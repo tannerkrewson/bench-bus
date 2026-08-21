@@ -1,4 +1,5 @@
 import { createSignal, onCleanup, onMount } from "solid-js";
+import { Dices, Moon, Sun } from "lucide-solid";
 
 export type ThemeMode = "light" | "dark";
 export type Theme =
@@ -174,23 +175,22 @@ export default function ThemeToggle() {
     <div class="join" role="group" aria-label="Theme controls">
       <button
         type="button"
-        class="btn btn-sm btn-outline join-item"
+        class="btn btn-sm btn-outline btn-square join-item"
         aria-label={`Switch to ${modeLabel() === "dark" ? "light" : "dark"} mode`}
         title="Toggle light/dark mode"
         onClick={toggle}
       >
-        <span aria-hidden="true">{modeLabel() === "dark" ? "☀" : "☾"}</span>
-        {modeLabel() === "dark" ? "Light mode" : "Dark mode"}
+        {modeLabel() === "dark" ? <Sun aria-hidden="true" size={17} /> : <Moon aria-hidden="true" size={17} />}
       </button>
       <button
         type="button"
-        class="btn btn-sm btn-outline join-item"
+        class="btn btn-sm btn-outline btn-square join-item"
         data-testid="random-theme"
         aria-label={`Choose a random ${modeLabel()} theme`}
         title={`Choose a random ${modeLabel()} theme`}
         onClick={randomize}
       >
-        <span aria-hidden="true">🎲</span>
+        <Dices aria-hidden="true" size={17} />
       </button>
     </div>
   );

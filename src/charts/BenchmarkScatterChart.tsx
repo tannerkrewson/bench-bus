@@ -1,4 +1,5 @@
 import { For, Show, createEffect, createSignal, on, onCleanup, onMount } from "solid-js";
+import { Crown } from "lucide-solid";
 import uPlot, { type Options } from "uplot";
 import "uplot/dist/uPlot.min.css";
 import { effortGroupColor, inferModelBrand } from "./brand";
@@ -22,6 +23,7 @@ export interface BenchmarkScatterChartProps {
   yAxisLabel: () => string;
   /** Model labels are enabled by default and controlled by the section toggle. */
   showLabels?: () => boolean;
+  showFrontier?: () => boolean;
   height?: number;
   /** Hover changes only when the pointer is within the hit radius of a dot. */
   onHover?: (id: string | null, pos?: { left: number; top: number }) => void;
@@ -177,7 +179,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       ...currentSeries.x,
     ];
     const frontierY = [
-      ...currentSeries.frontierIds.map((id) => pointById.get(id)?.y ?? null),
+      ...(props.showFrontier?.() ?? true)
+        ? currentSeries.frontierIds.map((id) => pointById.get(id)?.y ?? null)
+        : new Array<number | null>(currentSeries.frontierIds.length).fill(null),
       ...new Array<number | null>(pathLength - currentSeries.frontierIds.length + currentSeries.discounts.length + actualLength).fill(null),
     ];
     let groupOffset = 0;
@@ -274,12 +278,11 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       const x = currentSeries.x[index];
       const y = currentSeries.y[index];
       if (x === undefined || y === undefined || !currentSeries.frontierIds.includes(id)) return [];
-      const group = currentSeries.effortGroups[index];
       return [{
         id,
         left: overRect.left - rootRect.left + currentPlot.valToPos(x, "x"),
         top: overRect.top - rootRect.top + currentPlot.valToPos(y, "y"),
-        color: group ? effortGroupColor(group, dark) : (dark ? "#cbd5e1" : "#475569"),
+        color: themeStyles().frontierColor,
       }];
     });
     setPointDecorations(decorations);
@@ -413,7 +416,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       .join("|")}`;
     return {
       width: container?.clientWidth ?? 0,
-      height: props.height ?? (typeof window !== "undefined" && window.innerWidth < 640 ? 500 : 620),
+      height: props.height ?? (typeof window !== "undefined" && window.innerWidth < 640 ? 520 : 700),
       // time:false is essential — uPlot defaults the x axis to epoch-time
       // formatting, which collapses USD costs into one pixel cluster. Keep
       // sub-$1k models in view instead of snapping the log range to $1k.
@@ -477,7 +480,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         {},
         {
           label: "Pareto frontier",
-          stroke: styles.frontierColor,
+          stroke: props.showFrontier?.() ?? true ? styles.frontierColor : "rgba(0,0,0,0)",
           width: 2,
           dash: [5, 4],
           points: { show: false },
@@ -550,7 +553,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     };
   };
 
-  const chartHeight = () => props.height ?? (typeof window !== "undefined" && window.innerWidth < 640 ? 500 : 620);
+  const chartHeight = () => props.height ?? (typeof window !== "undefined" && window.innerWidth < 640 ? 520 : 700);
 
   const createPlot = () => {
     if (!container) return;
@@ -601,7 +604,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   createEffect(
     on(
-      () => [props.points(), props.selectedId()] as const,
+      () => [props.points(), props.selectedId(), props.showFrontier?.() ?? true] as const,
       () => {
         const data = dataFor();
         const nextStructureKey = `${currentSeries.discounts.length}|${currentSeries.variantGroups
@@ -641,21 +644,15 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         <Show when={hoveredPosition()}>
           {(position) => <circle cx={position().left} cy={position().top} r="6" fill="none" stroke="currentColor" stroke-width="2" data-testid="hovered-dot" />}
         </Show>
-        <For each={pointDecorations()}>
-          {(point) => (
-            <text
-              x={point.left}
-              y={point.top - 10}
-              fill={point.color}
-              text-anchor="middle"
-              font-size="13"
-              aria-hidden="true"
-              data-testid="pareto-crown"
-            >
-              ♛
-            </text>
-          )}
-        </For>
+        <Show when={props.showFrontier?.() ?? true}>
+          <For each={pointDecorations()}>
+            {(point) => (
+              <g transform={`translate(${point.left - 9} ${point.top - 27})`} fill="none" stroke={point.color}>
+                <Crown width={18} height={18} aria-hidden="true" data-testid="pareto-crown" />
+              </g>
+            )}
+          </For>
+        </Show>
       </svg>
       <Show when={props.showLabels?.() ?? true}>
         <svg

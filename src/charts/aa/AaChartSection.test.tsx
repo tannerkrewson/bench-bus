@@ -91,7 +91,7 @@ describe("AaChartSection", () => {
     const selected = [...container.querySelectorAll("[data-testid='model-list'] input[type='checkbox']")]
       .filter((input) => (input as HTMLInputElement).checked);
     expect(selected).toHaveLength(1);
-    expect((selected[0] as HTMLInputElement).ariaLabel).toBe("Select GPT-5.6 Sol");
+    expect((selected[0] as HTMLInputElement).ariaLabel).toBe("Show GPT-5.6 Sol");
     dispose();
   });
 

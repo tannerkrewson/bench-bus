@@ -49,7 +49,7 @@ describe("CursorBenchChartSection", () => {
       />
     ));
 
-    const search = container.querySelector("#chart-cursor-search") as HTMLInputElement;
+    const search = container.querySelector("#chart-cursor-model-search") as HTMLInputElement;
     expect(search.value).toBe("opus");
 
     const linearBtn = [...container.querySelectorAll("button")].find(

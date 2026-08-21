@@ -62,14 +62,14 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     expect(logBtn.getAttribute("aria-pressed")).toBe("true");
 
     // Establish selection + query first.
-    const search = container.querySelector("#chart-aa-demo-search") as HTMLInputElement;
+    const search = container.querySelector("#chart-aa-demo-model-search") as HTMLInputElement;
     search.value = "gemini";
     search.dispatchEvent(new Event("input", { bubbles: true }));
 
     linearBtn.click();
     expect(linearBtn.getAttribute("aria-pressed")).toBe("true");
     expect(logBtn.getAttribute("aria-pressed")).toBe("false");
-    expect((container.querySelector("#chart-aa-demo-search") as HTMLInputElement).value).toBe(
+    expect((container.querySelector("#chart-aa-demo-model-search") as HTMLInputElement).value).toBe(
       "gemini",
     );
     const last = states[states.length - 1]!;
@@ -117,7 +117,7 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     )!;
     expect(linearBtn.getAttribute("aria-pressed")).toBe("true");
     const selected = container.querySelector(
-      "[data-testid='model-list'] input[aria-label='Select Claude Opus 5']",
+      "[data-testid='model-list'] input[aria-label='Show Claude Opus 5']",
     ) as HTMLInputElement;
     expect(selected.checked).toBe(true);
     dispose();
@@ -174,8 +174,8 @@ describe("Chart controls across benchmark sections", () => {
       [...panel.querySelectorAll<HTMLElement>("[id]")].map((element) => element.id),
     );
     expect(new Set(ids).size).toBe(ids.length);
-    expect(ids).toContain("chart-aa-demo-search");
-    expect(ids).toContain("chart-cursor-demo-search");
+    expect(container.querySelector("#chart-aa-demo-model-search")).not.toBeNull();
+    expect(container.querySelector("#chart-cursor-demo-model-search")).not.toBeNull();
 
     for (const label of container.querySelectorAll<HTMLLabelElement>("[data-testid='chart-controls'] label[for]")) {
       const control = document.getElementById(label.htmlFor);
@@ -191,6 +191,34 @@ describe("Chart controls across benchmark sections", () => {
 });
 
 describe("BenchmarkChartSection (Cursor fixture shape)", () => {
+  it("persists Pareto visibility without changing model visibility", () => {
+    const states: ChartViewState[] = [];
+    const { container, dispose } = mount(() => (
+      <BenchmarkChartSection
+        adapter={cursorDemoAdapter}
+        records={() => CURSOR_FIXTURE_RECORDS}
+        onStateChange={(state) => states.push(state)}
+      />
+    ));
+    const frontier = container.querySelector("input[aria-label='Show Pareto frontier']") as HTMLInputElement;
+    expect(frontier.checked).toBe(true);
+    const canvas = container.querySelector("canvas");
+    frontier.click();
+    expect(frontier.checked).toBe(false);
+    expect(container.querySelector("canvas")).toBe(canvas);
+    expect(states[states.length - 1]?.showFrontier).toBe(false);
+    dispose();
+  });
+
+  it("keeps the model visibility selector search inside the menu", () => {
+    const { container, dispose } = mount(() => (
+      <BenchmarkChartSection adapter={cursorDemoAdapter} records={() => CURSOR_FIXTURE_RECORDS} />
+    ));
+    expect(container.querySelector("[data-testid='chart-controls'] input[type='search']")).toBeNull();
+    expect(container.querySelector("[data-testid='model-list'] input[type='search']")).not.toBeNull();
+    dispose();
+  });
+
   it("applies the surcharge toggle and reports state changes", () => {
     const states: ChartViewState[] = [];
     const { container, dispose } = mount(() => (
@@ -205,7 +233,7 @@ describe("BenchmarkChartSection (Cursor fixture shape)", () => {
       "input[aria-label^='Third-party surcharge']",
     ) as HTMLInputElement;
     expect(toggle.checked).toBe(false);
-    const labels = container.querySelector("#chart-cursor-demo-show-labels") as HTMLInputElement;
+    const labels = container.querySelector("input[aria-label='Show model labels']") as HTMLInputElement;
     expect(labels.checked).toBe(true);
     labels.click();
     expect(labels.checked).toBe(false);

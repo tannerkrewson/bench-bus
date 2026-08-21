@@ -43,17 +43,19 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
 
   const [scale, setScale] = createSignal(props.initialState?.scale ?? props.adapter.defaultXScale);
   const [query, setQuery] = createSignal(props.initialState?.query ?? "");
-  const [selectedIds, setSelectedIds] = createSignal<string[]>(
-    props.initialState?.selectedIds ?? [],
-  );
+  const [selectedIds, setSelectedIds] = createSignal<string[]>(props.initialState?.selectedIds ?? []);
   const [selectionSpecified, setSelectionSpecified] = createSignal(
     props.initialState?.selectionSpecified ?? (props.initialState?.selectedIds?.length ?? 0) > 0,
   );
   const [showLabels, setShowLabels] = createSignal(props.initialState?.showLabels ?? true);
+  const [showFrontier, setShowFrontier] = createSignal(props.initialState?.showFrontier ?? true);
   const [controls, setControls] = createSignal<PricingControlState>({
     ...defaultControls(),
     ...props.initialState?.controls,
   });
+
+  const buildAll = createMemo(() => buildChartPlot(props.records(), props.adapter, controls(), ""));
+  const defaultSelectionIds = createMemo(() => buildAll().entries.map((entry) => entry.point.id));
 
   const [hovered, setHovered] = createSignal<{
     id: string;
@@ -63,12 +65,13 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
 
   const build = createMemo(() => buildChartPlot(props.records(), props.adapter, controls(), query()));
 
+  const effectiveSelectedIds = createMemo(() =>
+    selectionSpecified() ? selectedIds() : defaultSelectionIds(),
+  );
   const selectedId = createMemo<string | null>(() => null);
   const visibleEntries = createMemo(() => {
-    const ids = selectedIds();
-    return selectionSpecified()
-      ? build().entries.filter((entry) => ids.includes(entry.point.id))
-      : build().entries;
+    const ids = new Set(effectiveSelectedIds());
+    return build().entries.filter((entry) => ids.has(entry.point.id));
   });
 
   const hoveredInfo = createMemo<{ title: string; lines: readonly TooltipLine[] } | null>(() => {
@@ -94,13 +97,23 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
       ...(selectionSpecified() ? { selectionSpecified: true } : {}),
       controls: controls(),
       showLabels: showLabels(),
+      showFrontier: showFrontier(),
     });
   };
   createEffect(emitState);
 
   const toggleSelect = (id: string) => {
+    const current = effectiveSelectedIds();
     setSelectionSpecified(true);
-    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    setSelectedIds((prev) => {
+      const source = selectionSpecified() ? prev : current;
+      return source.includes(id) ? source.filter((x) => x !== id) : [...source, id];
+    });
+  };
+
+  const resetDefault = () => {
+    setSelectionSpecified(false);
+    setSelectedIds([]);
   };
 
   const setControl = (id: string, value: number | boolean | string) => {
@@ -120,8 +133,6 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
         <ChartControlPanel
           scale={scale}
           onScaleChange={setScale}
-          query={query}
-          onQueryChange={setQuery}
           benchmarkId={props.adapter.benchmarkId}
           specs={props.adapter.controlSpecs}
           controls={controls}
@@ -129,6 +140,8 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
           isControlVisible={(spec) => props.isControlVisible?.(spec, controls()) ?? true}
           showLabels={showLabels}
           onShowLabelsChange={setShowLabels}
+          showFrontier={showFrontier}
+          onShowFrontierChange={setShowFrontier}
         />
 
         <Show
@@ -146,8 +159,13 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
         >
           <div class="mb-3 flex justify-end">
             <ModelList
-              points={() => build().entries.map((e) => e.point)}
-              selectedIds={selectedIds}
+              points={() => buildAll().entries.map((e) => e.point)}
+              selectedIds={effectiveSelectedIds}
+              defaultSelectedIds={defaultSelectionIds}
+              searchId={`chart-${props.adapter.benchmarkId}-model-search`}
+              onResetDefault={resetDefault}
+              query={query}
+              onQueryChange={setQuery}
               onToggleSelect={toggleSelect}
               unplottable={() =>
                 build().unplottable.map((u) => props.adapter.identity(u.record))
@@ -172,6 +190,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
                 scale={scale}
                 selectedId={selectedId}
                 showLabels={showLabels}
+                showFrontier={showFrontier}
                 xAxisLabel={() => props.adapter.xAxisLabel}
                 yAxisLabel={() => props.adapter.yAxisLabel}
                 onHover={(id, pos) =>

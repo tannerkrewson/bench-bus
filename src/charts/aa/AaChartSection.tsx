@@ -44,6 +44,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
       : [...AA_DEFAULT_MODEL_SLUGS],
   );
   const [showLabels, setShowLabels] = createSignal(props.initialState?.showLabels ?? true);
+  const [showFrontier, setShowFrontier] = createSignal(props.initialState?.showFrontier ?? true);
   const [controls, setControls] = createSignal<PricingControlState>({
     ...defaultControls(),
     ...props.initialState?.controls,
@@ -56,6 +57,9 @@ export default function AaChartSection(props: AaChartSectionProps) {
   } | null>(null);
 
   const allBuild = createMemo(() =>
+    buildChartPlot(props.records(), aaAdapter, controls(), ""),
+  );
+  const filteredBuild = createMemo(() =>
     buildChartPlot(props.records(), aaAdapter, controls(), query()),
   );
 
@@ -64,7 +68,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
   // the generic visibility-filter contract; missing default slugs simply have
   // no matching entry and therefore cannot break plotting.
   const build = createMemo(() => {
-    const candidate = allBuild();
+    const candidate = filteredBuild();
     const selected = new Set(selectedIds());
     return {
       entries: candidate.entries.filter((entry) => selected.has(entry.point.id)),
@@ -104,6 +108,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
       ...(selectionSpecified() ? { selectionSpecified: true } : {}),
       controls: controls(),
       showLabels: showLabels(),
+      showFrontier: showFrontier(),
     });
   };
   createEffect(emitState);
@@ -111,6 +116,12 @@ export default function AaChartSection(props: AaChartSectionProps) {
   const toggleSelect = (id: string) => {
     setSelectionSpecified(true);
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const resetDefault = () => {
+    setSelectionSpecified(false);
+    setSelectedIds([...AA_DEFAULT_MODEL_SLUGS]);
+    setQuery("");
   };
 
   const setControl = (id: string, value: number | boolean | string) => {
@@ -132,13 +143,13 @@ export default function AaChartSection(props: AaChartSectionProps) {
           benchmarkId={aaAdapter.benchmarkId}
           scale={scale}
           onScaleChange={setScale}
-          query={query}
-          onQueryChange={setQuery}
           specs={aaAdapter.controlSpecs}
           controls={controls}
           onControlChange={setControl}
           showLabels={showLabels}
           onShowLabelsChange={setShowLabels}
+          showFrontier={showFrontier}
+          onShowFrontierChange={setShowFrontier}
           isControlVisible={(spec) =>
             spec.id !== "cacheHitRate" || controls().pricingMode === "listed"
           }
@@ -157,6 +168,11 @@ export default function AaChartSection(props: AaChartSectionProps) {
             <ModelList
               points={() => allBuild().entries.map((e) => e.point)}
               selectedIds={selectedIds}
+              defaultSelectedIds={() => AA_DEFAULT_MODEL_SLUGS}
+              searchId={`chart-${aaAdapter.benchmarkId}-model-search`}
+              onResetDefault={resetDefault}
+              query={query}
+              onQueryChange={setQuery}
               onToggleSelect={toggleSelect}
               unplottable={() => allBuild().unplottable.map((u) => aaAdapter.identity(u.record))}
             />
@@ -179,6 +195,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
                 scale={scale}
                 selectedId={selectedId}
                 showLabels={showLabels}
+                showFrontier={showFrontier}
                 xAxisLabel={() => aaAdapter.xAxisLabel}
                 yAxisLabel={() => aaAdapter.yAxisLabel}
                 onHover={(id, pos) =>

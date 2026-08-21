@@ -127,7 +127,7 @@ const App: Component = () => {
       decodeBundle(JSON.parse(JSON.stringify(makeAaBundleFixture())) as { cursor: null } & Record<string, unknown>);
     return (
       <main class="min-h-screen bg-base-100 text-base-content">
-        <div class="container mx-auto flex min-h-screen max-w-6xl flex-col px-4 py-4 sm:px-6 sm:py-8">
+        <div class="container mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-4 sm:px-6 sm:py-8">
           <header class="navbar mb-6 rounded-box bg-base-200 px-4 shadow-sm sm:px-6">
             <div class="navbar-start gap-3">
               <img class="h-12 w-16 object-contain sm:h-14 sm:w-20" src="/logo.svg" alt="Bench Bus logo" />
@@ -152,8 +152,8 @@ const App: Component = () => {
 
           <Charts bundle={bundle()} />
 
-          <footer class="footer footer-center mt-12 border-t border-base-300 bg-base-200/60 px-4 py-8 text-sm">
-            <p>
+          <footer class="mt-12 flex flex-col items-center gap-1 px-4 py-8 text-center text-sm">
+            <p class="whitespace-nowrap">
               Bench Bus by{" "}
               <a
                 class="link link-hover font-semibold"

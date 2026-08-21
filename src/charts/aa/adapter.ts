@@ -74,19 +74,6 @@ function explicitProviderDiscount(
   return { percentage, preDiscountX, providerName: winner.providerName };
 }
 
-function pricingModeLabel(mode: string): string {
-  switch (mode) {
-    case "cheapest":
-      return "Cheapest single provider (OpenRouter effective)";
-    case "weighted":
-      return "OpenRouter weighted effective";
-    case "listed":
-      return "AA listed (cache-hit estimate)";
-    default:
-      return mode;
-  }
-}
-
 /**
  * Real Artificial Analysis adapter: Intelligence Index (Y) versus the
  * estimated cost of the actual canonical benchmark workload (X).
@@ -164,7 +151,6 @@ export function aaControlledTooltipLines(
   const lines: TooltipLine[] = [
     { label: "Intelligence Index", value: record.intelligenceIndex.toFixed(1) },
     { label: "Est. workload cost", value: `$${point.x.toFixed(2)}` },
-    { label: "Pricing mode", value: pricingModeLabel(mode) },
   ];
   if (mode === "cheapest") {
     const winner = selectCheapestProvider(

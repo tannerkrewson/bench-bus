@@ -134,7 +134,7 @@ describe("aaAdapter.computePoint", () => {
 });
 
 describe("aa tooltips and metadata", () => {
-  it("controlled tooltip includes pricing mode and winning provider in cheapest mode", () => {
+  it("controlled tooltip includes winning provider without repeating pricing mode", () => {
     const point = aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, {
       pricingMode: "cheapest",
       cacheHitRate: 0.9,
@@ -144,7 +144,7 @@ describe("aa tooltips and metadata", () => {
       cacheHitRate: 0.9,
     });
     const labels = lines.map((l) => l.label);
-    expect(labels).toContain("Pricing mode");
+    expect(labels).not.toContain("Pricing mode");
     expect(labels).toContain("Winning provider");
     expect(labels).toContain("Workload tokens");
     const provider = lines.find((l) => l.label === "Winning provider");

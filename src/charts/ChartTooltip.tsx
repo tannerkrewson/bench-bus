@@ -25,7 +25,7 @@ export default function ChartTooltip(props: ChartTooltipProps) {
     const anchorLeft = props.left();
     const anchorTop = props.top();
     const gap = 14;
-    const width = element.offsetWidth || 280;
+    const width = element.offsetWidth || 320;
     const height = element.offsetHeight || 80;
     const parentWidth = parent?.clientWidth ?? Number.POSITIVE_INFINITY;
     const parentHeight = parent?.clientHeight ?? Number.POSITIVE_INFINITY;
@@ -60,7 +60,7 @@ export default function ChartTooltip(props: ChartTooltipProps) {
     <Show when={props.title() !== null}>
       <div
         ref={element}
-        class="pointer-events-none absolute z-10 max-w-[min(20rem,calc(100%-1rem))] rounded-box border border-base-300 bg-base-100 px-3 py-2 text-left text-base shadow-md"
+        class="pointer-events-none absolute z-10 w-max max-w-[min(32rem,calc(100%-1rem))] rounded-box border border-base-300 bg-base-100/85 px-3 py-2 text-left text-xs shadow-md backdrop-blur-sm"
         data-testid="chart-tooltip"
         role="status"
         style={{ left: `${position().left}px`, top: `${position().top}px` }}
@@ -68,7 +68,7 @@ export default function ChartTooltip(props: ChartTooltipProps) {
         <div class="font-semibold">{props.title()}</div>
         <dl class="mt-1 space-y-0.5">
           {props.lines().map((line) => (
-            <div class="flex justify-between gap-4">
+            <div class="flex min-w-max justify-between gap-6 whitespace-nowrap">
               <dt class="text-base-content/70">{line.label}</dt>
               <dd class="font-medium">{line.value}</dd>
             </div>

@@ -59,6 +59,19 @@ describe("chart URL state", () => {
     ).toBe(false);
   });
 
+  it("round-trips Pareto frontier visibility", () => {
+    const state = {
+      scale: "log" as const,
+      query: "",
+      selectedIds: [],
+      controls: {},
+      showFrontier: false,
+    };
+    const params = chartStateToParams(state, "aa-demo");
+    expect(params.get("chart.aa-demo.frontier")).toBe("false");
+    expect(chartStateFromParams(params, "aa-demo", specs, defaults).showFrontier).toBe(false);
+  });
+
   it("namespaces per benchmark so two charts coexist", () => {
     const params = chartStateToParams(
       { scale: "linear", query: "", selectedIds: [], controls: { mode: "weighted" } },

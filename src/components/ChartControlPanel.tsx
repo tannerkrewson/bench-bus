@@ -4,8 +4,6 @@ import type { PricingControlSpec, PricingControlState, XScale } from "../charts/
 export interface ChartControlPanelProps {
   scale: () => XScale;
   onScaleChange: (scale: XScale) => void;
-  query: () => string;
-  onQueryChange: (query: string) => void;
   /** Stable benchmark namespace used to keep control IDs unique on pages with multiple charts. */
   benchmarkId: string;
   specs: readonly PricingControlSpec[];
@@ -14,13 +12,16 @@ export interface ChartControlPanelProps {
   /** Optional chart display toggle, enabled by chart sections that show labels. */
   showLabels?: () => boolean;
   onShowLabelsChange?: (show: boolean) => void;
+  /** Optional Pareto frontier visibility toggle. */
+  showFrontier?: () => boolean;
+  onShowFrontierChange?: (show: boolean) => void;
   /** Optional predicate for controls whose visibility depends on another control. */
   isControlVisible?: (spec: PricingControlSpec) => boolean;
 }
 
 /**
- * Keyboard-accessible chart controls: axis scale toggle, search filter, and
- * the adapter's pricing controls, rendered with DaisyUI components and
+ * Keyboard-accessible chart controls: axis scale, display toggles, and the
+ * adapter's pricing controls, rendered with DaisyUI components and
  * explicit labels.
  */
 export default function ChartControlPanel(props: ChartControlPanelProps) {
@@ -62,21 +63,6 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
         </div>
       </div>
 
-      <div>
-        <label class="mb-1 block text-base font-medium" for={controlId("search")}>
-          Filter models
-        </label>
-        <input
-          id={controlId("search")}
-          type="search"
-          class="input input-sm input-bordered w-56"
-          placeholder="Search by name…"
-          value={props.query()}
-          aria-label="Filter models by name"
-          onInput={(e) => props.onQueryChange(e.currentTarget.value)}
-        />
-      </div>
-
       <Show when={props.showLabels && props.onShowLabelsChange}>
         <div>
           <label class="label cursor-pointer gap-2 text-base font-medium" for={controlId("show-labels")}>
@@ -97,6 +83,22 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
         <span class="w-6 border-t-2 border-dashed border-primary" aria-hidden="true" />
         <span>Pareto frontier</span>
       </div>
+
+      <Show when={props.showFrontier && props.onShowFrontierChange}>
+        <div>
+          <label class="label cursor-pointer gap-2 text-base font-medium" for={controlId("show-frontier")}>
+            <span>Pareto frontier</span>
+            <input
+              id={controlId("show-frontier")}
+              type="checkbox"
+              class="toggle toggle-sm toggle-primary"
+              aria-label="Show Pareto frontier"
+              checked={props.showFrontier?.() ?? true}
+              onChange={(e) => props.onShowFrontierChange?.(e.currentTarget.checked)}
+            />
+          </label>
+        </div>
+      </Show>
 
       <For each={props.specs}>
         {(spec) => (

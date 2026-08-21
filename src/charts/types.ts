@@ -149,6 +149,8 @@ export interface ChartViewState {
   controls: PricingControlState;
   /** Whether model labels should be rendered next to plotted points. */
   showLabels?: boolean;
+  /** Whether the Pareto frontier line and crown decorations are visible. */
+  showFrontier?: boolean;
 }
 
 /** Result of mapping records through an adapter under a query filter. */
