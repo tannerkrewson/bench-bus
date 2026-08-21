@@ -36,9 +36,10 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     ).toBe("0.9");
 
     // 3 plotted + 1 unplottable (no providers) in the model list.
-    const buttons = container.querySelectorAll("[data-testid='model-list'] button");
-    expect(buttons).toHaveLength(3);
-    expect(container.textContent).toContain("Mystery Model (no pricing)");
+    const checkboxes = container.querySelectorAll("[data-testid='model-list'] input[type='checkbox']");
+    expect(checkboxes).toHaveLength(3);
+    expect(container.textContent).toContain("Mystery Model");
+    expect(container.textContent).toContain("no pricing");
     dispose();
   });
 
@@ -83,9 +84,9 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     ));
 
     const section = container.querySelector("section[data-benchmark='aa-demo']")!;
-    const modelButton = container.querySelector("[data-testid='model-list'] button")!;
-    (modelButton as HTMLButtonElement).click();
-    expect(modelButton.getAttribute("aria-pressed")).toBe("true");
+    const modelCheckbox = container.querySelector("[data-testid='model-list'] input[type='checkbox']")!;
+    (modelCheckbox as HTMLInputElement).click();
+    expect((modelCheckbox as HTMLInputElement).checked).toBe(true);
 
     // Same DOM node: no full-app recreation happened.
     expect(container.querySelector("section[data-benchmark='aa-demo']")).toBe(section);
@@ -115,8 +116,10 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
       (b) => b.textContent === "Linear",
     )!;
     expect(linearBtn.getAttribute("aria-pressed")).toBe("true");
-    const selected = container.querySelector("[data-testid='model-list'] button[aria-pressed='true']");
-    expect(selected?.textContent).toBe("Claude Opus 5");
+    const selected = container.querySelector(
+      "[data-testid='model-list'] input[aria-label='Select Claude Opus 5']",
+    ) as HTMLInputElement;
+    expect(selected.checked).toBe(true);
     dispose();
   });
 

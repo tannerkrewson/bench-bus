@@ -2,6 +2,12 @@ import { For, Show, createEffect, createSignal, on, onCleanup, onMount } from "s
 import uPlot, { type Options } from "uplot";
 import "uplot/dist/uPlot.min.css";
 import { MODEL_BRANDS, inferModelBrand, modelBrandColor } from "./brand";
+import {
+  groupModelVariants,
+  layoutModelLabels,
+  type ModelVariantGroup,
+  type ModelVariantMember,
+} from "./labelLayout";
 import { paretoFrontier, toHighlightY, toPlotSeries } from "./plotData";
 import type { ModelBrand, PlottablePoint, XScale } from "./types";
 
@@ -26,20 +32,14 @@ const SELECTED_FILL = "#dc2626";
 const DOT_SIZE = 9;
 const SELECTED_SIZE = 12;
 const DOT_HIT_RADIUS = 14;
+const LEADER_LINE_THRESHOLD = 28;
 
 type CurrentSeries = ReturnType<typeof toPlotSeries> & {
   brands: ModelBrand[];
   labels: string[];
   frontierIds: string[];
+  variantGroups: ModelVariantGroup[];
 };
-
-interface LabelPosition {
-  id: string;
-  label: string;
-  left: number;
-  top: number;
-  color: string;
-}
 
 /**
  * Reusable uPlot scatter wrapper. uPlot remains responsible for axes and
@@ -50,6 +50,7 @@ interface LabelPosition {
 export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps) {
   let container: HTMLDivElement | undefined;
   let plot: uPlot | null = null;
+  let plotStructureKey = "";
   let hoveredIndex: number | null = null;
   let currentSeries: CurrentSeries = {
     x: [],
@@ -59,8 +60,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     brands: [],
     labels: [],
     frontierIds: [],
+    variantGroups: [],
   };
-  const [labelPositions, setLabelPositions] = createSignal<LabelPosition[]>([]);
+  const [labelPositions, setLabelPositions] = createSignal<ReturnType<typeof layoutModelLabels>>([]);
 
   const refreshSeries = () => {
     const points = props.points();
@@ -70,15 +72,37 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       .map((id) => pointById.get(id))
       .filter((point): point is PlottablePoint => point !== undefined);
     const frontierIds = paretoFrontier(plottedPoints).map((point) => point.id);
+    const members: ModelVariantMember[] = series.ids.flatMap((id) => {
+      const point = pointById.get(id);
+      if (!point) return [];
+      return [{
+        id,
+        label: point.label,
+        brand: point.brand ?? inferModelBrand(point.label, id),
+        x: point.x,
+        y: point.y,
+      }];
+    });
+    const variantGroups = groupModelVariants(members);
+    const groupedIds = new Set(variantGroups.flatMap((group) => group.members.map((member) => member.id)));
+    const orderedIds = [
+      ...variantGroups.flatMap((group) => group.members.map((member) => member.id)),
+      ...series.ids.filter((id) => !groupedIds.has(id)),
+    ];
+    const indexById = new Map(series.ids.map((id, index) => [id, index]));
 
     currentSeries = {
-      ...series,
-      brands: series.ids.map((id) => {
+      x: orderedIds.map((id) => series.x[indexById.get(id)!]!),
+      y: orderedIds.map((id) => series.y[indexById.get(id)!]!),
+      ids: orderedIds,
+      droppedIds: series.droppedIds,
+      brands: orderedIds.map((id) => {
         const point = pointById.get(id);
         return point?.brand ?? inferModelBrand(point?.label, id);
       }),
-      labels: series.ids.map((id) => pointById.get(id)?.label ?? id),
+      labels: orderedIds.map((id) => pointById.get(id)?.label ?? id),
       frontierIds,
+      variantGroups,
     };
     return currentSeries;
   };
@@ -102,14 +126,41 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   const dataFor = (): uPlot.AlignedData => {
     refreshSeries();
-    const brandRows = MODEL_BRANDS.map((brand) => pointDataForBrand(brand));
+    const pointById = new Map(
+      currentSeries.ids.map((id, index) => [id, { x: currentSeries.x[index]!, y: currentSeries.y[index]! }]),
+    );
+    const pathIds = [
+      ...currentSeries.frontierIds,
+      ...currentSeries.variantGroups.flatMap((group) => group.members.map((member) => member.id)),
+    ];
+    const pathX = pathIds.map((id) => pointById.get(id)?.x ?? 0);
+    const pathLength = pathIds.length;
+    const actualLength = currentSeries.ids.length;
+    const dataX = [...pathX, ...currentSeries.x];
+    const frontierY = [
+      ...currentSeries.frontierIds.map((id) => pointById.get(id)?.y ?? null),
+      ...new Array<number | null>(pathLength - currentSeries.frontierIds.length + actualLength).fill(null),
+    ];
+    let groupOffset = 0;
+    const connectorRows = currentSeries.variantGroups.map((group) => {
+      const row = new Array<number | null>(dataX.length).fill(null);
+      group.members.forEach((member, index) => {
+        row[currentSeries.frontierIds.length + groupOffset + index] = member.y;
+      });
+      groupOffset += group.members.length;
+      return row;
+    });
+    const brandRows = MODEL_BRANDS.map((brand) => [
+      ...new Array<number | null>(pathLength).fill(null),
+      ...pointDataForBrand(brand),
+    ]);
+    const selectedRow = [
+      ...new Array<number | null>(pathLength).fill(null),
+      ...toHighlightY(currentSeries, props.selectedId()),
+    ];
     // uPlot accepts null-gapped plain arrays at runtime; its typings only
     // cover TypedArrays, so the sparse rows are cast at this boundary.
-    return [
-      Float64Array.from(currentSeries.x),
-      ...brandRows,
-      toHighlightY(currentSeries, props.selectedId()),
-    ] as unknown as uPlot.AlignedData;
+    return [Float64Array.from(dataX), frontierY, ...connectorRows, ...brandRows, selectedRow] as unknown as uPlot.AlignedData;
   };
 
   const nearestIndexForBrand = (u: uPlot, brand: ModelBrand): number | null => {
@@ -144,12 +195,34 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   };
 
   const updateLabelPositions = () => {
-    if (!plot || !(props.showLabels?.() ?? true)) {
+    if (!plot || !(props.showLabels?.() ?? true) || !container?.parentElement) {
       setLabelPositions([]);
       return;
     }
     const currentPlot = plot;
-    const positions = currentSeries.ids.flatMap((id, index) => {
+    const over = container.querySelector<HTMLElement>(".u-over");
+    if (!over) {
+      setLabelPositions([]);
+      return;
+    }
+
+    const rootRect = container.parentElement.getBoundingClientRect();
+    const overRect = over.getBoundingClientRect();
+    const bounds = {
+      left: overRect.left - rootRect.left + 4,
+      top: overRect.top - rootRect.top + 4,
+      right: overRect.right - rootRect.left - 4,
+      bottom: overRect.bottom - rootRect.top - 4,
+    };
+    const dark = themeStyles().dark;
+    const representativeById = new Map(
+      currentSeries.variantGroups.flatMap((group) =>
+        group.members.map((member) => [member.id, group.representativeId] as const),
+      ),
+    );
+    const anchors = currentSeries.ids.flatMap((id, index) => {
+      const representativeId = representativeById.get(id);
+      if (representativeId !== undefined && representativeId !== id) return [];
       const x = currentSeries.x[index];
       const y = currentSeries.y[index];
       if (x === undefined || y === undefined) return [];
@@ -158,13 +231,14 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         {
           id,
           label: currentSeries.labels[index] ?? id,
-          left: uPlotPosition(currentPlot, x, "x") + 8,
-          top: uPlotPosition(currentPlot, y, "y") - 8,
-          color: modelBrandColor(brand, themeStyles().dark),
+          anchorLeft: overRect.left - rootRect.left + currentPlot.valToPos(x, "x"),
+          anchorTop: overRect.top - rootRect.top + currentPlot.valToPos(y, "y"),
+          color: modelBrandColor(brand, dark),
+          priority: currentSeries.frontierIds.includes(id) ? 1 : 0,
         },
       ];
     });
-    setLabelPositions(positions);
+    setLabelPositions(layoutModelLabels(anchors, bounds));
   };
 
   const scheduleLabelPositions = () => {
@@ -175,40 +249,35 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     }
   };
 
-  const drawFrontier = (u: uPlot) => {
-    if (currentSeries.frontierIds.length < 2) return;
-    const points = currentSeries.frontierIds
-      .map((id) => {
-        const index = currentSeries.ids.indexOf(id);
-        return index < 0 ? null : { x: currentSeries.x[index]!, y: currentSeries.y[index]! };
-      })
-      .filter((point): point is { x: number; y: number } => point !== null)
-      .sort((a, b) => a.x - b.x);
-    if (points.length < 2) return;
-
-    const ctx = u.ctx;
-    const { frontierColor } = themeStyles();
-    ctx.save();
-    ctx.beginPath();
-    ctx.setLineDash([5, 4]);
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = frontierColor;
-    points.forEach((point, index) => {
-      const left = u.valToPos(point.x, "x", true);
-      const top = u.valToPos(point.y, "y", true);
-      if (index === 0) ctx.moveTo(left, top);
-      else ctx.lineTo(left, top);
-    });
-    ctx.stroke();
-    ctx.restore();
+  const pointPosition = (u: uPlot, index: number) => {
+    const x = currentSeries.x[index];
+    const y = currentSeries.y[index];
+    const over = container?.querySelector<HTMLElement>(".u-over");
+    const parent = container?.parentElement;
+    if (x === undefined || y === undefined || !over || !parent) return undefined;
+    const parentRect = parent.getBoundingClientRect();
+    const overRect = over.getBoundingClientRect();
+    return {
+      left: overRect.left - parentRect.left + u.valToPos(x, "x"),
+      top: overRect.top - parentRect.top + u.valToPos(y, "y"),
+    };
   };
 
   const buildOptions = (): Options => {
     const scale = props.scale();
     const styles = themeStyles();
+    refreshSeries();
+    const pathLength = currentSeries.frontierIds.length + currentSeries.variantGroups.reduce(
+      (total, group) => total + group.members.length,
+      0,
+    );
+    const brandStart = 2 + currentSeries.variantGroups.length;
+    plotStructureKey = currentSeries.variantGroups
+      .map((group) => `${group.key}:${group.members.length}`)
+      .join("|");
     return {
       width: container?.clientWidth ?? 0,
-      height: props.height ?? 420,
+      height: props.height ?? 540,
       // time:false is essential — uPlot defaults the x axis to epoch-time
       // formatting, which collapses USD costs into one pixel cluster. Keep
       // sub-$1k models in view instead of snapping the log range to $1k.
@@ -241,12 +310,27 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         // uPlot's default is nearest-in-X, which is not a dot hit test.
         dataIdx: (u, seriesIndex) => {
           if (seriesIndex === 0) return u.cursor.idx ?? null;
-          if (seriesIndex > MODEL_BRANDS.length) return null;
-          return nearestIndexForBrand(u, MODEL_BRANDS[seriesIndex - 1]!);
+          if (seriesIndex < brandStart || seriesIndex >= brandStart + MODEL_BRANDS.length) return null;
+          const index = nearestIndexForBrand(u, MODEL_BRANDS[seriesIndex - brandStart]!);
+          return index === null ? null : pathLength + index;
         },
       },
       series: [
         {},
+        {
+          label: "Pareto frontier",
+          stroke: styles.frontierColor,
+          width: 2,
+          dash: [5, 4],
+          points: { show: false },
+        },
+        ...currentSeries.variantGroups.map((group) => ({
+          label: `${group.baseLabel} effort variants`,
+          stroke: modelBrandColor(group.brand, styles.dark),
+          width: 1.5,
+          alpha: 0.62,
+          points: { show: false },
+        })),
         ...MODEL_BRANDS.map((brand) => {
           const color = modelBrandColor(brand, styles.dark);
           return {
@@ -264,17 +348,14 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         },
       ],
       hooks: {
-        // Draw after the points so the enabled-by-default frontier remains
-        // visible even when the first series has no path of its own.
-        draw: [drawFrontier],
         ready: [scheduleLabelPositions],
         setCursor: [
           (u) => {
             const index = hoveredPointIndex(u);
             hoveredIndex = index;
             const id = index === null ? null : (currentSeries.ids[index] ?? null);
-            if (id === null) props.onHover?.(null);
-            else props.onHover?.(id, { left: u.cursor.left ?? 0, top: u.cursor.top ?? 0 });
+            if (id === null || index === null) props.onHover?.(null);
+            else props.onHover?.(id, pointPosition(u, index));
           },
         ],
       },
@@ -293,7 +374,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
     const resize = () => {
       if (!container || !plot) return;
-      plot.setSize({ width: container.clientWidth, height: props.height ?? 420 });
+      plot.setSize({ width: container.clientWidth, height: props.height ?? 540 });
       scheduleLabelPositions();
     };
     if (typeof ResizeObserver !== "undefined") {
@@ -330,7 +411,12 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     on(
       () => [props.points(), props.selectedId()] as const,
       () => {
-        plot?.setData(dataFor());
+        const data = dataFor();
+        const nextStructureKey = currentSeries.variantGroups
+          .map((group) => `${group.key}:${group.members.length}`)
+          .join("|");
+        if (!plot || nextStructureKey !== plotStructureKey) createPlot();
+        else plot.setData(data);
         scheduleLabelPositions();
       },
       { defer: true },
@@ -356,11 +442,45 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     >
       <div ref={container} class="w-full" data-testid="benchmark-scatter-plot" />
       <Show when={props.showLabels?.() ?? true}>
+        <svg
+          class="pointer-events-none absolute inset-0 z-0 overflow-visible"
+          aria-hidden="true"
+          data-testid="model-label-leaders"
+        >
+          <For each={labelPositions()}>
+            {(label) => {
+              const endLeft = Math.max(label.left, Math.min(label.anchorLeft, label.left + label.width));
+              const endTop = Math.max(label.top, Math.min(label.anchorTop, label.top + label.height));
+              const distance = Math.hypot(label.anchorLeft - endLeft, label.anchorTop - endTop);
+              return (
+                <Show when={distance >= LEADER_LINE_THRESHOLD}>
+                  <line
+                    x1={label.anchorLeft}
+                    y1={label.anchorTop}
+                    x2={endLeft}
+                    y2={endTop}
+                    stroke={label.color}
+                    stroke-opacity="0.38"
+                    stroke-width="1"
+                    data-testid="model-label-leader"
+                  />
+                </Show>
+              );
+            }}
+          </For>
+        </svg>
         <For each={labelPositions()}>
           {(label) => (
             <span
-              class="pointer-events-none absolute z-1 max-w-40 -translate-y-1/2 overflow-hidden rounded bg-base-100/70 px-1 text-left text-[10px] leading-tight shadow-sm"
-              style={{ left: `${label.left}px`, top: `${label.top}px`, color: label.color }}
+              class="pointer-events-none absolute z-1 overflow-hidden whitespace-nowrap rounded bg-base-100/80 px-1 text-ellipsis text-left text-[10px] leading-5 shadow-sm"
+              title={label.label}
+              style={{
+                left: `${label.left}px`,
+                top: `${label.top}px`,
+                width: `${label.width}px`,
+                height: `${label.height}px`,
+                color: label.color,
+              }}
               data-testid="model-label"
               data-model-id={label.id}
             >
@@ -371,8 +491,4 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       </Show>
     </div>
   );
-}
-
-function uPlotPosition(plot: uPlot, value: number, scale: "x" | "y"): number {
-  return plot.valToPos(value, scale, true);
 }

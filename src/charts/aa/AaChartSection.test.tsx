@@ -25,9 +25,10 @@ describe("AaChartSection", () => {
       container.querySelector("input#chart-control-pricingMode, #chart-control-pricingMode"),
     ).not.toBeNull();
     // 3 plotted + 1 unplottable (no providers) in the default mode.
-    const buttons = container.querySelectorAll("[data-testid='model-list'] button");
-    expect(buttons).toHaveLength(3);
-    expect(container.textContent).toContain("Mystery Model (no pricing)");
+    const checkboxes = container.querySelectorAll("[data-testid='model-list'] input[type='checkbox']");
+    expect(checkboxes).toHaveLength(3);
+    expect(container.textContent).toContain("Mystery Model");
+    expect(container.textContent).toContain("no pricing");
     expect(container.querySelector("[data-testid='aa-unplottable-count']")?.textContent).toContain(
       "1 model",
     );

@@ -118,45 +118,45 @@ export default function AaChartSection(props: AaChartSectionProps) {
             </p>
           }
         >
-          <div class="grid gap-4 lg:grid-cols-[1fr_14rem]">
-            <div class="relative">
-              <Show
-                when={build().entries.length > 0}
-                fallback={
-                  <p
-                    class="rounded-box bg-base-200 p-8 text-center"
-                    role="status"
-                    data-testid="aa-no-points"
-                  >
-                    No models have computable costs for the current pricing settings.
-                  </p>
-                }
-              >
-                <BenchmarkScatterChart
-                  points={() => build().entries.map((e) => e.point)}
-                  scale={scale}
-                  selectedId={selectedId}
-                  showLabels={showLabels}
-                  xAxisLabel={() => aaAdapter.xAxisLabel}
-                  yAxisLabel={() => aaAdapter.yAxisLabel}
-                  onHover={(id, pos) =>
-                    setHovered(id && pos ? { id, left: pos.left, top: pos.top } : null)
-                  }
-                  onActivate={toggleSelect}
-                />
-              </Show>
-              <ChartTooltip
-                left={() => hovered()?.left ?? 0}
-                top={() => hovered()?.top ?? 0}
-                title={() => hoveredInfo()?.title ?? null}
-                lines={() => hoveredInfo()?.lines ?? []}
-              />
-            </div>
+          <div class="mb-3 flex justify-end">
             <ModelList
               points={() => build().entries.map((e) => e.point)}
               selectedIds={selectedIds}
               onToggleSelect={toggleSelect}
               unplottable={() => build().unplottable.map((u) => aaAdapter.identity(u.record))}
+            />
+          </div>
+          <div class="relative">
+            <Show
+              when={build().entries.length > 0}
+              fallback={
+                <p
+                  class="rounded-box bg-base-200 p-8 text-center"
+                  role="status"
+                  data-testid="aa-no-points"
+                >
+                  No models have computable costs for the current pricing settings.
+                </p>
+              }
+            >
+              <BenchmarkScatterChart
+                points={() => build().entries.map((e) => e.point)}
+                scale={scale}
+                selectedId={selectedId}
+                showLabels={showLabels}
+                xAxisLabel={() => aaAdapter.xAxisLabel}
+                yAxisLabel={() => aaAdapter.yAxisLabel}
+                onHover={(id, pos) =>
+                  setHovered(id && pos ? { id, left: pos.left, top: pos.top } : null)
+                }
+                onActivate={toggleSelect}
+              />
+            </Show>
+            <ChartTooltip
+              left={() => hovered()?.left ?? 0}
+              top={() => hovered()?.top ?? 0}
+              title={() => hoveredInfo()?.title ?? null}
+              lines={() => hoveredInfo()?.lines ?? []}
             />
           </div>
           <Show when={build().unplottable.length > 0}>
