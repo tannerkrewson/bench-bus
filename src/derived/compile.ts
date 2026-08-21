@@ -157,6 +157,7 @@ function toCursorRecords(records: CursorEvalRecord[]): DerivedCursorChartRecord[
     inputTokens: r.inputTokens,
     outputTokens: r.outputTokens,
     publishedCostUsd: r.publishedCostUsd,
+    tokensPerTask: r.tokensPerTask,
   }));
 }
 

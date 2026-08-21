@@ -77,6 +77,7 @@ export const CURSOR_FIXTURE_RECORDS: readonly DerivedCursorChartRecord[] = [
     isThirdParty: false,
     score: 70.8,
     publishedCostUsd: 2.81,
+    tokensPerTask: 41_136,
   },
   {
     modelId: "opus-5-max",
@@ -87,6 +88,7 @@ export const CURSOR_FIXTURE_RECORDS: readonly DerivedCursorChartRecord[] = [
     inputTokens: 1_200_000,
     outputTokens: 300_000,
     publishedCostUsd: 3.4,
+    tokensPerTask: 1_500_000,
   },
   {
     modelId: "gemini-3.7-flash",
@@ -95,6 +97,7 @@ export const CURSOR_FIXTURE_RECORDS: readonly DerivedCursorChartRecord[] = [
     isThirdParty: true,
     score: 55.2,
     publishedCostUsd: 0.42,
+    tokensPerTask: 180_500,
   },
 ];
 

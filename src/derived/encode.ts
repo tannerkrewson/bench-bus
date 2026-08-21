@@ -41,7 +41,8 @@ import {
  *
  * - Cursor record tuple (mirrors DerivedCursorChartRecord):
  *     `[modelId, modelName, provider, isThirdParty (0|1), score,
- *       inputTokens|null, outputTokens|null, publishedCostUsd|null]`
+ *       inputTokens|null, outputTokens|null, publishedCostUsd|null,
+ *       tokensPerTask|null]`
  *
  * The decoder is browser-safe (no Node built-ins) and validates every decoded
  * record against the shared zod contracts, so an encoding drift fails loudly
@@ -100,6 +101,7 @@ type CompactCursorRecord = [
   number | null, // inputTokens
   number | null, // outputTokens
   number | null, // publishedCostUsd
+  number | null, // tokensPerTask
 ];
 
 export function encodeAaDataset(
@@ -147,6 +149,7 @@ export function encodeCursorDataset(
         r.inputTokens ?? null,
         r.outputTokens ?? null,
         r.publishedCostUsd ?? null,
+        r.tokensPerTask ?? null,
       ],
     ),
   };
@@ -263,10 +266,10 @@ export function decodeBundle(raw: unknown): DecodedBundle {
     const { f, m } = dataset as { f: unknown; m: unknown };
     if (!Array.isArray(m)) throw new TypeError("Invalid cursor records array");
     const records = m.map((row) => {
-      if (!Array.isArray(row) || row.length !== 8) {
+      if (!Array.isArray(row) || row.length !== 9) {
         throw new TypeError(`Invalid compact Cursor record: ${JSON.stringify(row)}`);
       }
-      const [modelId, modelName, provider, third, score, inputTokens, outputTokens, publishedCostUsd] =
+      const [modelId, modelName, provider, third, score, inputTokens, outputTokens, publishedCostUsd, tokensPerTask] =
         row as CompactCursorRecord;
       return derivedCursorChartRecordSchema.parse({
         modelId,
@@ -277,6 +280,7 @@ export function decodeBundle(raw: unknown): DecodedBundle {
         ...(inputTokens !== null ? { inputTokens } : {}),
         ...(outputTokens !== null ? { outputTokens } : {}),
         ...(publishedCostUsd !== null ? { publishedCostUsd } : {}),
+        ...(tokensPerTask !== null ? { tokensPerTask } : {}),
       });
     });
     return { freshness: decodeFreshness(asOf, f), records };

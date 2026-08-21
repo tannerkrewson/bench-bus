@@ -75,6 +75,12 @@ export const derivedCursorChartRecordSchema = z
     inputTokens: finiteNumber.optional(),
     outputTokens: finiteNumber.optional(),
     publishedCostUsd: finiteNumber.optional(),
+    /**
+     * Published aggregate tokens per task (raw display figure). This is the
+     * surcharge calculator's token volume: real scraped Cursor rows publish
+     * aggregates only, so inputTokens/outputTokens are typically absent.
+     */
+    tokensPerTask: finiteNumber.optional(),
   })
   .strict();
 
