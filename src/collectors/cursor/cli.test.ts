@@ -4,18 +4,17 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { collectCursorEvals, runCollectorCli } from "./collect";
 import { cursorSnapshotPayloadSchema } from "../../schemas";
-
-const fixtureHtml = readFileSync(
-  new URL("./fixtures/cursor-evals-trimmed.html", import.meta.url),
-  "utf8",
-);
+import fixtureHtml from "./fixtures/cursor-evals-trimmed.html?raw";
 
 let workDir: string;
+let fixturePath: string;
 
 beforeEach(() => {
   workDir = path.join(tmpdir(), `bench-bus-cursor-collector-test-${process.pid}-${Date.now()}`);
   rmSync(workDir, { recursive: true, force: true });
   mkdirSync(workDir, { recursive: true });
+  fixturePath = path.join(workDir, "cursor-evals-trimmed.html");
+  writeFileSync(fixturePath, fixtureHtml);
 });
 
 afterEach(() => {
@@ -26,28 +25,19 @@ describe("collectCursorEvals", () => {
   const OBSERVED_AT = "2026-08-21T03:04:05Z";
 
   it("emits a schema-valid deterministic payload from a fixture", async () => {
-    const result = await collectCursorEvals({
-      fixturePath: new URL("./fixtures/cursor-evals-trimmed.html", import.meta.url).pathname,
-      observedAt: OBSERVED_AT,
-    });
+    const result = await collectCursorEvals({ fixturePath, observedAt: OBSERVED_AT });
     const payload = cursorSnapshotPayloadSchema.parse(JSON.parse(result.payloadJson));
     expect(payload.records).toHaveLength(56);
     expect(result.rowCount).toBe(56);
     expect(result.observedAt).toBe(OBSERVED_AT);
 
-    const repeat = await collectCursorEvals({
-      fixturePath: new URL("./fixtures/cursor-evals-trimmed.html", import.meta.url).pathname,
-      observedAt: OBSERVED_AT,
-    });
+    const repeat = await collectCursorEvals({ fixturePath, observedAt: OBSERVED_AT });
     expect(repeat.payloadJson).toBe(result.payloadJson);
   });
 
   it("rejects an unparseable observedAt", async () => {
     await expect(
-      collectCursorEvals({
-        fixturePath: new URL("./fixtures/cursor-evals-trimmed.html", import.meta.url).pathname,
-        observedAt: "yesterday",
-      }),
+      collectCursorEvals({ fixturePath, observedAt: "yesterday" }),
     ).rejects.toThrow(/--observed-at/);
   });
 
@@ -59,8 +49,6 @@ describe("collectCursorEvals", () => {
 });
 
 describe("runCollectorCli", () => {
-  const fixturePath = new URL("./fixtures/cursor-evals-trimmed.html", import.meta.url).pathname;
-
   it("writes normalized JSON to --out and exits 0", async () => {
     const outPath = path.join(workDir, "snapshots", "cursor.json");
     const code = await runCollectorCli([

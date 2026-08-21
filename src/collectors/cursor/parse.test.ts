@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   crossCheckTableAgainstSvg,
@@ -7,9 +6,7 @@ import {
   parseSvgPoints,
 } from "./parse";
 import { CursorParseError } from "./types";
-
-const FIXTURE_PATH = new URL("./fixtures/cursor-evals-trimmed.html", import.meta.url);
-const fixtureHtml = readFileSync(FIXTURE_PATH, "utf8");
+import fixtureHtml from "./fixtures/cursor-evals-trimmed.html?raw";
 
 describe("parseEvalTable", () => {
   it("parses every row of the representative live-page fixture", () => {

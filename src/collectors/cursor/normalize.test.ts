@@ -1,13 +1,8 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { cursorEvalIdentityKey, validateCursorEvalCollection } from "../../schemas";
 import { buildSnapshotPayload, cursorModelId, deriveIsThirdParty, deriveProvider, toCanonicalRecords } from "./normalize";
 import { parseEvalTable } from "./parse";
-
-const fixtureHtml = readFileSync(
-  new URL("./fixtures/cursor-evals-trimmed.html", import.meta.url),
-  "utf8",
-);
+import fixtureHtml from "./fixtures/cursor-evals-trimmed.html?raw";
 
 describe("identity and classification heuristics", () => {
   it("derives deterministic model ids from published names", () => {
