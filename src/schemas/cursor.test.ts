@@ -26,6 +26,23 @@ describe("cursorEvalRecordSchema (via collection validator)", () => {
     expect(second?.publishedCostUsd).toBe(1.85);
   });
 
+  it("accepts optional aggregate tokensPerTask/stepsPerTask and preserves them exactly", () => {
+    const [second] = validateCursorEvalCollection([validCursorRecord2]);
+    expect(second?.tokensPerTask).toBe(115_000);
+    expect(second?.stepsPerTask).toBe(46);
+    // Records without aggregates (no fields) remain valid.
+    expect(() => validateCursorEvalCollection([validCursorRecord])).not.toThrow();
+  });
+
+  it("rejects non-numeric aggregate tokensPerTask/stepsPerTask", () => {
+    expect(() =>
+      validateCursorEvalCollection([{ ...validCursorRecord2, tokensPerTask: "115000" }]),
+    ).toThrow();
+    expect(() =>
+      validateCursorEvalCollection([{ ...validCursorRecord2, stepsPerTask: Number.NaN }]),
+    ).toThrow();
+  });
+
   it("rejects scores outside [0, 100]", () => {
     expect(() => validateCursorEvalCollection([invalidCursorScoreOutOfRange])).toThrow(
       /Invalid Cursor eval record at index 0/,

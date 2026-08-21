@@ -56,6 +56,15 @@ describe("toCanonicalRecords", () => {
     expect(grok?.outputTokens).toBeUndefined();
   });
 
+  it("preserves the table's aggregate tokensPerTask/stepsPerTask verbatim", () => {
+    const grok = records.find((record) => record.modelName === "Grok 4.6 Extra High");
+    expect(grok?.tokensPerTask).toBeGreaterThan(0);
+    expect(grok?.stepsPerTask).toBeGreaterThan(0);
+    // Aggregate figures must never be split into input/output.
+    expect(grok?.inputTokens).toBeUndefined();
+    expect(grok?.outputTokens).toBeUndefined();
+  });
+
   it("preserves display-rounded scores exactly as published", () => {
     const luna = records.find((record) => record.modelName === "GPT-5.6 Luna Low");
     expect(luna?.score).toBe(37.6);

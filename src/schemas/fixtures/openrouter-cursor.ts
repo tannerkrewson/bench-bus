@@ -70,6 +70,8 @@ export const validCursorRecord2: CursorEvalRecord = {
   inputTokens: 95_000,
   outputTokens: 20_000,
   publishedCostUsd: 1.85,
+  tokensPerTask: 115_000,
+  stepsPerTask: 46,
 };
 
 /** Invalid: Cursor score outside [0, 100]. */

@@ -15,6 +15,9 @@ import { finiteNumber, isoUtcTimestamp, nonEmptyString, optionalFiniteNumber } f
  *   When the table publishes only aggregate cost, the parser records the
  *   published cost in `publishedCostUsd` and leaves token counts undefined;
  *   downstream cost estimation must then use the published cost directly.
+ * - `tokensPerTask`/`stepsPerTask` preserve the table's aggregate raw figures
+ *   (never split into input/output); the surcharge calculation sources its
+ *   token volume from these aggregates when input/output splits are absent.
  * - `provider` is the serving provider shown in the table (e.g. "cursor",
  *   "openai", "anthropic"); `modelId` is the table's row identity.
  * - `isThirdParty` marks models Cursor serves via a third-party API rather
@@ -41,6 +44,10 @@ export const cursorEvalRecordSchema = z
     outputTokens: optionalFiniteNumber,
     /** Cost per benchmark task as published by Cursor, USD, when present. */
     publishedCostUsd: optionalFiniteNumber,
+    /** Published aggregate tokens per task (raw display value), when present. */
+    tokensPerTask: optionalFiniteNumber,
+    /** Published aggregate steps per task (raw display value), when present. */
+    stepsPerTask: optionalFiniteNumber,
   })
   .strict();
 

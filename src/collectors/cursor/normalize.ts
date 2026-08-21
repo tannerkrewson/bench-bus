@@ -65,10 +65,10 @@ export function deriveIsThirdParty(modelName: string): boolean {
  *
  * The table publishes aggregate per-task figures only (one cost, one token
  * count), so per the schema contract the aggregate cost is recorded in
- * `publishedCostUsd` and input/output token counts are left undefined — the
- * aggregate tokens/steps stay in the raw row and are never invented into
- * input/output splits. The optional $0.25/M surcharge is applied downstream
- * (surcharge.ts) and is never baked in here.
+ * `publishedCostUsd`, input/output token counts are left undefined, and the
+ * aggregate tokens/steps are preserved verbatim in `tokensPerTask`/
+ * `stepsPerTask` (never invented into input/output splits). The optional
+ * $0.25/M surcharge is applied downstream (surcharge.ts), never baked in here.
  */
 export function toCanonicalRecord(row: RawCursorEvalRow): CursorEvalRecord {
   return {
@@ -78,6 +78,8 @@ export function toCanonicalRecord(row: RawCursorEvalRow): CursorEvalRecord {
     isThirdParty: deriveIsThirdParty(row.modelName),
     score: row.scorePercent,
     publishedCostUsd: row.costPerTaskUsd,
+    tokensPerTask: row.tokensPerTask,
+    stepsPerTask: row.stepsPerTask,
   };
 }
 
