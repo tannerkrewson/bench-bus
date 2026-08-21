@@ -1,70 +1,73 @@
 {
-  "version": 1,
-  "description": "Explicit Artificial Analysis -> OpenRouter model identity mapping. Curated by humans: automatic matching must never silently extend this file. `status: confirmed` = identity verified against both catalogs; `provisional` = plausible but unverified, the collector surfaces these in every run report. `aaModelId` holds the Artificial Analysis model UUID when known; until curated it repeats the AA slug as a placeholder. `openrouterId` is the stable OpenRouter model id (no date suffix, no :variant, no ~ alias); the collector resolves the canonical date-suffixed slug at runtime via /api/v1/models.",
+  "version": 2,
+  "description": "Explicit Artificial Analysis -> OpenRouter model identity mapping. Curated by humans: automatic matching must never silently extend this file. `status: confirmed` = identity verified against both live catalogs (2026-08-21: AA model objects extracted from the artificialanalysis.ai page payload; OpenRouter ids verified against /api/v1/models). `provisional` = plausible but unverified, surfaced in every run report. `aaModelId` is the Artificial Analysis model UUID from the AA page payload. `openrouterId` is the stable OpenRouter model id (no date suffix, no :variant, no ~ alias); the collector resolves the canonical date-suffixed slug at runtime via /api/v1/models. NOTE: AA model slugs use dashes where names use dots (e.g. AA slug gpt-5-6-sol for GPT-5.6 Sol).",
   "entries": [
     {
       "aaModelSlug": "claude-opus-5",
-      "aaModelId": "claude-opus-5",
+      "aaModelId": "b8fc61f7-5e9a-49e6-8547-6ac56db24627",
       "openrouterId": "anthropic/claude-opus-5",
       "status": "confirmed"
     },
     {
       "aaModelSlug": "claude-sonnet-5",
-      "aaModelId": "claude-sonnet-5",
+      "aaModelId": "23c86e4a-c769-43c0-a056-79e3cd15834f",
       "openrouterId": "anthropic/claude-sonnet-5",
       "status": "confirmed"
     },
     {
-      "aaModelSlug": "gpt-5.6-sol",
-      "aaModelId": "gpt-5.6-sol",
+      "aaModelSlug": "gpt-5-6-sol",
+      "aaModelId": "d93edfe8-bf35-49ad-b56e-b18116142a1c",
       "openrouterId": "openai/gpt-5.6-sol",
-      "status": "confirmed"
+      "status": "confirmed",
+      "note": "AA slug uses dashes (gpt-5-6-sol, 'GPT-5.6 Sol (max)'); corrected from the dot form in v1."
     },
     {
-      "aaModelSlug": "gemini-3.7-flash",
-      "aaModelId": "gemini-3.7-flash",
+      "aaModelSlug": "gemini-3-7-flash",
+      "aaModelId": "b2331108-72ed-415a-82d1-188633875bbc",
       "openrouterId": "google/gemini-3.7-flash",
-      "status": "confirmed"
+      "status": "confirmed",
+      "note": "AA slug uses dashes (gemini-3-7-flash); corrected from the dot form in v1."
     },
     {
-      "aaModelSlug": "glm-5.3",
-      "aaModelId": "glm-5.3",
+      "aaModelSlug": "glm-5-3",
+      "aaModelId": "cd684ea4-b475-4269-b001-d469d06d8a7a",
       "openrouterId": "z-ai/glm-5.3",
-      "status": "confirmed"
+      "status": "confirmed",
+      "note": "AA slug uses dashes (glm-5-3); corrected from the dot form in v1."
     },
     {
       "aaModelSlug": "kimi-k3",
-      "aaModelId": "kimi-k3",
+      "aaModelId": "f7d2fc3e-1f7b-405f-818c-07952a4af78f",
       "openrouterId": "moonshotai/kimi-k3",
       "status": "confirmed"
     },
     {
-      "aaModelSlug": "grok-4.6",
-      "aaModelId": "grok-4.6",
+      "aaModelSlug": "grok-4-6",
+      "aaModelId": "c8adc5cf-fd5a-407b-af51-dc3bede3e49c",
       "openrouterId": "x-ai/grok-4.6",
-      "status": "provisional",
-      "note": "AA slug assumed to be grok-4.6; verify against artificialanalysis.ai before trusting chart output."
+      "status": "confirmed",
+      "note": "Verified 2026-08-21: AA slug is grok-4-6 ('Grok 4.6 (high)', release 2026-08-12); x-ai/grok-4.6 canonical x-ai/grok-4.6-20260810."
     },
     {
       "aaModelSlug": "deepseek-v4-pro",
-      "aaModelId": "deepseek-v4-pro",
-      "openrouterId": "deepseek/deepseek-v4-pro",
-      "status": "provisional",
-      "note": "AA also publishes dated variants (e.g. deepseek-v4-pro-0813); confirm which AA slug this targets."
+      "aaModelId": "83173329-c09a-41f1-a028-a282a5f908d7",
+      "openrouterId": "deepseek/deepseek-v4-pro-0813",
+      "status": "confirmed",
+      "note": "Verified 2026-08-21: AA deepseek-v4-pro is 'DeepSeek V4 Pro 0813 (Reasoning, Max Effort)' (release 2026-08-13), so it maps to the GA release deepseek/deepseek-v4-pro-0813 (canonical -20260813). The plain deepseek/deepseek-v4-pro id is the OLD 0423 release (canonical -20260423) and matches AA's dated deepseek-v4-pro-0424 slug instead."
     },
     {
-      "aaModelSlug": "qwen3.8-max",
-      "aaModelId": "qwen3.8-max",
+      "aaModelSlug": "qwen3-8-max",
+      "aaModelId": "5e5b4ce7-bc54-47b2-b911-21b9cad8394c",
       "openrouterId": "qwen/qwen3.8-max",
-      "status": "provisional",
-      "note": "AA slug assumed to be qwen3.8-max; verify."
+      "status": "confirmed",
+      "note": "Verified 2026-08-21: AA slug is qwen3-8-max ('Qwen3.8 Max'); corrected from the dot form in v1."
     },
     {
-      "aaModelSlug": "nemotron-3-super",
-      "aaModelId": "nemotron-3-super",
+      "aaModelSlug": "nvidia-nemotron-3-super-120b-a12b",
+      "aaModelId": "63872e9c-3377-4a6b-b477-7bba244c38e9",
       "openrouterId": "nvidia/nemotron-3-super-120b-a12b",
-      "status": "provisional",
-      "note": "OpenRouter id carries a parameter suffix the AA slug may not have; verify."
+      "status": "confirmed",
+      "note": "Verified 2026-08-21: AA slug carries the nvidia- prefix and full parameter suffix; corrected from nemotron-3-super in v1."
     }
   ]
 }

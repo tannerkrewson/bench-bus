@@ -71,7 +71,7 @@ const baseOptions = (overrides: Partial<Parameters<typeof collectOpenRouterPrici
     "glm-5.3-20260816": fullPricing,
     "kimi-k3-20260715": fullPricing,
     "grok-4.6-20260810": fullPricing,
-    "deepseek-v4-pro-20260423": fullPricing,
+    "deepseek-v4-pro-20260813": fullPricing,
     "qwen3.8-max-20260803": fullPricing,
     "nemotron-3-super-120b-a12b-20230311": fullPricing,
   }),
@@ -93,7 +93,7 @@ function routesFor(_fetchImpl: unknown): Record<string, unknown> {
     "glm-5.3-20260816": fullPricing,
     "kimi-k3-20260715": fullPricing,
     "grok-4.6-20260810": fullPricing,
-    "deepseek-v4-pro-20260423": fullPricing,
+    "deepseek-v4-pro-20260813": fullPricing,
     "qwen3.8-max-20260803": fullPricing,
     "nemotron-3-super-120b-a12b-20230311": fullPricing,
   };
@@ -127,7 +127,7 @@ describe("collectOpenRouterPricing", () => {
       "glm-5.3-20260816": fullPricing,
       "kimi-k3-20260715": fullPricing,
       "grok-4.6-20260810": fullPricing,
-      "deepseek-v4-pro-20260423": fullPricing,
+      "deepseek-v4-pro-20260813": fullPricing,
       "qwen3.8-max-20260803": fullPricing,
       "nemotron-3-super-120b-a12b-20230311": fullPricing,
     }));
@@ -145,18 +145,32 @@ describe("collectOpenRouterPricing", () => {
       expect(e).toBeInstanceOf(CollectorError);
       return (e as CollectorError).report;
     });
-    const geminiFailure = report.failures.find((f) => f.aaModelSlug === "gemini-3.7-flash");
+    const geminiFailure = report.failures.find((f) => f.aaModelSlug === "gemini-3-7-flash");
     expect(geminiFailure?.category).toBe("no-data");
-    expect(report.records.find((r) => r.aaModelSlug === "gemini-3.7-flash")).toBeUndefined();
+    expect(report.records.find((r) => r.aaModelSlug === "gemini-3-7-flash")).toBeUndefined();
   });
 
   it("surfaces provisional aliases and mapping suggestions in the report without acting on them", async () => {
+    // The curated seed file has no provisional entries left.
     const report = await collectOpenRouterPricing(baseOptions());
-    expect(report.provisionalUsed).toContain("grok-4.6");
+    expect(report.provisionalUsed).toEqual([]);
     expect(report.suggestedObvious).toEqual([]); // every seed slug already has a mapping entry
     // Advisory suggestions never leak into records.
     const slugs = report.records.map((r) => r.aaModelSlug);
     expect(new Set(slugs).size).toBe(slugs.length);
+  });
+
+  it("still surfaces provisional aliases when one is reintroduced", async () => {
+    const provisionalSeed = {
+      ...aliasSeed,
+      entries: aliasSeed.entries.map((e) =>
+        e.aaModelSlug === "grok-4-6" ? { ...e, status: "provisional" as const } : e,
+      ),
+    };
+    const files = baseFiles();
+    files.set(ALIAS_PATH, JSON.stringify(provisionalSeed));
+    const report = await collectOpenRouterPricing(baseOptions({ io: memoryIo(files) }));
+    expect(report.provisionalUsed).toContain("grok-4-6");
   });
 
   it("fails closed when an OpenRouter id cannot be resolved in the catalog", async () => {
@@ -190,7 +204,7 @@ describe("collectOpenRouterPricing", () => {
       "glm-5.3-20260816": fullPricing,
       "kimi-k3-20260715": fullPricing,
       "grok-4.6-20260810": fullPricing,
-      "deepseek-v4-pro-20260423": fullPricing,
+      "deepseek-v4-pro-20260813": fullPricing,
       "qwen3.8-max-20260803": fullPricing,
       "nemotron-3-super-120b-a12b-20230311": fullPricing,
     };
@@ -218,13 +232,23 @@ describe("collectOpenRouterPricing", () => {
   });
 
   it("formats a human-readable report with provisional warnings and failures", async () => {
+    const provisionalSeed = {
+      ...aliasSeed,
+      entries: aliasSeed.entries.map((e) =>
+        e.aaModelSlug === "grok-4-6" ? { ...e, status: "provisional" as const } : e,
+      ),
+    };
+    const files = baseFiles();
+    files.set(ALIAS_PATH, JSON.stringify(provisionalSeed));
     try {
-      await collectOpenRouterPricing(optionsWithGeminiEmpty());
+      await collectOpenRouterPricing(
+        optionsWithGeminiEmpty({ io: memoryIo(files) }),
+      );
       expect.unreachable("expected CollectorError");
     } catch (error) {
       const text = formatReport((error as CollectorError).report);
       expect(text).toContain("PROVISIONAL aliases used");
-      expect(text).toContain("FAILURE [no-data] gemini-3.7-flash");
+      expect(text).toContain("FAILURE [no-data] gemini-3-7-flash");
     }
   });
 });
