@@ -13,6 +13,9 @@ import { timeTravelStateFromParams, mergeTimeTravelStateIntoParams } from "./his
 import TimeTravelControl from "./controls/TimeTravelControl";
 import FreshnessChips from "./controls/FreshnessChips";
 import { freshnessFromBundle } from "./history/resolve";
+import AaMethodologyPanel from "./methodology/AaMethodologyPanel";
+import CursorMethodologyPanel from "./methodology/CursorMethodologyPanel";
+import { GeneralLimitationNote } from "./methodology/MethodologyPanel";
 import {
   fetchDerivedBundle,
   fetchDerivedIndex,
@@ -87,6 +90,7 @@ const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
         )}
         onStateChange={(state) => syncChartStateToUrl(state, "aa")}
       />
+      <AaMethodologyPanel />
       <FreshnessChips
         freshness={freshnessFromBundle(props.bundle)}
         now={new Date().toISOString()}
@@ -96,6 +100,8 @@ const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
         initialState={initialChartStateFor("cursor", [], { surcharge: false })}
         onStateChange={(state) => syncChartStateToUrl(state, "cursor")}
       />
+      <CursorMethodologyPanel />
+      <GeneralLimitationNote />
       {timeTravel.view().preHistory || (!props.bundle.aa && !props.bundle.cursor) ? (
         <p role="status" class="text-warning">
           No collected data at this selected time.
