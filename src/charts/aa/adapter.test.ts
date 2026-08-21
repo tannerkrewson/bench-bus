@@ -102,6 +102,10 @@ describe("aaAdapter.computePoint", () => {
       "Discount A",
       "Discount B",
     ]);
+    expect(point.discounts?.map((discount) => discount.providerRole)).toEqual([
+      "plotted",
+      "alternative",
+    ]);
     expect(point.discounts?.[1]?.effectiveX).toBe(7);
   });
 

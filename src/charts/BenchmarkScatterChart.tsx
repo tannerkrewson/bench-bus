@@ -3,7 +3,7 @@ import { Crown } from "lucide-solid";
 import uPlot, { type Options } from "uplot";
 import { isDarkTheme } from "../components/ThemeToggle";
 import "uplot/dist/uPlot.min.css";
-import { effortGroupColor, inferModelBrand } from "./brand";
+import { effortGroupColor, inferModelBrand, modelBrandColor } from "./brand";
 import {
   groupModelVariants,
   layoutModelLabels,
@@ -11,25 +11,23 @@ import {
   type ModelVariantMember,
 } from "./labelLayout";
 import {
-  explicitDiscountForAnnotation,
+  largestExplicitDiscountForPoint,
   paretoFrontier,
-  toHighlightY,
   toPlotSeries,
 } from "./plotData";
 import { formatDollarTick, formatPercentTick } from "../utils/format";
-import type { PlottablePoint, XScale } from "./types";
+import type { ModelBrand, PlottablePoint, XScale } from "./types";
 
 export interface BenchmarkScatterChartProps {
   /** Points currently passing filters, in stable order. */
   points: () => readonly PlottablePoint[];
   scale: () => XScale;
-  /** Single emphasized selection, or null. */
-  selectedId: () => string | null;
   xAxisLabel: () => string;
   yAxisLabel: () => string;
   /** Model labels are enabled by default and controlled by the section toggle. */
   showLabels?: () => boolean;
   showFrontier?: () => boolean;
+  showDiscounts?: () => boolean;
   height?: number;
   /** Hover changes only when the pointer is within the hit radius of a dot. */
   onHover?: (id: string | null, pos?: { left: number; top: number }) => void;
@@ -37,9 +35,7 @@ export interface BenchmarkScatterChartProps {
   onActivate?: (id: string) => void;
 }
 
-const SELECTED_FILL = "#dc2626";
 const DOT_SIZE = 9;
-const SELECTED_SIZE = 12;
 const DISCOUNT_DOT_SIZE = 7;
 const DOT_HIT_RADIUS = 14;
 const LABEL_DOT_RADIUS = 8;
@@ -47,11 +43,13 @@ const LEADER_LINE_GAP = 3;
 
 type DiscountAnnotation = {
   id: string;
+  pointId: string;
   preX: number;
   effectiveX: number;
   y: number;
   percentage: number;
   providerName?: string;
+  providerRole?: "plotted" | "alternative";
 };
 
 type DiscountDecoration = {
@@ -60,11 +58,13 @@ type DiscountDecoration = {
   effectiveLeft: number;
   top: number;
   percentage: number;
+  providerRole?: "plotted" | "alternative";
 };
 
 type CurrentSeries = ReturnType<typeof toPlotSeries> & {
   labels: string[];
   effortGroups: (string | null)[];
+  brands: ModelBrand[];
   frontierIds: string[];
   variantGroups: ModelVariantGroup[];
   discounts: DiscountAnnotation[];
@@ -88,6 +88,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     droppedIds: [],
     labels: [],
     effortGroups: [],
+    brands: [],
     frontierIds: [],
     variantGroups: [],
     discounts: [],
@@ -133,23 +134,22 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     const orderedPoints = orderedIds.map((id) => pointById.get(id)).filter(
       (point): point is PlottablePoint => point !== undefined,
     );
-    const discounts: DiscountAnnotation[] = orderedPoints.flatMap((point) => {
-      const candidates = point.discounts ?? (point.discount ? [point.discount] : []);
-      return candidates.flatMap((candidate, index) => {
-        const discount = explicitDiscountForAnnotation(candidate);
-        if (!discount) return [];
-        return [{
-          id: point.discounts === undefined && point.discount !== undefined
-            ? point.id
-            : `${point.id}::discount-${index}`,
-          preX: discount.preDiscountX,
-          effectiveX: discount.effectiveX ?? point.x,
-          y: point.y,
-          percentage: discount.percentage,
-          providerName: discount.providerName,
-        }];
-      });
-    });
+    const discounts: DiscountAnnotation[] = (props.showDiscounts?.() ?? true)
+      ? orderedPoints.flatMap((point) => {
+          const discount = largestExplicitDiscountForPoint(point);
+          if (!discount) return [];
+          return [{
+            id: point.id,
+            pointId: point.id,
+            preX: discount.preDiscountX,
+            effectiveX: discount.effectiveX ?? point.x,
+            y: point.y,
+            percentage: discount.percentage,
+            providerName: discount.providerName,
+            providerRole: discount.providerRole,
+          }];
+        })
+      : [];
     currentSeries = {
       x: orderedIds.map((id) => series.x[indexById.get(id)!]!),
       y: orderedIds.map((id) => series.y[indexById.get(id)!]!),
@@ -157,6 +157,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       droppedIds: series.droppedIds,
       labels: orderedIds.map((id) => pointById.get(id)?.label ?? id),
       effortGroups: orderedIds.map((id) => groupById.get(id) ?? null),
+      brands: orderedIds.map((id) => {
+        const point = pointById.get(id);
+        return point?.brand ?? inferModelBrand(point?.label, id);
+      }),
       frontierIds,
       variantGroups,
       discounts,
@@ -221,48 +225,103 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       row[currentSeries.frontierIds.length + currentSeries.variantGroups.reduce((n, group) => n + group.members.length, 0) + index * 2 + 1] = discount.y;
       return row;
     });
-    const groupKeys = [...new Set(currentSeries.effortGroups.filter((group): group is string => group !== null))];
-    const pointRows = groupKeys.map((key) => {
+    const dark = themeStyles().dark;
+    const pointColorKeys = [...new Set(
+      currentSeries.brands.map((brand) => modelBrandColor(brand, dark)),
+    )];
+    const pointRows = pointColorKeys.map((color) => {
       const row = new Array<number | null>(dataX.length).fill(null);
-      currentSeries.effortGroups.forEach((group, index) => {
-        if (group === key) row[actualOffset + index] = currentSeries.y[index]!;
+      currentSeries.brands.forEach((brand, index) => {
+        if (modelBrandColor(brand, dark) === color) row[actualOffset + index] = currentSeries.y[index]!;
       });
       return row;
-    });
-    const ungroupedRow = new Array<number | null>(dataX.length).fill(null);
-    currentSeries.effortGroups.forEach((group, index) => {
-      if (group === null) ungroupedRow[actualOffset + index] = currentSeries.y[index]!;
     });
     const discountDots = currentSeries.discounts.map((discount, index) => {
       const row = new Array<number | null>(dataX.length).fill(null);
       row[discountOffset + index] = discount.y;
       return row;
     });
-    const selectedRow = [
-      ...new Array<number | null>(actualOffset).fill(null),
-      ...toHighlightY(currentSeries, props.selectedId()),
-    ];
     // uPlot accepts null-gapped plain arrays at runtime; its typings only
     // cover TypedArrays, so the sparse rows are cast at this boundary.
-    return [Float64Array.from(dataX), frontierY, ...connectorRows, ...discountRows, ...pointRows, ungroupedRow, ...discountDots, selectedRow] as unknown as uPlot.AlignedData;
+    return [Float64Array.from(dataX), frontierY, ...connectorRows, ...discountRows, ...pointRows, ...discountDots] as unknown as uPlot.AlignedData;
   };
 
-  const hoveredPointIndex = (u: uPlot): number | null => {
-    const cursorLeft = u.cursor.left ?? -Infinity;
-    const cursorTop = u.cursor.top ?? -Infinity;
-    let nearest: number | null = null;
-    let nearestDistance = Infinity;
-    for (let index = 0; index < currentSeries.ids.length; index += 1) {
+  type HoverTarget = {
+    pointIndex: number;
+    id: string;
+    plotLeft: number;
+    plotTop: number;
+    dataIndex: number;
+  };
+
+  const pointerPlotPosition = (u: uPlot): { left: number; top: number } | undefined => {
+    const event = (u.cursor as uPlot.Cursor & { event?: MouseEvent }).event;
+    const over = container?.querySelector<HTMLElement>(".u-over");
+    if (event && over && Number.isFinite(event.clientX) && Number.isFinite(event.clientY)) {
+      const overRect = over.getBoundingClientRect();
+      return { left: event.clientX - overRect.left, top: event.clientY - overRect.top };
+    }
+    if (u.cursor.left != null && u.cursor.top != null) {
+      return { left: u.cursor.left, top: u.cursor.top };
+    }
+    return undefined;
+  };
+
+  const hoveredTarget = (u: uPlot): HoverTarget | null => {
+    const pointer = pointerPlotPosition(u);
+    if (!pointer) return null;
+    const connectorLength = currentSeries.frontierIds.length + currentSeries.variantGroups.reduce(
+      (total, group) => total + group.members.length,
+      0,
+    );
+    const discountOffset = connectorLength + currentSeries.discounts.length * 2;
+    const actualOffset = discountOffset + currentSeries.discounts.length;
+    const targets: (HoverTarget & { distance: number })[] = [];
+    currentSeries.ids.forEach((id, index) => {
       const x = currentSeries.x[index];
       const y = currentSeries.y[index];
-      if (x === undefined || y === undefined) continue;
-      const distance = Math.hypot(u.valToPos(x, "x") - cursorLeft, u.valToPos(y, "y") - cursorTop);
-      if (distance < nearestDistance) {
-        nearest = index;
-        nearestDistance = distance;
-      }
-    }
-    return nearestDistance <= DOT_HIT_RADIUS ? nearest : null;
+      if (x === undefined || y === undefined) return;
+      const plotLeft = u.valToPos(x, "x");
+      const plotTop = u.valToPos(y, "y");
+      if (plotLeft === undefined || plotTop === undefined) return;
+      targets.push({
+        pointIndex: index,
+        id,
+        plotLeft,
+        plotTop,
+        dataIndex: actualOffset + index,
+        distance: Math.hypot(plotLeft - pointer.left, plotTop - pointer.top),
+      });
+    });
+    currentSeries.discounts.forEach((discount, index) => {
+      const plotTop = u.valToPos(discount.y, "y");
+      const preLeft = u.valToPos(discount.preX, "x");
+      const effectiveLeft = u.valToPos(discount.effectiveX, "x");
+      if (plotTop === undefined || preLeft === undefined || effectiveLeft === undefined) return;
+      targets.push(
+        {
+          pointIndex: currentSeries.ids.indexOf(discount.pointId),
+          id: discount.pointId,
+          plotLeft: preLeft,
+          plotTop,
+          dataIndex: discountOffset + index,
+          distance: Math.hypot(preLeft - pointer.left, plotTop - pointer.top),
+        },
+        {
+          pointIndex: currentSeries.ids.indexOf(discount.pointId),
+          id: discount.pointId,
+          plotLeft: effectiveLeft,
+          plotTop,
+          dataIndex: connectorLength + index * 2 + 1,
+          distance: Math.hypot(effectiveLeft - pointer.left, plotTop - pointer.top),
+        },
+      );
+    });
+    const nearest = targets.reduce<((typeof targets)[number]) | null>(
+      (best, target) => target.distance < (best?.distance ?? Infinity) ? target : best,
+      null,
+    );
+    return nearest && nearest.distance <= DOT_HIT_RADIUS ? nearest : null;
   };
 
   const updateLabelPositions = () => {
@@ -315,9 +374,22 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       const effectiveLeft = overRect.left - rootRect.left + currentPlot.valToPos(discount.effectiveX, "x");
       const top = overRect.top - rootRect.top + currentPlot.valToPos(discount.y, "y");
       if (![preLeft, effectiveLeft, top].every(Number.isFinite)) return [];
-      return [{ id: discount.id, preLeft, effectiveLeft, top, percentage: discount.percentage }];
+      return [{
+        id: discount.id,
+        preLeft,
+        effectiveLeft,
+        top,
+        percentage: discount.percentage,
+        providerRole: discount.providerRole,
+      }];
     });
     setDiscountDecorations(discountGeometry);
+    const discountLines = discountGeometry.map((discount) => ({
+      left1: discount.preLeft,
+      top1: discount.top,
+      left2: discount.effectiveLeft,
+      top2: discount.top,
+    }));
     const anchors = currentSeries.ids.flatMap((id, index) => {
       const representativeId = representativeById.get(id);
       if (representativeId !== undefined && representativeId !== id) return [];
@@ -330,9 +402,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           label: currentSeries.labels[index] ?? id,
           anchorLeft: overRect.left - rootRect.left + currentPlot.valToPos(x, "x"),
           anchorTop: overRect.top - rootRect.top + currentPlot.valToPos(y, "y"),
-          color: dark ? "#ffffff" : (currentSeries.effortGroups[index]
-            ? effortGroupColor(currentSeries.effortGroups[index]!, dark)
-            : "#475569"),
+          color: modelBrandColor(currentSeries.brands[index] ?? "other", dark),
           priority: currentSeries.frontierIds.includes(id) ? 1 : 0,
         },
       ];
@@ -347,14 +417,14 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         top: overRect.top - rootRect.top + currentPlot.valToPos(y, "y"),
       }];
     });
-    const baseLabels = layoutModelLabels(anchors, bounds, { obstacles });
+    const baseLabels = layoutModelLabels(anchors, bounds, { obstacles, lines: discountLines });
     const activeId = hoveredLabelId();
     const activeBase = activeId === null ? undefined : baseLabels.find((label) => label.id === activeId);
     const preferredSides = activeBase
       ? new Map([[activeId!, activeBase.left + activeBase.width / 2 < activeBase.anchorLeft ? "right" : "left"] as const])
       : undefined;
     const labels = activeBase
-      ? layoutModelLabels(anchors, bounds, { obstacles, preferredSides })
+      ? layoutModelLabels(anchors, bounds, { obstacles, lines: discountLines, preferredSides })
       : baseLabels;
     if (activeId !== null && !labels.some((label) => label.id === activeId)) {
       hoveredLabelBounds = null;
@@ -406,18 +476,26 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     };
   };
 
-  const pointPosition = (u: uPlot, index: number) => {
-    const x = currentSeries.x[index];
-    const y = currentSeries.y[index];
+  const plotPosition = (plotLeft: number, plotTop: number) => {
     const over = container?.querySelector<HTMLElement>(".u-over");
     const parent = container?.parentElement;
-    if (x === undefined || y === undefined || !over || !parent) return undefined;
+    if (!over || !parent) return undefined;
     const parentRect = parent.getBoundingClientRect();
     const overRect = over.getBoundingClientRect();
     return {
-      left: overRect.left - parentRect.left + u.valToPos(x, "x"),
-      top: overRect.top - parentRect.top + u.valToPos(y, "y"),
+      left: overRect.left - parentRect.left + plotLeft,
+      top: overRect.top - parentRect.top + plotTop,
     };
+  };
+
+  const pointPosition = (u: uPlot, index: number) => {
+    const x = currentSeries.x[index];
+    const y = currentSeries.y[index];
+    if (x === undefined || y === undefined) return undefined;
+    const plotLeft = u.valToPos(x, "x");
+    const plotTop = u.valToPos(y, "y");
+    if (plotLeft === undefined || plotTop === undefined) return undefined;
+    return plotPosition(plotLeft, plotTop);
   };
 
   const updateLabelHover = (pointer: { left: number; top: number } | undefined) => {
@@ -461,14 +539,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     const scale = props.scale();
     const styles = themeStyles();
     refreshSeries();
-    const pathLength = currentSeries.frontierIds.length + currentSeries.variantGroups.reduce(
-      (total, group) => total + group.members.length,
-      0,
-    ) + currentSeries.discounts.length * 2;
-    const actualOffset = pathLength + currentSeries.discounts.length;
+    const pointBrands = [...new Set(currentSeries.brands)];
     plotStructureKey = `${currentSeries.discounts.length}|${currentSeries.variantGroups
       .map((group) => `${group.key}:${group.members.length}`)
-      .join("|")}`;
+      .join("|")}|${pointBrands.join("|")}`;
     return {
       width: container?.clientWidth ?? 0,
       height: props.height ?? (typeof window !== "undefined" && window.innerWidth < 640 ? 520 : 700),
@@ -537,8 +611,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         // uPlot's default is nearest-in-X, which is not a dot hit test.
         dataIdx: (u, seriesIndex) => {
           if (seriesIndex === 0) return u.cursor.idx ?? null;
-          const index = hoveredPointIndex(u);
-          return index === null ? null : actualOffset + index;
+          return hoveredTarget(u)?.dataIndex ?? null;
         },
       },
       series: [
@@ -564,10 +637,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           dash: [4, 3],
           points: { show: false },
         })),
-        ...[...new Set(currentSeries.effortGroups.filter((group): group is string => group !== null))].map((group) => {
-          const color = group ? effortGroupColor(group, styles.dark) : (styles.dark ? "#cbd5e1" : "#475569");
+        ...pointBrands.map((brand) => {
+          const color = modelBrandColor(brand, styles.dark);
           return {
-            label: group ? `${group} effort group` : "Ungrouped models",
+            label: `${brand} models`,
             stroke: color,
             width: 0,
             points: { show: true, size: DOT_SIZE, width: 1.5, stroke: color, fill: color },
@@ -579,12 +652,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           width: 0,
           points: { show: true, size: DISCOUNT_DOT_SIZE, width: 1.5, stroke: styles.discountColor, fill: styles.discountColor },
         })),
-        {
-          label: "Selected",
-          stroke: "rgba(0,0,0,0)",
-          width: 0,
-          points: { show: true, size: SELECTED_SIZE, width: 2, stroke: SELECTED_FILL, fill: SELECTED_FILL },
-        },
       ],
       hooks: {
         ready: [scheduleLabelPositions],
@@ -593,10 +660,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
             const pointer = u.cursor.left === null || u.cursor.top === null ? undefined : cursorPosition(u);
             const rawPointer = pointerEventPosition(u) ?? pointer;
             updateLabelHover(rawPointer);
-            const index = hoveredPointIndex(u);
-            hoveredIndex = index;
-            const id = index === null ? null : (currentSeries.ids[index] ?? null);
-            if (id === null || index === null) {
+            const target = hoveredTarget(u);
+            hoveredIndex = target && target.pointIndex >= 0 ? target.pointIndex : null;
+            if (!target || hoveredIndex === null) {
               // A prior hit snaps the crosshair to the dot. Restore the raw
               // pointer position when it leaves the hit radius so guides do
               // not remain frozen at the last hovered point.
@@ -620,18 +686,15 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
               setHoveredPosition(null);
               props.onHover?.(null);
             } else {
-              const dot = pointPosition(u, index);
-              // pointPosition is already relative to the chart's positioned
-              // parent; do not subtract the parent offset a second time.
+              const dot = plotPosition(target.plotLeft, target.plotTop);
               setHoveredPosition(dot ?? null);
-              // Keep guides centered on the dot while the tooltip remains at the pointer.
-              // fireHook=false prevents setCursor from recursively re-entering this hook.
-              const snappedLeft = u.valToPos(currentSeries.x[index]!, "x");
-              const snappedTop = u.valToPos(currentSeries.y[index]!, "y");
-              if (Math.abs((u.cursor.left ?? snappedLeft) - snappedLeft) > 0.5 || Math.abs((u.cursor.top ?? snappedTop) - snappedTop) > 0.5) {
-                u.setCursor({ left: snappedLeft, top: snappedTop }, false);
+              // Keep guides centered on whichever dot was hit, including the
+              // pre-discount endpoint, while the tooltip stays at the pointer.
+              if (Math.abs((u.cursor.left ?? target.plotLeft) - target.plotLeft) > 0.5 ||
+                  Math.abs((u.cursor.top ?? target.plotTop) - target.plotTop) > 0.5) {
+                u.setCursor({ left: target.plotLeft, top: target.plotTop }, false);
               }
-              props.onHover?.(id, pointer ?? dot);
+              props.onHover?.(target.id, rawPointer ?? dot);
             }
           },
         ],
@@ -697,7 +760,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   createEffect(
     on(
-      () => [props.points(), props.selectedId(), props.showFrontier?.() ?? true] as const,
+      () => [props.points(), props.showFrontier?.() ?? true, props.showDiscounts?.() ?? true] as const,
       () => {
         const hoveredId = hoveredIndex === null ? null : currentSeries.ids[hoveredIndex];
         const data = dataFor();
@@ -706,7 +769,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           : currentSeries.ids.indexOf(hoveredId);
         const nextStructureKey = `${currentSeries.discounts.length}|${currentSeries.variantGroups
           .map((group) => `${group.key}:${group.members.length}`)
-          .join("|")}`;
+          .join("|")}|${[...new Set(currentSeries.brands)].join("|")}`;
         if (!plot || nextStructureKey !== plotStructureKey) createPlot();
         else {
           plot.setData(data);
@@ -773,6 +836,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 data-testid="discount-arrow"
                 data-discount-id={discount.id}
                 data-discount-percentage={discount.percentage}
+                data-discount-provider-role={discount.providerRole ?? "plotted"}
               >
                 <path d={`M ${headStart} ${discount.top - 4} L ${discount.effectiveLeft} ${discount.top} L ${headStart} ${discount.top + 4}`} />
                 <text

@@ -1,7 +1,11 @@
 import { createEffect, createMemo, createSignal, Show } from "solid-js";
 import BenchmarkScatterChart from "../charts/BenchmarkScatterChart";
 import ChartTooltip from "../charts/ChartTooltip";
-import { buildChartPlot } from "../charts/plotData";
+import {
+  buildChartPlot,
+  discountProviderRole,
+  largestExplicitDiscountForPoint,
+} from "../charts/plotData";
 import type {
   BenchmarkChartAdapter,
   ChartViewState,
@@ -49,6 +53,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
   );
   const [showLabels, setShowLabels] = createSignal(props.initialState?.showLabels ?? true);
   const [showFrontier, setShowFrontier] = createSignal(props.initialState?.showFrontier ?? true);
+  const [showDiscounts, setShowDiscounts] = createSignal(props.initialState?.showDiscounts ?? true);
   const [controls, setControls] = createSignal<PricingControlState>({
     ...defaultControls(),
     ...props.initialState?.controls,
@@ -68,7 +73,6 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
   const effectiveSelectedIds = createMemo(() =>
     selectionSpecified() ? selectedIds() : defaultSelectionIds(),
   );
-  const selectedId = createMemo<string | null>(() => null);
   const visibleEntries = createMemo(() => {
     const ids = new Set(effectiveSelectedIds());
     return build().entries.filter((entry) => ids.has(entry.point.id));
@@ -80,11 +84,20 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
     const entry = build().entries.find((e) => e.point.id === h.id);
     if (!entry) return null;
     const lines = [...props.adapter.tooltipLines(entry.record, entry.point, controls())];
-    const discounts = entry.point.discounts ?? (entry.point.discount ? [entry.point.discount] : []);
-    for (const discount of discounts) {
+    const discount = showDiscounts() ? largestExplicitDiscountForPoint(entry.point) : null;
+    if (discount) {
+      const role = discountProviderRole(entry.point, discount);
       lines.push(
+        {
+          label: "Discount provider",
+          value: `${discount.providerName ?? "Source provider"} (${role === "plotted" ? "plotted provider" : "alternative provider"})`,
+        },
         { label: "Pre-discount cost", value: `$${discount.preDiscountX.toFixed(2)}` },
-        { label: "Effective discount", value: `${discount.percentage}%${discount.providerName ? ` (${discount.providerName})` : ""}` },
+        {
+          label: "Discounted provider cost",
+          value: `$${(discount.effectiveX ?? entry.point.x).toFixed(2)}`,
+        },
+        { label: "Discount", value: `${discount.percentage}% off` },
       );
     }
     return { title: entry.point.label, lines };
@@ -99,6 +112,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
       controls: controls(),
       showLabels: showLabels(),
       showFrontier: showFrontier(),
+      showDiscounts: showDiscounts(),
     });
   };
   createEffect(emitState);
@@ -147,6 +161,8 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
           onShowLabelsChange={setShowLabels}
           showFrontier={showFrontier}
           onShowFrontierChange={setShowFrontier}
+          showDiscounts={showDiscounts}
+          onShowDiscountsChange={setShowDiscounts}
         />
 
         <Show when={props.records().length > 0}>
@@ -200,9 +216,9 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
               <BenchmarkScatterChart
                 points={() => visibleEntries().map((e) => e.point)}
                 scale={scale}
-                selectedId={selectedId}
                 showLabels={showLabels}
                 showFrontier={showFrontier}
+                showDiscounts={showDiscounts}
                 xAxisLabel={() => props.adapter.xAxisLabel}
                 yAxisLabel={() => props.adapter.yAxisLabel}
                 onHover={(id, pos) =>

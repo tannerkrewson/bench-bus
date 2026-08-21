@@ -30,7 +30,6 @@ describe("BenchmarkScatterChart discount annotations", () => {
       <BenchmarkScatterChart
         points={points}
         scale={scale}
-        selectedId={() => null}
         xAxisLabel={() => "Cost"}
         yAxisLabel={() => "Score"}
         height={320}
@@ -55,7 +54,8 @@ describe("BenchmarkScatterChart discount annotations", () => {
     dispose();
   });
 
-  it("renders multiple provider discount arrows for one model", async () => {
+  it("renders only the largest provider discount for one model and can hide it", async () => {
+    const [showDiscounts, setShowDiscounts] = createSignal(true);
     const { container, dispose } = mount(() => (
       <BenchmarkScatterChart
         points={() => [{
@@ -69,7 +69,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
           ],
         }]}
         scale={() => "log"}
-        selectedId={() => null}
+        showDiscounts={showDiscounts}
         xAxisLabel={() => "Cost"}
         yAxisLabel={() => "Score"}
         height={320}
@@ -77,9 +77,12 @@ describe("BenchmarkScatterChart discount annotations", () => {
     ));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     const arrows = container.querySelectorAll("[data-testid='discount-arrow']");
-    expect(arrows).toHaveLength(2);
-    expect(arrows[0]?.getAttribute("data-discount-id")).toBe("multi-discount::discount-0");
-    expect(arrows[1]?.getAttribute("data-discount-id")).toBe("multi-discount::discount-1");
+    expect(arrows).toHaveLength(1);
+    expect(arrows[0]?.getAttribute("data-discount-id")).toBe("multi-discount");
+    expect(arrows[0]?.getAttribute("data-discount-percentage")).toBe("40");
+    setShowDiscounts(false);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(container.querySelectorAll("[data-testid='discount-arrow']")).toHaveLength(0);
     dispose();
   });
 });

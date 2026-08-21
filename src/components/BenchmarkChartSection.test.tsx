@@ -276,13 +276,18 @@ describe("BenchmarkChartSection (Cursor fixture shape)", () => {
     ) as HTMLInputElement;
     expect(toggle.checked).toBe(false);
     const labels = container.querySelector("input[aria-label='Show model labels']") as HTMLInputElement;
+    const discounts = container.querySelector("input[aria-label='Show provider discounts']") as HTMLInputElement;
     expect(labels.checked).toBe(true);
+    expect(discounts.checked).toBe(true);
     labels.click();
     expect(labels.checked).toBe(false);
     toggle.click();
     expect(toggle.checked).toBe(true);
+    discounts.click();
+    expect(discounts.checked).toBe(false);
     const last = states[states.length - 1]!;
     expect(last.controls.surcharge).toBe(true);
+    expect(last.showDiscounts).toBe(false);
     dispose();
   });
 });

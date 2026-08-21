@@ -12,7 +12,11 @@ import ModelList from "../../components/ModelList";
 import type { DerivedAaChartRecord } from "../../schemas";
 import { aaAdapter, aaControlledTooltipLines } from "./adapter";
 import { AA_DEFAULT_CACHE_HIT_RATE, listedCostUsd } from "./pricing";
-import { paretoFrontier } from "../plotData";
+import {
+  discountProviderRole,
+  largestExplicitDiscountForPoint,
+  paretoFrontier,
+} from "../plotData";
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
 
 export interface AaChartSectionProps {
@@ -42,6 +46,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
   );
   const [showLabels, setShowLabels] = createSignal(props.initialState?.showLabels ?? true);
   const [showFrontier, setShowFrontier] = createSignal(props.initialState?.showFrontier ?? true);
+  const [showDiscounts, setShowDiscounts] = createSignal(props.initialState?.showDiscounts ?? true);
   const [controls, setControls] = createSignal<PricingControlState>({
     ...defaultControls(),
     ...props.initialState?.controls,
@@ -101,9 +106,8 @@ export default function AaChartSection(props: AaChartSectionProps) {
     };
   });
 
-  // Visibility filtering is handled by `build`; there is no second selected
-  // highlight layer now that unselected models are omitted from the chart.
-  const selectedId = createMemo<string | null>(() => null);
+  // Visibility filtering is handled by `build`; unselected models are omitted
+  // from the chart rather than painted as a second selection layer.
 
   const hoveredInfo = createMemo<{ title: string; lines: readonly TooltipLine[] } | null>(() => {
     const h = hovered();
@@ -111,11 +115,20 @@ export default function AaChartSection(props: AaChartSectionProps) {
     const entry = build().entries.find((e) => e.point.id === h.id);
     if (!entry) return null;
     const lines = [...aaControlledTooltipLines(entry.record, entry.point, controls())];
-    const discounts = entry.point.discounts ?? (entry.point.discount ? [entry.point.discount] : []);
-    for (const discount of discounts) {
+    const discount = showDiscounts() ? largestExplicitDiscountForPoint(entry.point) : null;
+    if (discount) {
+      const role = discountProviderRole(entry.point, discount);
       lines.push(
+        {
+          label: "Discount provider",
+          value: `${discount.providerName ?? "Source provider"} (${role === "plotted" ? "plotted provider" : "alternative provider"})`,
+        },
         { label: "Pre-discount cost", value: `$${discount.preDiscountX.toFixed(2)}` },
-        { label: "Effective discount", value: `${discount.percentage}%${discount.providerName ? ` (${discount.providerName})` : ""}` },
+        {
+          label: "Discounted provider cost",
+          value: `$${(discount.effectiveX ?? entry.point.x).toFixed(2)}`,
+        },
+        { label: "Discount", value: `${discount.percentage}% off` },
       );
     }
     return { title: entry.point.label, lines };
@@ -130,6 +143,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
       controls: controls(),
       showLabels: showLabels(),
       showFrontier: showFrontier(),
+      showDiscounts: showDiscounts(),
     });
   };
   createEffect(emitState);
@@ -171,6 +185,8 @@ export default function AaChartSection(props: AaChartSectionProps) {
           onShowLabelsChange={setShowLabels}
           showFrontier={showFrontier}
           onShowFrontierChange={setShowFrontier}
+          showDiscounts={showDiscounts}
+          onShowDiscountsChange={setShowDiscounts}
           isControlVisible={(spec) =>
             spec.id !== "cacheHitRate" || controls().pricingMode === "listed"
           }
@@ -221,9 +237,9 @@ export default function AaChartSection(props: AaChartSectionProps) {
               <BenchmarkScatterChart
                 points={() => build().entries.map((e) => e.point)}
                 scale={scale}
-                selectedId={selectedId}
                 showLabels={showLabels}
                 showFrontier={showFrontier}
+                showDiscounts={showDiscounts}
                 xAxisLabel={() => aaAdapter.xAxisLabel}
                 yAxisLabel={() => aaAdapter.yAxisLabel}
                 onHover={(id, pos) =>

@@ -34,6 +34,8 @@ export interface PriceDiscountAnnotation {
   effectiveX?: number;
   /** Provider that supplied both the pre-discount and effective prices. */
   providerName?: string;
+  /** Whether this provider is the plotted winner or an alternative discounted provider. */
+  providerRole?: "plotted" | "alternative";
 }
 
 export interface PlottablePoint {
@@ -47,7 +49,7 @@ export interface PlottablePoint {
   x: number;
   /** Optional explicit source-backed discount annotation; never inferred by the chart. */
   discount?: PriceDiscountAnnotation;
-  /** Multiple source-backed provider discounts shown as additional dots/arrows. */
+  /** Source-backed provider discount candidates; the chart displays the largest one. */
   discounts?: readonly PriceDiscountAnnotation[];
   /** Stable key for an effort-group connection and its shared chart color. */
   effortGroup?: string;
@@ -157,6 +159,8 @@ export interface ChartViewState {
   showLabels?: boolean;
   /** Whether the Pareto frontier line and crown decorations are visible. */
   showFrontier?: boolean;
+  /** Whether the largest source-backed discount annotation is visible. */
+  showDiscounts?: boolean;
 }
 
 /** Result of mapping records through an adapter under a query filter. */

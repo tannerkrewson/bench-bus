@@ -41,10 +41,7 @@ export function effortGroupColor(groupKey: string, dark: boolean): string {
   return dark && color === "#a16207" ? "#facc15" : color;
 }
 
-/**
- * Legacy metadata colors retained for labels that do not belong to an effort
- * group. They are not used for dot or connector series.
- */
+/** Stable model-family colors shared by both benchmark charts and model lists. */
 export function modelBrandColor(brand: ModelBrand, dark: boolean): string {
   switch (brand) {
     case "anthropic":

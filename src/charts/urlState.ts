@@ -15,6 +15,7 @@ import type {
  *   chart.<benchmarkId>.sel          = comma-separated selected ids
  *   chart.<benchmarkId>.labels       = false when model labels are hidden
  *   chart.<benchmarkId>.frontier     = false when Pareto decorations are hidden
+ *   chart.<benchmarkId>.discounts     = false when discount annotations are hidden
  *   chart.<benchmarkId>.c.<control>  = control value (string form)
  *
  * Parsing is forgiving: unknown or invalid values fall back to defaults
@@ -26,6 +27,7 @@ const QUERY_KEY = "q";
 const SELECTED_KEY = "sel";
 const LABELS_KEY = "labels";
 const FRONTIER_KEY = "frontier";
+const DISCOUNTS_KEY = "discounts";
 const CONTROL_PREFIX = "c.";
 
 function key(benchmarkId: string, field: string): string {
@@ -50,6 +52,9 @@ export function chartStateToParams(
   }
   if (state.showFrontier === false) {
     params.set(key(benchmarkId, FRONTIER_KEY), "false");
+  }
+  if (state.showDiscounts === false) {
+    params.set(key(benchmarkId, DISCOUNTS_KEY), "false");
   }
   for (const [id, value] of Object.entries(state.controls)) {
     params.set(key(benchmarkId, CONTROL_PREFIX + id), String(value));
@@ -123,6 +128,9 @@ export function chartStateFromParams(
   const frontierRaw = params.get(key(benchmarkId, FRONTIER_KEY));
   const showFrontier =
     frontierRaw === "false" ? false : frontierRaw === "true" ? true : undefined;
+  const discountsRaw = params.get(key(benchmarkId, DISCOUNTS_KEY));
+  const showDiscounts =
+    discountsRaw === "false" ? false : discountsRaw === "true" ? true : undefined;
 
   const controls: PricingControlState = { ...defaults.controls };
   for (const spec of controlSpecs) {
@@ -140,6 +148,7 @@ export function chartStateFromParams(
     ...(selectionSpecified ? { selectionSpecified: true } : {}),
     ...(showLabels === undefined ? {} : { showLabels }),
     ...(showFrontier === undefined ? {} : { showFrontier }),
+    ...(showDiscounts === undefined ? {} : { showDiscounts }),
   };
 }
 

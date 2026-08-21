@@ -16,6 +16,9 @@ export interface ChartControlPanelProps {
   /** Optional Pareto frontier visibility toggle. */
   showFrontier?: () => boolean;
   onShowFrontierChange?: (show: boolean) => void;
+  /** Optional source-backed discount visibility toggle. */
+  showDiscounts?: () => boolean;
+  onShowDiscountsChange?: (show: boolean) => void;
   /** Optional predicate for controls whose visibility depends on another control. */
   isControlVisible?: (spec: PricingControlSpec) => boolean;
 }
@@ -163,6 +166,22 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
                     aria-label="Show Pareto frontier"
                     checked={props.showFrontier?.() ?? true}
                     onChange={(e) => props.onShowFrontierChange?.(e.currentTarget.checked)}
+                  />
+                </label>
+              </div>
+            </Show>
+
+            <Show when={props.showDiscounts && props.onShowDiscountsChange}>
+              <div>
+                <label class="label cursor-pointer gap-2 text-base font-medium" for={controlId("show-discounts")}>
+                  <span>Provider discounts</span>
+                  <input
+                    id={controlId("show-discounts")}
+                    type="checkbox"
+                    class="toggle toggle-sm toggle-primary"
+                    aria-label="Show provider discounts"
+                    checked={props.showDiscounts?.() ?? true}
+                    onChange={(e) => props.onShowDiscountsChange?.(e.currentTarget.checked)}
                   />
                 </label>
               </div>

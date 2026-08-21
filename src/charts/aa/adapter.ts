@@ -50,6 +50,7 @@ function providerDiscountAnnotation(
   provider: DerivedAaChartRecord["providers"][number],
   inputTokens: number,
   outputTokens: number,
+  plottedCost?: number,
 ): PriceDiscountAnnotation | undefined {
   const percentage = provider.discountPercentage;
   if (percentage === undefined || percentage <= 0 || percentage >= 100) return undefined;
@@ -68,11 +69,15 @@ function providerDiscountAnnotation(
   // workload cost is recovered from that explicit percentage and the same
   // provider's effective workload cost.
   if (!Number.isFinite(preDiscountX) || preDiscountX <= effectiveX) return undefined;
+  const tolerance = plottedCost === undefined ? 0 : Math.max(0.005, Math.abs(plottedCost) * 1e-6);
   return {
     percentage,
     preDiscountX,
     effectiveX,
     providerName: provider.providerName,
+    ...(plottedCost === undefined
+      ? {}
+      : { providerRole: Math.abs(effectiveX - plottedCost) <= tolerance ? "plotted" : "alternative" }),
   };
 }
 
@@ -96,12 +101,14 @@ function explicitProviderDiscount(
 
 function explicitProviderDiscounts(
   record: DerivedAaChartRecord,
+  plottedCost: number,
 ): PriceDiscountAnnotation[] {
   return record.providers.flatMap((provider) => {
     const annotation = providerDiscountAnnotation(
       provider,
       record.canonicalTokens.input,
       record.canonicalTokens.output,
+      plottedCost,
     );
     return annotation ? [annotation] : [];
   });
@@ -154,7 +161,7 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
       y: record.intelligenceIndex,
       ...(discount ? { discount } : {}),
       ...(mode === "cheapest"
-        ? { discounts: explicitProviderDiscounts(record) }
+        ? { discounts: explicitProviderDiscounts(record, cost) }
         : {}),
     };
   },

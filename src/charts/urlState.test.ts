@@ -72,6 +72,19 @@ describe("chart URL state", () => {
     expect(chartStateFromParams(params, "aa-demo", specs, defaults).showFrontier).toBe(false);
   });
 
+  it("round-trips discount visibility", () => {
+    const state = {
+      scale: "log" as const,
+      query: "",
+      selectedIds: [],
+      controls: {},
+      showDiscounts: false,
+    };
+    const params = chartStateToParams(state, "aa-demo");
+    expect(params.get("chart.aa-demo.discounts")).toBe("false");
+    expect(chartStateFromParams(params, "aa-demo", specs, defaults).showDiscounts).toBe(false);
+  });
+
   it("namespaces per benchmark so two charts coexist", () => {
     const params = chartStateToParams(
       { scale: "linear", query: "", selectedIds: [], controls: { mode: "weighted" } },

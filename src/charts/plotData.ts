@@ -59,8 +59,40 @@ export function explicitDiscountForAnnotation(
  * dropped (they are unrepresentable); callers get the dropped ids so the UI
  * can explain why a point disappeared after a scale switch.
  */
+export function explicitDiscountCandidates(point: PlottablePoint): PriceDiscountAnnotation[] {
+  const candidates = point.discounts ?? (point.discount ? [point.discount] : []);
+  return candidates.flatMap((candidate) => {
+    const discount = explicitDiscountForAnnotation(candidate);
+    return discount ? [discount] : [];
+  });
+}
+
+/** Pick one deterministic largest-percentage annotation for a model. */
+export function largestExplicitDiscountForPoint(
+  point: PlottablePoint,
+): PriceDiscountAnnotation | null {
+  const candidates = explicitDiscountCandidates(point);
+  return candidates.reduce<PriceDiscountAnnotation | null>((largest, candidate) => {
+    if (largest === null || candidate.percentage > largest.percentage) return candidate;
+    if (candidate.percentage < largest.percentage) return largest;
+    const candidateProvider = candidate.providerName ?? "";
+    const largestProvider = largest.providerName ?? "";
+    return candidateProvider.localeCompare(largestProvider) < 0 ? candidate : largest;
+  }, null);
+}
+
+export function discountProviderRole(
+  point: PlottablePoint,
+  discount: PriceDiscountAnnotation,
+): "plotted" | "alternative" {
+  if (discount.providerRole) return discount.providerRole;
+  if (discount.effectiveX === undefined) return "plotted";
+  const tolerance = Math.max(0.005, Math.abs(point.x) * 1e-6);
+  return Math.abs(discount.effectiveX - point.x) <= tolerance ? "plotted" : "alternative";
+}
+
 export function explicitDiscountForPoint(point: PlottablePoint): PriceDiscountAnnotation | null {
-  const discount = explicitDiscountForAnnotation(point.discount);
+  const discount = largestExplicitDiscountForPoint(point);
   return discount && point.x > 0 ? discount : null;
 }
 
@@ -82,18 +114,6 @@ export function toPlotSeries(
     y.push(p.y);
   }
   return { x, y, ids, droppedIds };
-}
-
-/**
- * Highlight series values: aligned with the plot series, null everywhere
- * except the selected id, so uPlot draws the selection as a separate
- * emphasized series via setData (no uPlot reconstruction).
- */
-export function toHighlightY(
-  series: { ids: string[]; y: number[] },
-  selectedId: string | null,
-): (number | null)[] {
-  return series.ids.map((id, i) => (id === selectedId ? (series.y[i] as number) : null));
 }
 
 /**

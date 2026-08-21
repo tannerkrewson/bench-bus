@@ -76,6 +76,16 @@ describe("layoutModelLabels", () => {
     }
   });
 
+  it("keeps labels away from discount lines", () => {
+    const [label] = layoutModelLabels(
+      [{ id: "discounted", label: "Discounted model", anchorLeft: 150, anchorTop: 100, color: "red" }],
+      bounds,
+      { lines: [{ left1: 80, top1: 100, left2: 220, top2: 100 }] },
+    );
+    expect(label).toBeDefined();
+    expect(label!.top + label!.height < 94 || label!.top > 106).toBe(true);
+  });
+
   it("honors an opposite-side preference for a hovered label", () => {
     const [label] = layoutModelLabels(
       [{ id: "hovered", label: "Hovered model", anchorLeft: 150, anchorTop: 100, color: "red" }],

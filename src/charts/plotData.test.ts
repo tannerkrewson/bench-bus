@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AA_FIXTURE_RECORDS, aaDemoAdapter } from "./fixtures";
-import { buildChartPlot, explicitDiscountForPoint, paretoFrontier, toHighlightY, toPlotSeries } from "./plotData";
+import { buildChartPlot, explicitDiscountForPoint, paretoFrontier, toPlotSeries } from "./plotData";
 
 const controls = { pricingMode: "cheapest", cacheHitRate: 0.9 };
 
@@ -34,6 +34,17 @@ describe("explicitDiscountForPoint", () => {
     expect(explicitDiscountForPoint(point)).toEqual(point.discount);
     expect(explicitDiscountForPoint({ ...point, discount: { percentage: 0, preDiscountX: 10 } })).toBeNull();
     expect(explicitDiscountForPoint({ ...point, discount: { percentage: 40, preDiscountX: -1 } })).toBeNull();
+  });
+
+  it("selects only the largest explicit percentage", () => {
+    const point = {
+      id: "multi", label: "Multi", x: 6, y: 70,
+      discounts: [
+        { percentage: 25, preDiscountX: 8, providerName: "Provider A" },
+        { percentage: 40, preDiscountX: 10, providerName: "Provider B" },
+      ],
+    };
+    expect(explicitDiscountForPoint(point)?.providerName).toBe("Provider B");
   });
 });
 
@@ -82,14 +93,5 @@ describe("paretoFrontier", () => {
       { id: "same-score", label: "Same score", x: 2, y: 50 },
     ]);
     expect(frontier.map((point) => point.id)).toEqual(["first"]);
-  });
-});
-
-describe("toHighlightY", () => {
-  it("nulls everything except the selected id", () => {
-    const series = { ids: ["a", "b", "c"], y: [1, 2, 3] };
-    expect(toHighlightY(series, "b")).toEqual([null, 2, null]);
-    expect(toHighlightY(series, null)).toEqual([null, null, null]);
-    expect(toHighlightY(series, "missing")).toEqual([null, null, null]);
   });
 });

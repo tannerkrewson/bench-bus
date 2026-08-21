@@ -46,9 +46,18 @@ export interface LabelLayoutPoint {
   top: number;
 }
 
+export interface LabelLayoutLine {
+  left1: number;
+  top1: number;
+  left2: number;
+  top2: number;
+}
+
 export interface LabelLayoutOptions {
   /** Other plotted dots that labels must not cover. */
   obstacles?: readonly LabelLayoutPoint[];
+  /** Discount/annotation lines that labels should not cover. */
+  lines?: readonly LabelLayoutLine[];
   /** Overrides the first side tried for a label (used while hovering it). */
   preferredSides?: ReadonlyMap<string, "left" | "right">;
 }
@@ -145,6 +154,16 @@ function coversPoint(label: PositionedLabel, point: LabelLayoutPoint): boolean {
   return Math.hypot(point.left - closestLeft, point.top - closestTop) < LABEL_DOT_RADIUS;
 }
 
+function coversLine(label: PositionedLabel, line: LabelLayoutLine): boolean {
+  const minX = Math.min(line.left1, line.left2);
+  const maxX = Math.max(line.left1, line.left2);
+  const minY = Math.min(line.top1, line.top2);
+  const maxY = Math.max(line.top1, line.top2);
+  const padding = LABEL_GAP;
+  return maxX >= label.left - padding && minX <= label.left + label.width + padding &&
+    maxY >= label.top - padding && minY <= label.top + label.height + padding;
+}
+
 /**
  * Place point labels inside the plot bounds. A candidate is accepted only if
  * it clears every already-plotted dot and every previously placed label. If a
@@ -232,6 +251,7 @@ export function layoutModelLabels(
       if (placed.some((existing) => overlaps(positioned, existing))) continue;
       if (obstacles.some((point) => point.id !== anchor.id && coversPoint(positioned, point))) continue;
       if (coversPoint(positioned, { id: anchor.id, left: anchor.anchorLeft, top: anchor.anchorTop })) continue;
+      if (options.lines?.some((line) => coversLine(positioned, line))) continue;
       const targetLeft = preferredSide === "left"
         ? anchor.anchorLeft - width - sideOffset
         : anchor.anchorLeft + sideOffset;
