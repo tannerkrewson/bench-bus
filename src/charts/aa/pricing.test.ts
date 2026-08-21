@@ -147,6 +147,13 @@ describe("listedCostUsd (AA listed mode with cache-hit slider)", () => {
     expect(listedCostUsd(AA_RECORD_NO_LISTING.listed, 1_000_000, 1_000_000, 0.9)).toBeNull();
   });
 
+  it("keeps listed mode available when OpenRouter providers are empty", () => {
+    const listedOnly = { ...AA_RECORD_UNPLOTTABLE.listed, price1mInputTokens: 2, price1mOutputTokens: 8, cacheHitPrice: 0.2 };
+    expect(listedCostUsd(listedOnly, 1_000_000, 1_000_000, 0.9)).toBeCloseTo(8.38, 10);
+    expect(weightedCostUsd(AA_RECORD_UNPLOTTABLE.weighted, 1_000_000, 1_000_000)).toBeNull();
+    expect(selectCheapestProvider(AA_RECORD_UNPLOTTABLE.providers, 1_000_000, 1_000_000)).toBeNull();
+  });
+
   it("clamps out-of-range slider values", () => {
     const atMinus1 = listedCostUsd(listed, input, output, -1)!;
     const at0 = listedCostUsd(listed, input, output, 0)!;

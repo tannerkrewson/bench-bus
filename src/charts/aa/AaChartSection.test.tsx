@@ -3,7 +3,7 @@ import { createSignal } from "solid-js";
 import { render } from "solid-js/web";
 import type { JSX } from "solid-js";
 import AaChartSection from "./AaChartSection";
-import { AA_FIXTURE_RECORDS, AA_RECORD_PLOTTABLE_CHEAPEST } from "./fixtures";
+import { AA_FIXTURE_RECORDS, AA_RECORD_PLOTTABLE_CHEAPEST, AA_RECORD_UNPLOTTABLE } from "./fixtures";
 import { chartStateFromParams, chartStateToParams } from "../urlState";
 import { aaAdapter } from "./adapter";
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
@@ -46,6 +46,25 @@ describe("AaChartSection", () => {
     expect(
       (container.querySelector("#chart-aa-control-cacheHitRate") as HTMLInputElement).value,
     ).toBe("0.9");
+    dispose();
+  });
+
+  it("explains listed pricing for records unavailable in the default OpenRouter mode", () => {
+    const listedOnly = {
+      ...AA_RECORD_UNPLOTTABLE,
+      slug: "listed-only",
+      name: "Listed Only",
+      listed: { price1mInputTokens: 2, price1mOutputTokens: 8, cacheHitPrice: 0.2 },
+    };
+    const { container, dispose } = mount(() => <AaChartSection records={() => [listedOnly]} />);
+    expect(container.querySelector("[data-testid='aa-listed-availability']")?.textContent).toContain(
+      "AA listed",
+    );
+    const pricingMode = container.querySelector("#chart-aa-control-pricingMode") as HTMLSelectElement;
+    pricingMode.value = "listed";
+    pricingMode.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(container.querySelector("[data-testid='aa-listed-availability']")).toBeNull();
+    expect(container.querySelector("canvas")).not.toBeNull();
     dispose();
   });
 

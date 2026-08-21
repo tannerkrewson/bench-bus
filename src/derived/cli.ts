@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { DataBranchStore } from "../snapshots/store";
 import { loadAliasFile } from "../collectors/openrouter/mapping";
+import { parseCuratedModelConfig } from "../collectors/openrouter/curated";
 import { NoDataAtTimeError, compileBundle, parseDerivedIndex, upsertDerivedIndexEntry } from "./compile";
 
 /**
@@ -27,6 +28,7 @@ interface CliArgs {
   asOf?: string;
   name: string;
   aliasesPath: string;
+  curatedConfigPath: string;
 }
 
 function parseArgs(argv: string[]): CliArgs {
@@ -35,6 +37,7 @@ function parseArgs(argv: string[]): CliArgs {
     outDir: "",
     name: "latest",
     aliasesPath: fileURLToPath(new URL("../collectors/openrouter/openrouter-aliases.json", import.meta.url)),
+    curatedConfigPath: fileURLToPath(new URL("../collectors/openrouter/curated-models.json", import.meta.url)),
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -49,6 +52,7 @@ function parseArgs(argv: string[]): CliArgs {
     else if (arg === "--as-of") args.asOf = next();
     else if (arg === "--name") args.name = next();
     else if (arg === "--aliases") args.aliasesPath = next();
+    else if (arg === "--curated-config") args.curatedConfigPath = next();
     else if (arg === "--help" || arg === "-h") {
       console.log("See header comment in src/derived/cli.ts for usage.");
       process.exit(0);
@@ -64,9 +68,13 @@ async function main(): Promise<number> {
   const args = parseArgs(process.argv.slice(2));
 
   const aliases = loadAliasFile(args.aliasesPath, (p) => readFileSync(p, "utf8"));
+  const curatedModels = parseCuratedModelConfig(
+    readFileSync(args.curatedConfigPath, "utf8"),
+    args.curatedConfigPath,
+  ).models;
 
   const store = new DataBranchStore(args.dataDir);
-  const compiled = await compileBundle(store, { asOf: args.asOf, aliases });
+  const compiled = await compileBundle(store, { asOf: args.asOf, aliases, curatedModels });
 
   await fs.mkdir(args.outDir, { recursive: true });
   const bundleFile = path.join(args.outDir, `${args.name}.json`);

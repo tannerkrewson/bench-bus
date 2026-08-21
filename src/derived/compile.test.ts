@@ -12,7 +12,14 @@ import { DataBranchStore } from "../snapshots/store";
 import { validAaModel, validAaModel2 } from "../schemas/fixtures/aa";
 import { validCursorRecord, validCursorRecord2, validOpenRouterPricing, validOpenRouterPricing2 } from "../schemas/fixtures/openrouter-cursor";
 import { parseAliasFile } from "../collectors/openrouter/mapping";
-import { compileBundle, LATEST_AS_OF, NoDataAtTimeError, parseDerivedIndex, upsertDerivedIndexEntry } from "./compile";
+import {
+  compileBundle,
+  joinAaWithPricing,
+  LATEST_AS_OF,
+  NoDataAtTimeError,
+  parseDerivedIndex,
+  upsertDerivedIndexEntry,
+} from "./compile";
 import { decodeBundle } from "./encode";
 
 /**
@@ -168,10 +175,9 @@ describe("compileBundle", () => {
     expect(atT1.stats.aaUnmatched).toBe(0);
   });
 
-  it("marks pricing unavailable instead of fabricating it (no openrouter snapshot at asOf)", async () => {
-    // asOf before the first openrouter snapshot: aa+cursor exist, pricing does not.
+  it("retains AA listed-frontier records when no OpenRouter snapshot exists", async () => {
+    // asOf before the first openrouter snapshot: AA+cursor exist, pricing does not.
     const beforePricing = "2026-07-15T00:00:00.000Z";
-    // Seed an earlier aa + cursor snapshot.
     await store.writeSnapshot(
       makeSnapshotEnvelope({ source: "aa", observedAt: beforePricing, records: [validAaModel] }),
     );
@@ -181,10 +187,12 @@ describe("compileBundle", () => {
     const compiled = await compileBundle(store, { asOf: beforePricing, aliases: ALIASES });
     expect(compiled.sources.aa.available).toBe(true);
     expect(compiled.sources.openrouter.available).toBe(false);
-    expect(compiled.bundle.aa).toBeNull();
+    expect(compiled.bundle.aa).not.toBeNull();
     expect(compiled.bundle.cursor).not.toBeNull();
     const decoded = decodeBundle(JSON.parse(compiled.json));
-    expect(decoded.aa).toBeNull();
+    expect(decoded.aa?.records).toHaveLength(1);
+    expect(decoded.aa?.records[0]?.providers).toEqual([]);
+    expect(decoded.aa?.records[0]?.weighted).toEqual({ weightedInputPrice: 0, weightedOutputPrice: 0 });
     expect(decoded.sources.openrouter).toEqual({ available: false });
   });
 
@@ -224,6 +232,36 @@ describe("compileBundle", () => {
     await expect(
       compileBundle(store, { asOf: "2026-08-04T00:00:00.000Z", aliases: ALIASES }),
     ).rejects.toThrow(/not present in the alias mapping/);
+  });
+
+  it("retains an unmatched listed-frontier model with explicit no-data OpenRouter fields", () => {
+    const joined = joinAaWithPricing(
+      [validAaModel, validAaModel2],
+      [],
+      ALIASES,
+      ["gpt-6"],
+    );
+    expect(joined.records.map((record) => record.slug)).toEqual(["gpt-6"]);
+    expect(joined.records[0]?.providers).toEqual([]);
+    expect(joined.records[0]?.weighted).toEqual({ weightedInputPrice: 0, weightedOutputPrice: 0 });
+    expect(joined.unmatchedAa).toBe(1);
+    expect(joined.unmatchedOr).toBe(0);
+  });
+
+  it("accepts a curated OpenRouter record absent from AA without emitting it", () => {
+    const joined = joinAaWithPricing(
+      [validAaModel],
+      [orPricing("deepseek-v4-0731-flash")],
+      ALIASES,
+      [validAaModel.slug],
+      [{
+        aaModelSlug: "deepseek-v4-0731-flash",
+        aaModelId: "deepseek-v4-0731-flash",
+        openrouterId: "vendor/deepseek-v4-0731-flash",
+      }],
+    );
+    expect(joined.records.map((record) => record.slug)).toEqual(["claude-opus-5"]);
+    expect(joined.unmatchedOr).toBe(1);
   });
 
   it("counts provisional alias usage in stats", async () => {

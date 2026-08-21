@@ -180,15 +180,15 @@ describe("offline end-to-end pipeline: collect -> store -> resolve -> compile ->
 
     // 5. Derived compile: alias-gated join, deterministic bytes.
     const compiled = await compileBundle(store, { aliases: ALIAS_FILE });
-    expect(compiled.stats.aaMatched).toBe(2);
-    expect(compiled.stats.aaUnmatched).toBe(1); // gpt-5-6-sol-low has no pricing
+    expect(compiled.stats.aaMatched).toBe(3);
+    expect(compiled.stats.aaUnmatched).toBe(0); // every fixture model is on the valid AA listed frontier
     expect(compiled.stats.cursorRecords).toBe(2);
     const compiledAgain = await compileBundle(store, { aliases: ALIAS_FILE });
     expect(compiledAgain.json).toBe(compiled.json);
 
     // 6. Browser decode through the compact codec.
     const decoded = decodeBundle(JSON.parse(compiled.json));
-    expect(decoded.aa?.records).toHaveLength(2);
+    expect(decoded.aa?.records).toHaveLength(3);
     expect(decoded.cursor?.records).toHaveLength(2);
 
     // 7. Chart adapters compute sane points from decoded records.
@@ -259,11 +259,15 @@ describe("offline end-to-end pipeline: collect -> store -> resolve -> compile ->
     expect(listedZero!.x!).toBeGreaterThan(listedDefault!.x!); // fewer cache hits = pricier
     expect(listedAll!.x!).toBeLessThan(listedDefault!.x!);
 
-    // Unmatched model (no pricing) is excluded from the compiled dataset and
-    // counted, never mispriced; the adapter still refuses to plot a record
-    // with no providers (defensive unplottable handling).
-    expect(decoded.aa?.records.find((r) => r.slug === "gpt-5-6-sol-low")).toBeUndefined();
-    const unplottable = { ...claude, providers: [] };
+    // AA frontier models remain in the derived dataset without fabricated
+    // OpenRouter pricing; listed mode can plot them while OpenRouter modes
+    // remain unavailable.
+    const unmatched = decoded.aa?.records.find((r) => r.slug === "gpt-5-6-sol-low");
+    expect(unmatched?.providers).toEqual([]);
+    expect(unmatched?.weighted).toEqual({ weightedInputPrice: 0, weightedOutputPrice: 0 });
+    const listedPoint = aaAdapter.computePoint(unmatched!, { ...controls, pricingMode: "listed" });
+    expect(listedPoint).not.toBeNull();
+    const unplottable = { ...claude, providers: [], weighted: { weightedInputPrice: 0, weightedOutputPrice: 0 } };
     expect(aaAdapter.computePoint(unplottable, { ...controls, pricingMode: "cheapest" })).toBeNull();
 
     // Cursor chart: surcharge toggle estimates total processed tokens from
@@ -291,14 +295,15 @@ describe("offline end-to-end pipeline: collect -> store -> resolve -> compile ->
   });
 
   it("resolves history: a past view excludes later snapshots instead of failing", async () => {
-    // AA-only point in time (before Cursor and OpenRouter snapshots): the AA
-    // dataset must be null (no pricing known), not fabricated.
+    // AA-only point in time (before Cursor and OpenRouter snapshots): listed
+    // frontier records remain, while OpenRouter-dependent fields are empty.
     const past = await compileBundle(store, { asOf: AA_ONLY_AS_OF, aliases: ALIAS_FILE });
     expect(past.sources.aa.available).toBe(true);
     expect(past.sources.openrouter.available).toBe(false);
     expect(past.sources.cursor.available).toBe(false);
     const decodedPast = decodeBundle(JSON.parse(past.json));
-    expect(decodedPast.aa).toBeNull();
+    expect(decodedPast.aa?.records).toHaveLength(3);
+    expect(decodedPast.aa?.records.every((record) => record.providers.length === 0)).toBe(true);
     expect(decodedPast.cursor).toBeNull();
   });
 });

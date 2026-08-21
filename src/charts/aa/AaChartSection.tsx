@@ -11,7 +11,7 @@ import ChartControlPanel from "../../components/ChartControlPanel";
 import ModelList from "../../components/ModelList";
 import type { DerivedAaChartRecord } from "../../schemas";
 import { aaAdapter, aaControlledTooltipLines } from "./adapter";
-import { AA_DEFAULT_CACHE_HIT_RATE } from "./pricing";
+import { AA_DEFAULT_CACHE_HIT_RATE, listedCostUsd } from "./pricing";
 import { paretoFrontier } from "../plotData";
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
 
@@ -244,6 +244,23 @@ export default function AaChartSection(props: AaChartSectionProps) {
           <p class="text-xs text-base-content/60" role="status" data-testid="aa-unplottable-count">
             {build().unplottable.length} model(s) shown in the list but not plotted: no usable
             pricing for the current mode — never estimated as $0.
+            <Show
+              when={
+                controls().pricingMode !== "listed" &&
+                build().unplottable.filter((entry) =>
+                  listedCostUsd(
+                    entry.record.listed,
+                    entry.record.canonicalTokens.input,
+                    entry.record.canonicalTokens.output,
+                    AA_DEFAULT_CACHE_HIT_RATE,
+                  ) !== null,
+                ).length > 0
+              }
+            >
+              <span data-testid="aa-listed-availability">
+                Some have AA listed pricing; switch Pricing mode to “AA listed” to plot them.
+              </span>
+            </Show>
           </p>
         </Show>
         <Show when={props.records().length > 0 && build().filteredOut > 0}>

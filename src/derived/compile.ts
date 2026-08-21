@@ -8,7 +8,8 @@ import {
 } from "../schemas";
 import type { DataBranchStore, ResolvedSnapshot } from "../snapshots/store";
 import type { AliasFile } from "../collectors/openrouter/mapping";
-import { computeAaListedParetoFrontier } from "../collectors/aa/frontier";
+import { DEFAULT_CURATED_MODELS, type CuratedModel } from "../collectors/openrouter/curated";
+import { computeAaListedParetoFrontier, aaListedWorkloadCost } from "../collectors/aa/frontier";
 import {
   encodeAaDataset,
   encodeCursorDataset,
@@ -28,10 +29,10 @@ import {
  * - A past view naturally excludes models that the historical benchmark
  *   snapshot does not contain, and uses pricing as known at that time.
  * - Nothing is ever fabricated: a source with no snapshot at or before the
- *   requested time is reported unavailable. The AA chart dataset requires
- *   BOTH the AA benchmark snapshot and OpenRouter pricing; without OpenRouter
- *   pricing the AA dataset is null (pricing unavailable) rather than emitted
- *   with invented or empty pricing.
+ *   requested time is reported unavailable. Source-backed AA frontier models
+ *   with valid AA listed prices remain in the AA dataset when OpenRouter
+ *   pricing is unavailable; their provider and weighted fields are explicit
+ *   no-data values and chart modes that need OpenRouter pricing stay null.
  */
 
 /**
@@ -51,13 +52,15 @@ export interface CompileOptions {
   asOf?: string;
   /**
    * Explicit AA -> OpenRouter mapping. The join is validated against it:
-   * an OpenRouter pricing record whose aaModelSlug is not in the mapping
-   * fails the build (mapping integrity), rather than silently pricing a
-   * model through an unsanctioned link.
+   * an OpenRouter pricing record whose aaModelSlug is not in the mapping or
+   * explicit curated identities fails the build (mapping integrity), rather
+   * than silently pricing a model through an unsanctioned link.
    */
   aliases: AliasFile;
   /** Optional precomputed frontier identities; defaults to the AA snapshot. */
   frontierSlugs?: readonly string[];
+  /** Explicit operator-approved OpenRouter identities, including models absent from AA. */
+  curatedModels?: readonly CuratedModel[];
 }
 
 export interface SourceResolution {
@@ -66,9 +69,9 @@ export interface SourceResolution {
 }
 
 export interface CompileStats {
-  /** AA models matched to OpenRouter pricing and emitted. */
+  /** AA chart records emitted, including listed-frontier records without OpenRouter pricing. */
   aaMatched: number;
-  /** AA benchmark models dropped because no OpenRouter pricing was mapped. */
+  /** AA benchmark models dropped because they are outside the listed frontier and have no OpenRouter pricing. */
   aaUnmatched: number;
   /** OpenRouter pricing records with no AA benchmark model at this time. */
   openrouterUnmatched: number;
@@ -92,24 +95,37 @@ function toResolution(resolved: ResolvedSnapshot | undefined): SourceResolution 
   return resolved ? { available: true, observedAt: resolved.envelope.observedAt } : { available: false };
 }
 
-/** Build typed AA chart records by joining AA models with OpenRouter pricing. */
+/**
+ * Build typed AA chart records by joining AA models with OpenRouter pricing.
+ * Listed-frontier models are retained from AA even when no OpenRouter row is
+ * available; this preserves a source-backed listed-pricing view without
+ * inventing provider or weighted prices.
+ */
 export function joinAaWithPricing(
   aaModels: ArtificialAnalysisModel[],
   pricing: OpenRouterModelPricing[],
   aliases: AliasFile,
   frontierSlugs: readonly string[] = [],
+  curatedModels: readonly CuratedModel[] = DEFAULT_CURATED_MODELS,
 ): { records: DerivedAaChartRecord[]; unmatchedAa: number; unmatchedOr: number; provisionalUsed: number } {
   const aliasSlugs = new Set(aliases.entries.map((e) => e.aaModelSlug));
   const frontierSet = new Set(frontierSlugs);
+  const curatedIdentities = new Set(
+    curatedModels.map((model) => `${model.aaModelSlug}\u0000${model.openrouterId}`),
+  );
   const provisionalSlugs = new Set(
     aliases.entries.filter((e) => e.status === "provisional").map((e) => e.aaModelSlug),
   );
 
   const pricingBySlug = new Map<string, OpenRouterModelPricing>();
   for (const record of pricing) {
-    if (!aliasSlugs.has(record.aaModelSlug) && !frontierSet.has(record.aaModelSlug)) {
+    if (
+      !aliasSlugs.has(record.aaModelSlug) &&
+      !frontierSet.has(record.aaModelSlug) &&
+      !curatedIdentities.has(`${record.aaModelSlug}\u0000${record.permaslug}`)
+    ) {
       throw new Error(
-        `OpenRouter pricing record for "${record.aaModelSlug}" (${record.permaslug}) is not present in the alias mapping; refusing to price through an unsanctioned link`,
+        `OpenRouter pricing record for "${record.aaModelSlug}" (${record.permaslug}) is not present in the alias mapping or curated identities; refusing to price through an unsanctioned link`,
       );
     }
     pricingBySlug.set(record.aaModelSlug, record);
@@ -120,11 +136,12 @@ export function joinAaWithPricing(
   let unmatchedAa = 0;
   for (const model of aaModels) {
     const match = pricingBySlug.get(model.slug);
-    if (!match) {
+    const isValidListedFrontier = frontierSet.has(model.slug) && aaListedWorkloadCost(model) !== null;
+    if (!match && !isValidListedFrontier) {
       unmatchedAa += 1;
       continue;
     }
-    if (provisionalSlugs.has(model.slug)) provisionalUsed += 1;
+    if (match && provisionalSlugs.has(model.slug)) provisionalUsed += 1;
     records.push({
       slug: model.slug,
       name: model.name,
@@ -134,10 +151,10 @@ export function joinAaWithPricing(
         input: model.canonicalIntelligenceIndexTokenCount.input,
         output: model.canonicalIntelligenceIndexTokenCount.output,
       },
-      providers: match.providerSummaries,
+      providers: match?.providerSummaries ?? [],
       weighted: {
-        weightedInputPrice: match.weightedInputPrice,
-        weightedOutputPrice: match.weightedOutputPrice,
+        weightedInputPrice: match?.weightedInputPrice ?? 0,
+        weightedOutputPrice: match?.weightedOutputPrice ?? 0,
       },
       listed: {
         price1mInputTokens: model.price1mInputTokens,
@@ -210,14 +227,15 @@ export async function compileBundle(
     cursorRecords: 0,
   };
 
-  if (aa && openrouter) {
+  if (aa) {
     const aaModels = aa.envelope.records as ArtificialAnalysisModel[];
     const frontierSlugs = options.frontierSlugs ?? computeAaListedParetoFrontier(aaModels).map((model) => model.slug);
     const joined = joinAaWithPricing(
       aaModels,
-      openrouter.envelope.records as OpenRouterModelPricing[],
+      openrouter ? (openrouter.envelope.records as OpenRouterModelPricing[]) : [],
       options.aliases,
       frontierSlugs,
+      options.curatedModels,
     );
     stats.aaMatched = joined.records.length;
     stats.aaUnmatched = joined.unmatchedAa;
@@ -228,13 +246,17 @@ export async function compileBundle(
         schemaVersion: SCHEMA_VERSIONS.derived,
         asOf,
         aaObservedAt: aa.envelope.observedAt,
-        openrouterObservedAt: openrouter.envelope.observedAt,
+        ...(openrouter ? { openrouterObservedAt: openrouter.envelope.observedAt } : {}),
         ...(resolutions.cursor.available
           ? { cursorObservedAt: resolutions.cursor.observedAt as string }
           : {}),
       },
       records: joined.records,
     });
+  } else if (openrouter) {
+    // With no AA snapshot, every OpenRouter row is unmatched at this point in
+    // time; retain that diagnostic rather than silently reporting zero.
+    stats.openrouterUnmatched = openrouter.envelope.records.length;
   }
 
   if (cursor) {
