@@ -17,7 +17,7 @@ export interface RawCursorEvalRow {
   scorePercent: number;
   /** Published average cost per task, USD, as displayed (e.g. 2.81). */
   costPerTaskUsd: number;
-  /** Published average tokens per task, as displayed (e.g. 41136). */
+  /** Published average completion/output tokens per task, as displayed (e.g. 41136). */
   tokensPerTask: number;
   /** Published average steps per task, as displayed (e.g. 46). */
   stepsPerTask: number;

@@ -266,8 +266,9 @@ describe("offline end-to-end pipeline: collect -> store -> resolve -> compile ->
     const unplottable = { ...claude, providers: [] };
     expect(aaAdapter.computePoint(unplottable, { ...controls, pricingMode: "cheapest" })).toBeNull();
 
-    // Cursor chart: surcharge toggle moves third-party cost by exactly
-    // $0.25/M * tokensPerTask and leaves first-party cost untouched.
+    // Cursor chart: surcharge toggle estimates total processed tokens from
+    // completion tokens, published output pricing, and non-output rates; it
+    // leaves first-party cost untouched.
     const decodedOpus = decoded.cursor?.records.find((r) => r.modelId === "opus-5-max");
     const decodedComposer = decoded.cursor?.records.find((r) => r.modelId === "composer-2");
     expect(decodedOpus && decodedComposer).toBeTruthy();
@@ -276,6 +277,8 @@ describe("offline end-to-end pipeline: collect -> store -> resolve -> compile ->
       [SURCHARGE_CONTROL_ID]: true,
     });
     expect(opusBase?.x).toBe(3.4);
+    // Opus's published output rate makes the residual non-output cost zero;
+    // the fee still uses completion tokens as one component of total volume.
     expect(opusSurcharged?.x).toBeCloseTo(
       3.4 + (1_500_000 / 1e6) * CURSOR_THIRD_PARTY_SURCHARGE_USD_PER_MILLION_TOKENS,
       10,

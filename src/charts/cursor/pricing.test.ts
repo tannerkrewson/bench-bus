@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { DerivedCursorChartRecord } from "../../schemas";
 import {
   blendCursorNonOutputPrice,
+  cursorCompletionTokens,
+  cursorNonOutputPrices,
   cursorTokenRateProfile,
   estimateCursorTokenRate,
 } from "./pricing";
@@ -12,7 +14,7 @@ const luna: DerivedCursorChartRecord = {
   provider: "openai",
   isThirdParty: true,
   score: 70,
-  outputTokens: 100_000,
+  tokensPerTask: 100_000,
   publishedCostUsd: 1,
 };
 
@@ -25,40 +27,63 @@ const composer: DerivedCursorChartRecord = {
 };
 
 describe("Cursor token-rate pricing", () => {
-  it("uses the standard cache-hit direction for Luna endpoints", () => {
+  it("uses cache-read, input, and cache-write rates for Luna endpoints", () => {
     const profile = cursorTokenRateProfile(luna)!;
-    expect(blendCursorNonOutputPrice(profile, 0)).toBe(0.25);
-    expect(blendCursorNonOutputPrice(profile, 100)).toBe(0.02);
+    expect(cursorNonOutputPrices(profile)).toEqual([0.2, 0.02, 0.25]);
+    expect(blendCursorNonOutputPrice(profile, 0)).toBe(0.02);
+    expect(blendCursorNonOutputPrice(profile, 100)).toBe(0.25);
     expect(blendCursorNonOutputPrice(profile, 50)).toBeCloseTo(Math.sqrt(0.02 * 0.25), 12);
   });
 
-  it("subtracts known output cost before estimating hidden and total tokens", () => {
+  it("subtracts known completion cost before estimating hidden and total tokens", () => {
     const estimate = estimateCursorTokenRate(luna, 50)!;
     const outputCost = (100_000 / 1e6) * 1.2;
     const hidden = ((1 - outputCost) / Math.sqrt(0.02 * 0.25)) * 1e6;
+    expect(estimate.completionTokens).toBe(100_000);
     expect(estimate.outputCostUsd).toBeCloseTo(outputCost, 12);
+    expect(estimate.residualNonOutputCostUsd).toBeCloseTo(1 - outputCost, 12);
     expect(estimate.hiddenTokens).toBeCloseTo(hidden, 6);
     expect(estimate.totalTokens).toBeCloseTo(hidden + 100_000, 6);
     expect(estimate.adjustedCostUsd).toBeGreaterThan(1);
   });
 
-  it("uses input-priced and cache-priced endpoint behavior in estimates", () => {
-    const inputPriced = estimateCursorTokenRate(luna, 0)!;
-    const cachePriced = estimateCursorTokenRate(luna, 100)!;
-    expect(inputPriced.blendedNonOutputPriceUsdPerMillion).toBe(0.25);
-    expect(cachePriced.blendedNonOutputPriceUsdPerMillion).toBe(0.02);
-    expect(inputPriced.totalTokens).toBeLessThan(cachePriced.totalTokens);
-    expect(inputPriced.adjustedCostUsd).toBeLessThan(cachePriced.adjustedCostUsd);
+  it("has cache-heavy, midpoint, and input/write-heavy uncertainty endpoints", () => {
+    const cacheHeavy = estimateCursorTokenRate(luna, 0)!;
+    const neutral = estimateCursorTokenRate(luna, 50)!;
+    const inputWriteHeavy = estimateCursorTokenRate(luna, 100)!;
+    expect(cacheHeavy.blendedNonOutputPriceUsdPerMillion).toBe(0.02);
+    expect(inputWriteHeavy.blendedNonOutputPriceUsdPerMillion).toBe(0.25);
+    expect(neutral.blendedNonOutputPriceUsdPerMillion).toBeCloseTo(Math.sqrt(0.02 * 0.25), 12);
+    expect(inputWriteHeavy.totalTokens).toBeLessThan(neutral.totalTokens);
+    expect(neutral.totalTokens).toBeLessThan(cacheHeavy.totalTokens);
+    expect(inputWriteHeavy.adjustedCostUsd).toBeLessThan(cacheHeavy.adjustedCostUsd);
+    expect(cacheHeavy.surchargeRangeUsd[0]).toBeCloseTo(inputWriteHeavy.surchargeUsd, 12);
+    expect(cacheHeavy.surchargeRangeUsd[1]).toBeCloseTo(cacheHeavy.surchargeUsd, 12);
+  });
+
+  it("uses tokensPerTask as completion tokens, never as total tokens", () => {
+    const record = { ...luna, tokensPerTask: 200_000, outputTokens: 1_000 };
+    expect(cursorCompletionTokens(record)).toBe(200_000);
+    const estimate = estimateCursorTokenRate(record, 50)!;
+    expect(estimate.completionTokens).toBe(200_000);
+    expect(estimate.totalTokens).toBeGreaterThan(estimate.completionTokens);
   });
 
   it("exempts first-party Cursor models", () => {
     expect(estimateCursorTokenRate(composer, 50)).toBeNull();
   });
 
-  it("fails closed for missing output, negative residual, and invalid prices", () => {
-    expect(estimateCursorTokenRate({ ...luna, outputTokens: undefined }, 50)).toBeNull();
-    expect(estimateCursorTokenRate({ ...luna, outputTokens: 1_000_000 }, 50)).toBeNull();
+  it("fails closed for missing completion tokens, rates, and invalid slider values", () => {
+    expect(estimateCursorTokenRate({ ...luna, tokensPerTask: undefined }, 50)).toBeNull();
+    expect(estimateCursorTokenRate({ ...luna, outputTokens: undefined, tokensPerTask: undefined }, 50)).toBeNull();
     expect(estimateCursorTokenRate({ ...luna, publishedCostUsd: -1 }, 50)).toBeNull();
     expect(blendCursorNonOutputPrice(cursorTokenRateProfile(luna)!, -1)).toBeNull();
+    expect(blendCursorNonOutputPrice(cursorTokenRateProfile(luna)!, 101)).toBeNull();
+  });
+
+  it("clamps a negative residual to zero rather than inventing non-output cost", () => {
+    const estimate = estimateCursorTokenRate({ ...luna, publishedCostUsd: 0.01 }, 50)!;
+    expect(estimate.residualNonOutputCostUsd).toBe(0);
+    expect(estimate.totalTokens).toBe(estimate.completionTokens);
   });
 });

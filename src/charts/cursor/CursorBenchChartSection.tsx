@@ -61,11 +61,11 @@ export default function CursorBenchChartSection(props: CursorBenchChartSectionPr
               <span class="badge badge-warning" data-testid="cursor-surcharge-included">Surcharge included</span>
             </p>
             <p class="text-sm">
-              The chart subtracts known output cost from each published task cost, then estimates hidden and total tokens.
-              The current model-specific rate and fee are shown in each point tooltip.
+              The chart subtracts known completion cost from each published task cost, then estimates hidden non-output and total processed tokens.
+              The selected Token mix assumption, model-specific rate, and fee are shown in each point tooltip.
             </p>
             <p class="text-sm text-base-content/70">
-              This is an assumption, not a bill. Rates span input-priced to cache-priced endpoints; the tooltip shows the full possible fee and adjusted-cost range. First-party Cursor models are exempt.
+              This is an assumption, not a bill, and the slider is not a measured cache ratio. Rates span cache-heavy to input/write-heavy endpoints; the tooltip shows the full possible fee and adjusted-cost range. First-party Cursor models are exempt.
             </p>
           </div>
         </div>

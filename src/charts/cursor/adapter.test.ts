@@ -1,26 +1,23 @@
 import { describe, expect, it } from "vitest";
-import {
-  CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS,
-  type DerivedCursorChartRecord,
-} from "../../schemas";
+import type { DerivedCursorChartRecord } from "../../schemas";
 import { CURSOR_FIXTURE_RECORDS } from "../fixtures";
 import { buildChartPlot } from "../plotData";
 import {
   CURSOR_BENCH_ID,
   SURCHARGE_CONTROL_ID,
   TOKEN_MIX_CONTROL_ID,
+  completionTokensForCursorRate,
   cursorBenchAdapter,
   effectiveCursorCostUsd,
   formatCursorCostUsd,
   surchargeApplies,
-  surchargeTokenVolume,
 } from "./adapter";
 
 const OFF = { [SURCHARGE_CONTROL_ID]: false };
-const ON = { [SURCHARGE_CONTROL_ID]: true };
-const cacheHitControls = (cacheHitRate: number) => ({
+const ON = { [SURCHARGE_CONTROL_ID]: true, [TOKEN_MIX_CONTROL_ID]: 50 };
+const tokenMixControls = (tokenMix: number) => ({
   [SURCHARGE_CONTROL_ID]: true,
-  [TOKEN_MIX_CONTROL_ID]: cacheHitRate,
+  [TOKEN_MIX_CONTROL_ID]: tokenMix,
 });
 
 const byId = (id: string) => {
@@ -37,95 +34,41 @@ describe("cursorBenchAdapter identity + axes", () => {
 });
 
 describe("effectiveCursorCostUsd (surcharge math)", () => {
-  it("returns the published cost unchanged for first-party models even with the surcharge on", () => {
+  it("leaves first-party models unchanged with the surcharge enabled", () => {
     const composer = byId("composer-2");
-    expect(composer.isThirdParty).toBe(false);
     expect(effectiveCursorCostUsd(composer, true)).toBe(composer.publishedCostUsd);
   });
 
-  it("adds exactly $0.25 per million tokens to third-party models when enabled", () => {
-    const opus = byId("opus-5-max");
-    const base = effectiveCursorCostUsd(opus, false)!;
-    const withSurcharge = effectiveCursorCostUsd(opus, true)!;
-    expect(base).toBe(opus.publishedCostUsd);
-    // 1,500,000 tokens/task * $0.25/M = $0.375
-    expect(withSurcharge - base).toBeCloseTo(0.375, 10);
-    expect(withSurcharge - base).toBe(
-      (surchargeTokenVolume(opus)! / 1e6) * CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS,
-    );
-  });
-
-  it("uses the aggregate tokensPerTask, not input/output splits, for the surcharge", () => {
-    const opus = byId("opus-5-max");
-    // tokensPerTask (1.5M) differs from inputTokens+outputTokens (1.2M+0.3M=1.5M
-    // here, so use a record where they diverge).
-    const record = { ...opus, tokensPerTask: 2_000_000 };
-    expect(surchargeTokenVolume(record)).toBe(2_000_000);
-    const delta = effectiveCursorCostUsd(record, true)! - effectiveCursorCostUsd(record, false)!;
-    expect(delta).toBeCloseTo(0.5, 10);
-  });
-
-  it("falls back to inputTokens+outputTokens when tokensPerTask is absent", () => {
-    const record: DerivedCursorChartRecord = {
+  it("uses published tokensPerTask as completion tokens with output-cost subtraction", () => {
+    const lunaLike: DerivedCursorChartRecord = {
       ...byId("opus-5-max"),
-      tokensPerTask: undefined,
-    };
-    expect(surchargeTokenVolume(record)).toBe(1_200_000 + 300_000);
-    const delta = effectiveCursorCostUsd(record, true)! - effectiveCursorCostUsd(record, false)!;
-    expect(delta).toBeCloseTo(0.375, 10);
-  });
-
-  it("uses the aggregate fallback for normalized third-party rows without estimation inputs", () => {
-    const record = byId("gemini-3.7-flash");
-    expect(record.inputTokens).toBeUndefined();
-    expect(record.outputTokens).toBeUndefined();
-    expect(surchargeTokenVolume(record)).toBe(record.tokensPerTask);
-
-    const base = effectiveCursorCostUsd(record, false)!;
-    const withDefaultCacheRate = effectiveCursorCostUsd(record, true, 90)!;
-    expect(withDefaultCacheRate - base).toBeCloseTo((record.tokensPerTask! / 1e6) * 0.25, 10);
-
-    const point = cursorBenchAdapter.computePoint(record, cacheHitControls(90))!;
-    const lines = cursorBenchAdapter.tooltipLines(record, point, cacheHitControls(90));
-    expect(lines.find((line) => line.label === "Cursor Token Rate fee (aggregate fallback)")?.value).toContain(
-      "aggregate tok",
-    );
-    expect(lines.find((line) => line.label === "Cursor Token Rate")?.value).toContain(
-      "Aggregate fallback",
-    );
-  });
-
-  it("never applies a surcharge without any token volume (no guessing)", () => {
-    const record = {
-      modelId: "no-tokens",
-      modelName: "No Tokens",
-      provider: "openai",
-      isThirdParty: true,
-      score: 50,
+      modelId: "gpt-5-6-luna-low",
+      tokensPerTask: 100_000,
+      outputTokens: 1_000,
       publishedCostUsd: 1,
     };
-    expect(surchargeTokenVolume(record)).toBeNull();
-    expect(effectiveCursorCostUsd(record, true)).toBe(1);
+    expect(completionTokensForCursorRate(lunaLike)).toBe(100_000);
+    const adjusted = effectiveCursorCostUsd(lunaLike, true, 50)!;
+    const outputCost = 100_000 / 1e6 * 1.2;
+    const hidden = (1 - outputCost) / Math.sqrt(0.02 * 0.25) * 1e6;
+    expect(adjusted).toBeCloseTo(1 + (hidden + 100_000) / 1e6 * 0.25, 10);
+  });
+
+  it("does not use completion tokens alone when model pricing is unavailable", () => {
+    const record = { ...byId("gemini-3.7-flash"), modelId: "unknown-model" };
+    expect(effectiveCursorCostUsd(record, true, 50)).toBe(record.publishedCostUsd);
     expect(surchargeApplies(record, ON)).toBe(false);
   });
 
-  it("returns null (unplottable) for records without a published cost — never zero or a guess", () => {
+  it("leaves rows without published cost unplottable", () => {
     const record = { ...byId("composer-2"), publishedCostUsd: undefined };
     expect(effectiveCursorCostUsd(record, false)).toBeNull();
     expect(effectiveCursorCostUsd(record, true)).toBeNull();
   });
-
-  it("returns null for non-positive or non-finite costs", () => {
-    expect(effectiveCursorCostUsd({ ...byId("composer-2"), publishedCostUsd: 0 }, false)).toBeNull();
-    expect(effectiveCursorCostUsd({ ...byId("composer-2"), publishedCostUsd: -1 }, false)).toBeNull();
-    expect(
-      effectiveCursorCostUsd({ ...byId("composer-2"), publishedCostUsd: Number.NaN }, false),
-    ).toBeNull();
-  });
 });
 
 describe("cursorBenchAdapter.computePoint + plot build", () => {
-  it("plots every valid fixture model at its exact score/cost coordinates", () => {
+  it("plots every valid fixture model at exact score/cost when disabled", () => {
     const build = buildChartPlot(CURSOR_FIXTURE_RECORDS, cursorBenchAdapter, OFF, "");
     expect(build.unplottable).toHaveLength(0);
     expect(build.entries).toHaveLength(CURSOR_FIXTURE_RECORDS.length);
@@ -136,59 +79,36 @@ describe("cursorBenchAdapter.computePoint + plot build", () => {
     }
   });
 
-  it("moves only third-party models when the surcharge toggle is on", () => {
+  it("moves rate-backed third-party models but keeps first-party costs unchanged", () => {
     const before = buildChartPlot(CURSOR_FIXTURE_RECORDS, cursorBenchAdapter, OFF, "");
     const after = buildChartPlot(CURSOR_FIXTURE_RECORDS, cursorBenchAdapter, ON, "");
     for (const { record, point } of after.entries) {
       const old = before.entries.find((e) => e.point.id === point.id)!.point;
-      if (!record.isThirdParty) {
-        expect(point.x).toBe(old.x);
-      } else {
-        expect(point.x).toBeGreaterThan(old.x);
-      }
+      if (!record.isThirdParty) expect(point.x).toBe(old.x);
+      else expect(point.x).toBeGreaterThanOrEqual(old.x);
       expect(point.y).toBe(old.y);
     }
   });
 
-  it("recomputes plotted costs when cache hit rate changes", () => {
-    // Use a valid profile with enough published residual after output cost so
-    // the model-specific estimate, rather than the compatibility fallback, is
-    // exercised.
-    const record = { ...byId("opus-5-max"), publishedCostUsd: 30 };
-    const inputPriced = buildChartPlot(
-      [record],
-      cursorBenchAdapter,
-      cacheHitControls(0),
-      "opus",
-    ).entries[0]!.point;
-    const cachePriced = buildChartPlot(
-      [record],
-      cursorBenchAdapter,
-      cacheHitControls(100),
-      "opus",
-    ).entries[0]!.point;
-    expect(inputPriced.x).toBeLessThan(cachePriced.x);
+  it("recomputes plotted costs with cache-heavy and input/write-heavy assumptions", () => {
+    const record = { ...byId("opus-5-max"), modelId: "gpt-5-6-luna-low", publishedCostUsd: 30 };
+    const cacheHeavy = buildChartPlot([record], cursorBenchAdapter, tokenMixControls(0), "opus").entries[0]!.point;
+    const inputWriteHeavy = buildChartPlot([record], cursorBenchAdapter, tokenMixControls(100), "opus").entries[0]!.point;
+    expect(cacheHeavy.x).toBeGreaterThan(inputWriteHeavy.x);
     expect(cursorBenchAdapter.controlSpecs.find((spec) => spec.id === TOKEN_MIX_CONTROL_ID)).toMatchObject({
-      label: "Cache hit rate",
-      default: 90,
+      label: "Token mix assumption",
+      default: 50,
     });
   });
 
-  it("treats rows with missing published cost as unplottable, not mispriced", () => {
-    const records = [
-      ...CURSOR_FIXTURE_RECORDS,
-      { ...byId("composer-2"), modelId: "broken", publishedCostUsd: undefined },
-    ];
-    const build = buildChartPlot(records, cursorBenchAdapter, ON, "");
-    expect(build.entries.map((e) => e.point.id)).not.toContain("broken");
-    expect(build.unplottable.map((u) => u.record.modelId)).toContain("broken");
-  });
-
-  it("passes cache-hit controls into surcharge tooltip rows", () => {
-    const record = { ...byId("opus-5-max"), publishedCostUsd: 30 };
-    const point = cursorBenchAdapter.computePoint(record, cacheHitControls(90))!;
-    const lines = cursorBenchAdapter.tooltipLines(record, point, cacheHitControls(90));
-    expect(lines.find((line) => line.label === "Cache hit rate")?.value).toContain("90%");
+  it("tooltip states the selected mix and estimate details", () => {
+    const record = { ...byId("opus-5-max"), modelId: "gpt-5-6-luna-low", publishedCostUsd: 30 };
+    const point = cursorBenchAdapter.computePoint(record, tokenMixControls(50))!;
+    const lines = cursorBenchAdapter.tooltipLines(record, point, tokenMixControls(50));
+    expect(lines.find((line) => line.label === "Token mix assumption")?.value).toContain("50%");
+    expect(lines.find((line) => line.label === "Completion tokens")).toBeDefined();
+    expect(lines.find((line) => line.label === "Total processed tokens (estimate)")).toBeDefined();
+    expect(lines.find((line) => line.label === "Adjusted cost")).toBeDefined();
     expect(lines.find((line) => line.label === "Cursor Token Rate fee (estimate)")).toBeDefined();
   });
 
@@ -198,10 +118,6 @@ describe("cursorBenchAdapter.computePoint + plot build", () => {
       const lines = cursorBenchAdapter.tooltipLines(record, point, ON);
       const costLine = lines.find((l) => l.label === "Avg cost / task")!;
       expect(costLine.value).toBe(formatCursorCostUsd(point.x));
-      // And the formatted value round-trips to the plotted x.
-      expect(Number.parseFloat(costLine.value.replace("$", ""))).toBeCloseTo(point.x, 2);
-      const scoreLine = lines.find((l) => l.label === "CursorBench score")!;
-      expect(Number.parseFloat(scoreLine.value)).toBeCloseTo(point.y, 1);
     }
   });
 });

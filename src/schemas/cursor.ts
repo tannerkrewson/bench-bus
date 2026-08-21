@@ -10,14 +10,13 @@ import { finiteNumber, isoUtcTimestamp, nonEmptyString, optionalFiniteNumber } f
  * fail closed if it cannot):
  *
  * - `score` is the published CursorBench score (0-100 scale as displayed).
- * - `inputTokens`/`outputTokens` are the per-task benchmark workload token
- *   counts the table publishes (or from which workload cost is computed).
- *   When the table publishes only aggregate cost, the parser records the
- *   published cost in `publishedCostUsd` and leaves token counts undefined;
- *   downstream cost estimation must then use the published cost directly.
- * - `tokensPerTask`/`stepsPerTask` preserve the table's aggregate raw figures
- *   (never split into input/output); the surcharge calculation sources its
- *   token volume from these aggregates when input/output splits are absent.
+ * - `inputTokens` is an optional workload input count from enriched records;
+ *   `outputTokens` is an optional completion/output count.
+ * - `tokensPerTask` is CursorBench's published completion/output token count,
+ *   not total processed tokens. It is preserved as published and must never
+ *   be used as a total-token or fee-only fallback.
+ * - When only published cost and completion tokens are available, downstream
+ *   estimation must infer hidden non-output tokens from valid model rates.
  * - `provider` is the serving provider shown in the table (e.g. "cursor",
  *   "openai", "anthropic"); `modelId` is the table's row identity.
  * - `isThirdParty` marks models Cursor serves via a third-party API rather
@@ -44,7 +43,7 @@ export const cursorEvalRecordSchema = z
     outputTokens: optionalFiniteNumber,
     /** Cost per benchmark task as published by Cursor, USD, when present. */
     publishedCostUsd: optionalFiniteNumber,
-    /** Published aggregate tokens per task (raw display value), when present. */
+    /** Published completion/output tokens per task (not total tokens), when present. */
     tokensPerTask: optionalFiniteNumber,
     /** Published aggregate steps per task (raw display value), when present. */
     stepsPerTask: optionalFiniteNumber,

@@ -87,6 +87,9 @@ describe("CursorMethodologyPanel", () => {
     expect(text).toContain("applied on top of the published cost");
     expect(text).toContain("never baked into the raw values");
     expect(text).toContain("first-party models are unaffected");
+    expect(text).toContain("completion/output tokens, not total processed tokens");
+    expect(text).toContain("not a measured cache ratio");
+    expect(text).toContain("published point remains unadjusted");
     dispose();
   });
 

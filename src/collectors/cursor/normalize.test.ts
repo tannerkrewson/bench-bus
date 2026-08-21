@@ -56,7 +56,7 @@ describe("toCanonicalRecords", () => {
     expect(grok?.outputTokens).toBeUndefined();
   });
 
-  it("preserves the table's aggregate tokensPerTask/stepsPerTask verbatim", () => {
+  it("preserves the table's completion tokens/steps verbatim", () => {
     const grok = records.find((record) => record.modelName === "Grok 4.6 Extra High");
     expect(grok?.tokensPerTask).toBeGreaterThan(0);
     expect(grok?.stepsPerTask).toBeGreaterThan(0);

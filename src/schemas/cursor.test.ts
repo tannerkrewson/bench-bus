@@ -26,7 +26,7 @@ describe("cursorEvalRecordSchema (via collection validator)", () => {
     expect(second?.publishedCostUsd).toBe(1.85);
   });
 
-  it("accepts optional aggregate tokensPerTask/stepsPerTask and preserves them exactly", () => {
+  it("accepts optional published completion tokens/steps and preserves them exactly", () => {
     const [second] = validateCursorEvalCollection([validCursorRecord2]);
     expect(second?.tokensPerTask).toBe(115_000);
     expect(second?.stepsPerTask).toBe(46);
@@ -34,7 +34,7 @@ describe("cursorEvalRecordSchema (via collection validator)", () => {
     expect(() => validateCursorEvalCollection([validCursorRecord])).not.toThrow();
   });
 
-  it("rejects non-numeric aggregate tokensPerTask/stepsPerTask", () => {
+  it("rejects non-numeric published completion tokens/steps", () => {
     expect(() =>
       validateCursorEvalCollection([{ ...validCursorRecord2, tokensPerTask: "115000" }]),
     ).toThrow();

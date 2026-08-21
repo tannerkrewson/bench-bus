@@ -63,12 +63,11 @@ export function deriveIsThirdParty(modelName: string): boolean {
 /**
  * Map one raw scraped row onto the canonical record schema.
  *
- * The table publishes aggregate per-task figures only (one cost, one token
- * count), so per the schema contract the aggregate cost is recorded in
- * `publishedCostUsd`, input/output token counts are left undefined, and the
- * aggregate tokens/steps are preserved verbatim in `tokensPerTask`/
- * `stepsPerTask` (never invented into input/output splits). The optional
- * $0.25/M surcharge is applied downstream (surcharge.ts), never baked in here.
+ * The table publishes one cost and one completion/output-token count per task.
+ * The cost is recorded in `publishedCostUsd`, and the published completion
+ * count is preserved verbatim in `tokensPerTask`; it must not be interpreted as
+ * total processed tokens. Cursor Token Rate estimation happens downstream
+ * from published model rates, never in normalization.
  */
 export function toCanonicalRecord(row: RawCursorEvalRow): CursorEvalRecord {
   return {

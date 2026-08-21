@@ -83,9 +83,10 @@ describe("CursorBenchChartSection", () => {
       `#chart-cursor-control-${TOKEN_MIX_CONTROL_ID}`,
     ) as HTMLInputElement;
     expect(slider).not.toBeNull();
-    expect(slider.getAttribute("aria-label")).toBe("Cache hit rate");
-    expect(slider.value).toBe("90");
-    expect(container.textContent).toContain("cached input tokens / total input tokens");
+    expect(slider.getAttribute("aria-label")).toBe("Token mix assumption");
+    expect(slider.value).toBe("50");
+    expect(container.textContent).toContain("Cache-heavy");
+    expect(container.textContent).toContain("not a measured cache ratio");
     slider.value = "25";
     slider.dispatchEvent(new Event("input", { bubbles: true }));
     toggle.click();

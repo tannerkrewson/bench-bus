@@ -1,76 +1,31 @@
-import {
-  CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS,
-  type CursorEvalRecord,
-} from "../../schemas";
+import { CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS } from "../../schemas";
 
 /**
- * Optional Cursor third-party-model surcharge support.
- *
- * Cursor applies a flat surcharge of $0.25 per million tokens to models it
- * serves via a third-party API. The evals page does NOT publish this
- * surcharge, so it is never baked into scraped values: raw
- * `publishedCostUsd` stays as published, and the surcharge is computed
- * separately here so chart code can toggle it on/off.
- */
-
-/**
- * Cursor's flat surcharge for third-party models, USD per million tokens.
- * Single source of truth is CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS in
- * schemas/derived.ts; re-exported under this module's longer historical name
- * so existing callers are unaffected.
+ * Cursor's flat third-party-model surcharge, USD per million processed tokens.
+ * Raw collection never applies this value: CursorBench `tokensPerTask` is
+ * completion/output tokens, not total processed tokens. Chart pricing combines
+ * it with published cost, output pricing, and valid non-output rates.
  */
 export const CURSOR_THIRD_PARTY_SURCHARGE_USD_PER_MILLION_TOKENS: number =
   CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS;
 
-/** Surcharge for one benchmark task, given the task's token usage. */
+/**
+ * Generic surcharge arithmetic for an already-estimated total token volume.
+ * Callers must not pass CursorBench completion tokens here as a total volume.
+ */
 export function computeThirdPartySurchargeUsd(
-  tokensPerTask: number,
+  estimatedTotalProcessedTokens: number,
   usdPerMillionTokens: number = CURSOR_THIRD_PARTY_SURCHARGE_USD_PER_MILLION_TOKENS,
 ): number {
-  if (!Number.isFinite(tokensPerTask) || tokensPerTask < 0) {
-    throw new TypeError(`tokensPerTask must be a finite non-negative number, got ${tokensPerTask}`);
+  if (!Number.isFinite(estimatedTotalProcessedTokens) || estimatedTotalProcessedTokens < 0) {
+    throw new TypeError(
+      `estimatedTotalProcessedTokens must be a finite non-negative number, got ${estimatedTotalProcessedTokens}`,
+    );
   }
   if (!Number.isFinite(usdPerMillionTokens) || usdPerMillionTokens < 0) {
     throw new TypeError(
       `usdPerMillionTokens must be a finite non-negative number, got ${usdPerMillionTokens}`,
     );
   }
-  return (tokensPerTask / 1_000_000) * usdPerMillionTokens;
-}
-
-export interface CursorSurchargeResult {
-  modelId: string;
-  isThirdParty: boolean;
-  /**
-   * Surcharge in USD for one task; 0 for first-party models. Derived value —
-   * never written back into raw or canonical records.
-   */
-  surchargeUsd: number;
-  /** Published cost plus surcharge, when the row is third-party; otherwise the published cost. */
-  costWithSurchargeUsd: number;
-}
-
-/**
- * Compute the per-task surcharge for each record. Token counts are NOT part
- * of the canonical record (the table publishes only aggregate tokens/task, in
- * the raw rows), so callers supply them from the same scrape keyed by modelId.
- * Records without a supplied token count get no surcharge rather than a guess.
- */
-export function computeCursorSurcharges(
-  records: readonly CursorEvalRecord[],
-  tokensPerTaskByModelId: ReadonlyMap<string, number>,
-): CursorSurchargeResult[] {
-  return records.map((record) => {
-    const tokens = tokensPerTaskByModelId.get(record.modelId);
-    const surchargeUsd =
-      record.isThirdParty && tokens !== undefined
-        ? computeThirdPartySurchargeUsd(tokens)
-        : 0;
-    return {
-      modelId: record.modelId,
-      isThirdParty: record.isThirdParty,
-      surchargeUsd,
-      costWithSurchargeUsd: (record.publishedCostUsd ?? 0) + surchargeUsd,
-    };
-  });
+  return (estimatedTotalProcessedTokens / 1_000_000) * usdPerMillionTokens;
 }
