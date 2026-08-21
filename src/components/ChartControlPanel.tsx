@@ -23,7 +23,9 @@ export interface ChartControlPanelProps {
  */
 export default function ChartControlPanel(props: ChartControlPanelProps) {
   return (
-    <div class="flex flex-wrap items-end gap-4" data-testid="chart-controls">
+    <fieldset class="rounded-box border border-base-300 bg-base-200/40 p-4" data-testid="chart-controls">
+      <legend class="px-2 text-sm font-semibold">Chart settings</legend>
+      <div class="flex flex-wrap items-end gap-x-5 gap-y-4">
       <div>
         <div id="chart-scale-group-label" class="mb-1 text-sm font-medium">
           Price axis scale
@@ -164,6 +166,7 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
           </Show>
         )}
       </For>
-    </div>
+      </div>
+    </fieldset>
   );
 }

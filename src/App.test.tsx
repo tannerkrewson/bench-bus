@@ -18,6 +18,11 @@ describe("App", () => {
     expect(container.querySelector("section[data-benchmark='aa'] canvas")).not.toBeNull();
     expect(container.querySelector("section[data-benchmark='cursor'] canvas")).not.toBeNull();
     expect(container.querySelector("button[aria-label^='Switch to']")).not.toBeNull();
+    expect(container.querySelector("button[data-testid='random-theme']")).not.toBeNull();
+    expect(container.querySelector("[data-testid='freshness-chips']")).toBeNull();
+    expect(container.querySelector("footer a[href='https://tannerkrewson.com']")?.getAttribute("rel")).toBe(
+      "noopener noreferrer",
+    );
 
     dispose();
     container.remove();

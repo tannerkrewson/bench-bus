@@ -3,6 +3,7 @@ import { render } from "solid-js/web";
 import type { JSX } from "solid-js";
 import AaMethodologyPanel from "./AaMethodologyPanel";
 import CursorMethodologyPanel from "./CursorMethodologyPanel";
+import { UnifiedLimitationsPanel } from "./MethodologyPanel";
 
 function mount(ui: () => JSX.Element) {
   const container = document.createElement("div");
@@ -67,13 +68,6 @@ describe("AaMethodologyPanel", () => {
     dispose();
   });
 
-  it("includes the general not-a-universal-measure limitation", () => {
-    const { container, dispose } = mount(() => <AaMethodologyPanel />);
-    expect(container.querySelector("[data-testid='general-limitation']")?.textContent).toContain(
-      "not a universal measure of real-world model value",
-    );
-    dispose();
-  });
 });
 
 describe("CursorMethodologyPanel", () => {
@@ -104,11 +98,14 @@ describe("CursorMethodologyPanel", () => {
     dispose();
   });
 
-  it("includes the general not-a-universal-measure limitation", () => {
-    const { container, dispose } = mount(() => <CursorMethodologyPanel />);
-    expect(container.querySelector("[data-testid='general-limitation']")?.textContent).toContain(
-      "not a universal measure of real-world model value",
-    );
+});
+
+describe("UnifiedLimitationsPanel", () => {
+  it("keeps the shared caveats in one discoverable section", () => {
+    const { container, dispose } = mount(() => <UnifiedLimitationsPanel />);
+    expect(container.querySelectorAll("[data-testid='general-limitation']")).toHaveLength(1);
+    expect(container.textContent).toContain("not a universal measure of real-world model value");
+    expect(container.textContent).toContain("One benchmark is not the whole picture");
     dispose();
   });
 });

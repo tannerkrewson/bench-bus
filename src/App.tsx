@@ -12,12 +12,10 @@ import type { ChartViewState, PricingControlSpec, PricingControlState } from "./
 import { TimeTravelProvider, useTimeTravel } from "./history/TimeTravelContext";
 import { timeTravelStateFromParams, mergeTimeTravelStateIntoParams } from "./history/urlState";
 import TimeTravelControl from "./controls/TimeTravelControl";
-import FreshnessChips from "./controls/FreshnessChips";
-import { freshnessFromBundle } from "./history/resolve";
 import AaMethodologyPanel from "./methodology/AaMethodologyPanel";
 import CursorMethodologyPanel from "./methodology/CursorMethodologyPanel";
 import ThemeToggle from "./components/ThemeToggle";
-import { GeneralLimitationNote } from "./methodology/MethodologyPanel";
+import { UnifiedLimitationsPanel } from "./methodology/MethodologyPanel";
 import {
   fetchDerivedBundle,
   fetchDerivedIndex,
@@ -93,10 +91,6 @@ const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
         onStateChange={(state) => syncChartStateToUrl(state, "aa")}
       />
       <AaMethodologyPanel />
-      <FreshnessChips
-        freshness={freshnessFromBundle(props.bundle)}
-        now={new Date().toISOString()}
-      />
       <CursorBenchChartSection
         records={() => props.bundle.cursor?.records ?? []}
         initialState={initialChartStateFor(
@@ -107,7 +101,7 @@ const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
         onStateChange={(state) => syncChartStateToUrl(state, "cursor")}
       />
       <CursorMethodologyPanel />
-      <GeneralLimitationNote />
+      <UnifiedLimitationsPanel />
       {timeTravel.view().preHistory || (!props.bundle.aa && !props.bundle.cursor) ? (
         <p role="status" class="text-warning">
           No collected data at this selected time.
@@ -133,22 +127,21 @@ const App: Component = () => {
       decodeBundle(JSON.parse(JSON.stringify(makeAaBundleFixture())) as { cursor: null } & Record<string, unknown>);
     return (
       <main class="min-h-screen bg-base-100 text-base-content">
-        <div class="container mx-auto px-4 py-8">
-          <div class="hero relative rounded-box bg-base-200">
-            <div class="hero-content text-center">
-              <div class="max-w-md">
-                <h1 class="text-5xl font-bold">Bench Bus</h1>
-                <p class="py-6">
-                  AI benchmark scores versus estimated benchmark workload cost.
-                </p>
+        <div class="container mx-auto flex min-h-screen max-w-6xl flex-col px-4 py-4 sm:px-6 sm:py-8">
+          <header class="navbar mb-6 rounded-box bg-base-200 px-4 shadow-sm sm:px-6">
+            <div class="navbar-start gap-3">
+              <img class="h-12 w-16 object-contain sm:h-14 sm:w-20" src="/logo.svg" alt="Bench Bus logo" />
+              <div>
+                <h1 class="text-xl font-bold tracking-tight sm:text-2xl">Bench Bus</h1>
+                <p class="hidden text-xs text-base-content/70 sm:block">AI benchmark scores versus estimated benchmark workload cost.</p>
               </div>
             </div>
-            <div class="absolute right-4 top-4">
+            <div class="navbar-end">
               <ThemeToggle />
             </div>
-          </div>
+          </header>
 
-          <div class="mt-4 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex flex-wrap items-center justify-between gap-4">
             <TimeTravelControl />
             {indexResource()?.isDemo ? (
               <span class="badge badge-warning badge-outline">
@@ -158,6 +151,30 @@ const App: Component = () => {
           </div>
 
           <Charts bundle={bundle()} />
+
+          <footer class="footer footer-center mt-12 border-t border-base-300 bg-base-200/60 px-4 py-8 text-sm">
+            <p>
+              Bench Bus by{" "}
+              <a
+                class="link link-hover font-semibold"
+                href="https://tannerkrewson.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Tanner Krewson
+              </a>
+            </p>
+            <p>
+              <a
+                class="link link-hover"
+                href="https://github.com/tannerkrewson/bench-bus"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View on GitHub
+              </a>
+            </p>
+          </footer>
         </div>
       </main>
     );

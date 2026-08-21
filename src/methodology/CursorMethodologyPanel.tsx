@@ -1,6 +1,6 @@
 import type { Component } from "solid-js";
 import { CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS } from "../schemas";
-import { GeneralLimitationNote, MethodologyPanel } from "./MethodologyPanel";
+import { MethodologyPanel } from "./MethodologyPanel";
 
 /**
  * Methodology & limitations for the CursorBench score vs. cost chart
@@ -43,7 +43,6 @@ export const CursorMethodologyPanel: Component<{ class?: string }> = (props) => 
       historical views only go back as far as Bench Bus has been collecting
       snapshots.
     </p>
-    <GeneralLimitationNote />
   </MethodologyPanel>
 );
 

@@ -27,16 +27,28 @@ export const MethodologyPanel: Component<{
 );
 
 /**
- * The general limitation that applies to every chart: a benchmark score and a
- * historical effective price are NOT a universal measure of real-world model
- * value. Both panels render this so no chart can imply otherwise.
+ * One shared, plain-English caveat section for both charts. Keeping this in a
+ * single place prevents repeated warnings from competing with the graphs.
  */
-export const GeneralLimitationNote: Component = () => (
-  <p data-testid="general-limitation">
-    <strong>General limitation:</strong> a benchmark score — and a historical
-    effective price — is <strong>not a universal measure of real-world model value</strong>.
-    Real workloads differ in task mix, prompts, tools, latency needs, and
-    negotiation leverage; treat these charts as one input among several, never
-    as a verdict.
-  </p>
+export const UnifiedLimitationsPanel: Component = () => (
+  <MethodologyPanel title="Limitations & caveats">
+    <div class="space-y-3" data-testid="unified-limitations">
+      <p data-testid="general-limitation">
+        <strong>Use these as context, not a verdict.</strong> A benchmark score
+        and historical effective price are not a universal measure of real-world
+        model value. Real workloads differ in tasks, prompts, tools, latency, and
+        provider availability.
+      </p>
+      <p>
+        <strong>Prices and scores can change.</strong> Costs are estimates based
+        on the selected snapshot and published inputs; providers and benchmark
+        publishers may update them later.
+      </p>
+      <p>
+        <strong>One benchmark is not the whole picture.</strong> These charts do
+        not measure every capability, safety consideration, or fit for your
+        workflow. Check the underlying methodology before comparing models.
+      </p>
+    </div>
+  </MethodologyPanel>
 );

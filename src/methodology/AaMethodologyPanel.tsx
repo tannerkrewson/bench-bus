@@ -1,6 +1,6 @@
 import type { Component } from "solid-js";
 import { AA_DEFAULT_CACHE_HIT_RATE } from "../charts/aa/pricing";
-import { GeneralLimitationNote, MethodologyPanel } from "./MethodologyPanel";
+import { MethodologyPanel } from "./MethodologyPanel";
 
 /**
  * Methodology & limitations for the Artificial Analysis Intelligence Index
@@ -61,7 +61,6 @@ export const AaMethodologyPanel: Component<{ class?: string }> = (props) => (
       performance on selected evaluations only — not helpfulness, safety,
       style, domain expertise, or fit for your workload.
     </p>
-    <GeneralLimitationNote />
   </MethodologyPanel>
 );
 
