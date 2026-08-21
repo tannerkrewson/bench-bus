@@ -37,6 +37,29 @@ describe("App", () => {
     container.remove();
   });
 
+  it("keeps transient selector filters out of the URL", async () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const originalUrl = window.location.href;
+    window.history.replaceState(null, "", "/?chart.aa.q=legacy");
+    const dispose = render(() => <App />, container);
+
+    await vi.waitFor(() => {
+      expect(container.querySelector("#chart-aa-model-search")).not.toBeNull();
+    });
+    expect(window.location.search).not.toContain("chart.aa.q");
+
+    const input = container.querySelector<HTMLInputElement>("#chart-aa-model-search");
+    input!.value = "opus";
+    input!.dispatchEvent(new Event("input", { bubbles: true }));
+    await vi.waitFor(() => expect(input!.value).toBe("opus"));
+    expect(window.location.search).not.toContain("chart.aa.q");
+
+    dispose();
+    container.remove();
+    window.history.replaceState(null, "", originalUrl);
+  });
+
   it("supports Solid reactivity", () => {
     const container = document.createElement("div");
     document.body.appendChild(container);

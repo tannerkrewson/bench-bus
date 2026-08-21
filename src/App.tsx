@@ -51,7 +51,13 @@ function syncChartStateToUrl(
   for (const key of [...params.keys()]) {
     if (key.startsWith(`chart.${benchmarkId}.`)) params.delete(key);
   }
-  for (const [key, value] of chartStateToParams(state, benchmarkId, serializationDefaults)) {
+  // The model-selector query is transient UI state, not a chart selection or
+  // setting. Read legacy q values if supplied, but never re-persist them.
+  for (const [key, value] of chartStateToParams(
+    { ...state, query: "" },
+    benchmarkId,
+    serializationDefaults,
+  )) {
     params.set(key, value);
   }
   const query = params.toString();
