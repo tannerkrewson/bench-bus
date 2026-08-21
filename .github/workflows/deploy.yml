@@ -1,0 +1,121 @@
+# Deploy Bench Bus to GitHub Pages (benchb.us).
+#
+# DEPLOYMENT DATA FLOW: this workflow consumes last-known-good snapshots from
+# the bench-bus-data branch and compiles them into the static bundle. It never
+# runs collectors — a failing collector cannot block or corrupt a deploy; the
+# site simply ships the newest valid data (or the labelled demo fixture set if
+# no eligible snapshots exist yet).
+#
+# FAILURE SEMANTICS: the gate job runs typecheck + tests + production build.
+# Any failure there blocks deployment (the deploy job never runs). Stale but
+# valid data always remains deployable.
+#
+# ACTIVATION (human, one-time): see docs/deployment.md — repo visibility,
+# Settings -> Pages -> source "GitHub Actions", custom domain benchb.us + DNS.
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Pages deployments are strictly serialized: never cancel a deploy in flight.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # Gate: the app must fully pass before anything is published.
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout application source (main)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Checkout last-known-good data (bench-bus-data)
+        uses: actions/checkout@v4
+        with:
+          ref: bench-bus-data
+          path: data-branch
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests (offline)
+        run: npm test
+
+      # Compile the compact browser datasets out of the data-branch checkout.
+      # Vite copies public/ verbatim into dist/, and the app's
+      # DERIVED_DATA_BASE is "./derived-data", so public/derived-data is the
+      # exact serve path. A missing/empty data branch is NOT a deploy blocker:
+      # if compilation fails (e.g. no eligible snapshots yet), we continue and
+      # the app falls back to its labelled demo fixture bundle at runtime.
+      - name: Compile derived datasets from bench-bus-data
+        run: |
+          set -euo pipefail
+          if npm run derive -- --data-dir data-branch --out-dir public/derived-data; then
+            echo "Derived datasets compiled from bench-bus-data."
+          else
+            echo "::warning::Derived-data compilation produced no output (no eligible snapshots on bench-bus-data yet?). Deploying with the labelled demo fixture bundle."
+          fi
+
+      - name: Production build
+        run: npm run build
+
+      - name: Verify custom domain file in artifact
+        run: |
+          set -euo pipefail
+          # Vite copies public/CNAME into dist/; Pages needs it at the artifact
+          # root to keep serving benchb.us.
+          if [ ! -f dist/CNAME ]; then
+            echo "::error::dist/CNAME missing from build artifact"
+            exit 1
+          fi
+          if [ "$(cat dist/CNAME | tr -d '[:space:]')" != "benchb.us" ]; then
+            echo "::error::dist/CNAME has unexpected contents: $(cat dist/CNAME)"
+            exit 1
+          fi
+          echo "CNAME verified: benchb.us"
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      # deploy-pages requires both of these; nothing more.
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
