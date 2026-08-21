@@ -141,8 +141,6 @@ export const cursorBenchAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord>
     lines.push(...cursorEstimateTooltipLines(record, controls));
     return lines;
   },
-  disclaimer:
-    "Scores, costs, and completion tokens are published by cursor.com/evals. Cursor Token Rate is an estimate: it subtracts known completion cost, then infers hidden non-output tokens from published model rates at the selected Token mix assumption. Raw source values are never mutated; first-party Cursor models are exempt.",
 };
 
 function tokenMixFromControls(controls: Readonly<PricingControlState>): number {
