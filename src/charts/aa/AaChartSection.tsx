@@ -11,6 +11,7 @@ import ChartControlPanel from "../../components/ChartControlPanel";
 import ModelList from "../../components/ModelList";
 import type { DerivedAaChartRecord } from "../../schemas";
 import { aaAdapter, aaControlledTooltipLines } from "./adapter";
+import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
 
 export interface AaChartSectionProps {
   records: () => readonly DerivedAaChartRecord[];
@@ -32,8 +33,12 @@ export default function AaChartSection(props: AaChartSectionProps) {
 
   const [scale, setScale] = createSignal(props.initialState?.scale ?? aaAdapter.defaultXScale);
   const [query, setQuery] = createSignal(props.initialState?.query ?? "");
+  // An absent selection is the curated AA view. A non-empty initial
+  // selection is explicit URL/session state and must win over the defaults.
   const [selectedIds, setSelectedIds] = createSignal<string[]>(
-    props.initialState?.selectedIds ?? [],
+    props.initialState?.selectedIds && props.initialState.selectedIds.length > 0
+      ? [...props.initialState.selectedIds]
+      : [...AA_DEFAULT_MODEL_SLUGS],
   );
   const [showLabels, setShowLabels] = createSignal(props.initialState?.showLabels ?? true);
   const [controls, setControls] = createSignal<PricingControlState>({
@@ -47,9 +52,27 @@ export default function AaChartSection(props: AaChartSectionProps) {
     top: number;
   } | null>(null);
 
-  const build = createMemo(() =>
+  const allBuild = createMemo(() =>
     buildChartPlot(props.records(), aaAdapter, controls(), query()),
   );
+
+  // Keep the selector populated from every matching model, while the chart
+  // itself contains only selected models. This is the AA section's bridge to
+  // the generic visibility-filter contract; missing default slugs simply have
+  // no matching entry and therefore cannot break plotting.
+  const build = createMemo(() => {
+    const candidate = allBuild();
+    const selected = new Set(selectedIds());
+    return {
+      entries: candidate.entries.filter((entry) => selected.has(entry.point.id)),
+      // Unplottable records remain visible in the selector regardless of
+      // selection so missing upstream pricing is explained, never estimated.
+      unplottable: candidate.unplottable,
+      filteredOut:
+        candidate.filteredOut +
+        candidate.entries.filter((entry) => !selected.has(entry.point.id)).length,
+    };
+  });
 
   const selectedId = createMemo<string | null>(() => {
     const ids = selectedIds();
@@ -90,10 +113,10 @@ export default function AaChartSection(props: AaChartSectionProps) {
     <section
       class="card bg-base-100 border-base-300 border shadow-sm"
       data-benchmark={aaAdapter.benchmarkId}
-      aria-label="Artificial Analysis Intelligence Index versus estimated benchmark cost"
+      aria-label={`Artificial Analysis ${AA_DEFAULT_COST_MODE}`}
     >
       <div class="card-body">
-        <h2 class="card-title text-2xl">Artificial Analysis — Intelligence Index vs. cost</h2>
+        <h2 class="card-title text-2xl">Artificial Analysis — Intelligence Index vs. cost per task</h2>
         <ChartControlPanel
           scale={scale}
           onScaleChange={setScale}
@@ -120,10 +143,10 @@ export default function AaChartSection(props: AaChartSectionProps) {
         >
           <div class="mb-3 flex justify-end">
             <ModelList
-              points={() => build().entries.map((e) => e.point)}
+              points={() => allBuild().entries.map((e) => e.point)}
               selectedIds={selectedIds}
               onToggleSelect={toggleSelect}
-              unplottable={() => build().unplottable.map((u) => aaAdapter.identity(u.record))}
+              unplottable={() => allBuild().unplottable.map((u) => aaAdapter.identity(u.record))}
             />
           </div>
           <div class="relative">

@@ -5,6 +5,7 @@ import AaChartSection from "./AaChartSection";
 import { AA_FIXTURE_RECORDS } from "./fixtures";
 import { chartStateFromParams, chartStateToParams } from "../urlState";
 import { aaAdapter } from "./adapter";
+import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
 
 function mount(ui: () => JSX.Element) {
   const container = document.createElement("div");
@@ -42,6 +43,39 @@ describe("AaChartSection", () => {
     expect(
       (container.querySelector("#chart-control-cacheHitRate") as HTMLInputElement).value,
     ).toBe("0.9");
+    dispose();
+  });
+
+  it("selects the requested curated defaults and keeps missing upstream models harmless", () => {
+    const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] =
+      [];
+    const { container, dispose } = mount(() => (
+      <AaChartSection records={() => AA_FIXTURE_RECORDS} onStateChange={(state) => states.push(state)} />
+    ));
+
+    expect(states[states.length - 1]?.selectedIds).toEqual(AA_DEFAULT_MODEL_SLUGS);
+    expect(container.querySelector("[data-testid='aa-no-points']")).toBeNull();
+    expect(AA_DEFAULT_COST_MODE).toBe("intelligence-vs-cost-per-task");
+    dispose();
+  });
+
+  it("preserves an explicit URL/session selection instead of replacing it", () => {
+    const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] =
+      [];
+    const { container, dispose } = mount(() => (
+      <AaChartSection
+        records={() => AA_FIXTURE_RECORDS}
+        initialState={{ selectedIds: ["gpt-5.6-sol"] }}
+        onStateChange={(state) => states.push(state)}
+      />
+    ));
+
+    expect(states[states.length - 1]?.selectedIds).toEqual(["gpt-5.6-sol"]);
+    expect(container.querySelector("[data-testid='aa-filter-count']")?.textContent).toContain("2 model");
+    const selected = [...container.querySelectorAll("[data-testid='model-list'] input[type='checkbox']")]
+      .filter((input) => (input as HTMLInputElement).checked);
+    expect(selected).toHaveLength(1);
+    expect((selected[0] as HTMLInputElement).ariaLabel).toBe("Select GPT-5.6 Sol");
     dispose();
   });
 
