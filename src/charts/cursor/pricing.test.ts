@@ -81,9 +81,8 @@ describe("Cursor token-rate pricing", () => {
     expect(blendCursorNonOutputPrice(cursorTokenRateProfile(luna)!, 101)).toBeNull();
   });
 
-  it("clamps a negative residual to zero rather than inventing non-output cost", () => {
-    const estimate = estimateCursorTokenRate({ ...luna, publishedCostUsd: 0.01 }, 50)!;
-    expect(estimate.residualNonOutputCostUsd).toBe(0);
-    expect(estimate.totalTokens).toBe(estimate.completionTokens);
+  it("returns unavailable when known output cost exceeds published cost", () => {
+    const estimate = estimateCursorTokenRate({ ...luna, publishedCostUsd: 0.01 }, 50);
+    expect(estimate).toBeNull();
   });
 });

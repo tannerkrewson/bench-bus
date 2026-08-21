@@ -70,9 +70,14 @@ export const UnifiedLimitationsPanel: Component = () => (
           cursor.com/evals
         </a>
         . Values are rounded as published. The optional ${CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS}/M-token
-        third-party fee is an estimate: it infers hidden tokens from published
-        costs, model rates, and the selected cache-hit rate. The fee is added to
-        published cost. Raw source values are not changed.
+        third-party fee is a neutral Token mix estimate: it infers hidden
+        non-output tokens from published costs and completion tokens, using a
+        logarithmic blend across each model&apos;s valid input, cache-read, and
+        cache-write rates. This Token mix assumption is not a literal cache-hit
+        percentage. If the known output cost exceeds published cost, the
+        estimate is unavailable and published cost remains unchanged. The fee is
+        added to published cost when the estimate is valid. Raw source values
+        are not changed.
       </p>
       <p>
         <strong>Limits.</strong> One score does not measure every capability,

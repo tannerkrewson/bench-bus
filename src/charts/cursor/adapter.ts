@@ -36,7 +36,7 @@ const SURCHARGE_CONTROL = {
   label: `Include Cursor Token Rate ($${CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS}/M tok)`,
   default: false,
   description:
-    "Estimate Cursor's flat third-party-model fee from published cost, completion tokens, and published model rates; first-party Cursor models are exempt.",
+    "Estimate Cursor's flat third-party-model fee from published cost, completion tokens, and a neutral logarithmic blend of valid input, cache-read, and cache-write rates; first-party Cursor models are exempt.",
 } as const;
 
 const TOKEN_MIX_CONTROL = {
@@ -50,7 +50,7 @@ const TOKEN_MIX_CONTROL = {
   step: 1,
   format: (value: number) => `${Math.round(value)}%`,
   description:
-    "Assumed non-output mix: 0% Cache-heavy (cheapest rate), 50% neutral estimate, 100% Input/write-heavy (most expensive rate). This is not a measured cache ratio.",
+    "Neutral Token mix assumption: a logarithmic blend across valid input, cache-read, and cache-write rates; 0% is Cache-heavy, 50% is neutral, and 100% is Input/write-heavy. This is not a measured cache-hit percentage.",
 } as const;
 
 /** Completion/output tokens published by CursorBench, never total tokens. */
@@ -136,8 +136,8 @@ export const cursorBenchAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord>
       value: record.publishedCostUsd !== undefined ? formatCursorCostUsd(record.publishedCostUsd) : "Unavailable",
     });
     lines.push({ label: "Provider", value: record.provider });
-    const surchargeLine = surchargeTooltipLine(record, controls);
-    if (surchargeLine) lines.push(surchargeLine);
+    // Detailed estimate lines below include the fee, so do not repeat it with
+    // the concise surcharge line.
     lines.push(...cursorEstimateTooltipLines(record, controls));
     return lines;
   },
@@ -162,7 +162,7 @@ export function surchargeTooltipLine(
   if (estimate === null) {
     return {
       label: "Cursor Token Rate",
-      value: "Estimate unavailable; published cost unchanged (completion tokens and published rates required)",
+      value: "Estimate unavailable; published cost unchanged (output cost may exceed published cost, or completion tokens/rates are missing or invalid)",
     };
   }
   return {
@@ -186,14 +186,17 @@ export function cursorEstimateTooltipLines(
     return [
       {
         label: "Cursor Token Rate",
-        value: "Estimate unavailable; published cost unchanged (completion tokens and published rates required)",
+        value: "Estimate unavailable; published cost unchanged (output cost may exceed published cost, or completion tokens/rates are missing or invalid)",
       },
     ];
   }
   const rate = blendCursorNonOutputPrice(profile, tokenMixPercent);
-  if (rate === null) return [{ label: "Cursor Token Rate", value: "Estimate unavailable; published cost unchanged" }];
+  if (rate === null) return [{
+    label: "Cursor Token Rate",
+    value: "Estimate unavailable; published cost unchanged (invalid Token mix assumption)",
+  }];
   return [
-    { label: "Token mix assumption", value: `${Math.round(tokenMixPercent)}% (Cache-heavy → Input/write-heavy)` },
+    { label: "Token mix assumption", value: `${Math.round(tokenMixPercent)}% neutral logarithmic blend (Cache-heavy → Input/write-heavy)` },
     { label: "Published cost / task", value: formatCursorCostUsd(record.publishedCostUsd!) },
     { label: "Completion tokens", value: estimate.completionTokens.toLocaleString("en-US") },
     { label: "Blended non-output rate (estimate)", value: `$${rate.toFixed(4)}/M` },

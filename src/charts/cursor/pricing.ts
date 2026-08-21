@@ -157,8 +157,16 @@ export function estimateCursorTokenRate(
   const nonOutputPrices = cursorNonOutputPrices(rateProfile);
   if (nonOutputPrices.length === 0) return null;
   const outputCostUsd = (completionTokens / 1e6) * rateProfile.outputPriceUsdPerMillion;
-  const residualNonOutputCostUsd = Math.max(0, publishedCost - outputCostUsd);
-  if (!Number.isFinite(outputCostUsd) || !Number.isFinite(residualNonOutputCostUsd)) return null;
+  const residualNonOutputCostUsd = publishedCost - outputCostUsd;
+  // A published output cost above the total benchmark cost is inconsistent;
+  // do not turn the negative residual into a completion-only surcharge.
+  if (
+    !Number.isFinite(outputCostUsd) ||
+    !Number.isFinite(residualNonOutputCostUsd) ||
+    residualNonOutputCostUsd < 0
+  ) {
+    return null;
+  }
 
   const blended = blendCursorNonOutputPrice(rateProfile, tokenMixPercent);
   if (blended === null) return null;

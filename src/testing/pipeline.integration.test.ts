@@ -37,7 +37,6 @@ import {
   effectiveCursorCostUsd,
   SURCHARGE_CONTROL_ID,
 } from "../charts/cursor/adapter";
-import { CURSOR_THIRD_PARTY_SURCHARGE_USD_PER_MILLION_TOKENS } from "../collectors/cursor/surcharge";
 
 // Observation times deliberately staggered so point-in-time semantics are
 // exercised: AA first, then Cursor, then OpenRouter.
@@ -281,12 +280,9 @@ describe("offline end-to-end pipeline: collect -> store -> resolve -> compile ->
       [SURCHARGE_CONTROL_ID]: true,
     });
     expect(opusBase?.x).toBe(3.4);
-    // Opus's published output rate makes the residual non-output cost zero;
-    // the fee still uses completion tokens as one component of total volume.
-    expect(opusSurcharged?.x).toBeCloseTo(
-      3.4 + (1_500_000 / 1e6) * CURSOR_THIRD_PARTY_SURCHARGE_USD_PER_MILLION_TOKENS,
-      10,
-    );
+    // Opus's published output rate exceeds the published task cost, so the
+    // inconsistent estimate is unavailable and the published point is kept.
+    expect(opusSurcharged?.x).toBe(3.4);
     const composerSurcharged = cursorBenchAdapter.computePoint(decodedComposer!, {
       [SURCHARGE_CONTROL_ID]: true,
     });

@@ -86,7 +86,7 @@ describe("CursorBenchChartSection", () => {
     expect(slider.getAttribute("aria-label")).toBe("Token mix assumption");
     expect(slider.value).toBe("50");
     expect(container.textContent).toContain("Cache-heavy");
-    expect(container.textContent).toContain("not a measured cache ratio");
+    expect(container.textContent).toContain("not a measured cache-hit percentage");
     slider.value = "25";
     slider.dispatchEvent(new Event("input", { bubbles: true }));
     toggle.click();

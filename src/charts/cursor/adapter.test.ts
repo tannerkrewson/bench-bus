@@ -60,6 +60,21 @@ describe("effectiveCursorCostUsd (surcharge math)", () => {
     expect(surchargeApplies(record, ON)).toBe(false);
   });
 
+  it("leaves published cost unchanged when known output cost exceeds it", () => {
+    const record = {
+      ...byId("opus-5-max"),
+      modelId: "gpt-5-6-luna-low",
+      tokensPerTask: 100_000,
+      publishedCostUsd: 0.01,
+    };
+    expect(effectiveCursorCostUsd(record, true, 50)).toBe(record.publishedCostUsd);
+    expect(surchargeApplies(record, ON)).toBe(false);
+    const point = cursorBenchAdapter.computePoint(record, ON)!;
+    const lines = cursorBenchAdapter.tooltipLines(record, point, ON);
+    const unavailable = lines.find((line) => line.label === "Cursor Token Rate");
+    expect(unavailable?.value).toContain("output cost may exceed published cost");
+  });
+
   it("leaves rows without published cost unplottable", () => {
     const record = { ...byId("composer-2"), publishedCostUsd: undefined };
     expect(effectiveCursorCostUsd(record, false)).toBeNull();
@@ -109,7 +124,7 @@ describe("cursorBenchAdapter.computePoint + plot build", () => {
     expect(lines.find((line) => line.label === "Completion tokens")).toBeDefined();
     expect(lines.find((line) => line.label === "Total processed tokens (estimate)")).toBeDefined();
     expect(lines.find((line) => line.label === "Adjusted cost")).toBeDefined();
-    expect(lines.find((line) => line.label === "Cursor Token Rate fee (estimate)")).toBeDefined();
+    expect(lines.filter((line) => line.label === "Cursor Token Rate fee")).toHaveLength(1);
   });
 
   it("tooltip cost values agree exactly with the plotted coordinate", () => {
