@@ -2,7 +2,7 @@ import { Show, createEffect, createSignal, onCleanup } from "solid-js";
 import type { TooltipLine } from "../charts/types";
 
 export interface ChartTooltipProps {
-  /** Pixel position of the hovered dot within the relatively-positioned parent. */
+  /** Pixel position of the pointer within the relatively-positioned parent. */
   left: () => number;
   top: () => number;
   title: () => string | null;
@@ -11,8 +11,8 @@ export interface ChartTooltipProps {
 
 /**
  * Hover tooltip rendered as positioned DOM (not canvas) so text stays
- * selectable, zoomable, and accessible to assistive tech. Its anchor is the
- * plotted dot; pointer movement only changes which dot is active.
+ * selectable, zoomable, and accessible to assistive tech. It is anchored to
+ * the pointer and flips sides at chart edges to avoid covering the pointer.
  */
 export default function ChartTooltip(props: ChartTooltipProps) {
   let element: HTMLDivElement | undefined;
@@ -60,7 +60,7 @@ export default function ChartTooltip(props: ChartTooltipProps) {
     <Show when={props.title() !== null}>
       <div
         ref={element}
-        class="pointer-events-none absolute z-10 max-w-[min(20rem,calc(100%-1rem))] rounded-box border border-base-300 bg-base-100 px-3 py-2 text-left text-sm shadow-md"
+        class="pointer-events-none absolute z-10 max-w-[min(20rem,calc(100%-1rem))] rounded-box border border-base-300 bg-base-100 px-3 py-2 text-left text-base shadow-md"
         data-testid="chart-tooltip"
         role="status"
         style={{ left: `${position().left}px`, top: `${position().top}px` }}

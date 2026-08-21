@@ -30,20 +30,20 @@ export default function ModelList(props: ModelListProps) {
 
   return (
     <details class="dropdown dropdown-end w-72 max-w-full" data-testid="model-list">
-      <summary class="btn btn-outline w-full justify-between gap-3">
+      <summary class="btn btn-outline btn-sm w-full justify-between gap-3">
         <span class="flex items-center gap-2">
           <span>Models</span>
           <span class="badge badge-sm">{totalCount()}</span>
         </span>
         <span class="text-xs text-base-content/60">
-          {selectedCount() > 0 ? `${selectedCount()} selected` : "Select to highlight"}
+          {selectedCount() > 0 ? `${selectedCount()} visible` : "Filter visibility"}
         </span>
       </summary>
-      <div class="dropdown-content z-20 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-box border border-base-300 bg-base-100 p-3 shadow-xl">
+      <div class="dropdown-content z-20 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-x-hidden rounded-box border border-base-300 bg-base-100 p-3 shadow-xl">
         <div class="mb-2 flex items-center justify-between gap-3">
           <div>
             <div class="font-semibold">Choose models</div>
-            <div class="text-xs text-base-content/60">Selected models are highlighted on the chart.</div>
+            <div class="text-sm text-base-content/60">Selecting models filters chart visibility.</div>
           </div>
           <button
             type="button"
@@ -54,7 +54,7 @@ export default function ModelList(props: ModelListProps) {
             Clear
           </button>
         </div>
-        <div class="menu menu-sm w-full max-h-96 overflow-y-auto p-0" role="group" aria-label="Model selection">
+        <div class="menu menu-sm w-full max-h-96 overflow-x-hidden overflow-y-auto p-0" role="group" aria-label="Model selection">
           <For each={sorted()}>
             {(point) => (
               <label class="label min-h-9 w-full max-w-full cursor-pointer justify-between gap-3 rounded-box px-2 py-1 hover:bg-base-200">
@@ -79,7 +79,7 @@ export default function ModelList(props: ModelListProps) {
           </For>
         </div>
         <Show when={sorted().length === 0 && unplottableSorted().length === 0}>
-          <p class="py-4 text-sm text-base-content/60" role="status">
+          <p class="py-4 text-base-content/70" role="status">
             No models match the current filter.
           </p>
         </Show>

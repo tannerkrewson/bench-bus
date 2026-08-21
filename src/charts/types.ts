@@ -11,7 +11,7 @@ import type { Component } from "solid-js";
 /** X-axis scale mode. Log is the default for cost axes spanning decades. */
 export type XScale = "log" | "linear";
 
-/** Provider family used for point color and label styling. */
+/** Provider family used for model metadata (not chart color identity). */
 export type ModelBrand =
   | "anthropic"
   | "openai"
@@ -25,6 +25,15 @@ export type ModelBrand =
   | "other";
 
 /** One plottable model point. x is estimated cost in USD, y is the score. */
+export interface PriceDiscountAnnotation {
+  /** Explicit percentage discount supplied by the pricing source (0–100). */
+  percentage: number;
+  /** Undiscounted workload cost in USD, from the same provider price. */
+  preDiscountX: number;
+  /** Provider that supplied both the pre-discount and effective prices. */
+  providerName?: string;
+}
+
 export interface PlottablePoint {
   /** Stable model identity (slug or table row id). */
   id: string;
@@ -34,6 +43,10 @@ export interface PlottablePoint {
   brand?: ModelBrand;
   /** Estimated benchmark workload cost, USD. Must be > 0 for log scale. */
   x: number;
+  /** Optional explicit source-backed discount annotation; never inferred by the chart. */
+  discount?: PriceDiscountAnnotation;
+  /** Stable key for an effort-group connection and its shared chart color. */
+  effortGroup?: string;
   /** Benchmark score. */
   y: number;
 }

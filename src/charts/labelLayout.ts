@@ -13,6 +13,7 @@ export interface ModelVariantMember {
   id: string;
   label: string;
   brand: ModelBrand;
+  effortGroup?: string;
   x: number;
   y: number;
 }
@@ -59,7 +60,7 @@ export function modelVariantParts(label: string): { baseLabel: string; effort: s
   return { baseLabel: match[1].trim(), effort: match[2].toLowerCase() };
 }
 
-/** Group only same-brand model families that expose multiple effort levels. */
+/** Group explicit effort groups or same-brand model families with multiple effort levels. */
 export function groupModelVariants(
   members: readonly ModelVariantMember[],
 ): ModelVariantGroup[] {
@@ -70,10 +71,12 @@ export function groupModelVariants(
 
   for (const member of members) {
     const parts = modelVariantParts(member.label);
-    if (!parts) continue;
-    const key = `${member.brand}:${parts.baseLabel.toLowerCase()}`;
+    if (!parts && !member.effortGroup) continue;
+    const key = member.effortGroup
+      ? `effort:${member.effortGroup}`
+      : `${member.brand}:${parts!.baseLabel.toLowerCase()}`;
     const group = groups.get(key) ?? {
-      baseLabel: parts.baseLabel,
+      baseLabel: parts?.baseLabel ?? member.effortGroup!,
       brand: member.brand,
       members: [],
     };
@@ -132,6 +135,16 @@ function overlaps(a: PositionedLabel, b: PositionedLabel): boolean {
     a.left + a.width + LABEL_GAP > b.left &&
     a.top < b.top + b.height + LABEL_GAP &&
     a.top + a.height + LABEL_GAP > b.top
+  );
+}
+
+function coversAnchor(label: PositionedLabel): boolean {
+  const radius = 7;
+  return (
+    label.anchorLeft >= label.left - radius &&
+    label.anchorLeft <= label.left + label.width + radius &&
+    label.anchorTop >= label.top - radius &&
+    label.anchorTop <= label.top + label.height + radius
   );
 }
 
@@ -205,10 +218,13 @@ export function layoutModelLabels(
           total + (overlaps(positioned, existing) ? 100_000 + overlapArea(positioned, existing) : 0),
         0,
       );
+      // A label may be clamped at an edge, but it must not cover its own dot.
+      // Keep a very large penalty so another nearby side wins whenever one fits.
+      const selfOverlap = coversAnchor(positioned) ? 100_000 : 0;
       const distance =
         Math.abs(candidate.left - (anchor.anchorLeft + LABEL_GAP + 4)) * 0.05 +
         Math.abs(candidate.top - (anchor.anchorTop - height / 2)) * 0.02;
-      const score = overlap + distance;
+      const score = overlap + selfOverlap + distance;
       if (score < bestScore) {
         best = positioned;
         bestScore = score;

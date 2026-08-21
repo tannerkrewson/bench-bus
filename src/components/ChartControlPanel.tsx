@@ -27,7 +27,7 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
       <legend class="px-2 text-sm font-semibold">Chart settings</legend>
       <div class="flex flex-wrap items-end gap-x-5 gap-y-4">
       <div>
-        <div id="chart-scale-group-label" class="mb-1 text-sm font-medium">
+        <div id="chart-scale-group-label" class="mb-1 text-base font-medium">
           Price axis scale
         </div>
         <div class="join" role="group" aria-labelledby="chart-scale-group-label">
@@ -59,7 +59,7 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
       </div>
 
       <div>
-        <label class="mb-1 block text-sm font-medium" for="benchmark-chart-search">
+        <label class="mb-1 block text-base font-medium" for="benchmark-chart-search">
           Filter models
         </label>
         <input
@@ -75,7 +75,7 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
 
       <Show when={props.showLabels && props.onShowLabelsChange}>
         <div>
-          <label class="label cursor-pointer gap-2 text-sm font-medium" for="chart-control-showLabels">
+          <label class="label cursor-pointer gap-2 text-base font-medium" for="chart-control-showLabels">
             <span>Model labels</span>
             <input
               id="chart-control-showLabels"
@@ -89,7 +89,7 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
         </div>
       </Show>
 
-      <div class="flex items-center gap-2 text-sm text-base-content/70" aria-label="Pareto frontier (dotted line)">
+      <div class="flex items-center gap-2 text-base text-base-content/70" aria-label="Pareto frontier (dotted line)">
         <span class="w-6 border-t-2 border-dashed border-primary" aria-hidden="true" />
         <span>Pareto frontier</span>
       </div>
@@ -100,7 +100,7 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
             <Switch>
             <Match when={spec.kind === "toggle"}>
               <div>
-                <label class="label cursor-pointer gap-2 text-sm font-medium">
+                <label class="label cursor-pointer gap-2 text-base font-medium">
                   <span>{spec.label}</span>
                   <input
                     type="checkbox"
@@ -111,13 +111,13 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
                   />
                 </label>
                 <Show when={spec.description}>
-                  <p class="text-xs text-base-content/60">{spec.description}</p>
+                  <p class="text-sm text-base-content/60">{spec.description}</p>
                 </Show>
               </div>
             </Match>
             <Match when={spec.kind === "slider"}>
               <div>
-                <label class="mb-1 block text-sm font-medium" for={`chart-control-${spec.id}`}>
+                <label class="mb-1 block text-base font-medium" for={`chart-control-${spec.id}`}>
                   {spec.label}
                   {spec.kind === "slider" && spec.format
                     ? `: ${spec.format(Number(props.controls()[spec.id] ?? spec.default))}`
@@ -143,7 +143,7 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
             </Match>
             <Match when={spec.kind === "select"}>
               <div>
-                <label class="mb-1 block text-sm font-medium" for={`chart-control-${spec.id}`}>
+                <label class="mb-1 block text-base font-medium" for={`chart-control-${spec.id}`}>
                   {spec.label}
                 </label>
                 <select

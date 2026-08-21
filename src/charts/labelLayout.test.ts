@@ -20,6 +20,14 @@ describe("layoutModelLabels", () => {
     expect(label!.top + label!.height).toBeLessThanOrEqual(bounds.bottom);
   });
 
+  it("keeps an edge label clear of its own dot", () => {
+    const [label] = layoutModelLabels(
+      [{ id: "edge", label: "Edge model", anchorLeft: 305, anchorTop: 100, color: "red" }],
+      bounds,
+    );
+    expect(label!.left).toBeLessThan(305 - 7);
+  });
+
   it("spreads labels with the same anchor when space is available", () => {
     const labels = layoutModelLabels(
       [

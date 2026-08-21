@@ -1,5 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { formatCompact } from "./format";
+import { formatCompact, formatDollarTick, formatPercentTick } from "./format";
+
+describe("axis formatters", () => {
+  it("formats percent ticks without duplicate units", () => {
+    expect(formatPercentTick(0)).toBe("0%");
+    expect(formatPercentTick(72.5)).toBe("72.5%");
+  });
+
+  it("formats dollar ticks across small and large values", () => {
+    expect(formatDollarTick(0)).toBe("$0");
+    expect(formatDollarTick(0.005)).toBe("$5.0e-3");
+    expect(formatDollarTick(1200)).toBe("$1.2k");
+  });
+});
 
 describe("formatCompact", () => {
   it("formats small numbers unchanged", () => {

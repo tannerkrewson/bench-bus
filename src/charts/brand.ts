@@ -29,9 +29,21 @@ export function inferModelBrand(...parts: readonly (string | undefined)[]): Mode
   return "other";
 }
 
+/** Stable colors for connected effort groups; provider identity is not encoded. */
+const EFFORT_GROUP_PALETTE = [
+  "#2563eb", "#c2410c", "#15803d", "#7c3aed", "#be123c", "#0f766e", "#a16207", "#4338ca",
+] as const;
+
+export function effortGroupColor(groupKey: string, dark: boolean): string {
+  let hash = 0;
+  for (let index = 0; index < groupKey.length; index += 1) hash = (hash * 31 + groupKey.charCodeAt(index)) | 0;
+  const color = EFFORT_GROUP_PALETTE[Math.abs(hash) % EFFORT_GROUP_PALETTE.length]!;
+  return dark && color === "#a16207" ? "#facc15" : color;
+}
+
 /**
- * Brand colors are intentionally recognizable, with neutral brands adapting
- * to the active theme so black OpenAI points remain visible in dark mode.
+ * Legacy metadata colors retained for labels that do not belong to an effort
+ * group. They are not used for dot or connector series.
  */
 export function modelBrandColor(brand: ModelBrand, dark: boolean): string {
   switch (brand) {

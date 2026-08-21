@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AA_FIXTURE_RECORDS, aaDemoAdapter } from "./fixtures";
-import { buildChartPlot, paretoFrontier, toHighlightY, toPlotSeries } from "./plotData";
+import { buildChartPlot, explicitDiscountForPoint, paretoFrontier, toHighlightY, toPlotSeries } from "./plotData";
 
 const controls = { pricingMode: "cheapest", cacheHitRate: 0.9 };
 
@@ -22,6 +22,18 @@ describe("buildChartPlot", () => {
     const build = buildChartPlot(AA_FIXTURE_RECORDS, aaDemoAdapter, controls, "gemini");
     expect(build.entries.map((e) => e.point.id)).toEqual(["gemini-3.7-flash"]);
     expect(build.filteredOut).toBe(3);
+  });
+});
+
+describe("explicitDiscountForPoint", () => {
+  it("accepts only explicit positive percentage discounts", () => {
+    const point = {
+      id: "discounted", label: "Discounted", x: 6, y: 70,
+      discount: { percentage: 40, preDiscountX: 10, providerName: "Provider A" },
+    };
+    expect(explicitDiscountForPoint(point)).toEqual(point.discount);
+    expect(explicitDiscountForPoint({ ...point, discount: { percentage: 0, preDiscountX: 10 } })).toBeNull();
+    expect(explicitDiscountForPoint({ ...point, discount: { percentage: 40, preDiscountX: -1 } })).toBeNull();
   });
 });
 

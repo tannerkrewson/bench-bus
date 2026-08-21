@@ -74,20 +74,23 @@ export default function AaChartSection(props: AaChartSectionProps) {
     };
   });
 
-  const selectedId = createMemo<string | null>(() => {
-    const ids = selectedIds();
-    return ids.length > 0 ? (ids[ids.length - 1] as string) : null;
-  });
+  // Visibility filtering is handled by `build`; there is no second selected
+  // highlight layer now that unselected models are omitted from the chart.
+  const selectedId = createMemo<string | null>(() => null);
 
   const hoveredInfo = createMemo<{ title: string; lines: readonly TooltipLine[] } | null>(() => {
     const h = hovered();
     if (!h) return null;
     const entry = build().entries.find((e) => e.point.id === h.id);
     if (!entry) return null;
-    return {
-      title: entry.point.label,
-      lines: aaControlledTooltipLines(entry.record, entry.point, controls()),
-    };
+    const lines = [...aaControlledTooltipLines(entry.record, entry.point, controls())];
+    if (entry.point.discount) {
+      lines.push(
+        { label: "Pre-discount cost", value: `$${entry.point.discount.preDiscountX.toFixed(2)}` },
+        { label: "Effective discount", value: `${entry.point.discount.percentage}%${entry.point.discount.providerName ? ` (${entry.point.discount.providerName})` : ""}` },
+      );
+    }
+    return { title: entry.point.label, lines };
   });
 
   const emitState = () => {

@@ -2,6 +2,7 @@ import type {
   BenchmarkChartAdapter,
   ChartPlotBuild,
   PlottablePoint,
+  PriceDiscountAnnotation,
   PricingControlState,
 } from "./types";
 
@@ -45,6 +46,16 @@ export function buildChartPlot<TRecord>(
  * dropped (they are unrepresentable); callers get the dropped ids so the UI
  * can explain why a point disappeared after a scale switch.
  */
+export function explicitDiscountForPoint(point: PlottablePoint): PriceDiscountAnnotation | null {
+  const discount = point.discount;
+  if (
+    !discount || !Number.isFinite(discount.preDiscountX) || discount.preDiscountX <= 0 ||
+    !Number.isFinite(discount.percentage) || discount.percentage <= 0 || discount.percentage >= 100 ||
+    !(point.x > 0)
+  ) return null;
+  return discount;
+}
+
 export function toPlotSeries(
   points: readonly PlottablePoint[],
   scale: "log" | "linear",
