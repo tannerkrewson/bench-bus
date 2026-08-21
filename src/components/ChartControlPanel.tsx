@@ -6,6 +6,8 @@ export interface ChartControlPanelProps {
   onScaleChange: (scale: XScale) => void;
   query: () => string;
   onQueryChange: (query: string) => void;
+  /** Stable benchmark namespace used to keep control IDs unique on pages with multiple charts. */
+  benchmarkId: string;
   specs: readonly PricingControlSpec[];
   controls: () => Readonly<PricingControlState>;
   onControlChange: (id: string, value: number | boolean | string) => void;
@@ -22,15 +24,17 @@ export interface ChartControlPanelProps {
  * explicit labels.
  */
 export default function ChartControlPanel(props: ChartControlPanelProps) {
+  const controlId = (name: string) => `chart-${props.benchmarkId}-${name}`;
+
   return (
     <fieldset class="rounded-box border border-base-300 bg-base-200/40 p-4" data-testid="chart-controls">
       <legend class="px-2 text-sm font-semibold">Chart settings</legend>
       <div class="flex flex-wrap items-end gap-x-5 gap-y-4">
       <div>
-        <div id="chart-scale-group-label" class="mb-1 text-base font-medium">
+        <div id={controlId("scale-group-label")} class="mb-1 text-base font-medium">
           Price axis scale
         </div>
-        <div class="join" role="group" aria-labelledby="chart-scale-group-label">
+        <div class="join" role="group" aria-labelledby={controlId("scale-group-label")}>
           <button
             type="button"
             class="btn btn-sm join-item"
@@ -59,11 +63,11 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
       </div>
 
       <div>
-        <label class="mb-1 block text-base font-medium" for="benchmark-chart-search">
+        <label class="mb-1 block text-base font-medium" for={controlId("search")}>
           Filter models
         </label>
         <input
-          id="benchmark-chart-search"
+          id={controlId("search")}
           type="search"
           class="input input-sm input-bordered w-56"
           placeholder="Search by name…"
@@ -75,10 +79,10 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
 
       <Show when={props.showLabels && props.onShowLabelsChange}>
         <div>
-          <label class="label cursor-pointer gap-2 text-base font-medium" for="chart-control-showLabels">
+          <label class="label cursor-pointer gap-2 text-base font-medium" for={controlId("show-labels")}>
             <span>Model labels</span>
             <input
-              id="chart-control-showLabels"
+              id={controlId("show-labels")}
               type="checkbox"
               class="toggle toggle-sm toggle-primary"
               aria-label="Show model labels"
@@ -89,7 +93,7 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
         </div>
       </Show>
 
-      <div class="flex items-center gap-2 text-base text-base-content/70" aria-label="Pareto frontier (dotted line)">
+      <div class="flex items-center gap-2 text-base text-base-content/70" role="img" aria-label="Pareto frontier (dotted line)">
         <span class="w-6 border-t-2 border-dashed border-primary" aria-hidden="true" />
         <span>Pareto frontier</span>
       </div>
@@ -100,9 +104,10 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
             <Switch>
             <Match when={spec.kind === "toggle"}>
               <div>
-                <label class="label cursor-pointer gap-2 text-base font-medium">
+                <label class="label cursor-pointer gap-2 text-base font-medium" for={controlId(`control-${spec.id}`)}>
                   <span>{spec.label}</span>
                   <input
+                    id={controlId(`control-${spec.id}`)}
                     type="checkbox"
                     class="toggle toggle-sm toggle-primary"
                     aria-label={spec.label}
@@ -117,7 +122,7 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
             </Match>
             <Match when={spec.kind === "slider"}>
               <div>
-                <label class="mb-1 block text-base font-medium" for={`chart-control-${spec.id}`}>
+                <label class="mb-1 block text-base font-medium" for={controlId(`control-${spec.id}`)}>
                   {spec.label}
                   {spec.kind === "slider" && spec.format
                     ? `: ${spec.format(Number(props.controls()[spec.id] ?? spec.default))}`
@@ -125,7 +130,7 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
                 </label>
                 <Show when={spec.kind === "slider"}>
                   <input
-                    id={`chart-control-${spec.id}`}
+                    id={controlId(`control-${spec.id}`)}
                     type="range"
                     class="range range-sm range-primary w-48"
                     min={spec.kind === "slider" ? spec.min : 0}
@@ -143,11 +148,11 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
             </Match>
             <Match when={spec.kind === "select"}>
               <div>
-                <label class="mb-1 block text-base font-medium" for={`chart-control-${spec.id}`}>
+                <label class="mb-1 block text-base font-medium" for={controlId(`control-${spec.id}`)}>
                   {spec.label}
                 </label>
                 <select
-                  id={`chart-control-${spec.id}`}
+                  id={controlId(`control-${spec.id}`)}
                   class="select select-sm select-bordered"
                   aria-label={spec.label}
                   value={String(props.controls()[spec.id] ?? spec.default)}

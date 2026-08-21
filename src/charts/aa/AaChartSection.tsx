@@ -129,6 +129,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
           <p class="mt-1 text-sm text-base-content/70">{aaAdapter.subtitle}</p>
         </header>
         <ChartControlPanel
+          benchmarkId={aaAdapter.benchmarkId}
           scale={scale}
           onScaleChange={setScale}
           query={query}

@@ -35,7 +35,7 @@ describe("CursorBenchChartSection", () => {
     ) as HTMLInputElement;
     expect(toggle).not.toBeNull();
     expect(toggle.checked).toBe(false);
-    expect((container.querySelector("#chart-control-showLabels") as HTMLInputElement).checked).toBe(true);
+    expect((container.querySelector("#chart-cursor-show-labels") as HTMLInputElement).checked).toBe(true);
     dispose();
   });
 
@@ -49,7 +49,7 @@ describe("CursorBenchChartSection", () => {
       />
     ));
 
-    const search = container.querySelector("#benchmark-chart-search") as HTMLInputElement;
+    const search = container.querySelector("#chart-cursor-search") as HTMLInputElement;
     expect(search.value).toBe("opus");
 
     const linearBtn = [...container.querySelectorAll("button")].find(
@@ -69,16 +69,26 @@ describe("CursorBenchChartSection", () => {
     dispose();
   });
 
-  it("exposes the token-mix slider and assumption summary only when enabled", () => {
+  it("hides the token-mix slider until enabled, then retains its state", () => {
     const { container, dispose } = mount(() => (
       <CursorBenchChartSection records={() => CURSOR_FIXTURE_RECORDS} />
     ));
-    expect(container.querySelector(`#chart-control-${TOKEN_MIX_CONTROL_ID}`)).not.toBeNull();
+    expect(container.querySelector(`#chart-cursor-control-${TOKEN_MIX_CONTROL_ID}`)).toBeNull();
     expect(container.querySelector("[data-testid='cursor-token-rate-assumptions']")).toBeNull();
     const toggle = container.querySelector(
       "[data-testid='chart-controls'] input[aria-label^='Include Cursor Token Rate']",
     ) as HTMLInputElement;
     toggle.click();
+    const slider = container.querySelector(
+      `#chart-cursor-control-${TOKEN_MIX_CONTROL_ID}`,
+    ) as HTMLInputElement;
+    expect(slider).not.toBeNull();
+    slider.value = "25";
+    slider.dispatchEvent(new Event("input", { bubbles: true }));
+    toggle.click();
+    expect(container.querySelector(`#chart-cursor-control-${TOKEN_MIX_CONTROL_ID}`)).toBeNull();
+    toggle.click();
+    expect((container.querySelector(`#chart-cursor-control-${TOKEN_MIX_CONTROL_ID}`) as HTMLInputElement).value).toBe("25");
     expect(container.querySelector("[data-testid='cursor-token-rate-assumptions']")).not.toBeNull();
     dispose();
   });

@@ -25,7 +25,7 @@ describe("AaChartSection", () => {
     expect(container.textContent).toContain("Intelligence Index score versus estimated benchmark workload cost per task.");
     expect(container.querySelector("canvas")).not.toBeNull();
     expect(
-      container.querySelector("input#chart-control-pricingMode, #chart-control-pricingMode"),
+      container.querySelector("input#chart-aa-control-pricingMode, #chart-aa-control-pricingMode"),
     ).not.toBeNull();
     // 3 plotted + 1 unplottable (no providers) in the default mode.
     const checkboxes = container.querySelectorAll("[data-testid='model-list'] input[type='checkbox']");
@@ -37,13 +37,13 @@ describe("AaChartSection", () => {
     );
 
     // The cache-hit control is relevant only to AA listed pricing.
-    expect(container.querySelector("#chart-control-cacheHitRate")).toBeNull();
-    const pricingMode = container.querySelector("#chart-control-pricingMode") as HTMLSelectElement;
+    expect(container.querySelector("#chart-aa-control-cacheHitRate")).toBeNull();
+    const pricingMode = container.querySelector("#chart-aa-control-pricingMode") as HTMLSelectElement;
     pricingMode.value = "listed";
     pricingMode.dispatchEvent(new Event("change", { bubbles: true }));
-    expect(container.querySelector("#chart-control-cacheHitRate")).not.toBeNull();
+    expect(container.querySelector("#chart-aa-control-cacheHitRate")).not.toBeNull();
     expect(
-      (container.querySelector("#chart-control-cacheHitRate") as HTMLInputElement).value,
+      (container.querySelector("#chart-aa-control-cacheHitRate") as HTMLInputElement).value,
     ).toBe("0.9");
     dispose();
   });

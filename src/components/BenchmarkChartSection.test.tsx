@@ -29,10 +29,10 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     expect(container.querySelector("canvas")).not.toBeNull();
 
     // Pricing controls from the adapter.
-    expect(container.querySelector("#chart-control-pricingMode")).not.toBeNull();
-    expect(container.querySelector("#chart-control-cacheHitRate")).not.toBeNull();
+    expect(container.querySelector("#chart-aa-demo-control-pricingMode")).not.toBeNull();
+    expect(container.querySelector("#chart-aa-demo-control-cacheHitRate")).not.toBeNull();
     expect(
-      (container.querySelector("#chart-control-cacheHitRate") as HTMLInputElement).value,
+      (container.querySelector("#chart-aa-demo-control-cacheHitRate") as HTMLInputElement).value,
     ).toBe("0.9");
 
     // 3 plotted + 1 unplottable (no providers) in the model list.
@@ -62,14 +62,14 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     expect(logBtn.getAttribute("aria-pressed")).toBe("true");
 
     // Establish selection + query first.
-    const search = container.querySelector("#benchmark-chart-search") as HTMLInputElement;
+    const search = container.querySelector("#chart-aa-demo-search") as HTMLInputElement;
     search.value = "gemini";
     search.dispatchEvent(new Event("input", { bubbles: true }));
 
     linearBtn.click();
     expect(linearBtn.getAttribute("aria-pressed")).toBe("true");
     expect(logBtn.getAttribute("aria-pressed")).toBe("false");
-    expect((container.querySelector("#benchmark-chart-search") as HTMLInputElement).value).toBe(
+    expect((container.querySelector("#chart-aa-demo-search") as HTMLInputElement).value).toBe(
       "gemini",
     );
     const last = states[states.length - 1]!;
@@ -109,7 +109,7 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
       />
     ));
 
-    expect((container.querySelector("#chart-control-cacheHitRate") as HTMLInputElement).value).toBe(
+    expect((container.querySelector("#chart-aa-demo-control-cacheHitRate") as HTMLInputElement).value).toBe(
       "0.5",
     );
     const linearBtn = [...container.querySelectorAll("button")].find(
@@ -160,6 +160,36 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
   });
 });
 
+describe("Chart controls across benchmark sections", () => {
+  it("namespaces IDs and preserves control labels when both charts are mounted", () => {
+    const { container, dispose } = mount(() => (
+      <>
+        <BenchmarkChartSection adapter={aaDemoAdapter} records={() => AA_FIXTURE_RECORDS} />
+        <BenchmarkChartSection adapter={cursorDemoAdapter} records={() => CURSOR_FIXTURE_RECORDS} />
+      </>
+    ));
+
+    const controls = [...container.querySelectorAll("[data-testid='chart-controls']")];
+    const ids = controls.flatMap((panel) =>
+      [...panel.querySelectorAll<HTMLElement>("[id]")].map((element) => element.id),
+    );
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toContain("chart-aa-demo-search");
+    expect(ids).toContain("chart-cursor-demo-search");
+
+    for (const label of container.querySelectorAll<HTMLLabelElement>("[data-testid='chart-controls'] label[for]")) {
+      const control = document.getElementById(label.htmlFor);
+      expect(control).not.toBeNull();
+    }
+    expect(controls.every((panel) => panel.querySelector("[role='group'][aria-labelledby]") !== null)).toBe(true);
+    expect(controls.every((panel) => panel.querySelector("[role='img'][aria-label='Pareto frontier (dotted line)']") !== null)).toBe(true);
+    expect(container.querySelector("[data-testid='chart-decorations']")?.getAttribute("aria-hidden")).toBe("true");
+    const crowns = container.querySelectorAll("[data-testid='pareto-crown']");
+    crowns.forEach((crown) => expect(crown.getAttribute("aria-hidden")).toBe("true"));
+    dispose();
+  });
+});
+
 describe("BenchmarkChartSection (Cursor fixture shape)", () => {
   it("applies the surcharge toggle and reports state changes", () => {
     const states: ChartViewState[] = [];
@@ -175,7 +205,7 @@ describe("BenchmarkChartSection (Cursor fixture shape)", () => {
       "input[aria-label^='Third-party surcharge']",
     ) as HTMLInputElement;
     expect(toggle.checked).toBe(false);
-    const labels = container.querySelector("#chart-control-showLabels") as HTMLInputElement;
+    const labels = container.querySelector("#chart-cursor-demo-show-labels") as HTMLInputElement;
     expect(labels.checked).toBe(true);
     labels.click();
     expect(labels.checked).toBe(false);

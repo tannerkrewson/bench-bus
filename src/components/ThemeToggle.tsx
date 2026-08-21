@@ -171,7 +171,7 @@ export default function ThemeToggle() {
   const modeLabel = () => themeMode(theme());
 
   return (
-    <div class="join" aria-label="Theme controls">
+    <div class="join" role="group" aria-label="Theme controls">
       <button
         type="button"
         class="btn btn-sm btn-outline join-item"

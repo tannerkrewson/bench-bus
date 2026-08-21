@@ -553,13 +553,27 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       data-testid="benchmark-scatter"
     >
       <div ref={container} class="w-full" data-testid="benchmark-scatter-plot" />
-      <svg class="pointer-events-none absolute inset-0 z-1 overflow-visible" aria-label="Pareto frontier markers" data-testid="chart-decorations">
+      <svg
+        class="pointer-events-none absolute inset-0 z-1 overflow-visible"
+        aria-hidden="true"
+        data-testid="chart-decorations"
+      >
         <Show when={hoveredPosition()}>
           {(position) => <circle cx={position().left} cy={position().top} r="6" fill="none" stroke="currentColor" stroke-width="2" data-testid="hovered-dot" />}
         </Show>
         <For each={pointDecorations()}>
           {(point) => (
-            <text x={point.left} y={point.top - 10} fill={point.color} text-anchor="middle" font-size="13" aria-label={`${point.id} is on the Pareto frontier`} data-testid="pareto-crown">♛</text>
+            <text
+              x={point.left}
+              y={point.top - 10}
+              fill={point.color}
+              text-anchor="middle"
+              font-size="13"
+              aria-hidden="true"
+              data-testid="pareto-crown"
+            >
+              ♛
+            </text>
           )}
         </For>
       </svg>

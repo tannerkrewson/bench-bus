@@ -16,6 +16,17 @@ afterEach(() => {
 });
 
 describe("ThemeToggle", () => {
+  it("exposes the theme buttons as a labeled keyboard-accessible group", () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const dispose = render(() => <ThemeToggle />, container);
+    const group = container.querySelector("[role='group'][aria-label='Theme controls']");
+    expect(group).not.toBeNull();
+    expect(group?.querySelectorAll("button")).toHaveLength(2);
+    dispose();
+    container.remove();
+  });
+
   it("uses caramellatte for a fresh light preference", async () => {
     const container = document.createElement("div");
     document.body.appendChild(container);

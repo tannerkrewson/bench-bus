@@ -5,6 +5,7 @@ import { buildChartPlot } from "../charts/plotData";
 import type {
   BenchmarkChartAdapter,
   ChartViewState,
+  PricingControlSpec,
   PricingControlState,
   TooltipLine,
 } from "../charts/types";
@@ -24,6 +25,11 @@ export interface BenchmarkChartSectionProps<TRecord> {
    * (e.g. history.replaceState with chartStateToQueryString).
    */
   onStateChange?: (state: Readonly<ChartViewState>) => void;
+  /** Optional visibility predicate for controls that depend on another control. */
+  isControlVisible?: (
+    spec: PricingControlSpec,
+    controls: Readonly<PricingControlState>,
+  ) => boolean;
 }
 
 /**
@@ -116,9 +122,11 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
           onScaleChange={setScale}
           query={query}
           onQueryChange={setQuery}
+          benchmarkId={props.adapter.benchmarkId}
           specs={props.adapter.controlSpecs}
           controls={controls}
           onControlChange={setControl}
+          isControlVisible={(spec) => props.isControlVisible?.(spec, controls()) ?? true}
           showLabels={showLabels}
           onShowLabelsChange={setShowLabels}
         />

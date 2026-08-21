@@ -9,6 +9,7 @@ import type { ChartViewState, PricingControlState } from "../types";
 import {
   CURSOR_BENCH_ID,
   SURCHARGE_CONTROL_ID,
+  TOKEN_MIX_CONTROL_ID,
   cursorBenchAdapter,
   cursorEstimateTooltipLines,
   surchargeTooltipLine,
@@ -60,6 +61,9 @@ export default function CursorBenchChartSection(props: CursorBenchChartSectionPr
           setControls(state.controls);
           props.onStateChange?.(state);
         }}
+        isControlVisible={(spec, state) =>
+          spec.id !== TOKEN_MIX_CONTROL_ID || Boolean(state[SURCHARGE_CONTROL_ID])
+        }
       />
       <Show when={Boolean(controls()[SURCHARGE_CONTROL_ID])}>
         <div class="alert mt-3" role="note" data-testid="cursor-token-rate-assumptions">
