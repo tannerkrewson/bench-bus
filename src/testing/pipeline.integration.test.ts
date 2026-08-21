@@ -149,11 +149,10 @@ describe("offline end-to-end pipeline: collect -> store -> resolve -> compile ->
     expect(opus?.tokensPerTask).toBe(1_500_000);
 
     // 3. Store all three sources in a real DataBranchStore (full validation).
-    // NOTE: collector CLIs emit source payloads; the envelope wrapping shown
-    // here (makeSnapshotEnvelope) is exactly the step the production
-    // collect-and-store action must perform — see report follow-up F1: the
-    // composite action currently pipes collector output into `snapshot write`
-    // without this wrapping, which would fail at the store step.
+    // Collector CLIs emit source payloads; the store normalizes them to
+    // envelopes itself (normalizeSnapshotInput), so the production
+    // collect-and-store action can pipe collector output straight into
+    // `snapshot write` — regression-tested below.
     store = new DataBranchStore(await dirPromise);
     await store.init();
     const storedAa = await store.writeSnapshot(

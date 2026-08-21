@@ -57,6 +57,37 @@ describe("DataBranchStore.init", () => {
 });
 
 describe("DataBranchStore.writeSnapshot", () => {
+  it("accepts raw collector source payloads and normalizes them to envelopes", async () => {
+    // Regression: the Actions composite action pipes collector CLI output
+    // (source payload shape) directly into snapshot write. The store must
+    // normalize it instead of failing strict envelope validation.
+    const store = new DataBranchStore(root);
+    await store.init();
+    const collectorPayload = {
+      observedAt: T1,
+      source: { source: "aa" as const, modelPageUrl: "https://artificialanalysis.ai/models/x" },
+      records: [validAaModel, validAaModel2],
+    };
+    const stored = await store.writeSnapshot(collectorPayload);
+    expect(stored.path).toBe(snapshotPath("aa", 1, T1));
+    expect(stored.manifest.latestKnownGood).toBe(T1);
+    const resolved = await store.resolveSnapshot("aa", T2);
+    expect(resolved?.envelope.observedAt).toBe(T1);
+    expect(resolved?.envelope.records).toHaveLength(2);
+  });
+
+  it("still rejects payloads with an unknown nested source", async () => {
+    const store = new DataBranchStore(root);
+    await store.init();
+    await expect(
+      store.writeSnapshot({
+        observedAt: T1,
+        source: { source: "unknown-source" },
+        records: [validAaModel],
+      }),
+    ).rejects.toThrow();
+  });
+
   it("persists the first snapshot at a deterministic path with a correct manifest", async () => {
     const store = new DataBranchStore(root);
     await store.init();

@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import {
   openRouterModelPricingSchema,
+  normalizeSnapshotInput,
   resolveManifestEntryAt,
   snapshotEnvelopeSchema,
   snapshotManifestSchema,
@@ -158,7 +159,7 @@ export class DataBranchStore {
     envelope: unknown,
     options: WriteSnapshotOptions = {},
   ): Promise<StoredSnapshot> {
-    const parsedEnvelope = snapshotEnvelopeSchema.parse(envelope);
+    const parsedEnvelope = snapshotEnvelopeSchema.parse(normalizeSnapshotInput(envelope));
     const records = validateRecords(parsedEnvelope.source, parsedEnvelope.records);
     if (records.length === 0 && !options.allowEmpty) {
       throw new Error(

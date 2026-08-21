@@ -1,4 +1,7 @@
-import type { CursorEvalRecord } from "../../schemas";
+import {
+  CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS,
+  type CursorEvalRecord,
+} from "../../schemas";
 
 /**
  * Optional Cursor third-party-model surcharge support.
@@ -10,8 +13,14 @@ import type { CursorEvalRecord } from "../../schemas";
  * separately here so chart code can toggle it on/off.
  */
 
-/** Cursor's flat surcharge for third-party models, USD per million tokens. */
-export const CURSOR_THIRD_PARTY_SURCHARGE_USD_PER_MILLION_TOKENS = 0.25;
+/**
+ * Cursor's flat surcharge for third-party models, USD per million tokens.
+ * Single source of truth is CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS in
+ * schemas/derived.ts; re-exported under this module's longer historical name
+ * so existing callers are unaffected.
+ */
+export const CURSOR_THIRD_PARTY_SURCHARGE_USD_PER_MILLION_TOKENS: number =
+  CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS;
 
 /** Surcharge for one benchmark task, given the task's token usage. */
 export function computeThirdPartySurchargeUsd(

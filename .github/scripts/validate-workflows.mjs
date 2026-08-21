@@ -40,10 +40,15 @@ const check = (label, ok) => {
 async function main() {
   const workflowFiles = (await readdir(workflowsDir)).filter((f) => f.endsWith(".yml"));
 
+  // The three collection workflows must exist; other workflows owned by
+  // separate issues (ci.yml, deploy.yml) are allowed but not validated here.
+  const nonCollectionWorkflows = new Set(["ci.yml", "deploy.yml"]);
+  const collectionWorkflows = workflowFiles.filter((f) => !nonCollectionWorkflows.has(f));
+
   check(
-    "exactly the three collection workflows exist (no Pages deploy workflow here)",
-    workflowFiles.length === 3 &&
-      expectations.every((e) => workflowFiles.includes(e.file)),
+    "exactly the three collection workflows exist (besides ci/deploy owned elsewhere)",
+    collectionWorkflows.length === 3 &&
+      expectations.every((e) => collectionWorkflows.includes(e.file)),
   );
 
   for (const expectation of expectations) {

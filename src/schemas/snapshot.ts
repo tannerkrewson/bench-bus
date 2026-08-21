@@ -65,6 +65,39 @@ export function makeSnapshotEnvelope(input: {
 }
 
 /**
+ * Accept either a full SnapshotEnvelope or a collector source payload and
+ * return envelope-shaped input for strict validation.
+ *
+ * Collectors emit source payloads (`{observedAt, source: {source, ...meta},
+ * records}`); the data-branch store persists envelopes. The GitHub Actions
+ * composite action pipes collector `--out` directly into `snapshot write`, so
+ * the store accepts both shapes: anything already envelope-shaped passes
+ * through untouched; a recognizable source payload is wrapped via
+ * {@link makeSnapshotEnvelope}; anything else passes through and fails strict
+ * envelope validation (fail closed).
+ */
+export function normalizeSnapshotInput(input: unknown): unknown {
+  if (typeof input !== "object" || input === null) return input;
+  const record = input as Record<string, unknown>;
+  if (record.schemaVersion !== undefined) return input;
+  const source = record.source;
+  if (
+    typeof source === "object" &&
+    source !== null &&
+    typeof (source as Record<string, unknown>).source === "string" &&
+    typeof record.observedAt === "string" &&
+    Array.isArray(record.records)
+  ) {
+    return makeSnapshotEnvelope({
+      source: (source as Record<string, unknown>).source as SnapshotSource,
+      observedAt: record.observedAt,
+      records: record.records as never[],
+    });
+  }
+  return input;
+}
+
+/**
  * One entry in the data-branch snapshot manifest: an immutable snapshot file
  * at a deterministic path, e.g. `snapshots/aa/2026-08-21T015342Z.json`.
  */
