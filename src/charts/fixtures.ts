@@ -192,8 +192,6 @@ export const aaDemoAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
     { label: "Workload input", value: `${(record.canonicalTokens.input / 1e6).toFixed(1)}M tok` },
     { label: "Workload output", value: `${(record.canonicalTokens.output / 1e6).toFixed(1)}M tok` },
   ],
-  disclaimer:
-    "Costs are estimates from canonical benchmark token counts and snapshot pricing, not guaranteed future prices. Cache-write volume is unknown and omitted from listed-price estimates.",
 };
 
 export const cursorDemoAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord> = {
@@ -237,5 +235,4 @@ export const cursorDemoAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord> 
     { label: "Avg cost/task", value: `$${point.x.toFixed(2)}` },
     { label: "Provider", value: record.provider },
   ],
-  disclaimer: "CursorBench scores are published by cursor.com/evals; costs are per-task averages as displayed there.",
 };

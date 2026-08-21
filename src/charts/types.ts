@@ -129,8 +129,6 @@ export interface BenchmarkChartAdapter<TRecord> {
     point: PlottablePoint,
     controls: Readonly<PricingControlState>,
   ): readonly TooltipLine[];
-  /** Methodology/limitations note rendered below the chart, if any. */
-  readonly disclaimer?: string;
 }
 
 /** Full serializable interaction state of one benchmark chart. */

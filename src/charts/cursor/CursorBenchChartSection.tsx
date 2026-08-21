@@ -54,20 +54,12 @@ export default function CursorBenchChartSection(props: CursorBenchChartSectionPr
         }
       />
       <Show when={Boolean(controls()[SURCHARGE_CONTROL_ID])}>
-        <div class="alert mt-3" role="note" data-testid="cursor-token-rate-assumptions">
-          <div>
-            <p class="font-medium flex items-center gap-2">
-              Cursor Token Rate estimate
-              <span class="badge badge-warning" data-testid="cursor-surcharge-included">Surcharge included</span>
-            </p>
-            <p class="text-sm">
-              The chart subtracts known completion cost from each published task cost, then estimates hidden non-output and total processed tokens.
-              The selected Token mix assumption, model-specific rate, and fee are shown in each point tooltip.
-            </p>
-            <p class="text-sm text-base-content/70">
-              This is an assumption, not a bill, and the slider is not a measured cache ratio. Rates span cache-heavy to input/write-heavy endpoints; the tooltip shows the full possible fee and adjusted-cost range. First-party Cursor models are exempt.
-            </p>
-          </div>
+        <div class="alert mt-3" role="status" data-testid="cursor-token-rate-assumptions">
+          <p class="flex flex-wrap items-center gap-2">
+            <span class="font-medium">Cursor Token Rate estimate enabled.</span>
+            <span class="badge badge-warning" data-testid="cursor-surcharge-included">Surcharge included</span>
+            <span class="text-sm text-base-content/70">Applies to third-party models; see the methodology below.</span>
+          </p>
         </div>
       </Show>
     </div>

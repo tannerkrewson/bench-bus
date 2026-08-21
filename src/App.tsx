@@ -12,8 +12,6 @@ import type { ChartViewState, PricingControlSpec, PricingControlState } from "./
 import { TimeTravelProvider, useTimeTravel } from "./history/TimeTravelContext";
 import { timeTravelStateFromParams, mergeTimeTravelStateIntoParams } from "./history/urlState";
 import TimeTravelControl from "./controls/TimeTravelControl";
-import AaMethodologyPanel from "./methodology/AaMethodologyPanel";
-import CursorMethodologyPanel from "./methodology/CursorMethodologyPanel";
 import ThemeToggle from "./components/ThemeToggle";
 import { UnifiedLimitationsPanel } from "./methodology/MethodologyPanel";
 import {
@@ -90,7 +88,6 @@ const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
         )}
         onStateChange={(state) => syncChartStateToUrl(state, "aa")}
       />
-      <AaMethodologyPanel />
       <CursorBenchChartSection
         records={() => props.bundle.cursor?.records ?? []}
         initialState={initialChartStateFor(
@@ -100,7 +97,6 @@ const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
         )}
         onStateChange={(state) => syncChartStateToUrl(state, "cursor")}
       />
-      <CursorMethodologyPanel />
       <UnifiedLimitationsPanel />
       {timeTravel.view().preHistory || (!props.bundle.aa && !props.bundle.cursor) ? (
         <p role="status" class="text-warning">
@@ -152,19 +148,23 @@ const App: Component = () => {
 
           <Charts bundle={bundle()} />
 
-          <footer class="mt-12 flex flex-col items-center gap-1 px-4 py-8 text-center text-sm">
-            <p class="whitespace-nowrap">
-              Bench Bus by{" "}
-              <a
-                class="link link-hover font-semibold"
-                href="https://tannerkrewson.com"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Tanner Krewson
-              </a>
-            </p>
-            <p>
+          <footer
+            class="mt-6 border-t border-base-300 px-4 py-4 text-center text-sm text-base-content/80"
+            aria-label="Site information"
+          >
+            <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+              <span>
+                Bench Bus by{" "}
+                <a
+                  class="link link-hover font-semibold"
+                  href="https://tannerkrewson.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Tanner Krewson
+                </a>
+              </span>
+              <span aria-hidden="true">·</span>
               <a
                 class="link link-hover"
                 href="https://github.com/tannerkrewson/bench-bus"
@@ -173,7 +173,7 @@ const App: Component = () => {
               >
                 View on GitHub
               </a>
-            </p>
+            </div>
           </footer>
         </div>
       </main>

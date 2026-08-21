@@ -20,6 +20,13 @@ describe("App", () => {
     expect(container.querySelector("button[aria-label^='Switch to']")).not.toBeNull();
     expect(container.querySelector("button[data-testid='random-theme']")).not.toBeNull();
     expect(container.querySelector("[data-testid='freshness-chips']")).toBeNull();
+    const footer = container.querySelector("footer");
+    expect(footer?.getAttribute("aria-label")).toBe("Site information");
+    expect(footer?.textContent).toContain("Bench Bus by");
+    expect(footer?.textContent).toContain("View on GitHub");
+    expect(footer?.className).toContain("mt-6");
+    expect(footer?.className).toContain("py-4");
+    expect(container.querySelectorAll("details[data-methodology-panel]")).toHaveLength(1);
     expect(container.querySelector("footer a[href='https://tannerkrewson.com']")?.getAttribute("rel")).toBe(
       "noopener noreferrer",
     );

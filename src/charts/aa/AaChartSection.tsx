@@ -252,7 +252,6 @@ export default function AaChartSection(props: AaChartSectionProps) {
           </p>
         </Show>
 
-        <p class="mt-2 text-xs text-base-content/60">{aaAdapter.disclaimer}</p>
       </div>
     </section>
   );

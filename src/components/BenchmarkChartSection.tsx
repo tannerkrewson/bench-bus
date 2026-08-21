@@ -225,9 +225,6 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
           </p>
         </Show>
 
-        <Show when={props.adapter.disclaimer}>
-          <p class="mt-2 text-xs text-base-content/60">{props.adapter.disclaimer}</p>
-        </Show>
       </div>
     </section>
   );

@@ -128,12 +128,6 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
   tooltipLines: (record, point, controls): readonly TooltipLine[] =>
     aaControlledTooltipLines(record, point, controls),
 
-  disclaimer:
-    "Cost estimates use each model's actual canonical Intelligence Index token counts and snapshot pricing; " +
-    "effective OpenRouter prices are 30-day realized averages and cheapest-provider results are snapshots, not guaranteed future routing prices. " +
-    "A benchmark score reduces model quality to one number, and models need different token counts for equivalent work — " +
-    "Bench Bus intentionally charges the actual benchmark workload so this shows up in cost. " +
-    "Listed-price estimates depend on the user-selected cache-hit rate; cache-write volume is unknown and omitted.",
 };
 
 /**

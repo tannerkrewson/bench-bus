@@ -167,12 +167,6 @@ describe("aa tooltips and metadata", () => {
     expect(cache?.value).toContain("cache writes unknown");
   });
 
-  it("disclaimer explains cache-hit estimate and unknown cache writes", () => {
-    expect(aaAdapter.disclaimer).toMatch(/cache-hit rate/i);
-    expect(aaAdapter.disclaimer).toMatch(/cache-write volume is unknown/i);
-    expect(aaAdapter.disclaimer).toMatch(/snapshots, not guaranteed/i);
-  });
-
   it("uses the aa URL namespace and log default", () => {
     expect(AA_BENCHMARK_ID).toBe("aa");
     expect(aaAdapter.benchmarkId).toBe("aa");
