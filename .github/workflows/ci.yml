@@ -1,0 +1,53 @@
+# Pull-request / push CI for Bench Bus.
+#
+# Runs the full offline verification suite: dependency install, strict
+# TypeScript checking, unit + integration tests (Vitest), and a production
+# Vite build. No step ever contacts Artificial Analysis, OpenRouter, or
+# Cursor — all collector/parser coverage is fixture-based, so CI is
+# deterministic and cannot fail due to third-party sites.
+#
+# Data collection lives in the separate collect-*.yml workflows; deployment
+# lives in the deployment workflow. This workflow only gates code changes.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Superseded runs on the same branch/PR are cancelled; no point finishing
+# a stale run.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck (strict)
+        run: npm run typecheck
+
+      - name: Unit + integration tests (offline)
+        run: npm test
+
+      - name: Production build
+        run: npm run build
