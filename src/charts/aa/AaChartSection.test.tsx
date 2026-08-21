@@ -56,6 +56,7 @@ describe("AaChartSection", () => {
     ));
 
     expect(states[states.length - 1]?.selectedIds).toEqual(AA_DEFAULT_MODEL_SLUGS);
+    expect(AA_DEFAULT_MODEL_SLUGS).toContain("deepseek-v4-0731-flash");
     expect(container.querySelector("[data-testid='aa-no-points']")).toBeNull();
     expect(AA_DEFAULT_COST_MODE).toBe("intelligence-vs-cost-per-task");
     dispose();

@@ -162,6 +162,22 @@ describe("collectOpenRouterPricing", () => {
     expect(report.unmatchedFrontierModels).toEqual([]);
   });
 
+  it("reports curated identities missing from the current catalog without fabricating records", async () => {
+    const report = await collectOpenRouterPricing(baseOptions({
+      curatedModels: [{
+        aaModelSlug: "missing-curated-model",
+        aaModelId: "missing-curated-model",
+        openrouterId: "missing/vendor-model",
+      }],
+    }));
+
+    expect(report.unmatchedCuratedModels).toEqual(["missing-curated-model"]);
+    expect(report.records.map((record) => record.aaModelSlug)).not.toContain("missing-curated-model");
+    expect(formatReport(report)).toContain(
+      "unmatched curated OpenRouter models: missing-curated-model",
+    );
+  });
+
   it("preserves catalog listed prices and explicit effective-provider discount metadata", async () => {
     const catalogWithPricing = {
       ...catalogFixture,

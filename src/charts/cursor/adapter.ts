@@ -96,22 +96,21 @@ export function effectiveCursorCostUsd(
   cacheHitRatePercent?: number,
 ): number | null {
   const base = record.publishedCostUsd;
-  if (base === undefined || !Number.isFinite(base)) return null;
-  if (includeSurcharge && cacheHitRatePercent !== undefined) {
-    const estimate = estimateCursorTokenRate(record, cacheHitRatePercent);
-    // Missing/invalid source inputs remain at the raw published cost rather
-    // than being replaced by a guessed token volume.
-    if (estimate !== null) return estimate.adjustedCostUsd;
-    if (record.isThirdParty) return base;
-  } else if (includeSurcharge && record.isThirdParty) {
-    // Compatibility path for callers using the original aggregate-token
-    // surcharge API. The chart UI always supplies the cache hit rate.
+  if (base === undefined || !Number.isFinite(base) || base <= 0) return null;
+  if (includeSurcharge && record.isThirdParty) {
+    if (cacheHitRatePercent !== undefined) {
+      const estimate = estimateCursorTokenRate(record, cacheHitRatePercent);
+      if (estimate !== null) return estimate.adjustedCostUsd;
+    }
+    // Aggregate-only scraped rows have the real tokens/task figure but no
+    // input/output split (and therefore cannot support the model-rate
+    // estimate). Cursor's flat rate still applies to that published volume.
     const tokens = surchargeTokenVolume(record);
     if (tokens !== null) {
-      return base + computeThirdPartySurchargeUsd(tokens, CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS);
+      const adjusted = base + computeThirdPartySurchargeUsd(tokens, CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS);
+      return Number.isFinite(adjusted) && adjusted > 0 ? adjusted : null;
     }
   }
-  if (!Number.isFinite(base) || base <= 0) return null;
   return base;
 }
 
@@ -181,12 +180,14 @@ export function surchargeTooltipLine(
         value: `+$${estimate.surchargeUsd.toFixed(4)}; ${estimate.totalTokens.toLocaleString("en-US", { maximumFractionDigits: 0 })} total tok`,
       };
     }
-    return null;
   }
   if (!surchargeApplies(record, controls)) return null;
   const tokens = surchargeTokenVolume(record)!;
   const amount = computeThirdPartySurchargeUsd(tokens, CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS);
-  return { label: "Incl. surcharge", value: `+$${amount.toFixed(4)} (${CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS}/M tok)` };
+  return {
+    label: "Cursor Token Rate fee (aggregate fallback)",
+    value: `+$${amount.toFixed(4)}; ${tokens.toLocaleString("en-US", { maximumFractionDigits: 0 })} aggregate tok × ${CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS}/M (estimation inputs unavailable)`,
+  };
 }
 
 /** All per-point assumptions and uncertainty details shown in the tooltip. */
@@ -200,7 +201,20 @@ export function cursorEstimateTooltipLines(
   if (!Number.isFinite(cacheHitRate)) return [];
   const profile = cursorTokenRateProfile(record);
   const estimate = estimateCursorTokenRate(record, cacheHitRate);
-  if (profile === null || estimate === null) {
+  if (estimate === null) {
+    const tokens = surchargeTokenVolume(record);
+    if (tokens !== null) {
+      return [
+        {
+          label: "Cursor Token Rate",
+          value: `Aggregate fallback: published tokens/task × flat $${CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS}/M (estimation inputs unavailable)`,
+        },
+        { label: "Aggregate tokens (fallback)", value: tokens.toLocaleString("en-US") },
+      ];
+    }
+    return [{ label: "Cursor Token Rate", value: "Estimate unavailable for this model/source row" }];
+  }
+  if (profile === null) {
     return [{ label: "Cursor Token Rate", value: "Estimate unavailable for this model/source row" }];
   }
   const rate = blendCursorNonOutputPrice(profile, cacheHitRate)!;

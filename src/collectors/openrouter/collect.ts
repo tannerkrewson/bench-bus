@@ -55,6 +55,8 @@ export interface CollectorReport {
   suggestedAmbiguous: { aaModelSlug: string; candidates: string[] }[];
   /** Advisory AA slugs with no catalog match found. */
   unmatchedCatalogModels: string[];
+  /** Explicit curated identities absent from the current OpenRouter catalog. */
+  unmatchedCuratedModels: string[];
   /** Frontier identities that had no unique exact catalog match. */
   unmatchedFrontierModels: string[];
   records: OpenRouterModelPricing[];
@@ -161,6 +163,12 @@ export async function collectOpenRouterPricing(
 
   const frontier = frontierAliases(options.frontierModels ?? [], catalog);
   const catalogIds = new Set(catalog.map((model) => model.id));
+  const unmatchedCuratedModels = curated
+    .filter((entry) => !catalogIds.has(entry.openrouterId))
+    .map((entry) => entry.aaModelSlug)
+    .sort();
+  // Do not admit a curated identity that the catalog cannot resolve, but keep
+  // it in the run report so a missing upstream identity is never silent.
   const additions = [...frontier.entries, ...curated.filter((entry) => catalogIds.has(entry.openrouterId))];
   const existingSlugs = new Set(aliasFile.entries.map((entry) => entry.aaModelSlug));
   const uniqueAdditions = additions.filter((entry) => !existingSlugs.has(entry.aaModelSlug));
@@ -263,6 +271,7 @@ export async function collectOpenRouterPricing(
     ),
     suggestedAmbiguous: suggestions.ambiguous,
     unmatchedCatalogModels,
+    unmatchedCuratedModels,
     unmatchedFrontierModels: [
       ...frontier.unmatched,
       ...frontier.ambiguous.map((model) => model.aaModelSlug),
@@ -319,6 +328,9 @@ export function formatReport(report: CollectorReport): string {
       `AMBIGUOUS matches needing human curation: ` +
         report.suggestedAmbiguous.map((s) => `${s.aaModelSlug} -> [${s.candidates.join(", ")}]`).join("; "),
     );
+  }
+  if (report.unmatchedCuratedModels.length > 0) {
+    lines.push(`unmatched curated OpenRouter models: ${report.unmatchedCuratedModels.join(", ")}`);
   }
   if (report.unmatchedFrontierModels.length > 0) {
     lines.push(`unmatched AA frontier models: ${report.unmatchedFrontierModels.join(", ")}`);

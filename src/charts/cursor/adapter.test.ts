@@ -75,6 +75,26 @@ describe("effectiveCursorCostUsd (surcharge math)", () => {
     expect(delta).toBeCloseTo(0.375, 10);
   });
 
+  it("uses the aggregate fallback for normalized third-party rows without estimation inputs", () => {
+    const record = byId("gemini-3.7-flash");
+    expect(record.inputTokens).toBeUndefined();
+    expect(record.outputTokens).toBeUndefined();
+    expect(surchargeTokenVolume(record)).toBe(record.tokensPerTask);
+
+    const base = effectiveCursorCostUsd(record, false)!;
+    const withDefaultCacheRate = effectiveCursorCostUsd(record, true, 90)!;
+    expect(withDefaultCacheRate - base).toBeCloseTo((record.tokensPerTask! / 1e6) * 0.25, 10);
+
+    const point = cursorBenchAdapter.computePoint(record, cacheHitControls(90))!;
+    const lines = cursorBenchAdapter.tooltipLines(record, point, cacheHitControls(90));
+    expect(lines.find((line) => line.label === "Cursor Token Rate fee (aggregate fallback)")?.value).toContain(
+      "aggregate tok",
+    );
+    expect(lines.find((line) => line.label === "Cursor Token Rate")?.value).toContain(
+      "Aggregate fallback",
+    );
+  });
+
   it("never applies a surcharge without any token volume (no guessing)", () => {
     const record = {
       modelId: "no-tokens",
