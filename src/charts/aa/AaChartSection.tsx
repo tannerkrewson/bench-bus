@@ -35,9 +35,12 @@ export default function AaChartSection(props: AaChartSectionProps) {
   const [query, setQuery] = createSignal(props.initialState?.query ?? "");
   // An absent selection is the curated AA view. A non-empty initial
   // selection is explicit URL/session state and must win over the defaults.
+  const [selectionSpecified, setSelectionSpecified] = createSignal(
+    props.initialState?.selectionSpecified ?? (props.initialState?.selectedIds?.length ?? 0) > 0,
+  );
   const [selectedIds, setSelectedIds] = createSignal<string[]>(
-    props.initialState?.selectedIds && props.initialState.selectedIds.length > 0
-      ? [...props.initialState.selectedIds]
+    selectionSpecified()
+      ? [...(props.initialState?.selectedIds ?? [])]
       : [...AA_DEFAULT_MODEL_SLUGS],
   );
   const [showLabels, setShowLabels] = createSignal(props.initialState?.showLabels ?? true);
@@ -98,6 +101,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
       scale: scale(),
       query: query(),
       selectedIds: selectedIds(),
+      ...(selectionSpecified() ? { selectionSpecified: true } : {}),
       controls: controls(),
       showLabels: showLabels(),
     });
@@ -105,6 +109,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
   createEffect(emitState);
 
   const toggleSelect = (id: string) => {
+    setSelectionSpecified(true);
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
@@ -119,7 +124,10 @@ export default function AaChartSection(props: AaChartSectionProps) {
       aria-label={`Artificial Analysis ${AA_DEFAULT_COST_MODE}`}
     >
       <div class="card-body">
-        <h2 class="card-title text-2xl">Artificial Analysis — Intelligence Index vs. cost per task</h2>
+        <header class="mb-1">
+          <h2 class="card-title text-2xl">{aaAdapter.title}</h2>
+          <p class="mt-1 text-sm text-base-content/70">{aaAdapter.subtitle}</p>
+        </header>
         <ChartControlPanel
           scale={scale}
           onScaleChange={setScale}

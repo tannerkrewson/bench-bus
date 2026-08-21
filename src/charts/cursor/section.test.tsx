@@ -23,6 +23,8 @@ describe("CursorBenchChartSection", () => {
     ));
 
     expect(container.querySelector("section[data-benchmark='cursor']")).not.toBeNull();
+    expect(container.querySelector("h2")?.textContent).toBe("Cursor coding model value");
+    expect(container.textContent).toContain("CursorBench score versus average benchmark workload cost per task");
     expect(container.querySelector("canvas")).not.toBeNull();
 
     const logBtn = [...container.querySelectorAll("button")].find((b) => b.textContent === "Log")!;

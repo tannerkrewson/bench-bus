@@ -68,12 +68,20 @@ describe("chart URL state", () => {
     expect(params.get("chart.aa-demo.scale")).toBeNull();
   });
 
-  it("omits default-equivalent empty values for compact URLs", () => {
+  it("omits an unspecified empty selection but preserves an explicit empty selection", () => {
     const qs = chartStateToQueryString(
       { scale: "log", query: "", selectedIds: [], controls: {} },
       "aa-demo",
     );
     expect(qs).toBe("chart.aa-demo.scale=log");
+    const cleared = chartStateToQueryString(
+      { scale: "log", query: "", selectedIds: [], selectionSpecified: true, controls: {} },
+      "aa-demo",
+    );
+    expect(cleared).toBe("chart.aa-demo.scale=log&chart.aa-demo.sel=");
+    expect(
+      chartStateFromParams(new URLSearchParams(cleared), "aa-demo", specs, defaults).selectionSpecified,
+    ).toBe(true);
   });
 
   it("falls back to defaults on missing or invalid values", () => {

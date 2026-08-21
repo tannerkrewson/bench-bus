@@ -39,6 +39,42 @@ describe("raw response parsing", () => {
     expect(parsed.data.providerSummaries).toHaveLength(8);
   });
 
+  it("preserves optional catalog listed prices and explicit provider discount fields", () => {
+    const parsedPricing = rawEffectivePricingResponseSchema.parse({
+      data: {
+        weightedInputPrice: 8,
+        weightedOutputPrice: 16,
+        providerSummaries: [
+          {
+            endpointId: "e1",
+            providerName: "Provider A",
+            providerSlug: "provider-a",
+            effectiveInputPrice: 6,
+            effectiveOutputPrice: 12,
+            listedInputPrice: 10,
+            listedOutputPrice: 20,
+            discountPercentage: 40,
+          },
+        ],
+      },
+    });
+    expect(parsedPricing.data.providerSummaries[0]?.discountPercentage).toBe(40);
+    const catalog = rawCatalogResponseSchema.parse({
+      data: [{
+        id: "vendor/model",
+        canonical_slug: "vendor/model-20260821",
+        name: "Model",
+        pricing: {
+          prompt: "0.00001",
+          completion: "0.00002",
+          input_cache_read: "0.000001",
+          input_cache_write: "0.00003",
+        },
+      }],
+    });
+    expect(catalog.data[0]?.pricing?.prompt).toBe("0.00001");
+  });
+
   it("parses the model catalog and maps id -> canonical_slug", () => {
     const parsed = rawCatalogResponseSchema.parse(catalogFixture);
     expect(resolveCanonicalSlug(parsed.data, "anthropic/claude-opus-5")).toBe(

@@ -104,6 +104,10 @@ export interface TooltipLine {
 export interface BenchmarkChartAdapter<TRecord> {
   /** Stable benchmark id, used as the URL-state namespace. */
   readonly benchmarkId: string;
+  /** Short plain-English heading shown above this graph. */
+  readonly title: string;
+  /** Concise explanation of the benchmark score and cost metrics. */
+  readonly subtitle: string;
   /** Stable id + display label for any record, plotted or not. */
   readonly identity: (record: TRecord) => { readonly id: string; readonly label: string };
   readonly xAxisLabel: string;
@@ -132,6 +136,11 @@ export interface ChartViewState {
   query: string;
   /** Selected model ids (highlighted + shown in the detail list). */
   selectedIds: string[];
+  /**
+   * Whether `selectedIds` came from an explicit URL/session selection. Absent
+   * means the benchmark's default selection (or all models) is active.
+   */
+  selectionSpecified?: boolean;
   /** Values for adapter.controlSpecs, keyed by spec id. */
   controls: PricingControlState;
   /** Whether model labels should be rendered next to plotted points. */

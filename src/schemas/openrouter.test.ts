@@ -32,6 +32,29 @@ describe("openRouterModelPricingSchema", () => {
     expect(openRouterModelPricingSchema.safeParse(broken).success).toBe(false);
   });
 
+  it("preserves source-backed listed prices and explicit discounts", () => {
+    const parsed = openRouterModelPricingSchema.parse({
+      ...validOpenRouterPricing,
+      listedInputPrice: 10,
+      listedOutputPrice: 20,
+      providerSummaries: [{
+        ...validOpenRouterPricing.providerSummaries[0],
+        listedInputPrice: 10,
+        listedOutputPrice: 20,
+        discountPercentage: 40,
+      }],
+    });
+    expect(parsed.listedInputPrice).toBe(10);
+    expect(parsed.providerSummaries[0]?.discountPercentage).toBe(40);
+  });
+
+  it("rejects out-of-range explicit discount percentages", () => {
+    expect(openRouterModelPricingSchema.safeParse({
+      ...validOpenRouterPricing,
+      providerSummaries: [{ ...validOpenRouterPricing.providerSummaries[0], discountPercentage: 101 }],
+    }).success).toBe(false);
+  });
+
   it("rejects non-numeric prices", () => {
     expect(
       openRouterModelPricingSchema.safeParse({

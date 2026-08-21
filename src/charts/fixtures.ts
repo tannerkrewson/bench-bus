@@ -143,6 +143,8 @@ export function cheapestProviderCostUsd(
 
 export const aaDemoAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
   benchmarkId: "aa-demo",
+  title: "Artificial Analysis model value",
+  subtitle: "Intelligence Index score versus estimated benchmark workload cost per task.",
   xAxisLabel: "Estimated benchmark cost (USD)",
   yAxisLabel: "Intelligence Index",
   defaultXScale: "log",
@@ -196,6 +198,8 @@ export const aaDemoAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
 
 export const cursorDemoAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord> = {
   benchmarkId: "cursor-demo",
+  title: "Cursor model value",
+  subtitle: "CursorBench score versus average benchmark workload cost per task.",
   xAxisLabel: "Avg cost per task (USD)",
   yAxisLabel: "CursorBench score",
   defaultXScale: "log",

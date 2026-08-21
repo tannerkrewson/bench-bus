@@ -13,6 +13,13 @@ export const openRouterProviderSummarySchema = z
     effectiveInputPrice: finiteNumber,
     /** Effective output price, USD per 1M tokens, after OpenRouter routing. */
     effectiveOutputPrice: finiteNumber,
+    /** Optional listed prices when the effective endpoint supplies them for this provider. */
+    listedInputPrice: finiteNumber.optional(),
+    listedOutputPrice: finiteNumber.optional(),
+    /** Explicit source-provided discount percentage; never computed from price ratios. */
+    discountPercentage: finiteNumber.refine((value) => value >= 0 && value <= 100, {
+      message: "discountPercentage must be between 0 and 100",
+    }).optional(),
   })
   .strict();
 
@@ -39,6 +46,11 @@ export const openRouterModelPricingSchema = z
     weightedOutputPrice: finiteNumber,
     /** Per-provider effective prices, preserved as returned. */
     providerSummaries: z.array(openRouterProviderSummarySchema).min(1),
+    /** Listed model prices from the catalog, USD per 1M tokens, when published. */
+    listedInputPrice: finiteNumber.optional(),
+    listedOutputPrice: finiteNumber.optional(),
+    listedCacheReadPrice: finiteNumber.optional(),
+    listedCacheWritePrice: finiteNumber.optional(),
   })
   .strict();
 

@@ -82,6 +82,11 @@ export interface CatalogModel {
   id: string;
   canonicalSlug: string;
   name: string;
+  /** Listed catalog prices, USD per 1M tokens, when the source publishes them. */
+  listedInputPrice?: number;
+  listedOutputPrice?: number;
+  listedCacheReadPrice?: number;
+  listedCacheWritePrice?: number;
 }
 
 export interface ObviousSuggestion {

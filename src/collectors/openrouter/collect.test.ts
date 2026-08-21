@@ -117,6 +117,62 @@ describe("collectOpenRouterPricing", () => {
     expect(payload.records[0]?.providerSummaries.length).toBeGreaterThan(0);
   });
 
+  it("preserves catalog listed prices and explicit effective-provider discount metadata", async () => {
+    const catalogWithPricing = {
+      ...catalogFixture,
+      data: catalogFixture.data.map((model) =>
+        model.id === "anthropic/claude-opus-5"
+          ? {
+              ...model,
+              pricing: {
+                prompt: "0.00001",
+                completion: "0.00002",
+                input_cache_read: "0.000001",
+                input_cache_write: "0.00003",
+              },
+            }
+          : model,
+      ),
+    };
+    const effectiveWithDiscount = {
+      ...fullPricing,
+      data: {
+        ...fullPricing.data,
+        providerSummaries: fullPricing.data.providerSummaries.map((provider, index) =>
+          index === 0
+            ? {
+                ...provider,
+                listedInputPrice: 1.5,
+                listedOutputPrice: 30,
+                discountPercentage: 20,
+              }
+            : provider,
+        ),
+      },
+    };
+    const report = await collectOpenRouterPricing(baseOptions({
+      fetchImpl: routerFetch({
+        "api/v1/models": catalogWithPricing,
+        "claude-opus-5-20260723": effectiveWithDiscount,
+        "claude-sonnet-5-20260630": fullPricing,
+        "gpt-5.6-sol-20260709": fullPricing,
+        "gemini-3.7-flash-20260813": fullPricing,
+        "glm-5.3-20260816": fullPricing,
+        "kimi-k3-20260715": fullPricing,
+        "grok-4.6-20260810": fullPricing,
+        "deepseek-v4-pro-20260813": fullPricing,
+        "qwen3.8-max-20260803": fullPricing,
+        "nemotron-3-super-120b-a12b-20230311": fullPricing,
+      }),
+    }));
+    const claude = report.records.find((record) => record.aaModelSlug === "claude-opus-5")!;
+    expect(claude.listedInputPrice).toBe(10);
+    expect(claude.listedOutputPrice).toBe(20);
+    expect(claude.listedCacheReadPrice).toBe(1);
+    expect(claude.providerSummaries[0]?.discountPercentage).toBe(20);
+    expect(claude.providerSummaries[0]?.listedInputPrice).toBe(1.5);
+  });
+
   it("resolves canonical date-suffixed slugs before querying effective pricing", async () => {
     const fetchImpl = vi.fn(routerFetch({
       "api/v1/models": catalogFixture,

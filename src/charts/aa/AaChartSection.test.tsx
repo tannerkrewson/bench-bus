@@ -21,6 +21,8 @@ describe("AaChartSection", () => {
     ));
 
     expect(container.querySelector("section[data-benchmark='aa']")).not.toBeNull();
+    expect(container.querySelector("h2")?.textContent).toBe("Best value AI models");
+    expect(container.textContent).toContain("Intelligence Index score versus estimated benchmark workload cost per task.");
     expect(container.querySelector("canvas")).not.toBeNull();
     expect(
       container.querySelector("input#chart-control-pricingMode, #chart-control-pricingMode"),
@@ -56,6 +58,20 @@ describe("AaChartSection", () => {
     expect(states[states.length - 1]?.selectedIds).toEqual(AA_DEFAULT_MODEL_SLUGS);
     expect(container.querySelector("[data-testid='aa-no-points']")).toBeNull();
     expect(AA_DEFAULT_COST_MODE).toBe("intelligence-vs-cost-per-task");
+    dispose();
+  });
+
+  it("keeps an explicitly cleared URL selection empty instead of restoring curated defaults", () => {
+    const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
+    const { container, dispose } = mount(() => (
+      <AaChartSection
+        records={() => AA_FIXTURE_RECORDS}
+        initialState={{ selectedIds: [], selectionSpecified: true }}
+        onStateChange={(state) => states.push(state)}
+      />
+    ));
+    expect(states[states.length - 1]?.selectedIds).toEqual([]);
+    expect(container.querySelector("[data-testid='aa-no-points']")).not.toBeNull();
     dispose();
   });
 

@@ -123,6 +123,23 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     dispose();
   });
 
+  it("honors an explicitly empty selection instead of treating it as all models", () => {
+    const params = new URLSearchParams("chart.aa-demo.sel=");
+    const initial = chartStateFromParams(params, "aa-demo", aaDemoAdapter.controlSpecs, {
+      scale: aaDemoAdapter.defaultXScale,
+      controls: { pricingMode: "cheapest", cacheHitRate: 0.9 },
+    });
+    const { container, dispose } = mount(() => (
+      <BenchmarkChartSection
+        adapter={aaDemoAdapter}
+        records={() => AA_FIXTURE_RECORDS}
+        initialState={initial}
+      />
+    ));
+    expect(container.querySelector("[data-testid='chart-no-points']")).not.toBeNull();
+    dispose();
+  });
+
   it("shows the empty state when there are no records", () => {
     const { container, dispose } = mount(() => (
       <BenchmarkChartSection adapter={aaDemoAdapter} records={() => []} />

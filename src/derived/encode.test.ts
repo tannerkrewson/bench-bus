@@ -55,6 +55,25 @@ describe("decodeBundle", () => {
     expect(first).toEqual(expected);
   });
 
+  it("round-trips explicit provider discount metadata for the AA chart", () => {
+    const source = PLOTTABLE_AA_RECORDS[0]!;
+    const discounted = {
+      ...source,
+      providers: [{
+        ...source.providers[0]!,
+        listedInputPrice: 10,
+        listedOutputPrice: 20,
+        discountPercentage: 40,
+      }],
+    };
+    const encoded = encodeAaDataset({
+      freshness: { schemaVersion: 1, asOf: AT, aaObservedAt: AT, openrouterObservedAt: AT, cursorObservedAt: AT },
+      records: [discounted],
+    });
+    const decoded = decodeBundle(bundle({ aa: encoded }));
+    expect(decoded.aa?.records[0]?.providers[0]).toEqual(discounted.providers[0]);
+  });
+
   it("emits schema-valid records for every decoded model", () => {
     const decoded = decodeBundle(bundle());
     for (const record of decoded.aa?.records ?? []) {

@@ -87,7 +87,7 @@ type CompactAaRecord = [
   string, // shortName
   number, // intelligenceIndex
   [number, number], // canonicalTokens [input, output]
-  Array<[string, string, number, number]>, // providers
+  Array<[string, string, number, number] | [string, string, number, number, number | null, number | null, number | null]>, // providers
   [number, number], // weighted
   [number, number, number], // listed
 ];
@@ -121,7 +121,23 @@ export function encodeAaDataset(
         r.shortName,
         r.intelligenceIndex,
         [r.canonicalTokens.input, r.canonicalTokens.output],
-        r.providers.map((p) => [p.providerName, p.providerSlug, p.effectiveInputPrice, p.effectiveOutputPrice]),
+        r.providers.map((p) => {
+          const hasDiscountMetadata =
+            p.listedInputPrice !== undefined ||
+            p.listedOutputPrice !== undefined ||
+            p.discountPercentage !== undefined;
+          return hasDiscountMetadata
+            ? [
+                p.providerName,
+                p.providerSlug,
+                p.effectiveInputPrice,
+                p.effectiveOutputPrice,
+                p.listedInputPrice ?? null,
+                p.listedOutputPrice ?? null,
+                p.discountPercentage ?? null,
+              ]
+            : [p.providerName, p.providerSlug, p.effectiveInputPrice, p.effectiveOutputPrice];
+        }),
         [r.weighted.weightedInputPrice, r.weighted.weightedOutputPrice],
         [r.listed.price1mInputTokens, r.listed.price1mOutputTokens, r.listed.cacheHitPrice],
       ],
@@ -246,6 +262,9 @@ export function decodeBundle(raw: unknown): DecodedBundle {
           providerSlug: p[1],
           effectiveInputPrice: p[2],
           effectiveOutputPrice: p[3],
+          ...(p.length >= 7 && p[4] !== null ? { listedInputPrice: p[4] } : {}),
+          ...(p.length >= 7 && p[5] !== null ? { listedOutputPrice: p[5] } : {}),
+          ...(p.length >= 7 && p[6] !== null ? { discountPercentage: p[6] } : {}),
         })),
         weighted: { weightedInputPrice: weighted[0], weightedOutputPrice: weighted[1] },
         listed: {

@@ -38,7 +38,9 @@ export function chartStateToParams(
   const params = new URLSearchParams();
   params.set(key(benchmarkId, SCALE_KEY), state.scale);
   if (state.query !== "") params.set(key(benchmarkId, QUERY_KEY), state.query);
-  if (state.selectedIds.length > 0) {
+  // An explicitly empty selection is meaningful (the user cleared every
+  // model), while an absent selection delegates to the benchmark default.
+  if (state.selectionSpecified === true || state.selectedIds.length > 0) {
     params.set(key(benchmarkId, SELECTED_KEY), state.selectedIds.join(","));
   }
   if (state.showLabels === false) {
@@ -99,12 +101,16 @@ export function chartStateFromParams(
   const query = params.get(key(benchmarkId, QUERY_KEY)) ?? "";
 
   const selRaw = params.get(key(benchmarkId, SELECTED_KEY));
-  const selectedIds = selRaw
-    ? selRaw
+  const selectedIds = selRaw === null
+    ? []
+    : selRaw
         .split(",")
         .map((s) => s.trim())
-        .filter((s) => s !== "")
-    : [];
+        .filter((s) => s !== "");
+  // Keep the historical state shape for non-empty selections; only an
+  // explicit empty value needs a discriminator because [] otherwise also
+  // represents an omitted key.
+  const selectionSpecified = selRaw !== null && selectedIds.length === 0;
 
   const labelsRaw = params.get(key(benchmarkId, LABELS_KEY));
   const showLabels =
@@ -118,7 +124,14 @@ export function chartStateFromParams(
     if (parsed !== null) controls[spec.id] = parsed;
   }
 
-  return { scale, query, selectedIds, controls, ...(showLabels === undefined ? {} : { showLabels }) };
+  return {
+    scale,
+    query,
+    selectedIds,
+    controls,
+    ...(selectionSpecified ? { selectionSpecified: true } : {}),
+    ...(showLabels === undefined ? {} : { showLabels }),
+  };
 }
 
 /** Convenience: full query-string serialization (no leading "?" ). */

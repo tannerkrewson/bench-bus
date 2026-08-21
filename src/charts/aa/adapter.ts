@@ -4,6 +4,7 @@ import type {
   PlottablePoint,
   PricingControlState,
   TooltipLine,
+  PriceDiscountAnnotation,
 } from "../types";
 import { inferModelBrand } from "../brand";
 import {
@@ -45,6 +46,34 @@ const CACHE_HIT_CONTROL = {
 
 export const AA_CONTROL_SPECS = [PRICING_MODE_CONTROL, CACHE_HIT_CONTROL] as const;
 
+function explicitProviderDiscount(
+  record: DerivedAaChartRecord,
+  winner: ReturnType<typeof selectCheapestProvider>,
+): PriceDiscountAnnotation | undefined {
+  if (!winner) return undefined;
+  const percentage = winner.discountPercentage;
+  const listedInput = winner.listedInputPrice;
+  const listedOutput = winner.listedOutputPrice;
+  if (
+    percentage === undefined ||
+    percentage <= 0 ||
+    percentage >= 100 ||
+    listedInput === undefined ||
+    listedOutput === undefined ||
+    listedInput <= 0 ||
+    listedOutput <= 0
+  ) return undefined;
+  const preDiscountX =
+    (record.canonicalTokens.input / 1e6) * listedInput +
+    (record.canonicalTokens.output / 1e6) * listedOutput;
+  // The percentage and both prices must come from this same winning provider;
+  // never manufacture a discount from another provider or an unrelated
+  // catalog/listed price. The explicit source percentage is not inferred from
+  // the effective/listed price ratio.
+  if (!Number.isFinite(preDiscountX) || preDiscountX <= winner.totalCostUsd) return undefined;
+  return { percentage, preDiscountX, providerName: winner.providerName };
+}
+
 function pricingModeLabel(mode: string): string {
   switch (mode) {
     case "cheapest":
@@ -64,6 +93,8 @@ function pricingModeLabel(mode: string): string {
  */
 export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
   benchmarkId: AA_BENCHMARK_ID,
+  title: "Best value AI models",
+  subtitle: "Artificial Analysis Intelligence Index score versus estimated benchmark workload cost per task.",
   xAxisLabel: "Estimated Intelligence Index workload cost (USD)",
   yAxisLabel: "Intelligence Index",
   defaultXScale: "log",
@@ -77,10 +108,14 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
     const { input, output } = record.canonicalTokens;
 
     let cost: number | null;
+    let discount: PriceDiscountAnnotation | undefined;
     switch (mode) {
-      case "cheapest":
-        cost = selectCheapestProvider(record.providers, input, output)?.totalCostUsd ?? null;
+      case "cheapest": {
+        const winner = selectCheapestProvider(record.providers, input, output);
+        cost = winner?.totalCostUsd ?? null;
+        discount = explicitProviderDiscount(record, winner);
         break;
+      }
       case "weighted":
         cost = weightedCostUsd(record.weighted, input, output);
         break;
@@ -97,6 +132,7 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
       brand: inferModelBrand(record.name, record.slug),
       x: cost,
       y: record.intelligenceIndex,
+      ...(discount ? { discount } : {}),
     };
   },
 

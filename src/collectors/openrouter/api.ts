@@ -12,6 +12,11 @@ export const rawProviderSummarySchema = z.object({
   providerSlug: z.string(),
   effectiveInputPrice: z.number(),
   effectiveOutputPrice: z.number(),
+  // These fields are optional because the current effective-pricing fixture
+  // does not publish them; preserve them when a source response does.
+  listedInputPrice: z.number().optional(),
+  listedOutputPrice: z.number().optional(),
+  discountPercentage: z.number().optional(),
   cacheHitRate: z.number().optional(),
   totalTokens: z.number().optional(),
 });
@@ -33,6 +38,13 @@ export const rawCatalogModelSchema = z.object({
   id: z.string(),
   canonical_slug: z.string(),
   name: z.string(),
+  // OpenRouter's public catalog publishes per-token listed prices as strings.
+  pricing: z.object({
+    prompt: z.string(),
+    completion: z.string(),
+    input_cache_read: z.string().optional(),
+    input_cache_write: z.string().optional(),
+  }).optional(),
 });
 
 export const rawCatalogResponseSchema = z.object({

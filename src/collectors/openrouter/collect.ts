@@ -124,12 +124,30 @@ export async function collectOpenRouterPricing(
 
   const fetchOptions = { timeoutMs, retries, backoffBaseMs, fetchImpl };
   const catalogResponse = await fetchJson(MODEL_CATALOG_URL, rawCatalogResponseSchema, fetchOptions);
+  const perMillion = (raw: string | undefined): number | undefined => {
+    if (raw === undefined) return undefined;
+    const value = Number(raw) * 1_000_000;
+    return Number.isFinite(value) && value >= 0 ? value : undefined;
+  };
   const catalog: CatalogModel[] = catalogResponse.data.map((m) => ({
     id: m.id,
     canonicalSlug: m.canonical_slug,
     name: m.name,
+    ...(m.pricing
+      ? {
+          listedInputPrice: perMillion(m.pricing.prompt),
+          listedOutputPrice: perMillion(m.pricing.completion),
+          ...(m.pricing.input_cache_read !== undefined
+            ? { listedCacheReadPrice: perMillion(m.pricing.input_cache_read) }
+            : {}),
+          ...(m.pricing.input_cache_write !== undefined
+            ? { listedCacheWritePrice: perMillion(m.pricing.input_cache_write) }
+            : {}),
+        }
+      : {}),
   }));
   const rawCatalog = catalogResponse.data;
+  const catalogById = new Map(catalog.map((model) => [model.id, model]));
 
   // Advisory suggestions for human curation; never merged into the mapping.
   const knownAaSlugs = aliasFile.entries.map((e) => e.aaModelSlug);
@@ -165,18 +183,31 @@ export async function collectOpenRouterPricing(
         });
         return;
       }
+      const providerSummaries = response.data.providerSummaries.map((p) => ({
+        providerName: p.providerName,
+        providerSlug: p.providerSlug,
+        effectiveInputPrice: p.effectiveInputPrice,
+        effectiveOutputPrice: p.effectiveOutputPrice,
+        ...(p.listedInputPrice !== undefined ? { listedInputPrice: p.listedInputPrice } : {}),
+        ...(p.listedOutputPrice !== undefined ? { listedOutputPrice: p.listedOutputPrice } : {}),
+        ...(p.discountPercentage !== undefined ? { discountPercentage: p.discountPercentage } : {}),
+      }));
+      const listed = catalogById.get(entry.openrouterId);
       const candidate = {
         permaslug: entry.openrouterId,
         aaModelSlug: entry.aaModelSlug,
         aaModelId: entry.aaModelId,
         weightedInputPrice: response.data.weightedInputPrice,
         weightedOutputPrice: response.data.weightedOutputPrice,
-        providerSummaries: response.data.providerSummaries.map((p) => ({
-          providerName: p.providerName,
-          providerSlug: p.providerSlug,
-          effectiveInputPrice: p.effectiveInputPrice,
-          effectiveOutputPrice: p.effectiveOutputPrice,
-        })),
+        providerSummaries,
+        ...(listed?.listedInputPrice !== undefined ? { listedInputPrice: listed.listedInputPrice } : {}),
+        ...(listed?.listedOutputPrice !== undefined ? { listedOutputPrice: listed.listedOutputPrice } : {}),
+        ...(listed?.listedCacheReadPrice !== undefined
+          ? { listedCacheReadPrice: listed.listedCacheReadPrice }
+          : {}),
+        ...(listed?.listedCacheWritePrice !== undefined
+          ? { listedCacheWritePrice: listed.listedCacheWritePrice }
+          : {}),
       };
       const parsed = openRouterModelPricingSchema.safeParse(candidate);
       if (!parsed.success) {

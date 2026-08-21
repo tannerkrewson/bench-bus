@@ -121,6 +121,8 @@ export function formatCursorCostUsd(cost: number): string {
 
 export const cursorBenchAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord> = {
   benchmarkId: CURSOR_BENCH_ID,
+  title: "Cursor coding model value",
+  subtitle: "CursorBench score versus average benchmark workload cost per task from cursor.com/evals.",
   xAxisLabel: "Avg cost per task (USD, cursor.com/evals)",
   yAxisLabel: "CursorBench score",
   defaultXScale: "log",

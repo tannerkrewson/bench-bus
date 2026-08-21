@@ -17,6 +17,10 @@ export interface ProviderPrices {
   providerSlug: string;
   effectiveInputPrice: number;
   effectiveOutputPrice: number;
+  /** Optional source-backed listed prices for discount annotation. */
+  listedInputPrice?: number;
+  listedOutputPrice?: number;
+  discountPercentage?: number;
 }
 
 /** Winning provider of the cheapest-effective selection, with its combined cost. */

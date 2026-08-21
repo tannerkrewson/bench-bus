@@ -49,6 +49,34 @@ describe("aaAdapter.computePoint", () => {
     );
   });
 
+  it("annotates only a cheapest provider with explicit listed-price discount metadata", () => {
+    const record = {
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      canonicalTokens: { input: 1_000_000, output: 1_000_000 },
+      providers: [{
+        providerName: "Discounted Provider",
+        providerSlug: "discounted",
+        effectiveInputPrice: 6,
+        effectiveOutputPrice: 12,
+        listedInputPrice: 10,
+        listedOutputPrice: 20,
+        discountPercentage: 40,
+      }],
+    };
+    const point = aaAdapter.computePoint(record, controls)!;
+    expect(point.x).toBe(18);
+    expect(point.discount).toEqual({
+      percentage: 40,
+      preDiscountX: 30,
+      providerName: "Discounted Provider",
+    });
+  });
+
+  it("does not infer a discount when source metadata is absent", () => {
+    const point = aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, controls)!;
+    expect(point.discount).toBeUndefined();
+  });
+
   it("weighted mode uses the record's weighted prices", () => {
     const { canonicalTokens, weighted } = AA_RECORD_PLOTTABLE_CHEAPEST;
     const point = aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, {

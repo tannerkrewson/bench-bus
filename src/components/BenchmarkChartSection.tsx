@@ -40,6 +40,9 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
   const [selectedIds, setSelectedIds] = createSignal<string[]>(
     props.initialState?.selectedIds ?? [],
   );
+  const [selectionSpecified, setSelectionSpecified] = createSignal(
+    props.initialState?.selectionSpecified ?? (props.initialState?.selectedIds?.length ?? 0) > 0,
+  );
   const [showLabels, setShowLabels] = createSignal(props.initialState?.showLabels ?? true);
   const [controls, setControls] = createSignal<PricingControlState>({
     ...defaultControls(),
@@ -57,7 +60,9 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
   const selectedId = createMemo<string | null>(() => null);
   const visibleEntries = createMemo(() => {
     const ids = selectedIds();
-    return ids.length === 0 ? build().entries : build().entries.filter((entry) => ids.includes(entry.point.id));
+    return selectionSpecified()
+      ? build().entries.filter((entry) => ids.includes(entry.point.id))
+      : build().entries;
   });
 
   const hoveredInfo = createMemo<{ title: string; lines: readonly TooltipLine[] } | null>(() => {
@@ -80,6 +85,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
       scale: scale(),
       query: query(),
       selectedIds: selectedIds(),
+      ...(selectionSpecified() ? { selectionSpecified: true } : {}),
       controls: controls(),
       showLabels: showLabels(),
     });
@@ -87,6 +93,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
   createEffect(emitState);
 
   const toggleSelect = (id: string) => {
+    setSelectionSpecified(true);
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
@@ -100,6 +107,10 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
       data-benchmark={props.adapter.benchmarkId}
     >
       <div class="card-body">
+        <header class="mb-1">
+          <h2 class="card-title text-2xl">{props.adapter.title}</h2>
+          <p class="mt-1 text-sm text-base-content/70">{props.adapter.subtitle}</p>
+        </header>
         <ChartControlPanel
           scale={scale}
           onScaleChange={setScale}
