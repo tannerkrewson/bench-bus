@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "description": "Explicit Artificial Analysis -> OpenRouter model identity mapping. Curated by humans: automatic matching must never silently extend this file. `status: confirmed` = identity verified against both catalogs; `provisional` = plausible but unverified, the collector surfaces these in every run report. `aaModelId` holds the Artificial Analysis model UUID when known; until curated it repeats the AA slug as a placeholder. `openrouterId` is the stable OpenRouter model id (no date suffix, no :variant, no ~ alias); the collector resolves the canonical date-suffixed slug at runtime via /api/v1/models.",
+  "entries": [
+    {
+      "aaModelSlug": "claude-opus-5",
+      "aaModelId": "claude-opus-5",
+      "openrouterId": "anthropic/claude-opus-5",
+      "status": "confirmed"
+    },
+    {
+      "aaModelSlug": "claude-sonnet-5",
+      "aaModelId": "claude-sonnet-5",
+      "openrouterId": "anthropic/claude-sonnet-5",
+      "status": "confirmed"
+    },
+    {
+      "aaModelSlug": "gpt-5.6-sol",
+      "aaModelId": "gpt-5.6-sol",
+      "openrouterId": "openai/gpt-5.6-sol",
+      "status": "confirmed"
+    },
+    {
+      "aaModelSlug": "gemini-3.7-flash",
+      "aaModelId": "gemini-3.7-flash",
+      "openrouterId": "google/gemini-3.7-flash",
+      "status": "confirmed"
+    },
+    {
+      "aaModelSlug": "glm-5.3",
+      "aaModelId": "glm-5.3",
+      "openrouterId": "z-ai/glm-5.3",
+      "status": "confirmed"
+    },
+    {
+      "aaModelSlug": "kimi-k3",
+      "aaModelId": "kimi-k3",
+      "openrouterId": "moonshotai/kimi-k3",
+      "status": "confirmed"
+    },
+    {
+      "aaModelSlug": "grok-4.6",
+      "aaModelId": "grok-4.6",
+      "openrouterId": "x-ai/grok-4.6",
+      "status": "provisional",
+      "note": "AA slug assumed to be grok-4.6; verify against artificialanalysis.ai before trusting chart output."
+    },
+    {
+      "aaModelSlug": "deepseek-v4-pro",
+      "aaModelId": "deepseek-v4-pro",
+      "openrouterId": "deepseek/deepseek-v4-pro",
+      "status": "provisional",
+      "note": "AA also publishes dated variants (e.g. deepseek-v4-pro-0813); confirm which AA slug this targets."
+    },
+    {
+      "aaModelSlug": "qwen3.8-max",
+      "aaModelId": "qwen3.8-max",
+      "openrouterId": "qwen/qwen3.8-max",
+      "status": "provisional",
+      "note": "AA slug assumed to be qwen3.8-max; verify."
+    },
+    {
+      "aaModelSlug": "nemotron-3-super",
+      "aaModelId": "nemotron-3-super",
+      "openrouterId": "nvidia/nemotron-3-super-120b-a12b",
+      "status": "provisional",
+      "note": "OpenRouter id carries a parameter suffix the AA slug may not have; verify."
+    }
+  ]
+}

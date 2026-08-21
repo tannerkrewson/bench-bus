@@ -1,0 +1,185 @@
+{
+  "data": {
+    "weightedInputPrice": 1.2714249835324893,
+    "weightedOutputPrice": 25.00383177150363,
+    "weightedCacheHitRate": 0.848510121999652,
+    "providerSummaries": [
+      {
+        "endpointId": "2edf66f3-04ad-4c38-b05a-bc69cf1a29ef",
+        "providerName": "Claude Platform on AWS",
+        "providerSlug": "claude-on-aws",
+        "effectiveInputPrice": 1.205441732165264,
+        "effectiveOutputPrice": 24.9999958112265,
+        "cacheHitRate": 0.8664224215171522,
+        "totalTokens": 7467754960
+      },
+      {
+        "endpointId": "f599d683-cce8-4b4d-988f-c54bf9e8208e",
+        "providerName": "Amazon Bedrock (2)",
+        "providerSlug": "amazon-bedrock",
+        "effectiveInputPrice": 1.38159999862954,
+        "effectiveOutputPrice": 24.99997349701179,
+        "cacheHitRate": 0.8165082276938418,
+        "totalTokens": 4692534987
+      },
+      {
+        "endpointId": "a6a218f6-0bca-440c-98b5-66bccd2f9480",
+        "providerName": "Anthropic",
+        "providerSlug": "anthropic",
+        "effectiveInputPrice": 1.177525617308869,
+        "effectiveOutputPrice": 24.999999999999996,
+        "cacheHitRate": 0.8691851387932854,
+        "totalTokens": 1899623020
+      },
+      {
+        "endpointId": "ac3766aa-9807-45c1-9cf5-b55267e8bddd",
+        "providerName": "Google Vertex",
+        "providerSlug": "google-vertex",
+        "effectiveInputPrice": 1.5208348424864793,
+        "effectiveOutputPrice": 24.999979020337896,
+        "cacheHitRate": 0.8154845569560739,
+        "totalTokens": 229878974
+      },
+      {
+        "endpointId": "c073101a-44d4-4060-86a4-b98c3fc168b3",
+        "providerName": "Amazon Bedrock (1)",
+        "providerSlug": "amazon-bedrock",
+        "effectiveInputPrice": 1.7781950427773239,
+        "effectiveOutputPrice": 27.499402303846985,
+        "cacheHitRate": 0.7991744078108001,
+        "totalTokens": 59030713
+      },
+      {
+        "endpointId": "82f0a682-38d7-49ce-9326-ace4af311a83",
+        "providerName": "Azure",
+        "providerSlug": "azure",
+        "effectiveInputPrice": 4.208536752516932,
+        "effectiveOutputPrice": 24.999999999999996,
+        "cacheHitRate": 0.28848771985176414,
+        "totalTokens": 23306999
+      },
+      {
+        "endpointId": "bb81069a-b9eb-4c88-b50b-00eb56ec6c0c",
+        "providerName": "Azure (US)",
+        "providerSlug": "azure",
+        "effectiveInputPrice": 4.506578912825468,
+        "effectiveOutputPrice": 24.999999999999996,
+        "cacheHitRate": 0.26509632095433616,
+        "totalTokens": 3826807
+      },
+      {
+        "endpointId": "829181b6-a898-4e91-8f5d-b781dc08fbdb",
+        "providerName": "Google Vertex (Europe)",
+        "providerSlug": "google-vertex",
+        "effectiveInputPrice": 5.5,
+        "effectiveOutputPrice": 27.496721311475408,
+        "cacheHitRate": 0,
+        "totalTokens": 100706
+      }
+    ],
+    "providerNames": [
+      "Azure (US)",
+      "Google Vertex (Europe)",
+      "Azure",
+      "Google Vertex",
+      "Anthropic",
+      "Amazon Bedrock (1)",
+      "Amazon Bedrock (2)",
+      "Claude Platform on AWS",
+      "Google Vertex (US)"
+    ],
+    "endpointNames": {
+      "164e05da-0b09-4bf3-94a3-0967a014bd93": "Google Vertex (US)",
+      "2edf66f3-04ad-4c38-b05a-bc69cf1a29ef": "Claude Platform on AWS",
+      "829181b6-a898-4e91-8f5d-b781dc08fbdb": "Google Vertex (Europe)",
+      "82f0a682-38d7-49ce-9326-ace4af311a83": "Azure",
+      "a6a218f6-0bca-440c-98b5-66bccd2f9480": "Anthropic",
+      "ac3766aa-9807-45c1-9cf5-b55267e8bddd": "Google Vertex",
+      "bb81069a-b9eb-4c88-b50b-00eb56ec6c0c": "Azure (US)",
+      "c073101a-44d4-4060-86a4-b98c3fc168b3": "Amazon Bedrock (1)",
+      "f599d683-cce8-4b4d-988f-c54bf9e8208e": "Amazon Bedrock (2)"
+    },
+    "endpointRawNames": {
+      "a6a218f6-0bca-440c-98b5-66bccd2f9480": "Anthropic",
+      "f599d683-cce8-4b4d-988f-c54bf9e8208e": "Amazon Bedrock",
+      "bb81069a-b9eb-4c88-b50b-00eb56ec6c0c": "Azure (US)",
+      "c073101a-44d4-4060-86a4-b98c3fc168b3": "Amazon Bedrock",
+      "82f0a682-38d7-49ce-9326-ace4af311a83": "Azure",
+      "829181b6-a898-4e91-8f5d-b781dc08fbdb": "Google Vertex (Europe)",
+      "164e05da-0b09-4bf3-94a3-0967a014bd93": "Google Vertex (US)",
+      "ac3766aa-9807-45c1-9cf5-b55267e8bddd": "Google Vertex",
+      "2edf66f3-04ad-4c38-b05a-bc69cf1a29ef": "Claude Platform on AWS"
+    },
+    "endpointProviderSlugs": {
+      "a6a218f6-0bca-440c-98b5-66bccd2f9480": "anthropic",
+      "f599d683-cce8-4b4d-988f-c54bf9e8208e": "amazon-bedrock",
+      "bb81069a-b9eb-4c88-b50b-00eb56ec6c0c": "azure",
+      "c073101a-44d4-4060-86a4-b98c3fc168b3": "amazon-bedrock",
+      "82f0a682-38d7-49ce-9326-ace4af311a83": "azure",
+      "829181b6-a898-4e91-8f5d-b781dc08fbdb": "google-vertex",
+      "164e05da-0b09-4bf3-94a3-0967a014bd93": "google-vertex",
+      "ac3766aa-9807-45c1-9cf5-b55267e8bddd": "google-vertex",
+      "2edf66f3-04ad-4c38-b05a-bc69cf1a29ef": "claude-on-aws"
+    },
+    "inputChartData": [
+      {
+        "x": "2026-08-14 00:00:00",
+        "y": {
+          "a6a218f6-0bca-440c-98b5-66bccd2f9480": 1.2822274983115283,
+          "f599d683-cce8-4b4d-988f-c54bf9e8208e": 2.0110109413394004,
+          "bb81069a-b9eb-4c88-b50b-00eb56ec6c0c": 1.646257959534587,
+          "c073101a-44d4-4060-86a4-b98c3fc168b3": 1.6609213678669508,
+          "82f0a682-38d7-49ce-9326-ace4af311a83": 3.2619050350459178,
+          "829181b6-a898-4e91-8f5d-b781dc08fbdb": 2.63740113333866,
+          "164e05da-0b09-4bf3-94a3-0967a014bd93": 2.1876599548086837,
+          "ac3766aa-9807-45c1-9cf5-b55267e8bddd": 2.677130750997019,
+          "2edf66f3-04ad-4c38-b05a-bc69cf1a29ef": 1.9023835032432066
+        }
+      },
+      {
+        "x": "2026-08-15 00:00:00",
+        "y": {
+          "a6a218f6-0bca-440c-98b5-66bccd2f9480": 1.7936802585925569,
+          "829181b6-a898-4e91-8f5d-b781dc08fbdb": 0.9524312078847471,
+          "82f0a682-38d7-49ce-9326-ace4af311a83": 3.088673172850618,
+          "ac3766aa-9807-45c1-9cf5-b55267e8bddd": 2.566883008384679,
+          "164e05da-0b09-4bf3-94a3-0967a014bd93": 1.6611675902287573,
+          "c073101a-44d4-4060-86a4-b98c3fc168b3": 1.7071177771001305,
+          "2edf66f3-04ad-4c38-b05a-bc69cf1a29ef": 1.009735272875458,
+          "f599d683-cce8-4b4d-988f-c54bf9e8208e": 1.6898034928264465,
+          "bb81069a-b9eb-4c88-b50b-00eb56ec6c0c": 3.338241550360846
+        }
+      }
+    ],
+    "outputChartData": [
+      {
+        "x": "2026-08-14 00:00:00",
+        "y": {
+          "a6a218f6-0bca-440c-98b5-66bccd2f9480": 25,
+          "f599d683-cce8-4b4d-988f-c54bf9e8208e": 24.999597937290357,
+          "bb81069a-b9eb-4c88-b50b-00eb56ec6c0c": 24.995965373646083,
+          "c073101a-44d4-4060-86a4-b98c3fc168b3": 27.499223488077977,
+          "82f0a682-38d7-49ce-9326-ace4af311a83": 24.999937062410677,
+          "829181b6-a898-4e91-8f5d-b781dc08fbdb": 27.46748569244164,
+          "164e05da-0b09-4bf3-94a3-0967a014bd93": 27.491318214032603,
+          "ac3766aa-9807-45c1-9cf5-b55267e8bddd": 24.999734417116798,
+          "2edf66f3-04ad-4c38-b05a-bc69cf1a29ef": 25
+        }
+      },
+      {
+        "x": "2026-08-15 00:00:00",
+        "y": {
+          "a6a218f6-0bca-440c-98b5-66bccd2f9480": 25,
+          "829181b6-a898-4e91-8f5d-b781dc08fbdb": 27.214119157526405,
+          "82f0a682-38d7-49ce-9326-ace4af311a83": 24.999962173380336,
+          "ac3766aa-9807-45c1-9cf5-b55267e8bddd": 24.99998434734694,
+          "164e05da-0b09-4bf3-94a3-0967a014bd93": 27.499227716233914,
+          "c073101a-44d4-4060-86a4-b98c3fc168b3": 27.49947102296392,
+          "2edf66f3-04ad-4c38-b05a-bc69cf1a29ef": 25,
+          "f599d683-cce8-4b4d-988f-c54bf9e8208e": 24.999974232334267,
+          "bb81069a-b9eb-4c88-b50b-00eb56ec6c0c": 24.999949779389638
+        }
+      }
+    ]
+  }
+}
