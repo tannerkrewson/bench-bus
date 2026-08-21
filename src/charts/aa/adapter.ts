@@ -138,16 +138,8 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
 
   searchText: (record) => `${record.name} ${record.shortName} ${record.slug}`,
 
-  tooltipLines: (record, point): readonly TooltipLine[] => [
-    { label: "Intelligence Index", value: record.intelligenceIndex.toFixed(1) },
-    { label: "Est. workload cost", value: `$${point.x.toFixed(2)}` },
-    {
-      label: "Workload tokens",
-      value: `${(record.canonicalTokens.input / 1e6).toFixed(1)}M in / ${(
-        record.canonicalTokens.output / 1e6
-      ).toFixed(1)}M out`,
-    },
-  ],
+  tooltipLines: (record, point, controls): readonly TooltipLine[] =>
+    aaControlledTooltipLines(record, point, controls),
 
   disclaimer:
     "Cost estimates use each model's actual canonical Intelligence Index token counts and snapshot pricing; " +
@@ -159,9 +151,9 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
 
 /**
  * Tooltip rows that depend on the current control state (pricing mode label
- * and, in cheapest mode, the winning provider). The frozen generic section
- * calls adapter.tooltipLines(record, point) without controls, so the AA
- * section composes the chart primitives directly to layer these on.
+ * and, in cheapest mode, the winning provider). The generic chart passes the
+ * live controls through this adapter contract; the AA section also uses this
+ * helper because it owns the selected-model visibility shell.
  */
 export function aaControlledTooltipLines(
   record: DerivedAaChartRecord,

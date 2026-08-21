@@ -11,8 +11,6 @@ import {
   SURCHARGE_CONTROL_ID,
   TOKEN_MIX_CONTROL_ID,
   cursorBenchAdapter,
-  cursorEstimateTooltipLines,
-  surchargeTooltipLine,
 } from "./adapter";
 import type { DerivedCursorChartRecord } from "../../schemas";
 
@@ -28,33 +26,23 @@ export interface CursorBenchChartSectionProps {
  * CursorBench score-versus-cost chart section (bench-bus-0cd.11).
  *
  * Thin benchmark-specific wrapper around the generic BenchmarkChartSection:
- * supplies the real Cursor adapter and augments tooltips with the exact
- * surcharge amount whenever the surcharge toggle is included, so the UI
- * always states clearly when the +$0.25/M adjustment is part of a cost.
+ * supplies the real Cursor adapter. Control state flows through the generic
+ * tooltip contract, so the UI states clearly when the +$0.25/M adjustment is
+ * part of a plotted cost.
  */
 export default function CursorBenchChartSection(props: CursorBenchChartSectionProps): JSX.Element {
-  // Latest control state, kept in sync via onStateChange so the derived
-  // tooltip can react to the surcharge toggle (the frozen generic section's
-  // tooltip memo tracks any signal read inside adapter.tooltipLines).
+  // Latest control state, kept in sync via onStateChange for the visible
+  // surcharge indicator; the generic section passes its own live controls to
+  // adapter.tooltipLines.
   const [controls, setControls] = createSignal<PricingControlState>({
-    [SURCHARGE_CONTROL_ID]: false,
+    ...Object.fromEntries(cursorBenchAdapter.controlSpecs.map((spec) => [spec.id, spec.default])),
+    ...props.initialState?.controls,
   });
-
-  const adapter = {
-    ...cursorBenchAdapter,
-    tooltipLines: (record: DerivedCursorChartRecord, point: { x: number; y: number; id: string; label: string }) => {
-      const lines = [...cursorBenchAdapter.tooltipLines(record, point)];
-      const surchargeLine = surchargeTooltipLine(record, controls());
-      if (surchargeLine) lines.push(surchargeLine);
-      lines.push(...cursorEstimateTooltipLines(record, controls()));
-      return lines;
-    },
-  };
 
   return (
     <div data-testid="cursor-bench-chart">
       <BenchmarkChartSection
-        adapter={adapter}
+        adapter={cursorBenchAdapter}
         records={props.records}
         initialState={props.initialState}
         onStateChange={(state) => {
@@ -68,13 +56,16 @@ export default function CursorBenchChartSection(props: CursorBenchChartSectionPr
       <Show when={Boolean(controls()[SURCHARGE_CONTROL_ID])}>
         <div class="alert mt-3" role="note" data-testid="cursor-token-rate-assumptions">
           <div>
-            <p class="font-medium">Cursor Token Rate estimate</p>
+            <p class="font-medium flex items-center gap-2">
+              Cursor Token Rate estimate
+              <span class="badge badge-warning" data-testid="cursor-surcharge-included">Surcharge included</span>
+            </p>
             <p class="text-sm">
               The chart subtracts known output cost from each published task cost, then estimates hidden and total tokens.
               The current model-specific rate and fee are shown in each point tooltip.
             </p>
             <p class="text-sm text-base-content/70">
-              This is an assumption, not a bill. Rates span cache-heavy to input-heavy endpoints; the tooltip shows the full possible fee and adjusted-cost range. First-party Cursor models are exempt.
+              This is an assumption, not a bill. Rates span input-priced to cache-priced endpoints; the tooltip shows the full possible fee and adjusted-cost range. First-party Cursor models are exempt.
             </p>
           </div>
         </div>

@@ -8,6 +8,7 @@ import { buildChartPlot } from "../plotData";
 import {
   CURSOR_BENCH_ID,
   SURCHARGE_CONTROL_ID,
+  TOKEN_MIX_CONTROL_ID,
   cursorBenchAdapter,
   effectiveCursorCostUsd,
   formatCursorCostUsd,
@@ -17,6 +18,10 @@ import {
 
 const OFF = { [SURCHARGE_CONTROL_ID]: false };
 const ON = { [SURCHARGE_CONTROL_ID]: true };
+const cacheHitControls = (cacheHitRate: number) => ({
+  [SURCHARGE_CONTROL_ID]: true,
+  [TOKEN_MIX_CONTROL_ID]: cacheHitRate,
+});
 
 const byId = (id: string) => {
   const record = CURSOR_FIXTURE_RECORDS.find((r) => r.modelId === id);
@@ -125,6 +130,30 @@ describe("cursorBenchAdapter.computePoint + plot build", () => {
     }
   });
 
+  it("recomputes plotted costs when cache hit rate changes", () => {
+    // Use a valid profile with enough published residual after output cost so
+    // the model-specific estimate, rather than the compatibility fallback, is
+    // exercised.
+    const record = { ...byId("opus-5-max"), publishedCostUsd: 30 };
+    const inputPriced = buildChartPlot(
+      [record],
+      cursorBenchAdapter,
+      cacheHitControls(0),
+      "opus",
+    ).entries[0]!.point;
+    const cachePriced = buildChartPlot(
+      [record],
+      cursorBenchAdapter,
+      cacheHitControls(100),
+      "opus",
+    ).entries[0]!.point;
+    expect(inputPriced.x).toBeLessThan(cachePriced.x);
+    expect(cursorBenchAdapter.controlSpecs.find((spec) => spec.id === TOKEN_MIX_CONTROL_ID)).toMatchObject({
+      label: "Cache hit rate",
+      default: 90,
+    });
+  });
+
   it("treats rows with missing published cost as unplottable, not mispriced", () => {
     const records = [
       ...CURSOR_FIXTURE_RECORDS,
@@ -135,10 +164,18 @@ describe("cursorBenchAdapter.computePoint + plot build", () => {
     expect(build.unplottable.map((u) => u.record.modelId)).toContain("broken");
   });
 
+  it("passes cache-hit controls into surcharge tooltip rows", () => {
+    const record = { ...byId("opus-5-max"), publishedCostUsd: 30 };
+    const point = cursorBenchAdapter.computePoint(record, cacheHitControls(90))!;
+    const lines = cursorBenchAdapter.tooltipLines(record, point, cacheHitControls(90));
+    expect(lines.find((line) => line.label === "Cache hit rate")?.value).toContain("90%");
+    expect(lines.find((line) => line.label === "Cursor Token Rate fee (estimate)")).toBeDefined();
+  });
+
   it("tooltip cost values agree exactly with the plotted coordinate", () => {
     const build = buildChartPlot(CURSOR_FIXTURE_RECORDS, cursorBenchAdapter, ON, "");
     for (const { record, point } of build.entries) {
-      const lines = cursorBenchAdapter.tooltipLines(record, point);
+      const lines = cursorBenchAdapter.tooltipLines(record, point, ON);
       const costLine = lines.find((l) => l.label === "Avg cost / task")!;
       expect(costLine.value).toBe(formatCursorCostUsd(point.x));
       // And the formatted value round-trips to the plotted x.

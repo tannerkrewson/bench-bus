@@ -43,14 +43,15 @@ const SURCHARGE_CONTROL = {
 const TOKEN_MIX_CONTROL = {
   kind: "slider",
   id: TOKEN_MIX_CONTROL_ID,
-  label: "Cache-heavy to Input-heavy",
-  default: 50,
+  // Keep the tokenMix id so existing chart.cursor URLs remain readable.
+  label: "Cache hit rate",
+  default: 90,
   min: 0,
   max: 100,
   step: 1,
   format: (value: number) => `${Math.round(value)}%`,
   description:
-    "Estimate only: 0% cache-heavy · 50% neutral (not typical) · 100% input-heavy. Lower blended rates imply more hidden tokens and a larger fee.",
+    "Estimate only: cached input tokens / total input tokens. 0% is fully input-priced; 100% is fully cache-priced.",
 } as const;
 
 /** Token volume the surcharge applies to: aggregate tokens per task. */
@@ -92,19 +93,19 @@ export function surchargeApplies(
 export function effectiveCursorCostUsd(
   record: DerivedCursorChartRecord,
   includeSurcharge: boolean,
-  tokenMixPercent?: number,
+  cacheHitRatePercent?: number,
 ): number | null {
   const base = record.publishedCostUsd;
   if (base === undefined || !Number.isFinite(base)) return null;
-  if (includeSurcharge && tokenMixPercent !== undefined) {
-    const estimate = estimateCursorTokenRate(record, tokenMixPercent);
+  if (includeSurcharge && cacheHitRatePercent !== undefined) {
+    const estimate = estimateCursorTokenRate(record, cacheHitRatePercent);
     // Missing/invalid source inputs remain at the raw published cost rather
     // than being replaced by a guessed token volume.
     if (estimate !== null) return estimate.adjustedCostUsd;
     if (record.isThirdParty) return base;
   } else if (includeSurcharge && record.isThirdParty) {
     // Compatibility path for callers using the original aggregate-token
-    // surcharge API. The chart UI always supplies the token-mix position.
+    // surcharge API. The chart UI always supplies the cache hit rate.
     const tokens = surchargeTokenVolume(record);
     if (tokens !== null) {
       return base + computeThirdPartySurchargeUsd(tokens, CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS);
@@ -130,9 +131,9 @@ export const cursorBenchAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord>
   identity: (record) => ({ id: record.modelId, label: record.modelName }),
   computePoint: (record, controls): PlottablePoint | null => {
     const includeTokenRate = Boolean(controls[SURCHARGE_CONTROL_ID] ?? SURCHARGE_CONTROL.default);
-    const rawTokenMix = controls[TOKEN_MIX_CONTROL_ID];
-    const tokenMix = typeof rawTokenMix === "number" ? rawTokenMix : undefined;
-    const cost = effectiveCursorCostUsd(record, includeTokenRate, tokenMix);
+    const rawCacheHitRate = controls[TOKEN_MIX_CONTROL_ID];
+    const cacheHitRate = typeof rawCacheHitRate === "number" ? rawCacheHitRate : undefined;
+    const cost = effectiveCursorCostUsd(record, includeTokenRate, cacheHitRate);
     if (cost === null) return null;
     return {
       id: record.modelId,
@@ -143,7 +144,7 @@ export const cursorBenchAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord>
     };
   },
   searchText: (record) => `${record.modelName} ${record.provider} ${record.modelId}`,
-  tooltipLines: (record, point): readonly TooltipLine[] => {
+  tooltipLines: (record, point, controls): readonly TooltipLine[] => {
     const lines: TooltipLine[] = [
       { label: "CursorBench score", value: `${record.score.toFixed(1)}%` },
       { label: "Avg cost / task", value: formatCursorCostUsd(point.x) },
@@ -152,10 +153,13 @@ export const cursorBenchAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord>
       lines.push({ label: "Tokens / task (published)", value: record.tokensPerTask.toLocaleString("en-US") });
     }
     lines.push({ label: "Provider", value: record.provider });
+    const surchargeLine = surchargeTooltipLine(record, controls);
+    if (surchargeLine) lines.push(surchargeLine);
+    lines.push(...cursorEstimateTooltipLines(record, controls));
     return lines;
   },
   disclaimer:
-    "Scores, costs, and aggregate tokens are published by cursor.com/evals. Cursor Token Rate is an estimate: it subtracts known output cost, then infers hidden tokens from model-specific rates. Raw source values are never mutated.",
+    "Scores, costs, and aggregate tokens are published by cursor.com/evals. Cursor Token Rate is an estimate: it subtracts known output cost, then infers hidden tokens from model-specific rates at the selected cache hit rate (cached input / total input). Raw source values are never mutated.",
 };
 
 /**
@@ -168,9 +172,9 @@ export function surchargeTooltipLine(
 ): TooltipLine | null {
   const enabled = Boolean(controls[SURCHARGE_CONTROL_ID] ?? SURCHARGE_CONTROL.default);
   if (!enabled || !record.isThirdParty) return null;
-  const tokenMix = Number(controls[TOKEN_MIX_CONTROL_ID]);
-  if (Number.isFinite(tokenMix)) {
-    const estimate = estimateCursorTokenRate(record, tokenMix);
+  const cacheHitRate = Number(controls[TOKEN_MIX_CONTROL_ID]);
+  if (Number.isFinite(cacheHitRate)) {
+    const estimate = estimateCursorTokenRate(record, cacheHitRate);
     if (estimate !== null) {
       return {
         label: "Cursor Token Rate fee (estimate)",
@@ -192,15 +196,16 @@ export function cursorEstimateTooltipLines(
 ): readonly TooltipLine[] {
   if (!Boolean(controls[SURCHARGE_CONTROL_ID] ?? SURCHARGE_CONTROL.default)) return [];
   if (!record.isThirdParty) return [{ label: "Cursor Token Rate", value: "Exempt (first-party Cursor model)" }];
-  const tokenMix = Number(controls[TOKEN_MIX_CONTROL_ID]);
-  if (!Number.isFinite(tokenMix)) return [];
+  const cacheHitRate = Number(controls[TOKEN_MIX_CONTROL_ID]);
+  if (!Number.isFinite(cacheHitRate)) return [];
   const profile = cursorTokenRateProfile(record);
-  const estimate = estimateCursorTokenRate(record, tokenMix);
+  const estimate = estimateCursorTokenRate(record, cacheHitRate);
   if (profile === null || estimate === null) {
     return [{ label: "Cursor Token Rate", value: "Estimate unavailable for this model/source row" }];
   }
-  const rate = blendCursorNonOutputPrice(profile, tokenMix)!;
+  const rate = blendCursorNonOutputPrice(profile, cacheHitRate)!;
   return [
+    { label: "Cache hit rate", value: `${Math.round(cacheHitRate)}% (cached input / total input)` },
     { label: "Blended non-output rate (estimate)", value: `$${rate.toFixed(4)}/M` },
     { label: "Hidden tokens (estimate)", value: estimate.hiddenTokens.toLocaleString("en-US", { maximumFractionDigits: 0 }) },
     { label: "Total tokens (estimate)", value: estimate.totalTokens.toLocaleString("en-US", { maximumFractionDigits: 0 }) },

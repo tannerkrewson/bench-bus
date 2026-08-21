@@ -13,9 +13,9 @@ import {
  * - https://prod.cursor.com/docs/models/gpt-5-6-luna
  */
 export interface CursorTokenRateProfile {
-  /** Cache-heavy endpoint, USD per million non-output tokens. */
+  /** Cache-priced endpoint, USD per million non-output tokens. */
   nonOutputPriceMinUsdPerMillion: number;
-  /** Input-heavy endpoint, USD per million non-output tokens. */
+  /** Input-priced endpoint, USD per million non-output tokens. */
   nonOutputPriceMaxUsdPerMillion: number;
   /** Published output rate, USD per million output tokens. */
   outputPriceUsdPerMillion: number;
@@ -63,12 +63,13 @@ export function cursorTokenRateProfile(
 }
 
 /**
- * Logarithmically blend the cache-heavy and input-heavy non-output prices.
- * `positionPercent` is dimensionless: 0 is cache-heavy and 100 is input-heavy.
+ * Logarithmically blend the input-priced and cache-priced non-output rates.
+ * `cacheHitRatePercent` is the standard cached-input/total-input percentage:
+ * 0 is fully input-priced and 100 is fully cache-priced.
  */
 export function blendCursorNonOutputPrice(
   profile: CursorTokenRateProfile,
-  positionPercent: number,
+  cacheHitRatePercent: number,
 ): number | null {
   const min = profile.nonOutputPriceMinUsdPerMillion;
   const max = profile.nonOutputPriceMaxUsdPerMillion;
@@ -78,14 +79,15 @@ export function blendCursorNonOutputPrice(
     min <= 0 ||
     max <= 0 ||
     max < min ||
-    !Number.isFinite(positionPercent) ||
-    positionPercent < 0 ||
-    positionPercent > 100
+    !Number.isFinite(cacheHitRatePercent) ||
+    cacheHitRatePercent < 0 ||
+    cacheHitRatePercent > 100
   ) {
     return null;
   }
-  const position = positionPercent / 100;
-  const value = min * (max / min) ** position;
+  const cacheHitRate = cacheHitRatePercent / 100;
+  // At 0% all input is charged at the input rate; at 100% all is cached.
+  const value = max * (min / max) ** cacheHitRate;
   return Number.isFinite(value) && value > 0 ? value : null;
 }
 
@@ -109,7 +111,7 @@ export interface CursorTokenRateEstimate {
  */
 export function estimateCursorTokenRate(
   record: DerivedCursorChartRecord,
-  positionPercent: number,
+  cacheHitRatePercent: number,
 ): CursorTokenRateEstimate | null {
   if (!record.isThirdParty) return null;
   const profile = cursorTokenRateProfile(record);
@@ -135,10 +137,12 @@ export function estimateCursorTokenRate(
     return null;
   }
 
-  const blended = blendCursorNonOutputPrice(profile, positionPercent);
-  const minPrice = blendCursorNonOutputPrice(profile, 0);
-  const maxPrice = blendCursorNonOutputPrice(profile, 100);
-  if (blended === null || minPrice === null || maxPrice === null) return null;
+  const blended = blendCursorNonOutputPrice(profile, cacheHitRatePercent);
+  // The lowest fee comes from the cache-priced endpoint; the highest from
+  // the input-priced endpoint.
+  const cachePrice = blendCursorNonOutputPrice(profile, 100);
+  const inputPrice = blendCursorNonOutputPrice(profile, 0);
+  if (blended === null || cachePrice === null || inputPrice === null) return null;
 
   const hiddenTokens = (residualUsd / blended) * 1e6;
   const totalTokens = hiddenTokens + outputTokens;
@@ -148,10 +152,10 @@ export function estimateCursorTokenRate(
 
   const surchargeUsd = (totalTokens / 1e6) * CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS;
   const minSurchargeUsd =
-    (totalTokensAtPrice(residualUsd, outputTokens, maxPrice) / 1e6) *
+    (totalTokensAtPrice(residualUsd, outputTokens, cachePrice) / 1e6) *
     CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS;
   const maxSurchargeUsd =
-    (totalTokensAtPrice(residualUsd, outputTokens, minPrice) / 1e6) *
+    (totalTokensAtPrice(residualUsd, outputTokens, inputPrice) / 1e6) *
     CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS;
   if (![surchargeUsd, minSurchargeUsd, maxSurchargeUsd].every(Number.isFinite)) return null;
 

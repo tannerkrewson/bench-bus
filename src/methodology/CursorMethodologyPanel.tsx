@@ -23,10 +23,13 @@ export const CursorMethodologyPanel: Component<{ class?: string }> = (props) => 
       <strong>Third-party surcharge.</strong> The toggle adds Cursor
       {"'"}s flat ${CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS} per million
       tokens surcharge for third-party models, applied on top of the published
-      cost using the table{"'"}s aggregate tokens-per-task volume. It is never
-      baked into the raw values: first-party models are unaffected, and the
-      adjustment is only included when the toggle is on (the chart states
-      clearly when it is part of a plotted cost).
+      cost. When output tokens and a model rate profile are available, the
+      estimate subtracts known output cost and infers hidden tokens using the
+      selected cache hit rate (cached input / total input); otherwise it uses
+      the published aggregate tokens-per-task volume. It is never baked into
+      the raw values: first-party models are unaffected, and the adjustment is
+      only included when the toggle is on (the chart states clearly when it is
+      part of a plotted cost).
     </p>
     <p>
       <strong>Published values are display-rounded.</strong> The source table

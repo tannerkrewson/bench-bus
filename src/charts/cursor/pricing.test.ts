@@ -25,10 +25,10 @@ const composer: DerivedCursorChartRecord = {
 };
 
 describe("Cursor token-rate pricing", () => {
-  it("uses model-specific Luna endpoints and a geometric midpoint", () => {
+  it("uses the standard cache-hit direction for Luna endpoints", () => {
     const profile = cursorTokenRateProfile(luna)!;
-    expect(blendCursorNonOutputPrice(profile, 0)).toBe(0.02);
-    expect(blendCursorNonOutputPrice(profile, 100)).toBe(0.25);
+    expect(blendCursorNonOutputPrice(profile, 0)).toBe(0.25);
+    expect(blendCursorNonOutputPrice(profile, 100)).toBe(0.02);
     expect(blendCursorNonOutputPrice(profile, 50)).toBeCloseTo(Math.sqrt(0.02 * 0.25), 12);
   });
 
@@ -40,6 +40,15 @@ describe("Cursor token-rate pricing", () => {
     expect(estimate.hiddenTokens).toBeCloseTo(hidden, 6);
     expect(estimate.totalTokens).toBeCloseTo(hidden + 100_000, 6);
     expect(estimate.adjustedCostUsd).toBeGreaterThan(1);
+  });
+
+  it("uses input-priced and cache-priced endpoint behavior in estimates", () => {
+    const inputPriced = estimateCursorTokenRate(luna, 0)!;
+    const cachePriced = estimateCursorTokenRate(luna, 100)!;
+    expect(inputPriced.blendedNonOutputPriceUsdPerMillion).toBe(0.25);
+    expect(cachePriced.blendedNonOutputPriceUsdPerMillion).toBe(0.02);
+    expect(inputPriced.totalTokens).toBeLessThan(cachePriced.totalTokens);
+    expect(inputPriced.adjustedCostUsd).toBeLessThan(cachePriced.adjustedCostUsd);
   });
 
   it("exempts first-party Cursor models", () => {

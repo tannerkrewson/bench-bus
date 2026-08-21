@@ -123,8 +123,12 @@ export interface BenchmarkChartAdapter<TRecord> {
   computePoint(record: TRecord, controls: Readonly<PricingControlState>): PlottablePoint | null;
   /** Lowercased haystack used by the search/filter box. */
   searchText(record: TRecord): string;
-  /** Tooltip rows for a plotted point. */
-  tooltipLines(record: TRecord, point: PlottablePoint): readonly TooltipLine[];
+  /** Tooltip rows for a plotted point under the current control state. */
+  tooltipLines(
+    record: TRecord,
+    point: PlottablePoint,
+    controls: Readonly<PricingControlState>,
+  ): readonly TooltipLine[];
   /** Methodology/limitations note rendered below the chart, if any. */
   readonly disclaimer?: string;
 }

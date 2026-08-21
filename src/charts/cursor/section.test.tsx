@@ -83,6 +83,9 @@ describe("CursorBenchChartSection", () => {
       `#chart-cursor-control-${TOKEN_MIX_CONTROL_ID}`,
     ) as HTMLInputElement;
     expect(slider).not.toBeNull();
+    expect(slider.getAttribute("aria-label")).toBe("Cache hit rate");
+    expect(slider.value).toBe("90");
+    expect(container.textContent).toContain("cached input tokens / total input tokens");
     slider.value = "25";
     slider.dispatchEvent(new Event("input", { bubbles: true }));
     toggle.click();
@@ -90,6 +93,7 @@ describe("CursorBenchChartSection", () => {
     toggle.click();
     expect((container.querySelector(`#chart-cursor-control-${TOKEN_MIX_CONTROL_ID}`) as HTMLInputElement).value).toBe("25");
     expect(container.querySelector("[data-testid='cursor-token-rate-assumptions']")).not.toBeNull();
+    expect(container.querySelector("[data-testid='cursor-surcharge-included']")?.textContent).toContain("Surcharge included");
     dispose();
   });
 

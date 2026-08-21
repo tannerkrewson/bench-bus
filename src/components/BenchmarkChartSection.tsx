@@ -76,7 +76,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
     if (!h) return null;
     const entry = build().entries.find((e) => e.point.id === h.id);
     if (!entry) return null;
-    const lines = [...props.adapter.tooltipLines(entry.record, entry.point)];
+    const lines = [...props.adapter.tooltipLines(entry.record, entry.point, controls())];
     if (entry.point.discount) {
       lines.push(
         { label: "Pre-discount cost", value: `$${entry.point.discount.preDiscountX.toFixed(2)}` },
