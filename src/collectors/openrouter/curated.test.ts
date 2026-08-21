@@ -6,7 +6,7 @@ describe("curated model config", () => {
   it("validates the committed forced DeepSeek example", () => {
     const config = parseCuratedModelConfig(JSON.stringify(curatedConfig));
     expect(config.models).toEqual([expect.objectContaining({
-      aaModelSlug: "deepseek-v4-0731-flash",
+      aaModelSlug: "deepseek-v4-flash",
       openrouterId: "deepseek/deepseek-v4-flash-0731",
     })]);
   });

@@ -46,32 +46,65 @@ const CACHE_HIT_CONTROL = {
 
 export const AA_CONTROL_SPECS = [PRICING_MODE_CONTROL, CACHE_HIT_CONTROL] as const;
 
+function providerDiscountAnnotation(
+  provider: DerivedAaChartRecord["providers"][number],
+  inputTokens: number,
+  outputTokens: number,
+): PriceDiscountAnnotation | undefined {
+  const percentage = provider.discountPercentage;
+  if (percentage === undefined || percentage <= 0 || percentage >= 100) return undefined;
+  const effectiveX =
+    (inputTokens / 1e6) * provider.effectiveInputPrice +
+    (outputTokens / 1e6) * provider.effectiveOutputPrice;
+  if (!Number.isFinite(effectiveX) || effectiveX <= 0) return undefined;
+  const listedInput = provider.listedInputPrice;
+  const listedOutput = provider.listedOutputPrice;
+  const preDiscountX =
+    listedInput !== undefined && listedOutput !== undefined && listedInput > 0 && listedOutput > 0
+      ? (inputTokens / 1e6) * listedInput + (outputTokens / 1e6) * listedOutput
+      : effectiveX / (1 - percentage / 100);
+  // The percentage is explicit OpenRouter metadata. If provider-level listed
+  // rates are present, they are used directly; otherwise the undiscounted
+  // workload cost is recovered from that explicit percentage and the same
+  // provider's effective workload cost.
+  if (!Number.isFinite(preDiscountX) || preDiscountX <= effectiveX) return undefined;
+  return {
+    percentage,
+    preDiscountX,
+    effectiveX,
+    providerName: provider.providerName,
+  };
+}
+
 function explicitProviderDiscount(
   record: DerivedAaChartRecord,
   winner: ReturnType<typeof selectCheapestProvider>,
 ): PriceDiscountAnnotation | undefined {
   if (!winner) return undefined;
-  const percentage = winner.discountPercentage;
-  const listedInput = winner.listedInputPrice;
-  const listedOutput = winner.listedOutputPrice;
-  if (
-    percentage === undefined ||
-    percentage <= 0 ||
-    percentage >= 100 ||
-    listedInput === undefined ||
-    listedOutput === undefined ||
-    listedInput <= 0 ||
-    listedOutput <= 0
-  ) return undefined;
-  const preDiscountX =
-    (record.canonicalTokens.input / 1e6) * listedInput +
-    (record.canonicalTokens.output / 1e6) * listedOutput;
-  // The percentage and both prices must come from this same winning provider;
-  // never manufacture a discount from another provider or an unrelated
-  // catalog/listed price. The explicit source percentage is not inferred from
-  // the effective/listed price ratio.
-  if (!Number.isFinite(preDiscountX) || preDiscountX <= winner.totalCostUsd) return undefined;
-  return { percentage, preDiscountX, providerName: winner.providerName };
+  const annotation = providerDiscountAnnotation(
+    winner,
+    record.canonicalTokens.input,
+    record.canonicalTokens.output,
+  );
+  if (!annotation) return undefined;
+  return {
+    percentage: annotation.percentage,
+    preDiscountX: annotation.preDiscountX,
+    ...(annotation.providerName ? { providerName: annotation.providerName } : {}),
+  };
+}
+
+function explicitProviderDiscounts(
+  record: DerivedAaChartRecord,
+): PriceDiscountAnnotation[] {
+  return record.providers.flatMap((provider) => {
+    const annotation = providerDiscountAnnotation(
+      provider,
+      record.canonicalTokens.input,
+      record.canonicalTokens.output,
+    );
+    return annotation ? [annotation] : [];
+  });
 }
 
 /**
@@ -120,6 +153,9 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
       x: cost,
       y: record.intelligenceIndex,
       ...(discount ? { discount } : {}),
+      ...(mode === "cheapest"
+        ? { discounts: explicitProviderDiscounts(record) }
+        : {}),
     };
   },
 

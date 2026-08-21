@@ -111,6 +111,7 @@ async function main(): Promise<void> {
       concurrency: args.concurrency,
       timeoutMs: args.timeoutMs,
       retries: args.retries,
+      collectProviderDiscounts: true,
       curatedModels: parseCuratedModelConfig(readFileSync(args.curatedConfigPath, "utf8"), args.curatedConfigPath).models,
     });
     console.error(formatReport(report));

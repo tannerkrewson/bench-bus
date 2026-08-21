@@ -54,4 +54,32 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect(container.querySelectorAll("[data-testid='discount-arrow']")).toHaveLength(0);
     dispose();
   });
+
+  it("renders multiple provider discount arrows for one model", async () => {
+    const { container, dispose } = mount(() => (
+      <BenchmarkScatterChart
+        points={() => [{
+          id: "multi-discount",
+          label: "Multi discount",
+          x: 6,
+          y: 70,
+          discounts: [
+            { percentage: 40, preDiscountX: 10, effectiveX: 6, providerName: "Provider A" },
+            { percentage: 25, preDiscountX: 8, effectiveX: 5, providerName: "Provider B" },
+          ],
+        }]}
+        scale={() => "log"}
+        selectedId={() => null}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        height={320}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const arrows = container.querySelectorAll("[data-testid='discount-arrow']");
+    expect(arrows).toHaveLength(2);
+    expect(arrows[0]?.getAttribute("data-discount-id")).toBe("multi-discount::discount-0");
+    expect(arrows[1]?.getAttribute("data-discount-id")).toBe("multi-discount::discount-1");
+    dispose();
+  });
 });

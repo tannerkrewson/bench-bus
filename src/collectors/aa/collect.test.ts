@@ -151,6 +151,31 @@ describe("fail-closed behavior", () => {
 });
 
 describe("buildAaCollection", () => {
+  it("retains a curated model with a source-null cache-write price", () => {
+    const model = {
+      id: "deepseek-id",
+      slug: "deepseek-v4-flash",
+      name: "DeepSeek V4 Flash 0731",
+      shortName: "DeepSeek V4 Flash 0731 (max)",
+      releaseDate: "2026-07-31",
+      price1mInputTokens: 0.44,
+      price1mOutputTokens: 1.32,
+      cacheHitPrice: 0.014,
+      cacheWritePrice: null,
+      intelligenceIndex: 51.7665776089032,
+      intelligenceIndexCost: { total: 323.25907280569834 },
+      canonicalIntelligenceIndexTokenCount: {
+        input: 1_280_997_079,
+        output: 205_996_513,
+        answer: 10_185_879,
+        reasoning: 195_810_634,
+      },
+    };
+    expect(() => buildAaCollection([model])).toThrow(/No complete Artificial Analysis models/);
+    const result = buildAaCollection([model], { allowNullCacheWriteSlugs: [model.slug] });
+    expect(result.records[0]?.cacheWritePrice).toBeNull();
+  });
+
   it("keeps the first occurrence when deduplicating by identity key", () => {
     const complete = (id: string) => ({
       id,

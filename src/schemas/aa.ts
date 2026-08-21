@@ -52,9 +52,10 @@ export const artificialAnalysisModelSchema = z
     /**
      * Listed cache-write price, USD per 1M tokens.
      * Persisted for completeness only: cache-write token counts are not
-     * published, so cost estimates must never consume this field.
+     * published, so cost estimates must never consume this field. AA may
+     * publish null when the listed cache-write rate is unavailable.
      */
-    cacheWritePrice: finiteNumber,
+    cacheWritePrice: finiteNumber.nullable(),
     intelligenceIndex: finiteNumber,
     /** Total cost Artificial Analysis reports for one Intelligence Index run. */
     intelligenceIndexCost: z.object({

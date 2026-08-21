@@ -41,19 +41,27 @@ export function buildChartPlot<TRecord>(
   return { entries, unplottable, filteredOut };
 }
 
+/** Validate one explicit source-backed discount annotation. */
+export function explicitDiscountForAnnotation(
+  discount: PriceDiscountAnnotation | undefined,
+): PriceDiscountAnnotation | null {
+  if (
+    !discount || !Number.isFinite(discount.preDiscountX) || discount.preDiscountX <= 0 ||
+    !Number.isFinite(discount.percentage) || discount.percentage <= 0 || discount.percentage >= 100 ||
+    (discount.effectiveX !== undefined &&
+      (!Number.isFinite(discount.effectiveX) || discount.effectiveX <= 0))
+  ) return null;
+  return discount;
+}
+
 /**
  * Assemble uPlot data arrays. On log scale, non-positive x values are
  * dropped (they are unrepresentable); callers get the dropped ids so the UI
  * can explain why a point disappeared after a scale switch.
  */
 export function explicitDiscountForPoint(point: PlottablePoint): PriceDiscountAnnotation | null {
-  const discount = point.discount;
-  if (
-    !discount || !Number.isFinite(discount.preDiscountX) || discount.preDiscountX <= 0 ||
-    !Number.isFinite(discount.percentage) || discount.percentage <= 0 || discount.percentage >= 100 ||
-    !(point.x > 0)
-  ) return null;
-  return discount;
+  const discount = explicitDiscountForAnnotation(point.discount);
+  return discount && point.x > 0 ? discount : null;
 }
 
 export function toPlotSeries(

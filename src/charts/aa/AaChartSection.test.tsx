@@ -80,7 +80,7 @@ describe("AaChartSection", () => {
       ...AA_DEFAULT_MODEL_SLUGS,
       "gpt-5.6-sol",
     ]);
-    expect(AA_DEFAULT_MODEL_SLUGS).toContain("deepseek-v4-0731-flash");
+    expect(AA_DEFAULT_MODEL_SLUGS).toContain("deepseek-v4-flash");
     expect(container.querySelector("[data-testid='aa-no-points']")).toBeNull();
     expect(AA_DEFAULT_COST_MODE).toBe("intelligence-vs-cost-per-task");
     dispose();

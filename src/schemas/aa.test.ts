@@ -22,6 +22,11 @@ describe("artificialAnalysisModelSchema", () => {
     expect(parsed.cacheWritePrice).toBe(6.25);
   });
 
+  it("accepts a source-published null cache-write price", () => {
+    const parsed = artificialAnalysisModelSchema.parse({ ...validAaModel, cacheWritePrice: null });
+    expect(parsed.cacheWritePrice).toBeNull();
+  });
+
   it("preserves non-round numbers exactly", () => {
     const parsed = artificialAnalysisModelSchema.parse(validAaModel2);
     expect(parsed.canonicalIntelligenceIndexTokenCount.output).toBe(50_000.5);

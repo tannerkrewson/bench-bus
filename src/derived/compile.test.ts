@@ -251,13 +251,13 @@ describe("compileBundle", () => {
   it("accepts a curated OpenRouter record absent from AA without emitting it", () => {
     const joined = joinAaWithPricing(
       [validAaModel],
-      [orPricing("deepseek-v4-0731-flash")],
+      [orPricing("deepseek-v4-flash")],
       ALIASES,
       [validAaModel.slug],
       [{
-        aaModelSlug: "deepseek-v4-0731-flash",
-        aaModelId: "deepseek-v4-0731-flash",
-        openrouterId: "vendor/deepseek-v4-0731-flash",
+        aaModelSlug: "deepseek-v4-flash",
+        aaModelId: "fe4c0848-e284-4e52-a79d-cdc28392f1a9",
+        openrouterId: "vendor/deepseek-v4-flash",
       }],
     );
     expect(joined.records.map((record) => record.slug)).toEqual(["claude-opus-5"]);

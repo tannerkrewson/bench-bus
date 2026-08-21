@@ -56,7 +56,9 @@ export const UnifiedLimitationsPanel: Component = () => (
       <p>
         <strong>OpenRouter prices.</strong> Effective prices are 30-day realized
         averages from a snapshot. They can change, and the cheapest provider may
-        not be available later.
+        not be available later. When OpenRouter publishes an explicit provider
+        discount, the chart shows its source-backed discount arrow and tooltip
+        details; discounts are never inferred from price ratios.
       </p>
       <p>
         <strong>CursorBench.</strong> Scores, per-task costs, and aggregate token

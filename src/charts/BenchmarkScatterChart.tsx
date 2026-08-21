@@ -10,7 +10,12 @@ import {
   type ModelVariantGroup,
   type ModelVariantMember,
 } from "./labelLayout";
-import { explicitDiscountForPoint, paretoFrontier, toHighlightY, toPlotSeries } from "./plotData";
+import {
+  explicitDiscountForAnnotation,
+  paretoFrontier,
+  toHighlightY,
+  toPlotSeries,
+} from "./plotData";
 import { formatDollarTick, formatPercentTick } from "../utils/format";
 import type { PlottablePoint, XScale } from "./types";
 
@@ -129,16 +134,21 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       (point): point is PlottablePoint => point !== undefined,
     );
     const discounts: DiscountAnnotation[] = orderedPoints.flatMap((point) => {
-      const discount = explicitDiscountForPoint(point);
-      if (!discount) return [];
-      return [{
-        id: point.id,
-        preX: discount.preDiscountX,
-        effectiveX: point.x,
-        y: point.y,
-        percentage: discount.percentage,
-        providerName: discount.providerName,
-      }];
+      const candidates = point.discounts ?? (point.discount ? [point.discount] : []);
+      return candidates.flatMap((candidate, index) => {
+        const discount = explicitDiscountForAnnotation(candidate);
+        if (!discount) return [];
+        return [{
+          id: point.discounts === undefined && point.discount !== undefined
+            ? point.id
+            : `${point.id}::discount-${index}`,
+          preX: discount.preDiscountX,
+          effectiveX: discount.effectiveX ?? point.x,
+          y: point.y,
+          percentage: discount.percentage,
+          providerName: discount.providerName,
+        }];
+      });
     });
     currentSeries = {
       x: orderedIds.map((id) => series.x[indexById.get(id)!]!),

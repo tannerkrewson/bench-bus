@@ -38,8 +38,8 @@ export function parseCuratedModelConfig(raw: string, source = "curated model con
 /** First forced example; identity is kept separate from automatic frontier selection. */
 export const DEFAULT_CURATED_MODELS: readonly CuratedModel[] = [
   {
-    aaModelSlug: "deepseek-v4-0731-flash",
-    aaModelId: "deepseek-v4-0731-flash",
+    aaModelSlug: "deepseek-v4-flash",
+    aaModelId: "fe4c0848-e284-4e52-a79d-cdc28392f1a9",
     openrouterId: "deepseek/deepseek-v4-flash-0731",
     note: "DeepSeek V4 0731 Flash; forced into lookup/default visibility when AA and OpenRouter list it.",
   },

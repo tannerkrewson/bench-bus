@@ -111,10 +111,11 @@ export default function AaChartSection(props: AaChartSectionProps) {
     const entry = build().entries.find((e) => e.point.id === h.id);
     if (!entry) return null;
     const lines = [...aaControlledTooltipLines(entry.record, entry.point, controls())];
-    if (entry.point.discount) {
+    const discounts = entry.point.discounts ?? (entry.point.discount ? [entry.point.discount] : []);
+    for (const discount of discounts) {
       lines.push(
-        { label: "Pre-discount cost", value: `$${entry.point.discount.preDiscountX.toFixed(2)}` },
-        { label: "Effective discount", value: `${entry.point.discount.percentage}%${entry.point.discount.providerName ? ` (${entry.point.discount.providerName})` : ""}` },
+        { label: "Pre-discount cost", value: `$${discount.preDiscountX.toFixed(2)}` },
+        { label: "Effective discount", value: `${discount.percentage}%${discount.providerName ? ` (${discount.providerName})` : ""}` },
       );
     }
     return { title: entry.point.label, lines };

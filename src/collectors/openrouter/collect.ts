@@ -27,6 +27,10 @@ import {
   type OpenRouterModelPricing,
   type OpenRouterSnapshotPayload,
 } from "../../schemas/openrouter";
+import {
+  fetchOpenRouterProviderDiscounts,
+  type OpenRouterProviderDiscount,
+} from "./discounts";
 
 export const OPENROUTER_SOURCE_METADATA = {
   source: "openrouter",
@@ -92,6 +96,8 @@ export interface CollectorOptions {
   frontierModels?: readonly AaFrontierIdentity[];
   /** Explicit operator-forced identities, independent of frontier selection. */
   curatedModels?: readonly CuratedModel[];
+  /** Fetch official provider discount metadata from OpenRouter model pages. */
+  collectProviderDiscounts?: boolean;
   log?: (line: string) => void;
 }
 
@@ -175,6 +181,17 @@ export async function collectOpenRouterPricing(
   const entries: AliasEntry[] = [...aliasFile.entries, ...uniqueAdditions];
   const effectiveAliasFile = { ...aliasFile, entries };
   const effectiveProvisionalUsed = provisionalAliases(effectiveAliasFile).map((e) => e.aaModelSlug);
+  const providerDiscountCache = new Map<string, Promise<OpenRouterProviderDiscount[]>>();
+  const providerDiscountsFor = (openrouterId: string): Promise<OpenRouterProviderDiscount[]> => {
+    const cached = providerDiscountCache.get(openrouterId);
+    if (cached) return cached;
+    const request = fetchOpenRouterProviderDiscounts(openrouterId, fetchImpl, timeoutMs).catch((error: unknown) => {
+      log(`discount metadata unavailable for ${openrouterId}: ${String(error)}`);
+      return [];
+    });
+    providerDiscountCache.set(openrouterId, request);
+    return request;
+  };
 
   // Advisory suggestions for human curation; frontier entries are already
   // admitted above because they were selected by a deterministic rule.
@@ -211,15 +228,36 @@ export async function collectOpenRouterPricing(
         });
         return;
       }
-      const providerSummaries = response.data.providerSummaries.map((p) => ({
-        providerName: p.providerName,
-        providerSlug: p.providerSlug,
-        effectiveInputPrice: p.effectiveInputPrice,
-        effectiveOutputPrice: p.effectiveOutputPrice,
-        ...(p.listedInputPrice !== undefined ? { listedInputPrice: p.listedInputPrice } : {}),
-        ...(p.listedOutputPrice !== undefined ? { listedOutputPrice: p.listedOutputPrice } : {}),
-        ...(p.discountPercentage !== undefined ? { discountPercentage: p.discountPercentage } : {}),
-      }));
+      const pageDiscounts = options.collectProviderDiscounts
+        ? await providerDiscountsFor(entry.openrouterId)
+        : [];
+      const discountsByProvider = new Map(
+        pageDiscounts.map((discount) => [discount.providerSlug, discount]),
+      );
+      const providerSummaries = response.data.providerSummaries.map((p) => {
+        const pageDiscount = discountsByProvider.get(p.providerSlug);
+        return {
+          providerName: p.providerName,
+          providerSlug: p.providerSlug,
+          effectiveInputPrice: p.effectiveInputPrice,
+          effectiveOutputPrice: p.effectiveOutputPrice,
+          ...(p.listedInputPrice !== undefined
+            ? { listedInputPrice: p.listedInputPrice }
+            : pageDiscount
+              ? { listedInputPrice: pageDiscount.listedInputPrice }
+              : {}),
+          ...(p.listedOutputPrice !== undefined
+            ? { listedOutputPrice: p.listedOutputPrice }
+            : pageDiscount
+              ? { listedOutputPrice: pageDiscount.listedOutputPrice }
+              : {}),
+          ...(p.discountPercentage !== undefined
+            ? { discountPercentage: p.discountPercentage }
+            : pageDiscount
+              ? { discountPercentage: pageDiscount.discountPercentage }
+              : {}),
+        };
+      });
       const listed = catalogById.get(entry.openrouterId);
       const candidate = {
         permaslug: entry.openrouterId,

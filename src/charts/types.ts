@@ -30,6 +30,8 @@ export interface PriceDiscountAnnotation {
   percentage: number;
   /** Undiscounted workload cost in USD, from the same provider price. */
   preDiscountX: number;
+  /** Optional effective cost when the discounted provider is not the plotted winner. */
+  effectiveX?: number;
   /** Provider that supplied both the pre-discount and effective prices. */
   providerName?: string;
 }
@@ -45,6 +47,8 @@ export interface PlottablePoint {
   x: number;
   /** Optional explicit source-backed discount annotation; never inferred by the chart. */
   discount?: PriceDiscountAnnotation;
+  /** Multiple source-backed provider discounts shown as additional dots/arrows. */
+  discounts?: readonly PriceDiscountAnnotation[];
   /** Stable key for an effort-group connection and its shared chart color. */
   effortGroup?: string;
   /** Benchmark score. */

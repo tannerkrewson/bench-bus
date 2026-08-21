@@ -148,8 +148,8 @@ describe("collectOpenRouterPricing", () => {
     const report = await collectOpenRouterPricing(baseOptions({
       frontierModels: [{ slug: "frontier-model", id: "aa-frontier" }],
       curatedModels: [{
-        aaModelSlug: "deepseek-v4-0731-flash",
-        aaModelId: "aa-deepseek",
+        aaModelSlug: "deepseek-v4-flash",
+        aaModelId: "fe4c0848-e284-4e52-a79d-cdc28392f1a9",
         openrouterId: "deepseek/deepseek-v4-flash-0731",
       }],
       fetchImpl: routerFetch({
@@ -169,7 +169,7 @@ describe("collectOpenRouterPricing", () => {
       }),
     }));
     expect(report.records.map((record) => record.aaModelSlug)).toContain("frontier-model");
-    expect(report.records.map((record) => record.aaModelSlug)).toContain("deepseek-v4-0731-flash");
+    expect(report.records.map((record) => record.aaModelSlug)).toContain("deepseek-v4-flash");
     expect(report.unmatchedFrontierModels).toEqual([]);
   });
 

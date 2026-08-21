@@ -72,9 +72,43 @@ describe("aaAdapter.computePoint", () => {
     });
   });
 
+  it("renders every explicit provider discount as a separate annotation", () => {
+    const record = {
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      canonicalTokens: { input: 1_000_000, output: 1_000_000 },
+      providers: [
+        {
+          providerName: "Discount A",
+          providerSlug: "discount-a",
+          effectiveInputPrice: 1,
+          effectiveOutputPrice: 2,
+          listedInputPrice: 2,
+          listedOutputPrice: 4,
+          discountPercentage: 50,
+        },
+        {
+          providerName: "Discount B",
+          providerSlug: "discount-b",
+          effectiveInputPrice: 3,
+          effectiveOutputPrice: 4,
+          listedInputPrice: 4,
+          listedOutputPrice: 6,
+          discountPercentage: 25,
+        },
+      ],
+    };
+    const point = aaAdapter.computePoint(record, controls)!;
+    expect(point.discounts?.map((discount) => discount.providerName)).toEqual([
+      "Discount A",
+      "Discount B",
+    ]);
+    expect(point.discounts?.[1]?.effectiveX).toBe(7);
+  });
+
   it("does not infer a discount when source metadata is absent", () => {
     const point = aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, controls)!;
     expect(point.discount).toBeUndefined();
+    expect(point.discounts).toEqual([]);
   });
 
   it("weighted mode uses the record's weighted prices", () => {

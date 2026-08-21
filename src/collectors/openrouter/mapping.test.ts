@@ -135,12 +135,12 @@ describe("frontier and curated aliases", () => {
 
   it("preserves explicit forced curated identity and note", () => {
     expect(curatedAliases([{
-      aaModelSlug: "deepseek-v4-0731-flash",
-      aaModelId: "aa-deepseek-v4-0731-flash",
+      aaModelSlug: "deepseek-v4-flash",
+      aaModelId: "fe4c0848-e284-4e52-a79d-cdc28392f1a9",
       openrouterId: "deepseek/deepseek-v4-flash-0731",
       note: "forced",
     }])).toEqual([expect.objectContaining({
-      aaModelSlug: "deepseek-v4-0731-flash",
+      aaModelSlug: "deepseek-v4-flash",
       openrouterId: "deepseek/deepseek-v4-flash-0731",
       note: "forced",
     })]);
