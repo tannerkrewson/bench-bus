@@ -48,6 +48,14 @@ type DiscountAnnotation = {
   providerName?: string;
 };
 
+type DiscountDecoration = {
+  id: string;
+  preLeft: number;
+  effectiveLeft: number;
+  top: number;
+  percentage: number;
+};
+
 type CurrentSeries = ReturnType<typeof toPlotSeries> & {
   labels: string[];
   effortGroups: (string | null)[];
@@ -82,6 +90,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   const [hoveredPosition, setHoveredPosition] = createSignal<{ left: number; top: number } | null>(null);
   const [hoveredLabelId, setHoveredLabelId] = createSignal<string | null>(null);
   const [pointDecorations, setPointDecorations] = createSignal<{ id: string; left: number; top: number; color: string }[]>([]);
+  const [discountDecorations, setDiscountDecorations] = createSignal<DiscountDecoration[]>([]);
   let hoveredLabelBounds: { left: number; top: number; right: number; bottom: number } | null = null;
 
   const refreshSeries = () => {
@@ -156,6 +165,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       frontierColor:
         styles.getPropertyValue("--color-primary").trim() || (dark ? "#a78bfa" : "#4f46e5"),
       leaderColor: dark ? "#94a3b8" : "#64748b",
+      discountColor: dark ? "#cbd5e1" : "#475569",
     };
   };
 
@@ -248,6 +258,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     if (!plot || !container?.parentElement) {
       setLabelPositions([]);
       setPointDecorations([]);
+      setDiscountDecorations([]);
       hoveredLabelBounds = null;
       setHoveredLabelId(null);
       return;
@@ -256,6 +267,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     const over = container.querySelector<HTMLElement>(".u-over");
     if (!over) {
       setLabelPositions([]);
+      setDiscountDecorations([]);
       hoveredLabelBounds = null;
       setHoveredLabelId(null);
       return;
@@ -287,6 +299,14 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       }];
     });
     setPointDecorations(decorations);
+    const discountGeometry = currentSeries.discounts.flatMap((discount) => {
+      const preLeft = overRect.left - rootRect.left + currentPlot.valToPos(discount.preX, "x");
+      const effectiveLeft = overRect.left - rootRect.left + currentPlot.valToPos(discount.effectiveX, "x");
+      const top = overRect.top - rootRect.top + currentPlot.valToPos(discount.y, "y");
+      if (![preLeft, effectiveLeft, top].every(Number.isFinite)) return [];
+      return [{ id: discount.id, preLeft, effectiveLeft, top, percentage: discount.percentage }];
+    });
+    setDiscountDecorations(discountGeometry);
     const anchors = currentSeries.ids.flatMap((id, index) => {
       const representativeId = representativeById.get(id);
       if (representativeId !== undefined && representativeId !== id) return [];
@@ -495,7 +515,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         })),
         ...currentSeries.discounts.map((discount) => ({
           label: `${discount.percentage}% discount: ${discount.providerName ?? "provider"}`,
-          stroke: "#64748b",
+          stroke: styles.discountColor,
           width: 1.5,
           dash: [4, 3],
           points: { show: false },
@@ -511,9 +531,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         }),
         ...currentSeries.discounts.map((discount) => ({
           label: `${discount.percentage}% discount before price`,
-          stroke: "#64748b",
+          stroke: styles.discountColor,
           width: 0,
-          points: { show: true, size: DISCOUNT_DOT_SIZE, width: 1.5, stroke: "#64748b", fill: "#64748b" },
+          points: { show: true, size: DISCOUNT_DOT_SIZE, width: 1.5, stroke: styles.discountColor, fill: styles.discountColor },
         })),
         {
           label: "Selected",
@@ -654,6 +674,38 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
             )}
           </For>
         </Show>
+        <For each={discountDecorations()}>
+          {(discount) => {
+            const direction = discount.effectiveLeft >= discount.preLeft ? 1 : -1;
+            const headStart = discount.effectiveLeft - direction * 7;
+            const labelLeft = (discount.preLeft + discount.effectiveLeft) / 2;
+            return (
+              <g
+                fill="none"
+                stroke={themeStyles().discountColor}
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                data-testid="discount-arrow"
+                data-discount-id={discount.id}
+                data-discount-percentage={discount.percentage}
+              >
+                <path d={`M ${headStart} ${discount.top - 4} L ${discount.effectiveLeft} ${discount.top} L ${headStart} ${discount.top + 4}`} />
+                <text
+                  x={labelLeft}
+                  y={discount.top - 8}
+                  fill={themeStyles().discountColor}
+                  stroke="none"
+                  text-anchor="middle"
+                  font-size="11"
+                  font-weight="600"
+                >
+                  {discount.percentage}% off
+                </text>
+              </g>
+            );
+          }}
+        </For>
       </svg>
       <Show when={props.showLabels?.() ?? true}>
         <svg
