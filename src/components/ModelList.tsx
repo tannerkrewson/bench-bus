@@ -1,4 +1,4 @@
-import { For, Show, createMemo, createSignal, onCleanup, onMount } from "solid-js";
+import { For, Show, createEffect, createMemo, createSignal, onCleanup, onMount } from "solid-js";
 import { effortGroupColor, inferModelBrand, modelBrandColor } from "../charts/brand";
 import { modelVariantParts } from "../charts/labelLayout";
 import { isDarkTheme } from "./ThemeToggle";
@@ -232,12 +232,11 @@ export default function ModelList(props: ModelListProps) {
       <summary
         ref={summary}
         class="btn btn-outline btn-sm w-full justify-between gap-3"
-        aria-haspopup="listbox"
         aria-expanded={open()}
       >
         <span class="flex items-center gap-2">
           <span>Models</span>
-          <span class="badge badge-sm">{items().length}</span>
+          <span class="badge badge-sm">{displayItems().length}</span>
         </span>
         <span class="text-xs text-base-content/60">
           {visibleSelectedCount()} of {combinedMode() ? items().length : sorted().length} visible
@@ -298,7 +297,9 @@ export default function ModelList(props: ModelListProps) {
           <For each={filtered()}>
             {(item) => {
               const selected = () => new Set(props.selectedIds());
-              const allSelected = () => item.members.every((point) => selected().has(point.id));
+              const selectedCount = () => item.members.filter((point) => selected().has(point.id)).length;
+              const allSelected = () => selectedCount() === item.members.length;
+              const partiallySelected = () => selectedCount() > 0 && !allSelected();
               return (
                 <label class="label min-h-9 w-full max-w-full cursor-pointer justify-between gap-3 rounded-box px-2 py-1 hover:bg-base-200">
                   <span class="flex min-w-0 flex-1 items-start gap-2">
@@ -312,7 +313,13 @@ export default function ModelList(props: ModelListProps) {
                   <input
                     type="checkbox"
                     class="checkbox checkbox-sm checkbox-primary shrink-0"
+                    ref={(element) => {
+                      createEffect(() => {
+                        element.indeterminate = partiallySelected();
+                      });
+                    }}
                     checked={allSelected()}
+                    aria-checked={partiallySelected() ? "mixed" : allSelected() ? "true" : "false"}
                     aria-label={`Show ${item.label}`}
                     onChange={() => toggleItem(item)}
                   />

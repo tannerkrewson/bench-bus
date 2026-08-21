@@ -55,7 +55,12 @@ describe("ModelList effort selection", () => {
     ));
 
     const mode = container.querySelector("[data-testid='model-effort-mode'] [role='switch']") as HTMLButtonElement;
+    const familyCheckbox = container.querySelector("[aria-label='Show Opus 5']") as HTMLInputElement;
+    expect(familyCheckbox.indeterminate).toBe(true);
+    expect(familyCheckbox.getAttribute("aria-checked")).toBe("mixed");
+    expect((container.querySelector("[data-testid='model-list'] .badge") as HTMLElement).textContent).toBe("2");
     mode.click();
+    expect((container.querySelector("[data-testid='model-list'] .badge") as HTMLElement).textContent).toBe("4");
     expect(container.querySelector("[aria-label='Show Opus 5']")).toBeNull();
     expect(container.querySelector("[aria-label='Show Opus 5 Medium']")).not.toBeNull();
     expect((container.querySelector("[aria-label='Show Opus 5 Medium']") as HTMLInputElement).checked).toBe(true);

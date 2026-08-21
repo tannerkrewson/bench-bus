@@ -27,7 +27,7 @@ export interface ChartControlPanelProps {
  */
 export default function ChartControlPanel(props: ChartControlPanelProps) {
   let details: HTMLDetailsElement | undefined;
-  let summary: HTMLButtonElement | undefined;
+  let summary: HTMLElement | undefined;
   let panel: HTMLFieldSetElement | undefined;
   const [open, setOpen] = createSignal(false);
   const controlId = (name: string) => `chart-${props.benchmarkId}-${name}`;
@@ -75,29 +75,30 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
       }}
       data-testid="chart-settings"
     >
-      <summary class="list-none">
-        <button
-          ref={summary}
-          type="button"
-          class="btn btn-outline btn-sm gap-2"
-          aria-haspopup="dialog"
-          aria-expanded={open()}
-          aria-label="Chart settings"
-          onClick={(event) => {
-            event.preventDefault();
-            const nextOpen = !open();
-            setOpen(nextOpen);
-            if (details) details.open = nextOpen;
-            if (nextOpen) focusFirstControl();
-          }}
-        >
-          <Settings size={16} stroke-width={2.5} aria-hidden="true" />
-          <span>Settings</span>
-        </button>
+      <summary
+        ref={summary}
+        class="btn btn-outline btn-sm list-none gap-2"
+        aria-haspopup="dialog"
+        aria-expanded={open()}
+        aria-controls={controlId("panel")}
+        aria-label="Chart settings"
+        onClick={(event) => {
+          // Keep one disclosure control while making the native details
+          // interaction deterministic across browsers and jsdom.
+          event.preventDefault();
+          const nextOpen = !open();
+          setOpen(nextOpen);
+          if (details) details.open = nextOpen;
+          if (nextOpen) focusFirstControl();
+        }}
+      >
+        <Settings size={16} stroke-width={2.5} aria-hidden="true" />
+        <span>Settings</span>
       </summary>
       <div class="dropdown-content z-20 mt-2 w-[min(42rem,calc(100vw-2rem))] max-w-full">
         <fieldset
           ref={panel}
+          id={controlId("panel")}
           class="rounded-box border border-base-300 bg-base-200/95 p-4 shadow-xl"
           data-testid="chart-controls"
         >

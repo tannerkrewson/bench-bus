@@ -378,6 +378,24 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     };
   };
 
+  // uPlot updates cursor.left/top to the snapped dot position. Its last DOM
+  // event still carries the pointer's actual position, which is needed to
+  // undo that snap as soon as the pointer leaves the hit radius.
+  const pointerEventPosition = (u: uPlot) => {
+    const event = (u.cursor as uPlot.Cursor & { event?: MouseEvent }).event;
+    const over = container?.querySelector<HTMLElement>(".u-over");
+    const parent = container?.parentElement;
+    if (!event || !over || !parent || !Number.isFinite(event.clientX) || !Number.isFinite(event.clientY)) {
+      return undefined;
+    }
+    const parentRect = parent.getBoundingClientRect();
+    const overRect = over.getBoundingClientRect();
+    return {
+      left: overRect.left - parentRect.left + event.clientX - overRect.left,
+      top: overRect.top - parentRect.top + event.clientY - overRect.top,
+    };
+  };
+
   const pointPosition = (u: uPlot, index: number) => {
     const x = currentSeries.x[index];
     const y = currentSeries.y[index];
@@ -489,11 +507,16 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           stroke: styles.textColor,
           font: "14px Sora, sans-serif",
           labelFont: "600 15px Sora, sans-serif",
-          // Reserve a deliberate gap between the rotated title and percentage
-          // ticks. The extra value width also keeps the title clear on phones.
-          size: 64,
-          labelSize: 32,
-          labelGap: 12,
+          // Reserve enough width for the widest formatted tick, plus a
+          // deliberate gap between those ticks and the rotated title. The
+          // callback is important on narrow CursorBench charts where the
+          // percentage labels can be wider than the default uPlot estimate.
+          size: (_u, values) => Math.max(
+            72,
+            ...(values ?? []).map((value) => String(value).length * 8 + 18),
+          ),
+          labelSize: 44,
+          labelGap: 16,
           values: (_u, splits) => splits.map((value) => /score/i.test(props.yAxisLabel()) ? formatPercentTick(value) : String(value)),
           grid: { stroke: styles.gridColor },
         },
@@ -558,11 +581,32 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         setCursor: [
           (u) => {
             const pointer = u.cursor.left === null || u.cursor.top === null ? undefined : cursorPosition(u);
-            updateLabelHover(pointer);
+            const rawPointer = pointerEventPosition(u) ?? pointer;
+            updateLabelHover(rawPointer);
             const index = hoveredPointIndex(u);
             hoveredIndex = index;
             const id = index === null ? null : (currentSeries.ids[index] ?? null);
             if (id === null || index === null) {
+              // A prior hit snaps the crosshair to the dot. Restore the raw
+              // pointer position when it leaves the hit radius so guides do
+              // not remain frozen at the last hovered point.
+              if (rawPointer && (
+                Math.abs((u.cursor.left ?? rawPointer.left) - rawPointer.left) > 0.5 ||
+                Math.abs((u.cursor.top ?? rawPointer.top) - rawPointer.top) > 0.5
+              )) {
+                const over = container?.querySelector<HTMLElement>(".u-over");
+                if (over) {
+                  const overRect = over.getBoundingClientRect();
+                  const parent = container?.parentElement;
+                  const parentRect = parent?.getBoundingClientRect();
+                  if (parentRect) {
+                    u.setCursor({
+                      left: rawPointer.left - (overRect.left - parentRect.left),
+                      top: rawPointer.top - (overRect.top - parentRect.top),
+                    }, false);
+                  }
+                }
+              }
               setHoveredPosition(null);
               props.onHover?.(null);
             } else {

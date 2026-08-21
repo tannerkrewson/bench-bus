@@ -52,9 +52,10 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
       <BenchmarkChartSection adapter={aaDemoAdapter} records={() => AA_FIXTURE_RECORDS} />
     ));
 
-    const settings = container.querySelector("button[aria-label='Chart settings']") as HTMLButtonElement;
+    const settings = container.querySelector("summary[aria-label='Chart settings']") as HTMLElement;
     expect(settings).not.toBeNull();
     expect(settings.querySelector("svg")).not.toBeNull();
+    expect(container.querySelector("[data-testid='chart-settings'] summary button")).toBeNull();
     const details = container.querySelector("[data-testid='chart-settings']") as HTMLDetailsElement;
     expect(details.open).toBe(false);
     settings.click();
@@ -302,7 +303,8 @@ describe("ChartTooltip", () => {
     const tip = container.querySelector("[data-testid='chart-tooltip']");
     expect(tip?.textContent).toContain("Claude Opus 5");
     expect(tip?.textContent).toContain("71.2");
-    expect(tip?.classList.contains("whitespace-nowrap")).toBe(true);
+    expect(tip?.classList.contains("whitespace-normal")).toBe(true);
+    expect(tip?.classList.contains("break-words")).toBe(true);
     expect(tip?.classList.contains("truncate")).toBe(false);
     dispose();
   });

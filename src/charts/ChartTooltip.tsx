@@ -70,7 +70,7 @@ export default function ChartTooltip(props: ChartTooltipProps) {
     <Show when={props.title() !== null}>
       <div
         ref={element}
-        class="pointer-events-none absolute z-10 w-max max-w-[min(32rem,calc(100vw-1rem))] whitespace-nowrap overflow-visible rounded-box border border-base-300 bg-base-100/85 px-3 py-2 text-left text-xs shadow-md backdrop-blur-sm"
+        class="pointer-events-none absolute z-10 w-max max-w-[min(32rem,calc(100vw-1rem))] whitespace-normal break-words overflow-visible rounded-box border border-base-300 bg-base-100/85 px-3 py-2 text-left text-xs shadow-md backdrop-blur-sm"
         data-testid="chart-tooltip"
         role="status"
         style={{ left: `${position().left}px`, top: `${position().top}px` }}
@@ -78,9 +78,9 @@ export default function ChartTooltip(props: ChartTooltipProps) {
         <div class="font-semibold">{props.title()}</div>
         <dl class="mt-1 space-y-0.5">
           {props.lines().map((line) => (
-            <div class="flex min-w-max justify-between gap-6 whitespace-nowrap">
-              <dt class="text-base-content/70">{line.label}</dt>
-              <dd class="font-medium">{line.value}</dd>
+            <div class="flex min-w-0 justify-between gap-6">
+              <dt class="min-w-0 break-words text-base-content/70">{line.label}</dt>
+              <dd class="min-w-0 break-words text-right font-medium">{line.value}</dd>
             </div>
           ))}
         </dl>
