@@ -1,14 +1,20 @@
 import type { Component } from "solid-js";
 import BenchmarkChartSection from "./components/BenchmarkChartSection";
-import { AA_FIXTURE_RECORDS, CURSOR_FIXTURE_RECORDS, aaDemoAdapter, cursorDemoAdapter } from "./charts/fixtures";
+import AaChartSection from "./charts/aa/AaChartSection";
+import { decodeBundle } from "./derived/encode";
+import { CURSOR_FIXTURE_RECORDS, cursorDemoAdapter } from "./charts/fixtures";
+import { makeAaBundleFixture } from "./charts/aa/fixtures";
+import { AA_CONTROL_SPECS as aaControlSpecs } from "./charts/aa/adapter";
 import { chartStateFromParams, chartStateToParams } from "./charts/urlState";
 import type { ChartViewState, PricingControlSpec, PricingControlState } from "./charts/types";
 
 /**
- * Home page. The real data-driven charts land with the AA/Cursor chart
- * issues; this demo proves the generic chart system end to end with
- * fixture datasets shaped like both benchmarks, including URL state sync.
+ * Home page. The Artificial Analysis chart renders through the real derived
+ * bundle decode path (fixture bundle until the first collected data ships);
+ * the CursorBench demo proves the generic chart system until its data lands.
  */
+
+const AA_BUNDLE = decodeBundle(JSON.parse(JSON.stringify(makeAaBundleFixture())));
 
 function initialStateFor(
   benchmarkId: string,
@@ -51,20 +57,19 @@ const App: Component = () => {
       </div>
 
       <p class="mt-8 text-sm text-base-content/60">
-        Demo charts below use fixture data to prove the generic chart system; real benchmark
-        datasets arrive with the data-collection issues.
+        Charts use fixture data decoded through the real derived-bundle path until the first
+        collected snapshots deploy.
       </p>
 
       <div class="mt-4 space-y-8">
-        <BenchmarkChartSection
-          adapter={aaDemoAdapter}
-          records={() => AA_FIXTURE_RECORDS}
+        <AaChartSection
+          records={() => AA_BUNDLE.aa?.records ?? []}
           initialState={initialStateFor(
-            aaDemoAdapter.benchmarkId,
-            aaDemoAdapter.controlSpecs,
+            "aa",
+            aaControlSpecs,
             { pricingMode: "cheapest", cacheHitRate: 0.9 },
           )}
-          onStateChange={(state) => syncStateToUrl(state, aaDemoAdapter.benchmarkId)}
+          onStateChange={(state) => syncStateToUrl(state, "aa")}
         />
         <BenchmarkChartSection
           adapter={cursorDemoAdapter}

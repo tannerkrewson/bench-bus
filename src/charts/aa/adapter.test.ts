@@ -1,0 +1,178 @@
+import { describe, expect, it } from "vitest";
+import { derivedAaDatasetSchema } from "../../schemas";
+import { decodeBundle } from "../../derived/encode";
+import { aaAdapter, aaControlledTooltipLines, AA_BENCHMARK_ID } from "./adapter";
+import {
+  AA_FIXTURE_RECORDS,
+  AA_RECORD_CROSS_PROVIDER,
+  AA_RECORD_NO_LISTING,
+  AA_RECORD_PLOTTABLE_CHEAPEST,
+  AA_RECORD_UNPLOTTABLE,
+  BUNDLE_AS_OF,
+  makeAaBundleFixture,
+} from "./fixtures";
+
+describe("aa fixtures and decode path", () => {
+  it("fixture records are schema-valid derived AA records", () => {
+    const freshness = {
+      schemaVersion: 1,
+      asOf: BUNDLE_AS_OF,
+      aaObservedAt: BUNDLE_AS_OF,
+      openrouterObservedAt: BUNDLE_AS_OF,
+      cursorObservedAt: BUNDLE_AS_OF,
+    };
+    expect(() => derivedAaDatasetSchema.parse({ freshness, records: AA_FIXTURE_RECORDS })).not.toThrow();
+  });
+
+  it("fixture bundle decodes through the real decodeBundle path", () => {
+    const decoded = decodeBundle(JSON.parse(JSON.stringify(makeAaBundleFixture())));
+    expect(decoded.aa).not.toBeNull();
+    expect(decoded.aa?.records).toHaveLength(AA_FIXTURE_RECORDS.length);
+    expect(decoded.aa?.freshness.aaObservedAt).toBe(BUNDLE_AS_OF);
+    expect(decoded.sources.openrouter).toEqual({ available: true, observedAt: BUNDLE_AS_OF });
+    expect(decoded.cursor).toBeNull();
+  });
+});
+
+describe("aaAdapter.computePoint", () => {
+  const controls = { pricingMode: "cheapest", cacheHitRate: 0.9 };
+
+  it("plots Intelligence Index against cheapest-provider workload cost", () => {
+    const point = aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, controls);
+    expect(point).not.toBeNull();
+    expect(point?.y).toBe(71.2);
+    expect(point?.id).toBe("claude-opus-5");
+    expect(point?.x).toBeCloseTo(
+      (AA_RECORD_PLOTTABLE_CHEAPEST.canonicalTokens.input / 1e6) * 2.2 +
+        (AA_RECORD_PLOTTABLE_CHEAPEST.canonicalTokens.output / 1e6) * 13.9,
+      8,
+    );
+  });
+
+  it("weighted mode uses the record's weighted prices", () => {
+    const { canonicalTokens, weighted } = AA_RECORD_PLOTTABLE_CHEAPEST;
+    const point = aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, {
+      pricingMode: "weighted",
+      cacheHitRate: 0.9,
+    });
+    expect(point?.x).toBeCloseTo(
+      (canonicalTokens.input / 1e6) * weighted.weightedInputPrice +
+        (canonicalTokens.output / 1e6) * weighted.weightedOutputPrice,
+      8,
+    );
+  });
+
+  it("listed mode applies the cache-hit slider value", () => {
+    const { canonicalTokens, listed } = AA_RECORD_PLOTTABLE_CHEAPEST;
+    const at50 = aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, {
+      pricingMode: "listed",
+      cacheHitRate: 0.5,
+    });
+    const expected =
+      (canonicalTokens.input * 0.5 * listed.cacheHitPrice) / 1e6 +
+      (canonicalTokens.input * 0.5 * listed.price1mInputTokens) / 1e6 +
+      (canonicalTokens.output * listed.price1mOutputTokens) / 1e6;
+    expect(at50?.x).toBeCloseTo(expected, 8);
+  });
+
+  it("treats models with no providers as unplottable in every provider-based mode", () => {
+    for (const mode of ["cheapest", "weighted", "listed"]) {
+      const point = aaAdapter.computePoint(AA_RECORD_UNPLOTTABLE, {
+        pricingMode: mode,
+        cacheHitRate: 0.9,
+      });
+      expect(point).toBeNull();
+    }
+  });
+
+  it("treats missing listed pricing as unplottable in listed mode only", () => {
+    expect(
+      aaAdapter.computePoint(AA_RECORD_NO_LISTING, { pricingMode: "listed", cacheHitRate: 0.9 }),
+    ).toBeNull();
+    expect(
+      aaAdapter.computePoint(AA_RECORD_NO_LISTING, { pricingMode: "cheapest", cacheHitRate: 0.9 }),
+    ).not.toBeNull();
+  });
+
+  it("falls back to control defaults when controls are missing", () => {
+    const point = aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, {});
+    expect(point).not.toBeNull(); // defaults: cheapest mode
+  });
+
+  it("exposes no normalized-workload control", () => {
+    const ids = aaAdapter.controlSpecs.map((s) => s.id);
+    expect(ids).toEqual(["pricingMode", "cacheHitRate"]);
+  });
+});
+
+describe("aa tooltips and metadata", () => {
+  it("controlled tooltip includes pricing mode and winning provider in cheapest mode", () => {
+    const point = aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, {
+      pricingMode: "cheapest",
+      cacheHitRate: 0.9,
+    })!;
+    const lines = aaControlledTooltipLines(AA_RECORD_PLOTTABLE_CHEAPEST, point, {
+      pricingMode: "cheapest",
+      cacheHitRate: 0.9,
+    });
+    const labels = lines.map((l) => l.label);
+    expect(labels).toContain("Pricing mode");
+    expect(labels).toContain("Winning provider");
+    expect(labels).toContain("Workload tokens");
+    const provider = lines.find((l) => l.label === "Winning provider");
+    expect(provider?.value).toContain("Bedrock");
+    const tokens = lines.find((l) => l.label === "Workload tokens");
+    expect(tokens?.value).toContain("810.1M in");
+  });
+
+  it("controlled tooltip notes cache-write omission in listed mode", () => {
+    const point = aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, {
+      pricingMode: "listed",
+      cacheHitRate: 0.9,
+    })!;
+    const lines = aaControlledTooltipLines(AA_RECORD_PLOTTABLE_CHEAPEST, point, {
+      pricingMode: "listed",
+      cacheHitRate: 0.9,
+    });
+    const cache = lines.find((l) => l.label === "Cache hit rate");
+    expect(cache?.value).toContain("90%");
+    expect(cache?.value).toContain("cache writes unknown");
+  });
+
+  it("disclaimer explains cache-hit estimate and unknown cache writes", () => {
+    expect(aaAdapter.disclaimer).toMatch(/cache-hit rate/i);
+    expect(aaAdapter.disclaimer).toMatch(/cache-write volume is unknown/i);
+    expect(aaAdapter.disclaimer).toMatch(/snapshots, not guaranteed/i);
+  });
+
+  it("uses the aa URL namespace and log default", () => {
+    expect(AA_BENCHMARK_ID).toBe("aa");
+    expect(aaAdapter.benchmarkId).toBe("aa");
+    expect(aaAdapter.defaultXScale).toBe("log");
+  });
+});
+
+describe("aaAdapter cross-provider workload sensitivity", () => {
+  it("cheapest winner flips with the workload shape (no provider mixing)", () => {
+    const { providers } = AA_RECORD_CROSS_PROVIDER;
+    // Input-dominated workload: InputCheap wins.
+    const inputHeavy = selectWinner(providers, 900_000_000, 10_000_000);
+    // Output-dominated workload: OutputCheap wins.
+    const outputHeavy = selectWinner(providers, 10_000_000, 900_000_000);
+    expect(inputHeavy).toBe("input-cheap");
+    expect(outputHeavy).toBe("output-cheap");
+  });
+});
+
+function selectWinner(
+  providers: readonly { providerSlug: string; effectiveInputPrice: number; effectiveOutputPrice: number }[],
+  input: number,
+  output: number,
+): string {
+  let best: { slug: string; cost: number } | null = null;
+  for (const p of providers) {
+    const cost = (input / 1e6) * p.effectiveInputPrice + (output / 1e6) * p.effectiveOutputPrice;
+    if (best === null || cost < best.cost) best = { slug: p.providerSlug, cost };
+  }
+  return best!.slug;
+}

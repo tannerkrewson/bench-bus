@@ -11,9 +11,9 @@ describe("App", () => {
 
     expect(container.querySelector("h1")?.textContent).toBe("Bench Bus");
     expect(container.textContent).toContain("benchmark workload cost");
-    // Both demo benchmark sections mounted with uPlot canvases.
+    // AA chart (real adapter, namespace 'aa') + CursorBench demo section.
     expect(container.querySelectorAll("section[data-benchmark]")).toHaveLength(2);
-    expect(container.querySelector("section[data-benchmark='aa-demo'] canvas")).not.toBeNull();
+    expect(container.querySelector("section[data-benchmark='aa'] canvas")).not.toBeNull();
     expect(container.querySelector("section[data-benchmark='cursor-demo'] canvas")).not.toBeNull();
 
     dispose();
