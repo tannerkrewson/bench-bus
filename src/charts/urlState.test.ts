@@ -28,6 +28,27 @@ const defaults = {
 };
 
 describe("chart URL state", () => {
+  it("omits default state when serializing application URLs", () => {
+    const state = {
+      scale: "log" as const,
+      query: "",
+      selectedIds: ["default-a"],
+      controls: { surcharge: false, cacheHitRate: 0.9, mode: "cheapest" },
+      showLabels: true,
+      showFrontier: true,
+      showDiscounts: true,
+    };
+    const params = chartStateToParams(state, "aa-demo", defaults);
+    expect(params.toString()).toBe("");
+
+    const changed = chartStateToParams(
+      { ...state, controls: { ...state.controls, cacheHitRate: 0.5 } },
+      "aa-demo",
+      defaults,
+    );
+    expect([...changed.keys()]).toEqual(["chart.aa-demo.c.cacheHitRate"]);
+  });
+
   it("round-trips full state", () => {
     const state = {
       scale: "linear" as const,

@@ -84,25 +84,18 @@ export default function AaChartSection(props: AaChartSectionProps) {
     const defaults = dynamicDefaultIds();
     if (!selectionSpecified()) setSelectedIds(defaults);
   });
-  const filteredBuild = createMemo(() =>
-    buildChartPlot(props.records(), aaAdapter, controls(), query()),
-  );
-
-  // Keep the selector populated from every matching model, while the chart
-  // itself contains only selected models. This is the AA section's bridge to
-  // the generic visibility-filter contract; missing default slugs simply have
-  // no matching entry and therefore cannot break plotting.
+  // Keep the selector filter independent from chart visibility: the selector
+  // searches all priced models, while the chart contains only selected models.
+  // Missing default slugs simply have no matching entry and cannot break plot.
   const build = createMemo(() => {
-    const candidate = filteredBuild();
+    const candidate = allBuild();
     const selected = new Set(selectedIds());
     return {
       entries: candidate.entries.filter((entry) => selected.has(entry.point.id)),
       // Unplottable records remain visible in the selector regardless of
       // selection so missing upstream pricing is explained, never estimated.
       unplottable: candidate.unplottable,
-      filteredOut:
-        candidate.filteredOut +
-        candidate.entries.filter((entry) => !selected.has(entry.point.id)).length,
+      filteredOut: candidate.entries.filter((entry) => !selected.has(entry.point.id)).length,
     };
   });
 
@@ -245,7 +238,6 @@ export default function AaChartSection(props: AaChartSectionProps) {
                 onHover={(id, pos) =>
                   setHovered(id && pos ? { id, left: pos.left, top: pos.top } : null)
                 }
-                onActivate={toggleSelect}
               />
             </Show>
             <ChartTooltip
@@ -287,7 +279,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
         </Show>
         <Show when={props.records().length > 0 && build().filteredOut > 0}>
           <p class="text-xs text-base-content/60" role="status" data-testid="aa-filter-count">
-            {build().filteredOut} model(s) hidden by the current filter.
+            {build().filteredOut} model(s) hidden by model selection.
           </p>
         </Show>
 

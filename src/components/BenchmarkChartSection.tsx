@@ -68,7 +68,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
     top: number;
   } | null>(null);
 
-  const build = createMemo(() => buildChartPlot(props.records(), props.adapter, controls(), query()));
+  const build = createMemo(() => buildChartPlot(props.records(), props.adapter, controls(), ""));
 
   const effectiveSelectedIds = createMemo(() =>
     selectionSpecified() ? selectedIds() : defaultSelectionIds(),
@@ -224,7 +224,6 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
                 onHover={(id, pos) =>
                   setHovered(id && pos ? { id, left: pos.left, top: pos.top } : null)
                 }
-                onActivate={toggleSelect}
               />
             </Show>
             <ChartTooltip
@@ -241,11 +240,6 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
             </Show>
           </Show>
         </div>
-        <Show when={props.records().length > 0 && build().filteredOut > 0}>
-          <p class="text-xs text-base-content/60" role="status" data-testid="filter-count">
-            {build().filteredOut} model(s) hidden by the current filter.
-          </p>
-        </Show>
 
       </div>
     </section>

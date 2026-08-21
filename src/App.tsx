@@ -9,6 +9,7 @@ import { makeAaBundleFixture } from "./charts/aa/fixtures";
 import { AA_CONTROL_SPECS as aaControlSpecs } from "./charts/aa/adapter";
 import { chartStateFromParams, chartStateToParams } from "./charts/urlState";
 import type { ChartViewState, PricingControlSpec, PricingControlState } from "./charts/types";
+import type { ChartStateSerializationDefaults } from "./charts/urlState";
 import { TimeTravelProvider, useTimeTravel } from "./history/TimeTravelContext";
 import { timeTravelStateFromParams, mergeTimeTravelStateIntoParams } from "./history/urlState";
 import TimeTravelControl from "./controls/TimeTravelControl";
@@ -40,13 +41,17 @@ function initialChartStateFor(
   });
 }
 
-function syncChartStateToUrl(state: Readonly<ChartViewState>, benchmarkId: string) {
+function syncChartStateToUrl(
+  state: Readonly<ChartViewState>,
+  benchmarkId: string,
+  serializationDefaults: Readonly<ChartStateSerializationDefaults>,
+) {
   if (typeof window === "undefined") return;
   const params = new URLSearchParams(window.location.search);
   for (const key of [...params.keys()]) {
     if (key.startsWith(`chart.${benchmarkId}.`)) params.delete(key);
   }
-  for (const [key, value] of chartStateToParams(state, benchmarkId)) {
+  for (const [key, value] of chartStateToParams(state, benchmarkId, serializationDefaults)) {
     params.set(key, value);
   }
   const query = params.toString();
@@ -77,6 +82,20 @@ async function loadIndex() {
 
 const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
   const timeTravel = useTimeTravel();
+  const aaUrlDefaults: ChartStateSerializationDefaults = {
+    scale: "log",
+    controls: { pricingMode: "cheapest", cacheHitRate: 0.9 },
+    showLabels: true,
+    showFrontier: true,
+    showDiscounts: true,
+  };
+  const cursorUrlDefaults: ChartStateSerializationDefaults = {
+    scale: "log",
+    controls: { surcharge: false, tokenMix: 50 },
+    showLabels: true,
+    showFrontier: true,
+    showDiscounts: true,
+  };
   return (
     <div class="mt-4 space-y-8">
       <AaChartSection
@@ -86,7 +105,7 @@ const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
           aaControlSpecs,
           { pricingMode: "cheapest", cacheHitRate: 0.9 },
         )}
-        onStateChange={(state) => syncChartStateToUrl(state, "aa")}
+        onStateChange={(state) => syncChartStateToUrl(state, "aa", aaUrlDefaults)}
       />
       <CursorBenchChartSection
         records={() => props.bundle.cursor?.records ?? []}
@@ -95,7 +114,7 @@ const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
           cursorBenchAdapter.controlSpecs,
           { surcharge: false },
         )}
-        onStateChange={(state) => syncChartStateToUrl(state, "cursor")}
+        onStateChange={(state) => syncChartStateToUrl(state, "cursor", cursorUrlDefaults)}
       />
       <UnifiedLimitationsPanel />
       {timeTravel.view().preHistory || (!props.bundle.aa && !props.bundle.cursor) ? (

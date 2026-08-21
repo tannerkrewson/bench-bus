@@ -31,8 +31,6 @@ export interface BenchmarkScatterChartProps {
   height?: number;
   /** Hover changes only when the pointer is within the hit radius of a dot. */
   onHover?: (id: string | null, pos?: { left: number; top: number }) => void;
-  /** Click/Enter activation on a point. */
-  onActivate?: (id: string) => void;
 }
 
 const DOT_SIZE = 9;
@@ -736,14 +734,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       window.addEventListener("resize", resize);
       onCleanup(() => window.removeEventListener("resize", resize));
     }
-
-    const click = () => {
-      if (!plot || hoveredIndex === null) return;
-      const id = currentSeries.ids[hoveredIndex];
-      if (id !== undefined) props.onActivate?.(id);
-    };
-    container?.addEventListener("click", click);
-    onCleanup(() => container?.removeEventListener("click", click));
 
     const onThemeChange = () => createPlot();
     window.addEventListener("bench-bus-theme-change", onThemeChange);

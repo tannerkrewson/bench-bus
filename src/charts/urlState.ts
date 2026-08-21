@@ -35,28 +35,41 @@ function key(benchmarkId: string, field: string): string {
 }
 
 /** Serialize view state into a fresh URLSearchParams object. */
+export interface ChartStateSerializationDefaults extends ChartStateDefaults {
+  query?: string;
+  showLabels?: boolean;
+  showFrontier?: boolean;
+  showDiscounts?: boolean;
+}
+
 export function chartStateToParams(
   state: Readonly<ChartViewState>,
   benchmarkId: string,
+  serializationDefaults?: Readonly<ChartStateSerializationDefaults>,
 ): URLSearchParams {
   const params = new URLSearchParams();
-  params.set(key(benchmarkId, SCALE_KEY), state.scale);
-  if (state.query !== "") params.set(key(benchmarkId, QUERY_KEY), state.query);
+  if (!serializationDefaults || state.scale !== serializationDefaults.scale) {
+    params.set(key(benchmarkId, SCALE_KEY), state.scale);
+  }
+  if (state.query !== (serializationDefaults?.query ?? "")) {
+    if (state.query !== "") params.set(key(benchmarkId, QUERY_KEY), state.query);
+  }
   // An explicitly empty selection is meaningful (the user cleared every
   // model), while an absent selection delegates to the benchmark default.
-  if (state.selectionSpecified === true || state.selectedIds.length > 0) {
+  if (state.selectionSpecified === true || (!serializationDefaults && state.selectedIds.length > 0)) {
     params.set(key(benchmarkId, SELECTED_KEY), state.selectedIds.join(","));
   }
-  if (state.showLabels === false) {
+  if (state.showLabels === false && serializationDefaults?.showLabels !== false) {
     params.set(key(benchmarkId, LABELS_KEY), "false");
   }
-  if (state.showFrontier === false) {
+  if (state.showFrontier === false && serializationDefaults?.showFrontier !== false) {
     params.set(key(benchmarkId, FRONTIER_KEY), "false");
   }
-  if (state.showDiscounts === false) {
+  if (state.showDiscounts === false && serializationDefaults?.showDiscounts !== false) {
     params.set(key(benchmarkId, DISCOUNTS_KEY), "false");
   }
   for (const [id, value] of Object.entries(state.controls)) {
+    if (serializationDefaults && serializationDefaults.controls[id] === value) continue;
     params.set(key(benchmarkId, CONTROL_PREFIX + id), String(value));
   }
   return params;
@@ -156,6 +169,7 @@ export function chartStateFromParams(
 export function chartStateToQueryString(
   state: Readonly<ChartViewState>,
   benchmarkId: string,
+  serializationDefaults?: Readonly<ChartStateSerializationDefaults>,
 ): string {
-  return chartStateToParams(state, benchmarkId).toString();
+  return chartStateToParams(state, benchmarkId, serializationDefaults).toString();
 }

@@ -106,6 +106,19 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     dispose();
   });
 
+  it("keeps all plotted models visible while filtering selector options", () => {
+    const { container, dispose } = mount(() => (
+      <BenchmarkChartSection adapter={aaDemoAdapter} records={() => AA_FIXTURE_RECORDS} />
+    ));
+    const before = container.querySelectorAll("[data-testid='model-label']").length;
+    const search = container.querySelector("#chart-aa-demo-model-search") as HTMLInputElement;
+    search.value = "gemini";
+    search.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(container.querySelectorAll("[data-testid='model-label']")).toHaveLength(before);
+    expect(container.querySelector("[data-testid='chart-no-points']")).toBeNull();
+    dispose();
+  });
+
   it("updates selection in place without remounting the section", () => {
     const { container, dispose } = mount(() => (
       <BenchmarkChartSection adapter={aaDemoAdapter} records={() => AA_FIXTURE_RECORDS} />
