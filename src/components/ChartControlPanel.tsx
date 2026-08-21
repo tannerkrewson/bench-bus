@@ -1,0 +1,141 @@
+import { For, Match, Show, Switch } from "solid-js";
+import type { PricingControlSpec, PricingControlState, XScale } from "../charts/types";
+
+export interface ChartControlPanelProps {
+  scale: () => XScale;
+  onScaleChange: (scale: XScale) => void;
+  query: () => string;
+  onQueryChange: (query: string) => void;
+  specs: readonly PricingControlSpec[];
+  controls: () => Readonly<PricingControlState>;
+  onControlChange: (id: string, value: number | boolean | string) => void;
+}
+
+/**
+ * Keyboard-accessible chart controls: axis scale toggle, search filter, and
+ * the adapter's pricing controls, rendered with DaisyUI components and
+ * explicit labels.
+ */
+export default function ChartControlPanel(props: ChartControlPanelProps) {
+  return (
+    <div class="flex flex-wrap items-end gap-4" data-testid="chart-controls">
+      <div>
+        <div id="chart-scale-group-label" class="mb-1 text-sm font-medium">
+          Price axis scale
+        </div>
+        <div class="join" role="group" aria-labelledby="chart-scale-group-label">
+          <button
+            type="button"
+            class="btn btn-sm join-item"
+            classList={{
+              "btn-primary": props.scale() === "log",
+              "btn-outline": props.scale() !== "log",
+            }}
+            aria-pressed={props.scale() === "log"}
+            onClick={() => props.onScaleChange("log")}
+          >
+            Log
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm join-item"
+            classList={{
+              "btn-primary": props.scale() === "linear",
+              "btn-outline": props.scale() !== "linear",
+            }}
+            aria-pressed={props.scale() === "linear"}
+            onClick={() => props.onScaleChange("linear")}
+          >
+            Linear
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-medium" for="benchmark-chart-search">
+          Filter models
+        </label>
+        <input
+          id="benchmark-chart-search"
+          type="search"
+          class="input input-sm input-bordered w-56"
+          placeholder="Search by name…"
+          value={props.query()}
+          aria-label="Filter models by name"
+          onInput={(e) => props.onQueryChange(e.currentTarget.value)}
+        />
+      </div>
+
+      <For each={props.specs}>
+        {(spec) => (
+          <Switch>
+            <Match when={spec.kind === "toggle"}>
+              <div>
+                <label class="label cursor-pointer gap-2 text-sm font-medium">
+                  <span>{spec.label}</span>
+                  <input
+                    type="checkbox"
+                    class="toggle toggle-sm toggle-primary"
+                    aria-label={spec.label}
+                    checked={Boolean(props.controls()[spec.id] ?? spec.default)}
+                    onChange={(e) => props.onControlChange(spec.id, e.currentTarget.checked)}
+                  />
+                </label>
+                <Show when={spec.description}>
+                  <p class="text-xs text-base-content/60">{spec.description}</p>
+                </Show>
+              </div>
+            </Match>
+            <Match when={spec.kind === "slider"}>
+              <div>
+                <label class="mb-1 block text-sm font-medium" for={`chart-control-${spec.id}`}>
+                  {spec.label}
+                  {spec.kind === "slider" && spec.format
+                    ? `: ${spec.format(Number(props.controls()[spec.id] ?? spec.default))}`
+                    : ""}
+                </label>
+                <Show when={spec.kind === "slider"}>
+                  <input
+                    id={`chart-control-${spec.id}`}
+                    type="range"
+                    class="range range-sm range-primary w-48"
+                    min={spec.kind === "slider" ? spec.min : 0}
+                    max={spec.kind === "slider" ? spec.max : 100}
+                    step={spec.kind === "slider" ? spec.step : 1}
+                    value={Number(props.controls()[spec.id] ?? spec.default)}
+                    aria-label={spec.label}
+                    onInput={(e) => props.onControlChange(spec.id, e.currentTarget.valueAsNumber)}
+                  />
+                </Show>
+                <Show when={spec.description}>
+                  <p class="mt-1 text-xs text-base-content/60">{spec.description}</p>
+                </Show>
+              </div>
+            </Match>
+            <Match when={spec.kind === "select"}>
+              <div>
+                <label class="mb-1 block text-sm font-medium" for={`chart-control-${spec.id}`}>
+                  {spec.label}
+                </label>
+                <select
+                  id={`chart-control-${spec.id}`}
+                  class="select select-sm select-bordered"
+                  aria-label={spec.label}
+                  value={String(props.controls()[spec.id] ?? spec.default)}
+                  onChange={(e) => props.onControlChange(spec.id, e.currentTarget.value)}
+                >
+                  <For each={spec.kind === "select" ? spec.options : []}>
+                    {(opt) => <option value={opt.value}>{opt.label}</option>}
+                  </For>
+                </select>
+                <Show when={spec.description}>
+                  <p class="mt-1 text-xs text-base-content/60">{spec.description}</p>
+                </Show>
+              </div>
+            </Match>
+          </Switch>
+        )}
+      </For>
+    </div>
+  );
+}

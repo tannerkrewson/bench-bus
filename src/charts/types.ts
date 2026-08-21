@@ -1,0 +1,126 @@
+import type { Component } from "solid-js";
+
+/**
+ * Generic score-versus-cost chart contracts.
+ *
+ * Concrete benchmarks (Artificial Analysis, CursorBench) supply a
+ * BenchmarkChartAdapter; the reusable components in src/charts and
+ * src/components stay benchmark-agnostic.
+ */
+
+/** X-axis scale mode. Log is the default for cost axes spanning decades. */
+export type XScale = "log" | "linear";
+
+/** One plottable model point. x is estimated cost in USD, y is the score. */
+export interface PlottablePoint {
+  /** Stable model identity (slug or table row id). */
+  id: string;
+  /** Human-readable display name. */
+  label: string;
+  /** Estimated benchmark workload cost, USD. Must be > 0 for log scale. */
+  x: number;
+  /** Benchmark score. */
+  y: number;
+}
+
+/** Value a pricing control can hold. */
+export type PricingControlValue = number | boolean | string;
+
+/** Runtime state of all of an adapter's pricing controls. */
+export type PricingControlState = Record<string, PricingControlValue>;
+
+/** Discriminated specs so the generic panel can render DaisyUI controls. */
+export type PricingControlSpec =
+  | {
+      kind: "toggle";
+      id: string;
+      label: string;
+      /** Shown under the control; keep to one sentence. */
+      description?: string;
+      default: boolean;
+    }
+  | {
+      kind: "slider";
+      id: string;
+      label: string;
+      description?: string;
+      default: number;
+      min: number;
+      max: number;
+      step: number;
+      /** Formats the current value next to the label, e.g. "90%". */
+      format?: (value: number) => string;
+    }
+  | {
+      kind: "select";
+      id: string;
+      label: string;
+      description?: string;
+      default: string;
+      options: readonly { value: string; label: string }[];
+    };
+
+/** One label/value row in a hover tooltip. */
+export interface TooltipLine {
+  label: string;
+  value: string;
+}
+/**
+ * Benchmark-specific adapter. Everything the generic chart cannot know —
+ * how to compute cost (including pricing-mode controls), how to filter and
+ * describe models, and what the methodology note says — lives here.
+ *
+ * Type parameter TRecord is the benchmark's derived record type (e.g.
+ * DerivedAaChartRecord, DerivedCursorChartRecord from src/schemas).
+ */
+export interface BenchmarkChartAdapter<TRecord> {
+  /** Stable benchmark id, used as the URL-state namespace. */
+  readonly benchmarkId: string;
+  /** Stable id + display label for any record, plotted or not. */
+  readonly identity: (record: TRecord) => { readonly id: string; readonly label: string };
+  readonly xAxisLabel: string;
+  readonly yAxisLabel: string;
+  readonly defaultXScale: XScale;
+  /** Pricing/mode controls the generic panel renders and URL-serializes. */
+  readonly controlSpecs: readonly PricingControlSpec[];
+  /**
+   * Compute the plotted point for a record under the current control state.
+   * Return null to exclude the record (e.g. missing pricing); excluded
+   * records are surfaced as "unplottable" rather than mispriced.
+   */
+  computePoint(record: TRecord, controls: Readonly<PricingControlState>): PlottablePoint | null;
+  /** Lowercased haystack used by the search/filter box. */
+  searchText(record: TRecord): string;
+  /** Tooltip rows for a plotted point. */
+  tooltipLines(record: TRecord, point: PlottablePoint): readonly TooltipLine[];
+  /** Methodology/limitations note rendered below the chart, if any. */
+  readonly disclaimer?: string;
+}
+
+/** Full serializable interaction state of one benchmark chart. */
+export interface ChartViewState {
+  scale: XScale;
+  /** Search/filter query; empty string means no filter. */
+  query: string;
+  /** Selected model ids (highlighted + shown in the detail list). */
+  selectedIds: string[];
+  /** Values for adapter.controlSpecs, keyed by spec id. */
+  controls: PricingControlState;
+}
+
+/** Result of mapping records through an adapter under a query filter. */
+export interface ChartPlotBuild<TRecord> {
+  /** Records passing the filter with a successfully computed point. */
+  entries: { record: TRecord; point: PlottablePoint }[];
+  /** Records matching the filter but excluded because computePoint returned null. */
+  unplottable: { record: TRecord; reason: string }[];
+  /** Records hidden by the query filter. */
+  filteredOut: number;
+}
+
+/** Convenience view of just the plotted points, in record order. */
+export function pointsOf<TRecord>(build: Readonly<ChartPlotBuild<TRecord>>): PlottablePoint[] {
+  return build.entries.map((e) => e.point);
+}
+
+export type { Component };

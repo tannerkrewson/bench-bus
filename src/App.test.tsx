@@ -4,15 +4,17 @@ import { createSignal } from "solid-js";
 import App from "./App";
 
 describe("App", () => {
-  it("renders the Bench Bus home page", () => {
+  it("renders the Bench Bus home page with demo chart sections", () => {
     const container = document.createElement("div");
     document.body.appendChild(container);
     const dispose = render(() => <App />, container);
 
     expect(container.querySelector("h1")?.textContent).toBe("Bench Bus");
     expect(container.textContent).toContain("benchmark workload cost");
-    // uPlot sparkline mounted a canvas.
-    expect(container.querySelector("canvas")).not.toBeNull();
+    // Both demo benchmark sections mounted with uPlot canvases.
+    expect(container.querySelectorAll("section[data-benchmark]")).toHaveLength(2);
+    expect(container.querySelector("section[data-benchmark='aa-demo'] canvas")).not.toBeNull();
+    expect(container.querySelector("section[data-benchmark='cursor-demo'] canvas")).not.toBeNull();
 
     dispose();
     container.remove();

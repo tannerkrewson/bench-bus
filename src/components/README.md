@@ -1,1 +1,1 @@
-# Placeholder: components land here in later issues.
+# Reusable components: chart sections, control panel, and model list.
