@@ -5,7 +5,7 @@ import CursorBenchChartSection, {
   cursorChartStateFromParams,
   cursorChartStateToParams,
 } from "./CursorBenchChartSection";
-import { CURSOR_BENCH_ID, SURCHARGE_CONTROL_ID } from "./adapter";
+import { CURSOR_BENCH_ID, SURCHARGE_CONTROL_ID, TOKEN_MIX_CONTROL_ID } from "./adapter";
 import { CURSOR_FIXTURE_RECORDS } from "../fixtures";
 import type { ChartViewState } from "../types";
 
@@ -29,7 +29,7 @@ describe("CursorBenchChartSection", () => {
     expect(logBtn.getAttribute("aria-pressed")).toBe("true");
 
     const toggle = container.querySelector(
-      "[data-testid='chart-controls'] input[aria-label^='Third-party surcharge']",
+      "[data-testid='chart-controls'] input[aria-label^='Include Cursor Token Rate']",
     ) as HTMLInputElement;
     expect(toggle).not.toBeNull();
     expect(toggle.checked).toBe(false);
@@ -61,9 +61,23 @@ describe("CursorBenchChartSection", () => {
     expect(last.controls[SURCHARGE_CONTROL_ID]).toBe(true);
 
     const toggle = container.querySelector(
-      "[data-testid='chart-controls'] input[aria-label^='Third-party surcharge']",
+      "[data-testid='chart-controls'] input[aria-label^='Include Cursor Token Rate']",
     ) as HTMLInputElement;
     expect(toggle.checked).toBe(true);
+    dispose();
+  });
+
+  it("exposes the token-mix slider and assumption summary only when enabled", () => {
+    const { container, dispose } = mount(() => (
+      <CursorBenchChartSection records={() => CURSOR_FIXTURE_RECORDS} />
+    ));
+    expect(container.querySelector(`#chart-control-${TOKEN_MIX_CONTROL_ID}`)).not.toBeNull();
+    expect(container.querySelector("[data-testid='cursor-token-rate-assumptions']")).toBeNull();
+    const toggle = container.querySelector(
+      "[data-testid='chart-controls'] input[aria-label^='Include Cursor Token Rate']",
+    ) as HTMLInputElement;
+    toggle.click();
+    expect(container.querySelector("[data-testid='cursor-token-rate-assumptions']")).not.toBeNull();
     dispose();
   });
 
@@ -77,7 +91,7 @@ describe("CursorBenchChartSection", () => {
     ));
 
     const toggle = container.querySelector(
-      "[data-testid='chart-controls'] input[aria-label^='Third-party surcharge']",
+      "[data-testid='chart-controls'] input[aria-label^='Include Cursor Token Rate']",
     ) as HTMLInputElement;
     toggle.click();
     expect(toggle.checked).toBe(true);

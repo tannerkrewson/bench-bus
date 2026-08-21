@@ -1,4 +1,4 @@
-import { createSignal } from "solid-js";
+import { createSignal, Show } from "solid-js";
 import type { JSX } from "solid-js";
 import BenchmarkChartSection from "../../components/BenchmarkChartSection";
 import {
@@ -10,6 +10,7 @@ import {
   CURSOR_BENCH_ID,
   SURCHARGE_CONTROL_ID,
   cursorBenchAdapter,
+  cursorEstimateTooltipLines,
   surchargeTooltipLine,
 } from "./adapter";
 import type { DerivedCursorChartRecord } from "../../schemas";
@@ -44,6 +45,7 @@ export default function CursorBenchChartSection(props: CursorBenchChartSectionPr
       const lines = [...cursorBenchAdapter.tooltipLines(record, point)];
       const surchargeLine = surchargeTooltipLine(record, controls());
       if (surchargeLine) lines.push(surchargeLine);
+      lines.push(...cursorEstimateTooltipLines(record, controls()));
       return lines;
     },
   };
@@ -59,6 +61,20 @@ export default function CursorBenchChartSection(props: CursorBenchChartSectionPr
           props.onStateChange?.(state);
         }}
       />
+      <Show when={Boolean(controls()[SURCHARGE_CONTROL_ID])}>
+        <div class="alert mt-3" role="note" data-testid="cursor-token-rate-assumptions">
+          <div>
+            <p class="font-medium">Cursor Token Rate estimate</p>
+            <p class="text-sm">
+              The chart subtracts known output cost from each published task cost, then estimates hidden and total tokens.
+              The current model-specific rate and fee are shown in each point tooltip.
+            </p>
+            <p class="text-sm text-base-content/70">
+              This is an assumption, not a bill. Rates span cache-heavy to input-heavy endpoints; the tooltip shows the full possible fee and adjusted-cost range. First-party Cursor models are exempt.
+            </p>
+          </div>
+        </div>
+      </Show>
     </div>
   );
 }
@@ -72,8 +88,8 @@ export function cursorChartStateToParams(state: Readonly<ChartViewState>): URLSe
 export function cursorChartStateFromParams(params: Readonly<URLSearchParams>): ChartViewState {
   return chartStateFromParams(params, CURSOR_BENCH_ID, cursorBenchAdapter.controlSpecs, {
     scale: cursorBenchAdapter.defaultXScale,
-    controls: Object.fromEntries(
-      cursorBenchAdapter.controlSpecs.map((spec) => [spec.id, spec.default]),
-    ),
+    // Keep the historical URL shape compact: the generic section fills the
+    // slider default for rendering, while absent slider params stay absent.
+    controls: { [SURCHARGE_CONTROL_ID]: false },
   });
 }

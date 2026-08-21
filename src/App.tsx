@@ -2,6 +2,7 @@ import type { Component } from "solid-js";
 import { createResource } from "solid-js";
 import AaChartSection from "./charts/aa/AaChartSection";
 import CursorBenchChartSection from "./charts/cursor/CursorBenchChartSection";
+import { cursorBenchAdapter } from "./charts/cursor/adapter";
 import { decodeBundle } from "./derived/encode";
 import type { DecodedBundle } from "./derived/encode";
 import { makeAaBundleFixture } from "./charts/aa/fixtures";
@@ -98,7 +99,11 @@ const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
       />
       <CursorBenchChartSection
         records={() => props.bundle.cursor?.records ?? []}
-        initialState={initialChartStateFor("cursor", [], { surcharge: false })}
+        initialState={initialChartStateFor(
+          "cursor",
+          cursorBenchAdapter.controlSpecs,
+          { surcharge: false },
+        )}
         onStateChange={(state) => syncChartStateToUrl(state, "cursor")}
       />
       <CursorMethodologyPanel />
