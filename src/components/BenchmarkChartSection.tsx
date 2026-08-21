@@ -148,19 +148,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
           onShowFrontierChange={setShowFrontier}
         />
 
-        <Show
-          when={props.records().length > 0}
-          fallback={
-            <p
-              class="rounded-box bg-base-200 p-8 text-center"
-              role="status"
-              data-testid="chart-empty"
-            >
-              No benchmark data available yet. Snapshots are collected automatically; check back
-              soon.
-            </p>
-          }
-        >
+        <Show when={props.records().length > 0}>
           <div class="mb-3 flex justify-end">
             <ModelList
               points={() => buildAll().entries.map((e) => e.point)}
@@ -176,7 +164,21 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
               }
             />
           </div>
-          <div class="relative">
+        </Show>
+        <div class="relative min-h-[560px] sm:min-h-[740px]" data-testid="chart-area">
+          <Show
+            when={props.records().length > 0}
+            fallback={
+              <p
+                class="rounded-box bg-base-200 p-8 text-center"
+                role="status"
+                data-testid="chart-empty"
+              >
+                No benchmark data available yet. Snapshots are collected automatically; check back
+                soon.
+              </p>
+            }
+          >
             <Show
               when={visibleEntries().length > 0}
               fallback={
@@ -209,12 +211,18 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
               title={() => hoveredInfo()?.title ?? null}
               lines={() => hoveredInfo()?.lines ?? []}
             />
-          </div>
-          <Show when={build().filteredOut > 0}>
-            <p class="text-xs text-base-content/60" role="status" data-testid="filter-count">
-              {build().filteredOut} model(s) hidden by the current filter.
-            </p>
+            <Show when={showFrontier()}>
+              <div class="mt-2 flex items-center justify-center gap-2 text-sm text-base-content/70" role="img" aria-label="Pareto frontier (dotted line)">
+                <span class="w-6 border-t-2 border-dashed border-primary" aria-hidden="true" />
+                <span>Frontier line</span>
+              </div>
+            </Show>
           </Show>
+        </div>
+        <Show when={props.records().length > 0 && build().filteredOut > 0}>
+          <p class="text-xs text-base-content/60" role="status" data-testid="filter-count">
+            {build().filteredOut} model(s) hidden by the current filter.
+          </p>
         </Show>
 
         <Show when={props.adapter.disclaimer}>

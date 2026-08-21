@@ -37,7 +37,8 @@ const DOT_SIZE = 9;
 const SELECTED_SIZE = 12;
 const DISCOUNT_DOT_SIZE = 7;
 const DOT_HIT_RADIUS = 14;
-const LEADER_LINE_THRESHOLD = 28;
+const LABEL_DOT_RADIUS = 8;
+const LEADER_LINE_GAP = 3;
 
 type DiscountAnnotation = {
   id: string;
@@ -350,6 +351,11 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       setHoveredLabelId(null);
     }
     setLabelPositions(props.showLabels?.() ?? true ? labels : []);
+    // Re-read the dot position after uPlot has laid out the plot. This keeps
+    // the hover emphasis centered when a scale or container size changes.
+    if (hoveredIndex !== null) {
+      setHoveredPosition(pointPosition(currentPlot, hoveredIndex) ?? null);
+    }
   };
 
   const scheduleLabelPositions = () => {
@@ -483,6 +489,11 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           stroke: styles.textColor,
           font: "14px Sora, sans-serif",
           labelFont: "600 15px Sora, sans-serif",
+          // Reserve a deliberate gap between the rotated title and percentage
+          // ticks. The extra value width also keeps the title clear on phones.
+          size: 64,
+          labelSize: 32,
+          labelGap: 12,
           values: (_u, splits) => splits.map((value) => /score/i.test(props.yAxisLabel()) ? formatPercentTick(value) : String(value)),
           grid: { stroke: styles.gridColor },
         },
@@ -578,9 +589,16 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   const createPlot = () => {
     if (!container) return;
+    const hoveredId = hoveredIndex === null ? null : currentSeries.ids[hoveredIndex];
     const scrollY = typeof window !== "undefined" ? window.scrollY : 0;
     plot?.destroy();
     plot = new uPlot(buildOptions(), dataFor(), container);
+    hoveredIndex = hoveredId === undefined || hoveredId === null
+      ? null
+      : currentSeries.ids.indexOf(hoveredId);
+    setHoveredPosition(hoveredIndex === null || hoveredIndex < 0
+      ? null
+      : pointPosition(plot, hoveredIndex) ?? null);
     if (typeof window !== "undefined" && window.scrollY !== scrollY) window.scrollTo(window.scrollX, scrollY);
     scheduleLabelPositions();
   };
@@ -627,12 +645,24 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     on(
       () => [props.points(), props.selectedId(), props.showFrontier?.() ?? true] as const,
       () => {
+        const hoveredId = hoveredIndex === null ? null : currentSeries.ids[hoveredIndex];
         const data = dataFor();
+        hoveredIndex = hoveredId === undefined || hoveredId === null
+          ? null
+          : currentSeries.ids.indexOf(hoveredId);
         const nextStructureKey = `${currentSeries.discounts.length}|${currentSeries.variantGroups
           .map((group) => `${group.key}:${group.members.length}`)
           .join("|")}`;
         if (!plot || nextStructureKey !== plotStructureKey) createPlot();
-        else plot.setData(data);
+        else {
+          plot.setData(data);
+          hoveredIndex = hoveredId === undefined || hoveredId === null
+            ? null
+            : currentSeries.ids.indexOf(hoveredId);
+          setHoveredPosition(hoveredIndex === null || hoveredIndex < 0
+            ? null
+            : pointPosition(plot, hoveredIndex) ?? null);
+        }
         scheduleLabelPositions();
       },
       { defer: true },
@@ -717,20 +747,28 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
             {(label) => {
               const endLeft = Math.max(label.left, Math.min(label.anchorLeft, label.left + label.width));
               const endTop = Math.max(label.top, Math.min(label.anchorTop, label.top + label.height));
-              const distance = Math.hypot(label.anchorLeft - endLeft, label.anchorTop - endTop);
+              const deltaLeft = endLeft - label.anchorLeft;
+              const deltaTop = endTop - label.anchorTop;
+              const distance = Math.hypot(deltaLeft, deltaTop);
+              // Start the leader beyond the dot edge, rather than at its
+              // center. Layout already keeps labels clear of all obstacles;
+              // this small gap prevents the line from visually touching the
+              // dot while retaining leaders for short connections.
+              const directionLeft = distance > 0 ? deltaLeft / distance : 1;
+              const directionTop = distance > 0 ? deltaTop / distance : 0;
+              const startLeft = label.anchorLeft + directionLeft * (LABEL_DOT_RADIUS + LEADER_LINE_GAP);
+              const startTop = label.anchorTop + directionTop * (LABEL_DOT_RADIUS + LEADER_LINE_GAP);
               return (
-                <Show when={distance >= LEADER_LINE_THRESHOLD}>
-                  <line
-                    x1={label.anchorLeft}
-                    y1={label.anchorTop}
-                    x2={endLeft}
-                    y2={endTop}
-                    stroke={themeStyles().leaderColor}
-                    stroke-opacity="0.72"
-                    stroke-width="1"
-                    data-testid="model-label-leader"
-                  />
-                </Show>
+                <line
+                  x1={startLeft}
+                  y1={startTop}
+                  x2={endLeft}
+                  y2={endTop}
+                  stroke={themeStyles().leaderColor}
+                  stroke-opacity="0.72"
+                  stroke-width="1"
+                  data-testid="model-label-leader"
+                />
               );
             }}
           </For>

@@ -47,6 +47,29 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     dispose();
   });
 
+  it("opens chart settings as an accessible popover and keeps the legend below the graph", () => {
+    const { container, dispose } = mount(() => (
+      <BenchmarkChartSection adapter={aaDemoAdapter} records={() => AA_FIXTURE_RECORDS} />
+    ));
+
+    const settings = container.querySelector("button[aria-label='Chart settings']") as HTMLButtonElement;
+    expect(settings).not.toBeNull();
+    expect(settings.querySelector("svg")).not.toBeNull();
+    const details = container.querySelector("[data-testid='chart-settings']") as HTMLDetailsElement;
+    expect(details.open).toBe(false);
+    settings.click();
+    expect(details.open).toBe(true);
+    expect(settings.getAttribute("aria-expanded")).toBe("true");
+    document.body.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(details.open).toBe(false);
+    settings.click();
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    expect(details.open).toBe(false);
+    expect(container.querySelector("[data-testid='chart-area'] > [role='img']")).not.toBeNull();
+    expect(container.querySelector("[data-testid='chart-area']")?.className).toContain("min-h-");
+    dispose();
+  });
+
   it("switches log/linear and preserves query and selection state", () => {
     const states: ChartViewState[] = [];
     const { container, dispose } = mount(() => (
