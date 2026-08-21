@@ -16,9 +16,34 @@ afterEach(() => {
 });
 
 describe("ThemeToggle", () => {
-  it("uses caramellatte for a fresh light preference and halloween for dark", () => {
-    expect(themeMode("caramellatte")).toBe("light");
-    expect(themeMode("halloween")).toBe("dark");
+  it("uses caramellatte for a fresh light preference", async () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const dispose = render(() => <ThemeToggle />, container);
+    await vi.waitFor(() => expect(document.documentElement.dataset.theme).toBe("caramellatte"));
+    dispose();
+    container.remove();
+  });
+
+  it("uses halloween for a fresh dark preference", async () => {
+    const originalMatchMedia = window.matchMedia;
+    window.matchMedia = (() => ({
+      matches: true,
+      media: "(prefers-color-scheme: dark)",
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    })) as unknown as typeof window.matchMedia;
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const dispose = render(() => <ThemeToggle />, container);
+    await vi.waitFor(() => expect(document.documentElement.dataset.theme).toBe("halloween"));
+    dispose();
+    container.remove();
+    window.matchMedia = originalMatchMedia;
   });
 
   it("selects only from the matching random theme pool", () => {
