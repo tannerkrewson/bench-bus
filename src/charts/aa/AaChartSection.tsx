@@ -100,6 +100,9 @@ export default function AaChartSection(props: AaChartSectionProps) {
           specs={aaAdapter.controlSpecs}
           controls={controls}
           onControlChange={setControl}
+          isControlVisible={(spec) =>
+            spec.id !== "cacheHitRate" || controls().pricingMode === "listed"
+          }
         />
 
         <Show

@@ -9,6 +9,8 @@ export interface ChartControlPanelProps {
   specs: readonly PricingControlSpec[];
   controls: () => Readonly<PricingControlState>;
   onControlChange: (id: string, value: number | boolean | string) => void;
+  /** Optional predicate for controls whose visibility depends on another control. */
+  isControlVisible?: (spec: PricingControlSpec) => boolean;
 }
 
 /**
@@ -68,7 +70,8 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
 
       <For each={props.specs}>
         {(spec) => (
-          <Switch>
+          <Show when={props.isControlVisible?.(spec) ?? true}>
+            <Switch>
             <Match when={spec.kind === "toggle"}>
               <div>
                 <label class="label cursor-pointer gap-2 text-sm font-medium">
@@ -133,7 +136,8 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
                 </Show>
               </div>
             </Match>
-          </Switch>
+            </Switch>
+          </Show>
         )}
       </For>
     </div>

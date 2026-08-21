@@ -42,13 +42,19 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   const buildOptions = (): Options => {
     const scale = props.scale();
+    const styles = getComputedStyle(container ?? document.documentElement);
+    const textColor =
+      styles.getPropertyValue("--color-base-content").trim() || styles.color || "#111827";
+    const gridColor = styles.getPropertyValue("--color-base-300").trim() || "rgba(128,128,128,.25)";
     return {
       width: container?.clientWidth ?? 0,
       height: props.height ?? 420,
-      scales: { x: { distr: scale === "log" ? 3 : 1, log: 10 } },
+      // time:false is essential — uPlot defaults the x axis to epoch-time
+      // formatting, which collapses USD costs into one pixel cluster.
+      scales: { x: { time: false, distr: scale === "log" ? 3 : 1, log: 10 } },
       axes: [
-        { label: props.xAxisLabel() },
-        { label: props.yAxisLabel() },
+        { label: props.xAxisLabel(), stroke: textColor, grid: { stroke: gridColor } },
+        { label: props.yAxisLabel(), stroke: textColor, grid: { stroke: gridColor } },
       ],
       legend: { show: false },
       cursor: { drag: { x: false, y: false } },
@@ -122,6 +128,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     };
     container?.addEventListener("click", click);
     onCleanup(() => container?.removeEventListener("click", click));
+
+    const onThemeChange = () => createPlot();
+    window.addEventListener("bench-bus-theme-change", onThemeChange);
+    onCleanup(() => window.removeEventListener("bench-bus-theme-change", onThemeChange));
 
     onCleanup(() => {
       plot?.destroy();

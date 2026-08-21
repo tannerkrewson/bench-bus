@@ -17,6 +17,7 @@ describe("App", () => {
     });
     expect(container.querySelector("section[data-benchmark='aa'] canvas")).not.toBeNull();
     expect(container.querySelector("section[data-benchmark='cursor'] canvas")).not.toBeNull();
+    expect(container.querySelector("button[aria-label^='Switch to']")).not.toBeNull();
 
     dispose();
     container.remove();

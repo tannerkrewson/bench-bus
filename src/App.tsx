@@ -15,6 +15,7 @@ import FreshnessChips from "./controls/FreshnessChips";
 import { freshnessFromBundle } from "./history/resolve";
 import AaMethodologyPanel from "./methodology/AaMethodologyPanel";
 import CursorMethodologyPanel from "./methodology/CursorMethodologyPanel";
+import ThemeToggle from "./components/ThemeToggle";
 import { GeneralLimitationNote } from "./methodology/MethodologyPanel";
 import {
   fetchDerivedBundle,
@@ -126,28 +127,33 @@ const App: Component = () => {
       bundleResource.latest ??
       decodeBundle(JSON.parse(JSON.stringify(makeAaBundleFixture())) as { cursor: null } & Record<string, unknown>);
     return (
-      <main class="container mx-auto px-4 py-8">
-        <div class="hero bg-base-200 rounded-box">
-          <div class="hero-content text-center">
-            <div class="max-w-md">
-              <h1 class="text-5xl font-bold">Bench Bus</h1>
-              <p class="py-6">
-                AI benchmark scores versus estimated benchmark workload cost.
-              </p>
+      <main class="min-h-screen bg-base-100 text-base-content">
+        <div class="container mx-auto px-4 py-8">
+          <div class="hero relative rounded-box bg-base-200">
+            <div class="hero-content text-center">
+              <div class="max-w-md">
+                <h1 class="text-5xl font-bold">Bench Bus</h1>
+                <p class="py-6">
+                  AI benchmark scores versus estimated benchmark workload cost.
+                </p>
+              </div>
+            </div>
+            <div class="absolute right-4 top-4">
+              <ThemeToggle />
             </div>
           </div>
-        </div>
 
-        <div class="mt-4 flex flex-wrap items-center justify-between gap-4">
-          <TimeTravelControl />
-          {indexResource()?.isDemo ? (
-            <span class="badge badge-warning badge-outline">
-              Demo fixture data — no collected snapshots deployed yet
-            </span>
-          ) : null}
-        </div>
+          <div class="mt-4 flex flex-wrap items-center justify-between gap-4">
+            <TimeTravelControl />
+            {indexResource()?.isDemo ? (
+              <span class="badge badge-warning badge-outline">
+                Demo fixture data — no collected snapshots deployed yet
+              </span>
+            ) : null}
+          </div>
 
-        <Charts bundle={bundle()} />
+          <Charts bundle={bundle()} />
+        </div>
       </main>
     );
   };
