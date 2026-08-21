@@ -1,3 +1,4 @@
+import { ClipboardList } from "lucide-solid";
 import type { Component, JSX } from "solid-js";
 
 /**
@@ -17,9 +18,7 @@ export const MethodologyPanel: Component<{
     data-methodology-panel
   >
     <summary class="collapse-title cursor-pointer font-medium select-none">
-      <span aria-hidden="true" class="mr-1">
-        📋
-      </span>
+      <ClipboardList aria-hidden="true" class="mr-1 inline-block align-text-bottom" size={16} />
       {props.title}
     </summary>
     <div class="collapse-content text-sm text-base-content/80 space-y-3">{props.children}</div>
