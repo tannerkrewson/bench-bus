@@ -40,10 +40,23 @@ export interface PositionedLabel extends LabelLayoutAnchor {
   height: number;
 }
 
-const LABEL_HEIGHT = 20;
-const LABEL_MIN_WIDTH = 72;
-const LABEL_MAX_WIDTH = 180;
-const LABEL_GAP = 4;
+export interface LabelLayoutPoint {
+  id: string;
+  left: number;
+  top: number;
+}
+
+export interface LabelLayoutOptions {
+  /** Other plotted dots that labels must not cover. */
+  obstacles?: readonly LabelLayoutPoint[];
+  /** Overrides the first side tried for a label (used while hovering it). */
+  preferredSides?: ReadonlyMap<string, "left" | "right">;
+}
+
+const LABEL_HEIGHT = 22;
+const LABEL_GAP = 6;
+const LABEL_DOT_RADIUS = 8;
+const LABEL_FONT_WIDTH = 7.6;
 const EFFORT_SUFFIX = /^(.*?)\s+(Extra\s+High|Low|Medium|High|Max)$/i;
 const EFFORT_ORDER: Record<string, number> = {
   low: 0,
@@ -105,28 +118,16 @@ export function groupModelVariants(
     });
 }
 
-function labelWidth(label: string, bounds: LabelLayoutBounds): number {
+function labelWidth(label: string, bounds: LabelLayoutBounds): number | null {
   const available = Math.max(1, bounds.right - bounds.left);
-  return Math.min(
-    available,
-    Math.min(LABEL_MAX_WIDTH, Math.max(LABEL_MIN_WIDTH, label.length * 5.1 + 10)),
-  );
+  // Keep enough room for the larger label font and padding. A label wider than
+  // the plot can never be shown in full, so omit it instead of clipping it.
+  const intrinsic = Math.ceil(label.length * LABEL_FONT_WIDTH + 16);
+  return intrinsic <= available ? intrinsic : null;
 }
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), Math.max(min, max));
-}
-
-function overlapArea(a: PositionedLabel, b: PositionedLabel): number {
-  const width = Math.max(
-    0,
-    Math.min(a.left + a.width, b.left + b.width) - Math.max(a.left, b.left),
-  );
-  const height = Math.max(
-    0,
-    Math.min(a.top + a.height, b.top + b.height) - Math.max(a.top, b.top),
-  );
-  return width * height;
 }
 
 function overlaps(a: PositionedLabel, b: PositionedLabel): boolean {
@@ -138,44 +139,47 @@ function overlaps(a: PositionedLabel, b: PositionedLabel): boolean {
   );
 }
 
-function coversAnchor(label: PositionedLabel): boolean {
-  const radius = 7;
-  return (
-    label.anchorLeft >= label.left - radius &&
-    label.anchorLeft <= label.left + label.width + radius &&
-    label.anchorTop >= label.top - radius &&
-    label.anchorTop <= label.top + label.height + radius
-  );
+function coversPoint(label: PositionedLabel, point: LabelLayoutPoint): boolean {
+  const closestLeft = clamp(point.left, label.left, label.left + label.width);
+  const closestTop = clamp(point.top, label.top, label.top + label.height);
+  return Math.hypot(point.left - closestLeft, point.top - closestTop) < LABEL_DOT_RADIUS;
 }
 
 /**
- * Place point labels inside the plot bounds. Labels prefer to stay beside
- * their dot, but try several nearby sides and vertical offsets before using
- * a distant fallback. This keeps dense charts readable without needlessly
- * separating labels from their dots.
+ * Place point labels inside the plot bounds. A candidate is accepted only if
+ * it clears every already-plotted dot and every previously placed label. If a
+ * full label cannot be placed without a collision, it is omitted rather than
+ * rendered clipped or on top of a dot.
  */
 export function layoutModelLabels(
   anchors: readonly LabelLayoutAnchor[],
   bounds: LabelLayoutBounds,
+  options: LabelLayoutOptions = {},
 ): PositionedLabel[] {
+  const obstacles = options.obstacles ?? anchors.map((anchor) => ({
+    id: anchor.id,
+    left: anchor.anchorLeft,
+    top: anchor.anchorTop,
+  }));
   const sorted = [...anchors].sort(
     (a, b) => (b.priority ?? 0) - (a.priority ?? 0) || a.anchorTop - b.anchorTop,
   );
   const placed: PositionedLabel[] = [];
   const result = new Map<string, PositionedLabel>();
+  const sideOffset = LABEL_DOT_RADIUS + LABEL_GAP;
 
   for (const anchor of sorted) {
     const width = labelWidth(anchor.label, bounds);
+    if (width === null) continue;
     const height = LABEL_HEIGHT;
     const minLeft = bounds.left;
     const maxLeft = Math.max(minLeft, bounds.right - width);
     const minTop = bounds.top;
     const maxTop = Math.max(minTop, bounds.bottom - height);
-    const candidates: { left: number; top: number }[] = [];
-
-    // Search locally first. Dense charts may still need a distant fallback,
-    // but labels should not jump across most of the plot merely to avoid a
-    // nearby point. The larger offsets are deliberately tried last.
+    const preferredSide = options.preferredSides?.get(anchor.id) ?? "right";
+    const sides: ("left" | "right" | "center")[] = preferredSide === "left"
+      ? ["left", "right", "center"]
+      : ["right", "left", "center"];
     const verticalOffsets = [
       0,
       -height - LABEL_GAP,
@@ -185,62 +189,68 @@ export function layoutModelLabels(
       -3 * (height + LABEL_GAP),
       3 * (height + LABEL_GAP),
     ];
-    const maxLocalOffset = Math.max(...verticalOffsets.map((offset) => Math.abs(offset)));
-    for (const horizontalOffset of [LABEL_GAP + 4, -width - LABEL_GAP - 4, -width / 2]) {
-      for (const verticalOffset of verticalOffsets) {
-        candidates.push({
-          left: clamp(anchor.anchorLeft + horizontalOffset, minLeft, maxLeft),
-          top: clamp(anchor.anchorTop - height / 2 + verticalOffset, minTop, maxTop),
-        });
-      }
+    const candidates: { left: number; top: number; side: "left" | "right" | "center" }[] = [];
+    const addCandidate = (side: "left" | "right" | "center", verticalOffset: number) => {
+      const horizontalOffset = side === "left"
+        ? -width - sideOffset
+        : side === "right" ? sideOffset : -width / 2;
+      candidates.push({
+        left: clamp(anchor.anchorLeft + horizontalOffset, minLeft, maxLeft),
+        top: clamp(anchor.anchorTop - height / 2 + verticalOffset, minTop, maxTop),
+        side,
+      });
+    };
+    // Local candidates keep labels near their own dot. The broader sweep is a
+    // last resort for crowded clusters and remains bounded by the plot.
+    for (const side of sides) {
+      for (const verticalOffset of verticalOffsets) addCandidate(side, verticalOffset);
     }
-
-    const verticalRange = Math.max(maxLocalOffset + height, bounds.bottom - bounds.top);
-    for (const horizontalOffset of [LABEL_GAP + 4, -width - LABEL_GAP - 4, -width / 2]) {
-      for (
-        let verticalOffset = -verticalRange;
-        verticalOffset <= verticalRange;
-        verticalOffset += 18
-      ) {
-        candidates.push({
-          left: clamp(anchor.anchorLeft + horizontalOffset, minLeft, maxLeft),
-          top: clamp(anchor.anchorTop - height / 2 + verticalOffset, minTop, maxTop),
-        });
+    const verticalRange = Math.max(
+      Math.max(...verticalOffsets.map((offset) => Math.abs(offset))) + height,
+      bounds.bottom - bounds.top,
+    );
+    for (const side of sides) {
+      for (let verticalOffset = -verticalRange; verticalOffset <= verticalRange; verticalOffset += 18) {
+        addCandidate(side, verticalOffset);
       }
     }
 
     let best: PositionedLabel | undefined;
     let bestScore = Infinity;
+    const seen = new Set<string>();
     for (const candidate of candidates) {
-      const positioned: PositionedLabel = { ...anchor, ...candidate, width, height };
-      const overlap = placed.reduce(
-        (total, existing) =>
-          total + (overlaps(positioned, existing) ? 100_000 + overlapArea(positioned, existing) : 0),
-        0,
-      );
-      // A label may be clamped at an edge, but it must not cover its own dot.
-      // Keep a very large penalty so another nearby side wins whenever one fits.
-      const selfOverlap = coversAnchor(positioned) ? 100_000 : 0;
+      const key = `${candidate.left}:${candidate.top}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const positioned: PositionedLabel = {
+        ...anchor,
+        left: candidate.left,
+        top: candidate.top,
+        width,
+        height,
+      };
+      if (placed.some((existing) => overlaps(positioned, existing))) continue;
+      if (obstacles.some((point) => point.id !== anchor.id && coversPoint(positioned, point))) continue;
+      if (coversPoint(positioned, { id: anchor.id, left: anchor.anchorLeft, top: anchor.anchorTop })) continue;
+      const targetLeft = preferredSide === "left"
+        ? anchor.anchorLeft - width - sideOffset
+        : anchor.anchorLeft + sideOffset;
       const distance =
-        Math.abs(candidate.left - (anchor.anchorLeft + LABEL_GAP + 4)) * 0.05 +
+        Math.abs(candidate.left - targetLeft) * 0.05 +
         Math.abs(candidate.top - (anchor.anchorTop - height / 2)) * 0.02;
-      const score = overlap + selfOverlap + distance;
-      if (score < bestScore) {
+      if (distance < bestScore) {
         best = positioned;
-        bestScore = score;
+        bestScore = distance;
       }
     }
 
-    const finalPosition = best ?? {
-      ...anchor,
-      left: clamp(anchor.anchorLeft + LABEL_GAP + 4, minLeft, maxLeft),
-      top: clamp(anchor.anchorTop - height / 2, minTop, maxTop),
-      width,
-      height,
-    };
-    placed.push(finalPosition);
-    result.set(anchor.id, finalPosition);
+    // No collision-free candidate means this label is intentionally omitted.
+    if (!best) continue;
+    placed.push(best);
+    result.set(anchor.id, best);
   }
 
-  return anchors.map((anchor) => result.get(anchor.id)!).filter(Boolean);
+  return anchors.map((anchor) => result.get(anchor.id)).filter(
+    (label): label is PositionedLabel => label !== undefined,
+  );
 }

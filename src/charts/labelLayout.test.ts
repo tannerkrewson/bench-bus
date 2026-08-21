@@ -42,6 +42,49 @@ describe("layoutModelLabels", () => {
     expect(labels[0]?.left === labels[1]?.left && labels[0]?.top === labels[1]?.top).toBe(false);
   });
 
+  it("omits labels that cannot fit in the plot rather than clipping them", () => {
+    const labels = layoutModelLabels(
+      [{ id: "long", label: "A model name that is wider than this plot", anchorLeft: 20, anchorTop: 40, color: "red" }],
+      { left: 10, top: 10, right: 80, bottom: 100 },
+    );
+    expect(labels).toEqual([]);
+  });
+
+  it("keeps labels away from unrelated dots in dense clusters", () => {
+    const labels = layoutModelLabels(
+      [
+        { id: "luna", label: "GPT Luna Max", anchorLeft: 150, anchorTop: 100, color: "red", priority: 1 },
+        { id: "grok", label: "Grok 4.6 Low", anchorLeft: 165, anchorTop: 100, color: "blue" },
+      ],
+      bounds,
+      { obstacles: [
+        { id: "luna", left: 150, top: 100 },
+        { id: "grok", left: 165, top: 100 },
+      ] },
+    );
+    const luna = labels.find((label) => label.id === "luna");
+    const grok = labels.find((label) => label.id === "grok");
+    const nearestDistance = luna && grok
+      ? Math.hypot(
+          grok.anchorLeft - Math.min(Math.max(grok.anchorLeft, luna.left), luna.left + luna.width),
+          grok.anchorTop - Math.min(Math.max(grok.anchorTop, luna.top), luna.top + luna.height),
+        )
+      : 0;
+    expect(nearestDistance).toBeGreaterThanOrEqual(8);
+    for (const label of labels) {
+      expect(label.label.length * 7.6 + 16).toBeLessThanOrEqual(label.width + 1);
+    }
+  });
+
+  it("honors an opposite-side preference for a hovered label", () => {
+    const [label] = layoutModelLabels(
+      [{ id: "hovered", label: "Hovered model", anchorLeft: 150, anchorTop: 100, color: "red" }],
+      bounds,
+      { preferredSides: new Map([["hovered", "left"]]) },
+    );
+    expect(label!.left + label!.width).toBeLessThan(150);
+  });
+
   it("groups same-brand effort variants but keeps model families separate", () => {
     expect(modelVariantParts("Opus 5 Extra High")).toEqual({
       baseLabel: "Opus 5",

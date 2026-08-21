@@ -77,7 +77,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   };
   const [labelPositions, setLabelPositions] = createSignal<ReturnType<typeof layoutModelLabels>>([]);
   const [hoveredPosition, setHoveredPosition] = createSignal<{ left: number; top: number } | null>(null);
+  const [hoveredLabelId, setHoveredLabelId] = createSignal<string | null>(null);
   const [pointDecorations, setPointDecorations] = createSignal<{ id: string; left: number; top: number; color: string }[]>([]);
+  let hoveredLabelBounds: { left: number; top: number; right: number; bottom: number } | null = null;
 
   const refreshSeries = () => {
     const points = props.points();
@@ -150,6 +152,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         styles.getPropertyValue("--color-base-300").trim() || "rgba(128,128,128,.25)",
       frontierColor:
         styles.getPropertyValue("--color-primary").trim() || (dark ? "#a78bfa" : "#4f46e5"),
+      leaderColor: dark ? "#94a3b8" : "#64748b",
     };
   };
 
@@ -240,12 +243,16 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     if (!plot || !container?.parentElement) {
       setLabelPositions([]);
       setPointDecorations([]);
+      hoveredLabelBounds = null;
+      setHoveredLabelId(null);
       return;
     }
     const currentPlot = plot;
     const over = container.querySelector<HTMLElement>(".u-over");
     if (!over) {
       setLabelPositions([]);
+      hoveredLabelBounds = null;
+      setHoveredLabelId(null);
       return;
     }
 
@@ -288,14 +295,37 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           label: currentSeries.labels[index] ?? id,
           anchorLeft: overRect.left - rootRect.left + currentPlot.valToPos(x, "x"),
           anchorTop: overRect.top - rootRect.top + currentPlot.valToPos(y, "y"),
-          color: currentSeries.effortGroups[index]
+          color: dark ? "#ffffff" : (currentSeries.effortGroups[index]
             ? effortGroupColor(currentSeries.effortGroups[index]!, dark)
-            : (dark ? "#cbd5e1" : "#475569"),
+            : "#475569"),
           priority: currentSeries.frontierIds.includes(id) ? 1 : 0,
         },
       ];
     });
-    setLabelPositions(props.showLabels?.() ?? true ? layoutModelLabels(anchors, bounds) : []);
+    const obstacles = currentSeries.ids.flatMap((id, index) => {
+      const x = currentSeries.x[index];
+      const y = currentSeries.y[index];
+      if (x === undefined || y === undefined) return [];
+      return [{
+        id,
+        left: overRect.left - rootRect.left + currentPlot.valToPos(x, "x"),
+        top: overRect.top - rootRect.top + currentPlot.valToPos(y, "y"),
+      }];
+    });
+    const baseLabels = layoutModelLabels(anchors, bounds, { obstacles });
+    const activeId = hoveredLabelId();
+    const activeBase = activeId === null ? undefined : baseLabels.find((label) => label.id === activeId);
+    const preferredSides = activeBase
+      ? new Map([[activeId!, activeBase.left + activeBase.width / 2 < activeBase.anchorLeft ? "right" : "left"] as const])
+      : undefined;
+    const labels = activeBase
+      ? layoutModelLabels(anchors, bounds, { obstacles, preferredSides })
+      : baseLabels;
+    if (activeId !== null && !labels.some((label) => label.id === activeId)) {
+      hoveredLabelBounds = null;
+      setHoveredLabelId(null);
+    }
+    setLabelPositions(props.showLabels?.() ?? true ? labels : []);
   };
 
   const scheduleLabelPositions = () => {
@@ -330,6 +360,43 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       left: overRect.left - parentRect.left + u.valToPos(x, "x"),
       top: overRect.top - parentRect.top + u.valToPos(y, "y"),
     };
+  };
+
+  const updateLabelHover = (pointer: { left: number; top: number } | undefined) => {
+    const currentId = hoveredLabelId();
+    const padding = 10;
+    const contains = (rect: { left: number; top: number; right: number; bottom: number }) =>
+      pointer !== undefined && pointer.left >= rect.left - padding && pointer.left <= rect.right + padding &&
+      pointer.top >= rect.top - padding && pointer.top <= rect.bottom + padding;
+    let nextId: string | null = null;
+    if (pointer !== undefined && (props.showLabels?.() ?? true)) {
+      const current = currentId === null
+        ? undefined
+        : labelPositions().find((label) => label.id === currentId);
+      if ((hoveredLabelBounds !== null && contains(hoveredLabelBounds)) ||
+          (current !== undefined && contains({
+            left: current.left,
+            top: current.top,
+            right: current.left + current.width,
+            bottom: current.top + current.height,
+          }))) {
+        nextId = currentId;
+      } else {
+        nextId = labelPositions().find((label) => contains({
+          left: label.left,
+          top: label.top,
+          right: label.left + label.width,
+          bottom: label.top + label.height,
+        }))?.id ?? null;
+      }
+    }
+    if (nextId === currentId) return;
+    const next = nextId === null ? undefined : labelPositions().find((label) => label.id === nextId);
+    hoveredLabelBounds = next
+      ? { left: next.left, top: next.top, right: next.left + next.width, bottom: next.top + next.height }
+      : null;
+    setHoveredLabelId(nextId);
+    scheduleLabelPositions();
   };
 
   const buildOptions = (): Options => {
@@ -379,8 +446,22 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         },
       },
       axes: [
-        { label: props.xAxisLabel(), stroke: styles.textColor, values: (_u, splits) => splits.map(formatDollarTick), grid: { stroke: styles.gridColor } },
-        { label: props.yAxisLabel(), stroke: styles.textColor, values: (_u, splits) => splits.map((value) => /score/i.test(props.yAxisLabel()) ? formatPercentTick(value) : String(value)), grid: { stroke: styles.gridColor } },
+        {
+          label: props.xAxisLabel(),
+          stroke: styles.textColor,
+          font: "14px Sora, sans-serif",
+          labelFont: "600 15px Sora, sans-serif",
+          values: (_u, splits) => splits.map(formatDollarTick),
+          grid: { stroke: styles.gridColor },
+        },
+        {
+          label: props.yAxisLabel(),
+          stroke: styles.textColor,
+          font: "14px Sora, sans-serif",
+          labelFont: "600 15px Sora, sans-serif",
+          values: (_u, splits) => splits.map((value) => /score/i.test(props.yAxisLabel()) ? formatPercentTick(value) : String(value)),
+          grid: { stroke: styles.gridColor },
+        },
       ],
       legend: { show: false },
       cursor: {
@@ -441,6 +522,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         ready: [scheduleLabelPositions],
         setCursor: [
           (u) => {
+            const pointer = u.cursor.left === null || u.cursor.top === null ? undefined : cursorPosition(u);
+            updateLabelHover(pointer);
             const index = hoveredPointIndex(u);
             hoveredIndex = index;
             const id = index === null ? null : (currentSeries.ids[index] ?? null);
@@ -448,19 +531,16 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
               setHoveredPosition(null);
               props.onHover?.(null);
             } else {
-              const pointer = cursorPosition(u);
               const dot = pointPosition(u, index);
-              setHoveredPosition(dot ? {
-                left: dot.left - (container?.parentElement?.getBoundingClientRect().left ?? 0),
-                top: dot.top - (container?.parentElement?.getBoundingClientRect().top ?? 0),
-              } : null);
+              // pointPosition is already relative to the chart's positioned
+              // parent; do not subtract the parent offset a second time.
+              setHoveredPosition(dot ?? null);
               // Keep guides centered on the dot while the tooltip remains at the pointer.
+              // fireHook=false prevents setCursor from recursively re-entering this hook.
               const snappedLeft = u.valToPos(currentSeries.x[index]!, "x");
               const snappedTop = u.valToPos(currentSeries.y[index]!, "y");
               if (Math.abs((u.cursor.left ?? snappedLeft) - snappedLeft) > 0.5 || Math.abs((u.cursor.top ?? snappedTop) - snappedTop) > 0.5) {
-                u.cursor.left = snappedLeft;
-                u.cursor.top = snappedTop;
-                u.redraw();
+                u.setCursor({ left: snappedLeft, top: snappedTop }, false);
               }
               props.onHover?.(id, pointer ?? dot);
             }
@@ -595,8 +675,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                     y1={label.anchorTop}
                     x2={endLeft}
                     y2={endTop}
-                    stroke={label.color}
-                    stroke-opacity="0.38"
+                    stroke={themeStyles().leaderColor}
+                    stroke-opacity="0.72"
                     stroke-width="1"
                     data-testid="model-label-leader"
                   />
@@ -608,7 +688,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         <For each={labelPositions()}>
           {(label) => (
             <span
-              class="pointer-events-none absolute z-1 overflow-hidden whitespace-nowrap rounded bg-base-100/90 px-1 text-ellipsis text-left text-xs leading-5 shadow-sm"
+              class="pointer-events-none absolute z-1 whitespace-nowrap rounded bg-base-100/90 px-1 text-left text-sm leading-[22px] shadow-sm"
               title={label.label}
               style={{
                 left: `${label.left}px`,
@@ -616,6 +696,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 width: `${label.width}px`,
                 height: `${label.height}px`,
                 color: label.color,
+                "font-size": "14px",
+                "line-height": "22px",
               }}
               data-testid="model-label"
               data-model-id={label.id}
