@@ -19,6 +19,10 @@ export interface ModelListProps {
   searchId?: string;
   /** Ids of unplottable (matched but unpriced) models, shown disabled. */
   unplottable: () => readonly { id: string; label: string }[];
+  /** Current pricing-specific badge text for unplottable rows. */
+  unplottableLabel?: () => string;
+  /** Current pricing-specific explanation for unplottable rows. */
+  unplottableDescription?: () => string;
 }
 
 /**
@@ -152,6 +156,9 @@ export default function ModelList(props: ModelListProps) {
       ? unplottableSorted()
       : unplottableSorted().filter((item) => `${item.label} ${item.id}`.toLocaleLowerCase().includes(needle));
   });
+  const unplottableLabel = () => props.unplottableLabel?.() ?? "no pricing";
+  const unplottableDescription = () =>
+    props.unplottableDescription?.() ?? "Unavailable with the current pricing settings.";
   const visibleSelectedCount = createMemo(() =>
     filtered().filter((item) => item.members.every((point) => props.selectedIds().includes(point.id))).length,
   );
@@ -290,7 +297,7 @@ export default function ModelList(props: ModelListProps) {
         </label>
         <div
           ref={modelMenu}
-          class="menu menu-sm max-h-96 w-full overflow-x-hidden overflow-y-auto p-0"
+          class="menu menu-sm max-h-96 w-full flex-nowrap overscroll-contain overflow-x-hidden overflow-y-auto p-0"
           role="group"
           aria-label="Model visibility"
         >
@@ -327,6 +334,11 @@ export default function ModelList(props: ModelListProps) {
               );
             }}
           </For>
+          <Show when={filteredUnplottable().length > 0}>
+            <p class="px-2 pb-1 pt-2 text-xs text-base-content/60" role="note">
+              {unplottableDescription()}
+            </p>
+          </Show>
           <For each={filteredUnplottable()}>
             {(item) => (
               <div class="label min-h-9 w-full max-w-full cursor-not-allowed justify-between gap-3 px-2 py-1 text-base-content/50">
@@ -338,7 +350,9 @@ export default function ModelList(props: ModelListProps) {
                   />
                   <span class="min-w-0 whitespace-normal break-words" title={item.label}>{item.label}</span>
                 </span>
-                <span class="badge badge-ghost badge-xs shrink-0">no pricing</span>
+                <span class="badge badge-ghost badge-xs shrink-0" title={unplottableDescription()}>
+                  {unplottableLabel()}
+                </span>
               </div>
             )}
           </For>

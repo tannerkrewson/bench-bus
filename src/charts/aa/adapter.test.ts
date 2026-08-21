@@ -127,6 +127,12 @@ describe("aaAdapter.computePoint", () => {
     expect(point).not.toBeNull(); // defaults: cheapest mode
   });
 
+  it("explains provider-mode rows that can use AA listed pricing", () => {
+    expect(aaAdapter.unplottableLabel?.({ pricingMode: "cheapest" })).toBe("no OpenRouter price");
+    expect(aaAdapter.unplottableDescription?.({ pricingMode: "cheapest" })).toContain("Choose AA listed");
+    expect(aaAdapter.unplottableLabel?.({ pricingMode: "listed" })).toBe("no listed rate");
+  });
+
   it("exposes no normalized-workload control", () => {
     const ids = aaAdapter.controlSpecs.map((s) => s.id);
     expect(ids).toEqual(["pricingMode", "cacheHitRate"]);

@@ -115,6 +115,9 @@ export const cursorBenchAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord>
     };
   },
   searchText: (record) => `${record.modelName} ${record.provider} ${record.modelId}`,
+  unplottableLabel: () => "no published price",
+  unplottableDescription: () =>
+    "This model has no valid published task cost, so it cannot be plotted.",
   tooltipLines: (record, point, controls): readonly TooltipLine[] => {
     const lines: TooltipLine[] = [
       { label: "CursorBench score", value: `${record.score.toFixed(1)}%` },

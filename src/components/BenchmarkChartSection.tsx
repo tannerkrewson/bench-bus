@@ -159,6 +159,11 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
               query={query}
               onQueryChange={setQuery}
               onToggleSelect={toggleSelect}
+              unplottableLabel={() => props.adapter.unplottableLabel?.(controls()) ?? "no pricing"}
+              unplottableDescription={() =>
+                props.adapter.unplottableDescription?.(controls()) ??
+                "Unavailable with the current pricing settings."
+              }
               unplottable={() =>
                 build().unplottable.map((u) => props.adapter.identity(u.record))
               }

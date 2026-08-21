@@ -125,6 +125,15 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
 
   searchText: (record) => `${record.name} ${record.shortName} ${record.slug}`,
 
+  unplottableLabel: (controls) =>
+    String(controls["pricingMode"] ?? PRICING_MODE_CONTROL.default) === "listed"
+      ? "no listed rate"
+      : "no OpenRouter price",
+  unplottableDescription: (controls) =>
+    String(controls["pricingMode"] ?? PRICING_MODE_CONTROL.default) === "listed"
+      ? "No Artificial Analysis listed rate is available for this model."
+      : "No OpenRouter price is available in this mode. Choose AA listed to use the source-listed rate when available.",
+
   tooltipLines: (record, point, controls): readonly TooltipLine[] =>
     aaControlledTooltipLines(record, point, controls),
 

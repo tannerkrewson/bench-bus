@@ -32,7 +32,8 @@ describe("AaChartSection", () => {
     const checkboxes = container.querySelectorAll("[data-testid='model-list'] input[type='checkbox']");
     expect(checkboxes).toHaveLength(3);
     expect(container.textContent).toContain("Mystery Model");
-    expect(container.textContent).toContain("no pricing");
+    expect(container.textContent).toContain("no OpenRouter price");
+    expect(container.textContent).toContain("Choose AA listed to use the source-listed rate");
     expect(container.querySelector("[data-testid='aa-unplottable-count']")?.textContent).toContain(
       "1 model",
     );

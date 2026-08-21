@@ -81,9 +81,16 @@ describe("ModelList effort selection", () => {
         selectedIds={() => []}
         onToggleSelect={() => undefined}
         unplottable={() => [{ id: "missing", label: "Missing Model" }]}
+        unplottableLabel={() => "no OpenRouter price"}
+        unplottableDescription={() => "Switch to AA listed pricing to use the source-listed rate."}
         searchId="model-test-search-3"
       />
     ));
+    const menu = container.querySelector("[data-testid='model-list'] [role='group']") as HTMLElement;
+    expect(menu.className).toContain("flex-nowrap");
+    expect(menu.className).toContain("overflow-y-auto");
+    expect(container.textContent).toContain("Switch to AA listed pricing");
+    expect(container.textContent).toContain("no OpenRouter price");
     const familyLabel = container.querySelector("[title='Opus 5']") as HTMLElement;
     expect(familyLabel.previousElementSibling?.getAttribute("aria-hidden")).toBe("true");
     const missingLabel = container.querySelector("[title='Missing Model']") as HTMLElement;
