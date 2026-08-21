@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { createSignal } from "solid-js";
 import { render } from "solid-js/web";
 import type { JSX } from "solid-js";
 import AaChartSection from "./AaChartSection";
-import { AA_FIXTURE_RECORDS } from "./fixtures";
+import { AA_FIXTURE_RECORDS, AA_RECORD_PLOTTABLE_CHEAPEST } from "./fixtures";
 import { chartStateFromParams, chartStateToParams } from "../urlState";
 import { aaAdapter } from "./adapter";
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
@@ -55,11 +56,71 @@ describe("AaChartSection", () => {
       <AaChartSection records={() => AA_FIXTURE_RECORDS} onStateChange={(state) => states.push(state)} />
     ));
 
-    expect(states[states.length - 1]?.selectedIds).toEqual(AA_DEFAULT_MODEL_SLUGS);
+    expect(states[states.length - 1]?.selectedIds).toEqual([
+      ...AA_DEFAULT_MODEL_SLUGS,
+      "gpt-5.6-sol",
+    ]);
     expect(AA_DEFAULT_MODEL_SLUGS).toContain("deepseek-v4-0731-flash");
     expect(container.querySelector("[data-testid='aa-no-points']")).toBeNull();
     expect(AA_DEFAULT_COST_MODE).toBe("intelligence-vs-cost-per-task");
     dispose();
+  });
+
+  it("updates frontier defaults with snapshots and preserves explicit selections", () => {
+    const frontierRecord = {
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug: "frontier-not-curated",
+      name: "Frontier Not Curated",
+      shortName: "Frontier",
+      intelligenceIndex: 99,
+      canonicalTokens: { input: 100_000_000, output: 10_000_000 },
+      listed: { price1mInputTokens: 0.1, price1mOutputTokens: 1, cacheHitPrice: 0.01 },
+    };
+    const replacementFrontierRecord = {
+      ...frontierRecord,
+      slug: "frontier-from-new-snapshot",
+      name: "Frontier From New Snapshot",
+      intelligenceIndex: 100,
+    };
+    const [records, setRecords] = createSignal<readonly typeof frontierRecord[]>([
+      ...AA_FIXTURE_RECORDS,
+      frontierRecord,
+    ]);
+    const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
+    const { container, dispose } = mount(() => (
+      <AaChartSection records={records} onStateChange={(state) => states.push(state)} />
+    ));
+
+    expect(container.querySelectorAll("[data-testid='model-list'] input[type='checkbox']")).toHaveLength(4);
+    expect(states[states.length - 1]?.selectedIds).toContain("frontier-not-curated");
+    expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("frontier-not-curated");
+    setRecords([...AA_FIXTURE_RECORDS, replacementFrontierRecord]);
+    expect(states[states.length - 1]?.selectedIds).toContain("frontier-from-new-snapshot");
+    expect(states[states.length - 1]?.selectedIds).not.toContain("frontier-not-curated");
+    const frontierCheckbox = container.querySelector(
+      "input[aria-label='Show Frontier From New Snapshot']",
+    ) as HTMLInputElement;
+    frontierCheckbox.click();
+    expect(states[states.length - 1]?.selectedIds).not.toContain("frontier-from-new-snapshot");
+    const reset = [...container.querySelectorAll("[data-testid='model-list'] button")].find(
+      (button) => button.textContent === "Reset to default",
+    );
+    reset?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(states[states.length - 1]?.selectedIds).toContain("frontier-from-new-snapshot");
+    dispose();
+
+    const explicitStates: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
+    const [explicitRecords, setExplicitRecords] = createSignal(AA_FIXTURE_RECORDS);
+    const explicit = mount(() => (
+      <AaChartSection
+        records={explicitRecords}
+        initialState={{ selectedIds: ["gpt-5.6-sol"], selectionSpecified: true }}
+        onStateChange={(state) => explicitStates.push(state)}
+      />
+    ));
+    setExplicitRecords([...AA_FIXTURE_RECORDS, replacementFrontierRecord]);
+    expect(explicitStates[explicitStates.length - 1]?.selectedIds).toEqual(["gpt-5.6-sol"]);
+    explicit.dispose();
   });
 
   it("keeps an explicitly cleared URL selection empty instead of restoring curated defaults", () => {

@@ -11,6 +11,8 @@ import ChartControlPanel from "../../components/ChartControlPanel";
 import ModelList from "../../components/ModelList";
 import type { DerivedAaChartRecord } from "../../schemas";
 import { aaAdapter, aaControlledTooltipLines } from "./adapter";
+import { AA_DEFAULT_CACHE_HIT_RATE } from "./pricing";
+import { paretoFrontier } from "../plotData";
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
 
 export interface AaChartSectionProps {
@@ -38,11 +40,6 @@ export default function AaChartSection(props: AaChartSectionProps) {
   const [selectionSpecified, setSelectionSpecified] = createSignal(
     props.initialState?.selectionSpecified ?? (props.initialState?.selectedIds?.length ?? 0) > 0,
   );
-  const [selectedIds, setSelectedIds] = createSignal<string[]>(
-    selectionSpecified()
-      ? [...(props.initialState?.selectedIds ?? [])]
-      : [...AA_DEFAULT_MODEL_SLUGS],
-  );
   const [showLabels, setShowLabels] = createSignal(props.initialState?.showLabels ?? true);
   const [showFrontier, setShowFrontier] = createSignal(props.initialState?.showFrontier ?? true);
   const [controls, setControls] = createSignal<PricingControlState>({
@@ -59,6 +56,29 @@ export default function AaChartSection(props: AaChartSectionProps) {
   const allBuild = createMemo(() =>
     buildChartPlot(props.records(), aaAdapter, controls(), ""),
   );
+  const dynamicDefaultIds = createMemo(() => {
+    const listedBuild = buildChartPlot(
+      props.records(),
+      aaAdapter,
+      { ...defaultControls(), pricingMode: "listed", cacheHitRate: AA_DEFAULT_CACHE_HIT_RATE },
+      "",
+    );
+    const frontierIds = paretoFrontier(listedBuild.entries.map((entry) => entry.point)).map(
+      (point) => point.id,
+    );
+    return [...new Set([...AA_DEFAULT_MODEL_SLUGS, ...frontierIds])];
+  });
+  const [selectedIds, setSelectedIds] = createSignal<string[]>(
+    selectionSpecified()
+      ? [...(props.initialState?.selectedIds ?? [])]
+      : dynamicDefaultIds(),
+  );
+  // A default selection follows each newly loaded snapshot. Once a URL or user
+  // interaction specifies a selection, it remains untouched by snapshot updates.
+  createEffect(() => {
+    const defaults = dynamicDefaultIds();
+    if (!selectionSpecified()) setSelectedIds(defaults);
+  });
   const filteredBuild = createMemo(() =>
     buildChartPlot(props.records(), aaAdapter, controls(), query()),
   );
@@ -120,7 +140,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
 
   const resetDefault = () => {
     setSelectionSpecified(false);
-    setSelectedIds([...AA_DEFAULT_MODEL_SLUGS]);
+    setSelectedIds(dynamicDefaultIds());
     setQuery("");
   };
 
@@ -168,7 +188,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
             <ModelList
               points={() => allBuild().entries.map((e) => e.point)}
               selectedIds={selectedIds}
-              defaultSelectedIds={() => AA_DEFAULT_MODEL_SLUGS}
+              defaultSelectedIds={dynamicDefaultIds}
               searchId={`chart-${aaAdapter.benchmarkId}-model-search`}
               onResetDefault={resetDefault}
               query={query}
