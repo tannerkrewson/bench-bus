@@ -59,9 +59,16 @@ describe("derived datasets", () => {
     expect(derivedCursorDatasetSchema.parse({ freshness, records: [cursorRecord] }).records).toHaveLength(1);
   });
 
-  it("rejects an AA record with an empty providers array", () => {
+  it("accepts an AA record with an empty providers array (unplottable: no pricing known)", () => {
     expect(
       derivedAaDatasetSchema.safeParse({ freshness, records: [{ ...aaRecord, providers: [] }] })
+        .success,
+    ).toBe(true);
+  });
+
+  it("rejects non-array providers", () => {
+    expect(
+      derivedAaDatasetSchema.safeParse({ freshness, records: [{ ...aaRecord, providers: "none" }] })
         .success,
     ).toBe(false);
   });

@@ -40,8 +40,13 @@ export const derivedAaChartRecordSchema = z
         output: finiteNumber,
       })
       .strict(),
-    /** Cheapest-single-provider mode: every provider's effective prices. */
-    providers: z.array(openRouterProviderSummarySchema).min(1),
+    /**
+     * Cheapest-single-provider mode: every provider's effective prices.
+     * An empty array means no OpenRouter pricing was known for this model at
+     * the compiled point in time — the record is unplottable in cost terms and
+     * charts must surface it as such rather than mispricing it.
+     */
+    providers: z.array(openRouterProviderSummarySchema),
     /** Weighted OpenRouter mode: model-wide weighted effective prices. */
     weighted: z
       .object({
@@ -85,9 +90,12 @@ export const freshnessMetadataSchema = z
     schemaVersion: z.literal(SCHEMA_VERSIONS.derived),
     /** The point in time the dataset was compiled for. */
     asOf: isoUtcTimestamp,
-    aaObservedAt: isoUtcTimestamp,
-    openrouterObservedAt: isoUtcTimestamp,
-    cursorObservedAt: isoUtcTimestamp,
+    /** Observation time of the AA snapshot used. Absent = no AA snapshot at/before asOf. */
+    aaObservedAt: isoUtcTimestamp.optional(),
+    /** Observation time of the OpenRouter snapshot used. Absent = no pricing available. */
+    openrouterObservedAt: isoUtcTimestamp.optional(),
+    /** Observation time of the Cursor snapshot used. Absent = no Cursor snapshot at/before asOf. */
+    cursorObservedAt: isoUtcTimestamp.optional(),
   })
   .strict();
 

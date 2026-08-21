@@ -218,7 +218,9 @@ export async function compileBundle(
       freshness: {
         aaObservedAt: aa.envelope.observedAt,
         openrouterObservedAt: openrouter.envelope.observedAt,
-        cursorObservedAt: resolutions.cursor.available ? (resolutions.cursor.observedAt as string) : asOf,
+        ...(resolutions.cursor.available
+          ? { cursorObservedAt: resolutions.cursor.observedAt as string }
+          : {}),
       },
       records: joined.records,
     });
@@ -229,10 +231,10 @@ export async function compileBundle(
     stats.cursorRecords = records.length;
     cursorDataset = encodeCursorDataset({
       freshness: {
-        aaObservedAt: resolutions.aa.available ? (resolutions.aa.observedAt as string) : asOf,
-        openrouterObservedAt: resolutions.openrouter.available
-          ? (resolutions.openrouter.observedAt as string)
-          : asOf,
+        ...(resolutions.aa.available ? { aaObservedAt: resolutions.aa.observedAt as string } : {}),
+        ...(resolutions.openrouter.available
+          ? { openrouterObservedAt: resolutions.openrouter.observedAt as string }
+          : {}),
         cursorObservedAt: cursor.envelope.observedAt,
       },
       records,

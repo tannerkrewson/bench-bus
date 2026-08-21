@@ -5,6 +5,7 @@ import {
   SCHEMA_VERSIONS,
   type DerivedAaChartRecord,
   type DerivedCursorChartRecord,
+  type FreshnessMetadata,
 } from "../schemas";
 
 /**
@@ -26,8 +27,9 @@ import {
  *
  * - Each dataset is `{ f, m }`:
  *     `f`  freshness tuple `[aaObservedAt, openrouterObservedAt, cursorObservedAt]`
- *          (a source with no eligible snapshot is stamped with the bundle
- *          `asOf`; it contributes no data to that dataset)
+ *          where an entry is the source's observation time or `null` when no
+ *          eligible snapshot exists for that source at `asOf` (it contributes
+ *          no data to that dataset; nothing is fabricated)
  *     `m`  array of positional records (below) sorted by identity key.
  *
  * - AA record tuple (positional, mirrors DerivedAaChartRecord):
@@ -72,7 +74,8 @@ export interface CompactBundle {
 
 /** `{ f, m }` dataset with positional records; record shape differs per chart. */
 export interface CompactDataset {
-  f: [string, string, string];
+  /** Freshness tuple; an entry is the source's observedAt or null when unavailable. */
+  f: [string | null, string | null, string | null];
   /** Positional record tuples (AA or Cursor shape); validated on decode. */
   m: unknown[];
 }
@@ -100,14 +103,14 @@ type CompactCursorRecord = [
 ];
 
 export function encodeAaDataset(
-  dataset: { freshness: { aaObservedAt: string; openrouterObservedAt: string; cursorObservedAt: string }; records: DerivedAaChartRecord[] } | null,
+  dataset: { freshness: FreshnessMetadata; records: DerivedAaChartRecord[] } | null,
 ): CompactDataset | null {
   if (!dataset) return null;
   return {
     f: [
-      dataset.freshness.aaObservedAt,
-      dataset.freshness.openrouterObservedAt,
-      dataset.freshness.cursorObservedAt,
+      dataset.freshness.aaObservedAt ?? null,
+      dataset.freshness.openrouterObservedAt ?? null,
+      dataset.freshness.cursorObservedAt ?? null,
     ],
     m: dataset.records.map(
       (r): CompactAaRecord => [
@@ -125,14 +128,14 @@ export function encodeAaDataset(
 }
 
 export function encodeCursorDataset(
-  dataset: { freshness: { aaObservedAt: string; openrouterObservedAt: string; cursorObservedAt: string }; records: DerivedCursorChartRecord[] } | null,
+  dataset: { freshness: FreshnessMetadata; records: DerivedCursorChartRecord[] } | null,
 ): CompactDataset | null {
   if (!dataset) return null;
   return {
     f: [
-      dataset.freshness.aaObservedAt,
-      dataset.freshness.openrouterObservedAt,
-      dataset.freshness.cursorObservedAt,
+      dataset.freshness.aaObservedAt ?? null,
+      dataset.freshness.openrouterObservedAt ?? null,
+      dataset.freshness.cursorObservedAt ?? null,
     ],
     m: dataset.records.map(
       (r): CompactCursorRecord => [
@@ -154,19 +157,17 @@ function decodeFreshness(bundleAsOf: string, f: unknown) {
     throw new TypeError(`Invalid freshness tuple: ${JSON.stringify(f)}`);
   }
   const [aaObservedAt, openrouterObservedAt, cursorObservedAt] = f;
-  if (
-    typeof aaObservedAt !== "string" ||
-    typeof openrouterObservedAt !== "string" ||
-    typeof cursorObservedAt !== "string"
-  ) {
-    throw new TypeError(`Invalid freshness tuple: ${JSON.stringify(f)}`);
+  for (const entry of [aaObservedAt, openrouterObservedAt, cursorObservedAt]) {
+    if (entry !== null && typeof entry !== "string") {
+      throw new TypeError(`Invalid freshness tuple: ${JSON.stringify(f)}`);
+    }
   }
   return freshnessMetadataSchema.parse({
     schemaVersion: SCHEMA_VERSIONS.derived,
     asOf: bundleAsOf,
-    aaObservedAt,
-    openrouterObservedAt,
-    cursorObservedAt,
+    ...(typeof aaObservedAt === "string" ? { aaObservedAt } : {}),
+    ...(typeof openrouterObservedAt === "string" ? { openrouterObservedAt } : {}),
+    ...(typeof cursorObservedAt === "string" ? { cursorObservedAt } : {}),
   });
 }
 
