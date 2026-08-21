@@ -1,6 +1,7 @@
 import { createEffect, createMemo, createSignal, Show } from "solid-js";
 import BenchmarkScatterChart from "../charts/BenchmarkScatterChart";
 import ChartTooltip from "../charts/ChartTooltip";
+import ChartWatermark from "./ChartWatermark";
 import {
   buildChartPlot,
   discountProviderRole,
@@ -240,6 +241,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
             </Show>
           </Show>
         </div>
+        <ChartWatermark />
 
       </div>
     </section>

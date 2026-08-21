@@ -1,6 +1,7 @@
 import { createEffect, createMemo, createSignal, Show } from "solid-js";
 import BenchmarkScatterChart from "../BenchmarkScatterChart";
 import ChartTooltip from "../ChartTooltip";
+import ChartWatermark from "../../components/ChartWatermark";
 import { buildChartPlot } from "../plotData";
 import type {
   ChartViewState,
@@ -254,6 +255,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
             </Show>
           </Show>
         </div>
+        <ChartWatermark />
         <Show when={props.records().length > 0 && build().unplottable.length > 0}>
           <p class="text-xs text-base-content/60" role="status" data-testid="aa-unplottable-count">
             {build().unplottable.length} model(s) shown in the list but not plotted: no usable

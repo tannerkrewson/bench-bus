@@ -17,6 +17,8 @@ describe("App", () => {
     });
     expect(container.querySelector("section[data-benchmark='aa'] canvas")).not.toBeNull();
     expect(container.querySelector("section[data-benchmark='cursor'] canvas")).not.toBeNull();
+    expect(container.querySelectorAll("[data-testid='chart-watermark']")).toHaveLength(2);
+    expect(container.querySelector("[data-testid='chart-watermark']")?.textContent).toContain("benchb.us");
     expect(container.querySelector("button[aria-label^='Switch to']")).not.toBeNull();
     expect(container.querySelector("button[data-testid='random-theme']")).not.toBeNull();
     expect(container.querySelector("[data-testid='freshness-chips']")).toBeNull();
