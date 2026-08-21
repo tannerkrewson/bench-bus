@@ -82,7 +82,7 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
       <Show when={props.showFrontier?.() ?? true}>
         <div class="flex items-center gap-2 text-base text-base-content/70" role="img" aria-label="Pareto frontier (dotted line)">
           <span class="w-6 border-t-2 border-dashed border-primary" aria-hidden="true" />
-          <span>Pareto frontier</span>
+          <span>Frontier line</span>
         </div>
       </Show>
 
