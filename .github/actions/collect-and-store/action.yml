@@ -1,0 +1,73 @@
+name: "Collect and store benchmark snapshot"
+description: >
+  Runs one Bench Bus collector, validates and stores the resulting envelope
+  into a bench-bus-data checkout via the snapshot CLI, commits atomically, and
+  pushes. Fails closed: if collection or validation fails, nothing is written
+  and the data branch is left untouched.
+
+inputs:
+  source:
+    description: "Snapshot source id: aa | openrouter | cursor"
+    required: true
+  collector-command:
+    description: "npm script that runs the collector (extra args --out <path> are appended)"
+    required: true
+  data-branch-path:
+    description: "Checkout path of the bench-bus-data working tree"
+    required: false
+    default: "data-branch"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Collect upstream data
+      id: collect
+      shell: bash
+      env:
+        SOURCE: ${{ inputs.source }}
+        DATA_BRANCH_PATH: ${{ inputs.data-branch-path }}
+      run: |
+        set -euo pipefail
+        envelope="${RUNNER_TEMP}/${SOURCE}-envelope.json"
+        echo "envelope=${envelope}" >> "${GITHUB_OUTPUT}"
+        # Collectors fail closed: a nonzero exit here skips every later step
+        # and leaves the data branch checkout completely untouched.
+        npm run "collect:${SOURCE}" -- --out "${envelope}"
+
+    - name: Validate and write snapshot into data branch
+      shell: bash
+      env:
+        SOURCE: ${{ inputs.source }}
+        DATA_BRANCH_PATH: ${{ inputs.data-branch-path }}
+      run: |
+        set -euo pipefail
+        # The store re-validates the whole envelope against the shared
+        # schemas, refuses duplicate/overwritten snapshot paths, and only
+        # then appends the manifest entry and moves latestKnownGood.
+        npm run snapshot -- write \
+          --dir "${DATA_BRANCH_PATH}" \
+          --input "${{ steps.collect.outputs.envelope }}"
+
+    - name: Commit snapshot atomically on bench-bus-data
+      shell: bash
+      env:
+        SOURCE: ${{ inputs.source }}
+        DATA_BRANCH_PATH: ${{ inputs.data-branch-path }}
+      run: |
+        set -euo pipefail
+        git -C "${DATA_BRANCH_PATH}" config user.name "github-actions[bot]"
+        git -C "${DATA_BRANCH_PATH}" config user.email \
+          "github-actions[bot]@users.noreply.github.com"
+        # commitAll treats "nothing to commit" as success; assertDataBranch
+        # refuses to commit anywhere but bench-bus-data.
+        npm run snapshot -- commit \
+          --repo "${DATA_BRANCH_PATH}" \
+          --message "collect: ${SOURCE} $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+    - name: Push data branch
+      shell: bash
+      env:
+        DATA_BRANCH_PATH: ${{ inputs.data-branch-path }}
+      run: |
+        set -euo pipefail
+        git -C "${DATA_BRANCH_PATH}" push origin HEAD:bench-bus-data
