@@ -16,11 +16,11 @@ const PLOTTABLE_AA_RECORDS = AA_FIXTURE_RECORDS.filter((r) => r.providers.length
 function freshDatasets() {
   return {
     aa: encodeAaDataset({
-      freshness: { aaObservedAt: AT, openrouterObservedAt: AT, cursorObservedAt: AT },
+      freshness: { schemaVersion: 1, asOf: AT, aaObservedAt: AT, openrouterObservedAt: AT, cursorObservedAt: AT },
       records: [...PLOTTABLE_AA_RECORDS],
     }),
     cursor: encodeCursorDataset({
-      freshness: { aaObservedAt: AT, openrouterObservedAt: AT, cursorObservedAt: AT },
+      freshness: { schemaVersion: 1, asOf: AT, aaObservedAt: AT, openrouterObservedAt: AT, cursorObservedAt: AT },
       records: [...CURSOR_FIXTURE_RECORDS],
     }),
   };

@@ -216,6 +216,8 @@ export async function compileBundle(
     stats.provisionalAliasesUsed = joined.provisionalUsed;
     aaDataset = encodeAaDataset({
       freshness: {
+        schemaVersion: SCHEMA_VERSIONS.derived,
+        asOf,
         aaObservedAt: aa.envelope.observedAt,
         openrouterObservedAt: openrouter.envelope.observedAt,
         ...(resolutions.cursor.available
@@ -231,6 +233,8 @@ export async function compileBundle(
     stats.cursorRecords = records.length;
     cursorDataset = encodeCursorDataset({
       freshness: {
+        schemaVersion: SCHEMA_VERSIONS.derived,
+        asOf,
         ...(resolutions.aa.available ? { aaObservedAt: resolutions.aa.observedAt as string } : {}),
         ...(resolutions.openrouter.available
           ? { openrouterObservedAt: resolutions.openrouter.observedAt as string }
