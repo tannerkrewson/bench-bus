@@ -84,6 +84,11 @@ export function themeMode(theme: Theme): ThemeMode {
   return DARK_THEMES.includes(theme) ? "dark" : "light";
 }
 
+/** Whether a DaisyUI theme uses the dark semantic color palette. */
+export function isDarkTheme(theme: string | null | undefined): boolean {
+  return theme !== null && theme !== undefined && DARK_THEMES.includes(theme as Theme);
+}
+
 /** Pick a theme only from the pool matching the current light/dark mode. */
 export function randomThemeForMode(mode: ThemeMode, random = Math.random): Theme {
   const pool = mode === "dark" ? DARK_THEMES : LIGHT_THEMES;

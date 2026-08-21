@@ -78,7 +78,10 @@ export default function ModelList(props: ModelListProps) {
   const clearSelection = (event: MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    for (const id of props.selectedIds()) props.onToggleSelect(id);
+    // Snapshot before toggling: the first toggle can switch from the adapter's
+    // implicit default selection to an explicit selection synchronously.
+    const selectedIds = [...props.selectedIds()];
+    for (const id of selectedIds) props.onToggleSelect(id);
   };
   const resetDefault = (event: MouseEvent) => {
     event.preventDefault();
@@ -139,7 +142,7 @@ export default function ModelList(props: ModelListProps) {
           <For each={filtered()}>
             {(point) => (
               <label class="label min-h-9 w-full max-w-full cursor-pointer justify-between gap-3 rounded-box px-2 py-1 hover:bg-base-200">
-                <span class="min-w-0 flex-1 truncate" title={point.label}>{point.label}</span>
+                <span class="min-w-0 flex-1 whitespace-normal break-all" title={point.label}>{point.label}</span>
                 <input
                   type="checkbox"
                   class="checkbox checkbox-sm checkbox-primary"
@@ -153,7 +156,7 @@ export default function ModelList(props: ModelListProps) {
           <For each={filteredUnplottable()}>
             {(item) => (
               <div class="label min-h-9 w-full max-w-full cursor-not-allowed justify-between gap-3 px-2 py-1 text-base-content/50">
-                <span class="min-w-0 flex-1 truncate" title={item.label}>{item.label}</span>
+                <span class="min-w-0 flex-1 whitespace-normal break-all" title={item.label}>{item.label}</span>
                 <span class="badge badge-ghost badge-xs">no pricing</span>
               </div>
             )}

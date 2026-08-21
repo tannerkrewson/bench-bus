@@ -103,10 +103,14 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
   createEffect(emitState);
 
   const toggleSelect = (id: string) => {
+    // Capture both values before changing selectionSpecified: Solid applies
+    // signal writes synchronously, so reading it inside the updater would make
+    // the first toggle discard the adapter's default selection.
+    const wasSelectionSpecified = selectionSpecified();
     const current = effectiveSelectedIds();
     setSelectionSpecified(true);
     setSelectedIds((prev) => {
-      const source = selectionSpecified() ? prev : current;
+      const source = wasSelectionSpecified ? prev : current;
       return source.includes(id) ? source.filter((x) => x !== id) : [...source, id];
     });
   };

@@ -4,6 +4,7 @@ import ThemeToggle, {
   DARK_THEMES,
   LIGHT_THEMES,
   THEME_STORAGE_KEY,
+  isDarkTheme,
   randomThemeForMode,
   themeMode,
 } from "./ThemeToggle";
@@ -55,6 +56,12 @@ describe("ThemeToggle", () => {
     dispose();
     container.remove();
     window.matchMedia = originalMatchMedia;
+  });
+
+  it("shares the complete dark-theme definition with chart styling", () => {
+    for (const theme of DARK_THEMES) expect(isDarkTheme(theme)).toBe(true);
+    for (const theme of LIGHT_THEMES) expect(isDarkTheme(theme)).toBe(false);
+    expect(isDarkTheme("unknown-theme")).toBe(false);
   });
 
   it("selects only from the matching random theme pool", () => {

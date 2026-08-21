@@ -1,6 +1,7 @@
 import { For, Show, createEffect, createSignal, on, onCleanup, onMount } from "solid-js";
 import { Crown } from "lucide-solid";
 import uPlot, { type Options } from "uplot";
+import { isDarkTheme } from "../components/ThemeToggle";
 import "uplot/dist/uPlot.min.css";
 import { effortGroupColor, inferModelBrand } from "./brand";
 import {
@@ -145,7 +146,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   const themeStyles = () => {
     const styles = getComputedStyle(container ?? document.documentElement);
-    const dark = document.documentElement.dataset.theme === "dark";
+    const dark = isDarkTheme(document.documentElement.dataset.theme);
     return {
       dark,
       textColor:

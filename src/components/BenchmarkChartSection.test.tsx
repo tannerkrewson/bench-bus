@@ -3,7 +3,8 @@ import { render } from "solid-js/web";
 import { createSignal } from "solid-js";
 import type { JSX } from "solid-js";
 import BenchmarkChartSection from "./BenchmarkChartSection";
-import ChartTooltip from "../charts/ChartTooltip";import {
+import ChartTooltip from "../charts/ChartTooltip";
+import {
   AA_FIXTURE_RECORDS,
   CURSOR_FIXTURE_RECORDS,
   aaDemoAdapter,
@@ -40,6 +41,9 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     expect(checkboxes).toHaveLength(3);
     expect(container.textContent).toContain("Mystery Model");
     expect(container.textContent).toContain("no pricing");
+    const modelLabels = container.querySelectorAll("[data-testid='model-list'] span[title]");
+    expect(modelLabels.length).toBeGreaterThan(0);
+    modelLabels.forEach((label) => expect(label.classList.contains("truncate")).toBe(false));
     dispose();
   });
 
@@ -86,7 +90,20 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     const section = container.querySelector("section[data-benchmark='aa-demo']")!;
     const modelCheckbox = container.querySelector("[data-testid='model-list'] input[type='checkbox']")!;
     (modelCheckbox as HTMLInputElement).click();
-    expect((modelCheckbox as HTMLInputElement).checked).toBe(true);
+    expect((modelCheckbox as HTMLInputElement).checked).toBe(false);
+    expect(
+      [...container.querySelectorAll<HTMLInputElement>("[data-testid='model-list'] input[type='checkbox']")]
+        .filter((checkbox) => checkbox.checked),
+    ).toHaveLength(2);
+
+    const clear = [...container.querySelectorAll("[data-testid='model-list'] button")].find(
+      (button) => button.textContent === "Clear",
+    )!;
+    clear.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(
+      [...container.querySelectorAll<HTMLInputElement>("[data-testid='model-list'] input[type='checkbox']")]
+        .some((checkbox) => checkbox.checked),
+    ).toBe(false);
 
     // Same DOM node: no full-app recreation happened.
     expect(container.querySelector("section[data-benchmark='aa-demo']")).toBe(section);
@@ -205,6 +222,7 @@ describe("BenchmarkChartSection (Cursor fixture shape)", () => {
     const canvas = container.querySelector("canvas");
     frontier.click();
     expect(frontier.checked).toBe(false);
+    expect(container.querySelector("[role='img'][aria-label='Pareto frontier (dotted line)']")).toBeNull();
     expect(container.querySelector("canvas")).toBe(canvas);
     expect(states[states.length - 1]?.showFrontier).toBe(false);
     dispose();
@@ -261,6 +279,8 @@ describe("ChartTooltip", () => {
     const tip = container.querySelector("[data-testid='chart-tooltip']");
     expect(tip?.textContent).toContain("Claude Opus 5");
     expect(tip?.textContent).toContain("71.2");
+    expect(tip?.classList.contains("whitespace-nowrap")).toBe(true);
+    expect(tip?.classList.contains("truncate")).toBe(false);
     dispose();
   });
 });

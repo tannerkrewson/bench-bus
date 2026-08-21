@@ -31,7 +31,17 @@ export default function ChartTooltip(props: ChartTooltipProps) {
     const parentHeight = parent?.clientHeight ?? Number.POSITIVE_INFINITY;
     const rightPosition = anchorLeft + gap;
     const leftPosition = anchorLeft - width - gap;
-    const left = rightPosition + width <= parentWidth ? rightPosition : Math.max(4, leftPosition);
+    const rightEdge = parentWidth - 4;
+    const leftEdge = 4;
+    const maxLeft = Math.max(leftEdge, rightEdge - width);
+    // Prefer the side that keeps the tooltip beside the pointer, then clamp
+    // the measured width to the chart edge when neither side has enough room.
+    const preferredLeft = rightPosition + width <= rightEdge
+      ? rightPosition
+      : leftPosition >= leftEdge
+        ? leftPosition
+        : rightPosition;
+    const left = Math.min(Math.max(leftEdge, preferredLeft), maxLeft);
     const top = Math.min(
       Math.max(4, anchorTop - height / 2),
       Math.max(4, parentHeight - height - 4),
@@ -60,7 +70,7 @@ export default function ChartTooltip(props: ChartTooltipProps) {
     <Show when={props.title() !== null}>
       <div
         ref={element}
-        class="pointer-events-none absolute z-10 w-max max-w-[min(32rem,calc(100%-1rem))] rounded-box border border-base-300 bg-base-100/85 px-3 py-2 text-left text-xs shadow-md backdrop-blur-sm"
+        class="pointer-events-none absolute z-10 w-max max-w-[min(32rem,calc(100vw-1rem))] whitespace-nowrap overflow-visible rounded-box border border-base-300 bg-base-100/85 px-3 py-2 text-left text-xs shadow-md backdrop-blur-sm"
         data-testid="chart-tooltip"
         role="status"
         style={{ left: `${position().left}px`, top: `${position().top}px` }}
