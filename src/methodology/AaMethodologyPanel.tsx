@@ -11,7 +11,7 @@ import { MethodologyPanel } from "./MethodologyPanel";
  */
 export const AaMethodologyPanel: Component<{ class?: string }> = (props) => (
   <MethodologyPanel
-    title="Methodology & limitations — Artificial Analysis Intelligence Index chart"
+    title="Artificial Analysis methodology"
     class={props.class}
   >
     <p>

@@ -19,7 +19,7 @@ describe("AaMethodologyPanel", () => {
     expect(details).not.toBeNull();
     expect((details as HTMLDetailsElement).open).toBe(false);
     const summary = details?.querySelector("summary");
-    expect(summary?.textContent).toContain("Methodology & limitations");
+    expect(summary?.textContent).toContain("Artificial Analysis methodology");
     dispose();
   });
 
@@ -75,7 +75,7 @@ describe("CursorMethodologyPanel", () => {
     const { container, dispose } = mount(() => <CursorMethodologyPanel />);
     const details = container.querySelector("details[data-methodology-panel]") as HTMLDetailsElement;
     expect(details.open).toBe(false);
-    expect(details.querySelector("summary")?.textContent).toContain("CursorBench");
+    expect(details.querySelector("summary")?.textContent).toContain("CursorBench methodology");
     dispose();
   });
 

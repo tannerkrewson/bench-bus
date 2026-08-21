@@ -9,7 +9,7 @@ import { MethodologyPanel } from "./MethodologyPanel";
  */
 export const CursorMethodologyPanel: Component<{ class?: string }> = (props) => (
   <MethodologyPanel
-    title="Methodology & limitations — CursorBench chart"
+    title="CursorBench methodology"
     class={props.class}
   >
     <p>
