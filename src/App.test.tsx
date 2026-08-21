@@ -1,20 +1,22 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render } from "solid-js/web";
 import { createSignal } from "solid-js";
 import App from "./App";
 
 describe("App", () => {
-  it("renders the Bench Bus home page with demo chart sections", () => {
+  it("renders the Bench Bus home page with demo chart sections", async () => {
     const container = document.createElement("div");
     document.body.appendChild(container);
     const dispose = render(() => <App />, container);
 
-    expect(container.querySelector("h1")?.textContent).toBe("Bench Bus");
-    expect(container.textContent).toContain("benchmark workload cost");
-    // AA chart (real adapter, namespace 'aa') + CursorBench demo section.
-    expect(container.querySelectorAll("section[data-benchmark]")).toHaveLength(2);
+    // Data (index + bundle) loads asynchronously; wait for the charts.
+    await vi.waitFor(() => {
+      expect(container.querySelector("h1")?.textContent).toBe("Bench Bus");
+      expect(container.textContent).toContain("benchmark workload cost");
+      expect(container.querySelectorAll("section[data-benchmark]")).toHaveLength(2);
+    });
     expect(container.querySelector("section[data-benchmark='aa'] canvas")).not.toBeNull();
-    expect(container.querySelector("section[data-benchmark='cursor-demo'] canvas")).not.toBeNull();
+    expect(container.querySelector("section[data-benchmark='cursor'] canvas")).not.toBeNull();
 
     dispose();
     container.remove();

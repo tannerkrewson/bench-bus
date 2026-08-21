@@ -1,22 +1,32 @@
 import type { Component } from "solid-js";
-import BenchmarkChartSection from "./components/BenchmarkChartSection";
+import { createResource } from "solid-js";
 import AaChartSection from "./charts/aa/AaChartSection";
+import CursorBenchChartSection from "./charts/cursor/CursorBenchChartSection";
 import { decodeBundle } from "./derived/encode";
-import { CURSOR_FIXTURE_RECORDS, cursorDemoAdapter } from "./charts/fixtures";
+import type { DecodedBundle } from "./derived/encode";
 import { makeAaBundleFixture } from "./charts/aa/fixtures";
 import { AA_CONTROL_SPECS as aaControlSpecs } from "./charts/aa/adapter";
 import { chartStateFromParams, chartStateToParams } from "./charts/urlState";
 import type { ChartViewState, PricingControlSpec, PricingControlState } from "./charts/types";
+import { TimeTravelProvider, useTimeTravel } from "./history/TimeTravelContext";
+import { timeTravelStateFromParams, mergeTimeTravelStateIntoParams } from "./history/urlState";
+import TimeTravelControl from "./controls/TimeTravelControl";
+import FreshnessChips from "./controls/FreshnessChips";
+import { freshnessFromBundle } from "./history/resolve";
+import {
+  fetchDerivedBundle,
+  fetchDerivedIndex,
+  makeDemoBundle,
+  makeDemoIndex,
+} from "./data/derivedData";
 
 /**
- * Home page. The Artificial Analysis chart renders through the real derived
- * bundle decode path (fixture bundle until the first collected data ships);
- * the CursorBench demo proves the generic chart system until its data lands.
+ * Home page. Both benchmark charts render through the real derived-bundle
+ * decode path. When no compiled derived data is deployed yet, the loader
+ * falls back to a clearly-labelled demo fixture bundle so the site works.
  */
 
-const AA_BUNDLE = decodeBundle(JSON.parse(JSON.stringify(makeAaBundleFixture())));
-
-function initialStateFor(
+function initialChartStateFor(
   benchmarkId: string,
   controlSpecs: readonly PricingControlSpec[],
   defaultControls: PricingControlState,
@@ -29,7 +39,7 @@ function initialStateFor(
   });
 }
 
-function syncStateToUrl(state: Readonly<ChartViewState>, benchmarkId: string) {
+function syncChartStateToUrl(state: Readonly<ChartViewState>, benchmarkId: string) {
   if (typeof window === "undefined") return;
   const params = new URLSearchParams(window.location.search);
   for (const key of [...params.keys()]) {
@@ -42,45 +52,116 @@ function syncStateToUrl(state: Readonly<ChartViewState>, benchmarkId: string) {
   window.history.replaceState(null, "", query === "" ? window.location.pathname : `?${query}`);
 }
 
-const App: Component = () => {
+function initialTimeTravelSelection(): string | null | undefined {
+  if (typeof window === "undefined") return undefined;
+  return timeTravelStateFromParams(new URLSearchParams(window.location.search)).selectedAsOf;
+}
+
+function syncTimeTravelToUrl(state: { selectedAsOf: string | null }) {
+  if (typeof window === "undefined") return;
+  const params = new URLSearchParams(window.location.search);
+  mergeTimeTravelStateIntoParams(params, state);
+  const query = params.toString();
+  window.history.replaceState(null, "", query === "" ? window.location.pathname : `?${query}`);
+}
+
+/** Fetch the derived index, falling back to the demo fixture index. */
+async function loadIndex() {
+  try {
+    return { index: await fetchDerivedIndex(), isDemo: false };
+  } catch {
+    return { index: makeDemoIndex(), isDemo: true };
+  }
+}
+
+const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
+  const timeTravel = useTimeTravel();
   return (
-    <main class="container mx-auto px-4 py-8">
-      <div class="hero bg-base-200 rounded-box">
-        <div class="hero-content text-center">
-          <div class="max-w-md">
-            <h1 class="text-5xl font-bold">Bench Bus</h1>
-            <p class="py-6">
-              AI benchmark scores versus estimated benchmark workload cost.
-            </p>
+    <div class="mt-4 space-y-8">
+      <AaChartSection
+        records={() => props.bundle.aa?.records ?? []}
+        initialState={initialChartStateFor(
+          "aa",
+          aaControlSpecs,
+          { pricingMode: "cheapest", cacheHitRate: 0.9 },
+        )}
+        onStateChange={(state) => syncChartStateToUrl(state, "aa")}
+      />
+      <FreshnessChips
+        freshness={freshnessFromBundle(props.bundle)}
+        now={new Date().toISOString()}
+      />
+      <CursorBenchChartSection
+        records={() => props.bundle.cursor?.records ?? []}
+        initialState={initialChartStateFor("cursor", [], { surcharge: false })}
+        onStateChange={(state) => syncChartStateToUrl(state, "cursor")}
+      />
+      {timeTravel.view().preHistory || (!props.bundle.aa && !props.bundle.cursor) ? (
+        <p role="status" class="text-warning">
+          No collected data at this selected time.
+        </p>
+      ) : null}
+    </div>
+  );
+};
+
+const App: Component = () => {
+  const [indexResource] = createResource(loadIndex);
+  const initialTime = initialTimeTravelSelection();
+
+  // The provider needs the loaded index; render charts once it resolves.
+  const Page: Component = () => {
+    const timeTravel = useTimeTravel();
+    const [bundleResource] = createResource(
+      () => timeTravel.view().entry?.path,
+      (path) => fetchDerivedBundle(path).catch(() => makeDemoBundle()),
+    );
+    const bundle = () =>
+      bundleResource.latest ??
+      decodeBundle(JSON.parse(JSON.stringify(makeAaBundleFixture())) as { cursor: null } & Record<string, unknown>);
+    return (
+      <main class="container mx-auto px-4 py-8">
+        <div class="hero bg-base-200 rounded-box">
+          <div class="hero-content text-center">
+            <div class="max-w-md">
+              <h1 class="text-5xl font-bold">Bench Bus</h1>
+              <p class="py-6">
+                AI benchmark scores versus estimated benchmark workload cost.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <p class="mt-8 text-sm text-base-content/60">
-        Charts use fixture data decoded through the real derived-bundle path until the first
-        collected snapshots deploy.
-      </p>
+        <div class="mt-4 flex flex-wrap items-center justify-between gap-4">
+          <TimeTravelControl />
+          {indexResource()?.isDemo ? (
+            <span class="badge badge-warning badge-outline">
+              Demo fixture data — no collected snapshots deployed yet
+            </span>
+          ) : null}
+        </div>
 
-      <div class="mt-4 space-y-8">
-        <AaChartSection
-          records={() => AA_BUNDLE.aa?.records ?? []}
-          initialState={initialStateFor(
-            "aa",
-            aaControlSpecs,
-            { pricingMode: "cheapest", cacheHitRate: 0.9 },
-          )}
-          onStateChange={(state) => syncStateToUrl(state, "aa")}
-        />
-        <BenchmarkChartSection
-          adapter={cursorDemoAdapter}
-          records={() => CURSOR_FIXTURE_RECORDS}
-          initialState={initialStateFor(cursorDemoAdapter.benchmarkId, cursorDemoAdapter.controlSpecs, {
-            surcharge: false,
-          })}
-          onStateChange={(state) => syncStateToUrl(state, cursorDemoAdapter.benchmarkId)}
-        />
-      </div>
-    </main>
+        <Charts bundle={bundle()} />
+      </main>
+    );
+  };
+
+  const index = () => indexResource()?.index ?? makeDemoIndex();
+
+  return (
+    <TimeTravelProvider
+      index={index()}
+      initialSelectedAsOf={initialTime}
+      onStateChange={syncTimeTravelToUrl}
+    >
+      {indexResource.loading ? (
+        <main class="container mx-auto px-4 py-8">
+          <p role="status">Loading benchmark data…</p>
+        </main>
+      ) : (
+        <Page />
+      )}
+    </TimeTravelProvider>
   );
 };
 
