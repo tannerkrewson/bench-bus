@@ -38,7 +38,9 @@ export interface CollectAaOptions {
 
 export interface CollectAaResult {
   payload: AaSnapshotPayload;
-  stats: Omit<AaCollectionResult, "records">;
+  /** Frontier identities computed from the same normalized AA collection. */
+  frontier: AaCollectionResult["frontier"];
+  stats: Omit<AaCollectionResult, "records" | "frontier">;
 }
 
 /** Fetch the model page HTML with a hard timeout and a browser-like UA. */
@@ -84,6 +86,7 @@ export function collectFromHtml(
   });
   return {
     payload,
+    frontier: collection.frontier,
     stats: {
       rawCount: collection.rawCount,
       incompleteCount: collection.incompleteCount,

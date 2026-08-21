@@ -68,7 +68,7 @@ describe("parseFlightRows", () => {
 describe("collectFromHtml", () => {
   it("extracts, dedupes, and normalizes the complete model set from a fixture page", async () => {
     const html = aaPageHtml;
-    const { payload, stats } = collectFromHtml(html, START_URL, OBSERVED_AT);
+    const { payload, stats, frontier } = collectFromHtml(html, START_URL, OBSERVED_AT);
 
     // 3 complete models survive: incomplete (null counts, missing price) and
     // the duplicate claude-opus-5 entry are discarded.
@@ -89,6 +89,7 @@ describe("collectFromHtml", () => {
       rscEndpoint: `${START_URL}?_rsc=1x9kq2f`,
     });
     expect(payload.observedAt).toBe(OBSERVED_AT);
+    expect(frontier).toEqual(collectFromHtml(html, START_URL, OBSERVED_AT).frontier);
   });
 
   it("preserves upstream numeric values exactly (no rounding or recomputation)", async () => {

@@ -8,6 +8,7 @@ import {
 } from "../schemas";
 import type { DataBranchStore, ResolvedSnapshot } from "../snapshots/store";
 import type { AliasFile } from "../collectors/openrouter/mapping";
+import { computeAaListedParetoFrontier } from "../collectors/aa/frontier";
 import {
   encodeAaDataset,
   encodeCursorDataset,
@@ -55,6 +56,8 @@ export interface CompileOptions {
    * model through an unsanctioned link.
    */
   aliases: AliasFile;
+  /** Optional precomputed frontier identities; defaults to the AA snapshot. */
+  frontierSlugs?: readonly string[];
 }
 
 export interface SourceResolution {
@@ -94,15 +97,17 @@ export function joinAaWithPricing(
   aaModels: ArtificialAnalysisModel[],
   pricing: OpenRouterModelPricing[],
   aliases: AliasFile,
+  frontierSlugs: readonly string[] = [],
 ): { records: DerivedAaChartRecord[]; unmatchedAa: number; unmatchedOr: number; provisionalUsed: number } {
   const aliasSlugs = new Set(aliases.entries.map((e) => e.aaModelSlug));
+  const frontierSet = new Set(frontierSlugs);
   const provisionalSlugs = new Set(
     aliases.entries.filter((e) => e.status === "provisional").map((e) => e.aaModelSlug),
   );
 
   const pricingBySlug = new Map<string, OpenRouterModelPricing>();
   for (const record of pricing) {
-    if (!aliasSlugs.has(record.aaModelSlug)) {
+    if (!aliasSlugs.has(record.aaModelSlug) && !frontierSet.has(record.aaModelSlug)) {
       throw new Error(
         `OpenRouter pricing record for "${record.aaModelSlug}" (${record.permaslug}) is not present in the alias mapping; refusing to price through an unsanctioned link`,
       );
@@ -206,10 +211,13 @@ export async function compileBundle(
   };
 
   if (aa && openrouter) {
+    const aaModels = aa.envelope.records as ArtificialAnalysisModel[];
+    const frontierSlugs = options.frontierSlugs ?? computeAaListedParetoFrontier(aaModels).map((model) => model.slug);
     const joined = joinAaWithPricing(
-      aa.envelope.records as ArtificialAnalysisModel[],
+      aaModels,
       openrouter.envelope.records as OpenRouterModelPricing[],
       options.aliases,
+      frontierSlugs,
     );
     stats.aaMatched = joined.records.length;
     stats.aaUnmatched = joined.unmatchedAa;

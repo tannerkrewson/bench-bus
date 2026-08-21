@@ -1,3 +1,8 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { parseCuratedModelConfig } from "./curated";
+import { computeAaListedParetoFrontier } from "../aa/frontier";
+import { artificialAnalysisModelSchema } from "../../schemas";
 import {
   collectOpenRouterPricing,
   formatReport,
@@ -16,6 +21,8 @@ interface CliArgs {
   concurrency: number;
   timeoutMs: number;
   retries: number;
+  curatedConfigPath: string;
+  frontierAaPath?: string;
 }
 
 function parseArgs(argv: readonly string[]): CliArgs {
@@ -24,6 +31,7 @@ function parseArgs(argv: readonly string[]): CliArgs {
     concurrency: 3,
     timeoutMs: 20_000,
     retries: 2,
+    curatedConfigPath: fileURLToPath(new URL("./curated-models.json", import.meta.url)),
   };
   for (let i = 0; i < argv.length; i++) {
     const value = argv[i + 1];
@@ -52,6 +60,16 @@ function parseArgs(argv: readonly string[]): CliArgs {
         }
         i++;
         break;
+      case "--frontier-aa":
+        if (value === undefined) throw new UsageError("--frontier-aa requires a snapshot path");
+        args.frontierAaPath = value;
+        i++;
+        break;
+      case "--curated-config":
+        if (value === undefined) throw new UsageError("--curated-config requires a path");
+        args.curatedConfigPath = value;
+        i++;
+        break;
       case "--retries":
         args.retries = Number(value);
         if (!Number.isInteger(args.retries) || args.retries < 0) {
@@ -74,18 +92,26 @@ async function main(): Promise<void> {
     args = parseArgs(process.argv.slice(2));
   } catch (error) {
     console.error(
-      `usage: tsx src/collectors/openrouter/cli.ts [--out <path>] [--mapping <path>] [--concurrency N] [--timeout-ms N] [--retries N]\n${String(error)}`,
+      `usage: tsx src/collectors/openrouter/cli.ts [--out <path>] [--mapping <path>] [--frontier-aa <path>] [--curated-config <path>] [--concurrency N] [--timeout-ms N] [--retries N]\n${String(error)}`,
     );
     process.exitCode = 2;
     return;
   }
 
   try {
+    let frontierModels = undefined;
+    if (args.frontierAaPath !== undefined) {
+      const raw = JSON.parse(readFileSync(args.frontierAaPath, "utf8")) as { records?: unknown[] };
+      const records = (raw.records ?? []).map((record) => artificialAnalysisModelSchema.parse(record));
+      frontierModels = computeAaListedParetoFrontier(records).map(({ slug, id }) => ({ slug, id }));
+    }
     const report = await collectOpenRouterPricing({
       aliasPath: args.aliasPath,
+      frontierModels,
       concurrency: args.concurrency,
       timeoutMs: args.timeoutMs,
       retries: args.retries,
+      curatedModels: parseCuratedModelConfig(readFileSync(args.curatedConfigPath, "utf8"), args.curatedConfigPath).models,
     });
     console.error(formatReport(report));
     if (args.out === undefined) {

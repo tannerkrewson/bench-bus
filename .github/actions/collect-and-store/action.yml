@@ -32,7 +32,16 @@ runs:
         echo "envelope=${envelope}" >> "${GITHUB_OUTPUT}"
         # Collectors fail closed: a nonzero exit here skips every later step
         # and leaves the data branch checkout completely untouched.
-        npm run "collect:${SOURCE}" -- --out "${envelope}"
+        frontier_args=()
+        if [[ "${SOURCE}" == "openrouter" ]]; then
+          # AA snapshots are immutable and timestamped; the newest path is the
+          # deterministic input for the same-run frontier lookup.
+          aa_snapshot=$(find "${DATA_BRANCH_PATH}/snapshots/aa" -type f -name '*.json' 2>/dev/null | sort | tail -n 1 || true)
+          if [[ -n "${aa_snapshot}" ]]; then
+            frontier_args+=(--frontier-aa "${aa_snapshot}")
+          fi
+        fi
+        npm run "collect:${SOURCE}" -- --out "${envelope}" "${frontier_args[@]}"
 
     - name: Validate and write snapshot into data branch
       shell: bash

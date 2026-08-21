@@ -13,10 +13,14 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import {
   type AliasEntry,
   type CatalogModel,
+  curatedAliases,
+  frontierAliases,
   parseAliasFile,
   provisionalAliases,
   suggestAliases,
 } from "./mapping";
+import type { AaFrontierIdentity } from "../aa/frontier";
+import type { CuratedModel } from "./curated";
 import {
   openRouterModelPricingSchema,
   openRouterSnapshotPayloadSchema,
@@ -51,6 +55,8 @@ export interface CollectorReport {
   suggestedAmbiguous: { aaModelSlug: string; candidates: string[] }[];
   /** Advisory AA slugs with no catalog match found. */
   unmatchedCatalogModels: string[];
+  /** Frontier identities that had no unique exact catalog match. */
+  unmatchedFrontierModels: string[];
   records: OpenRouterModelPricing[];
   failures: ModelFailure[];
 }
@@ -80,6 +86,10 @@ export interface CollectorOptions {
   now?: () => Date;
   /** Defaults to the real Node fs (nodeFs); tests inject fakes. */
   io?: CollectorIo;
+  /** Automatic AA frontier identities to include before matching/dropping. */
+  frontierModels?: readonly AaFrontierIdentity[];
+  /** Explicit operator-forced identities, independent of frontier selection. */
+  curatedModels?: readonly CuratedModel[];
   log?: (line: string) => void;
 }
 
@@ -120,7 +130,7 @@ export async function collectOpenRouterPricing(
 
   const rawAliases = await io.readFile(options.aliasPath, "utf8");
   const aliasFile = parseAliasFile(rawAliases, `alias file at ${options.aliasPath}`);
-  const provisionalUsed = provisionalAliases(aliasFile).map((e) => e.aaModelSlug);
+  const curated = curatedAliases(options.curatedModels ?? []);
 
   const fetchOptions = { timeoutMs, retries, backoffBaseMs, fetchImpl };
   const catalogResponse = await fetchJson(MODEL_CATALOG_URL, rawCatalogResponseSchema, fetchOptions);
@@ -149,8 +159,18 @@ export async function collectOpenRouterPricing(
   const rawCatalog = catalogResponse.data;
   const catalogById = new Map(catalog.map((model) => [model.id, model]));
 
-  // Advisory suggestions for human curation; never merged into the mapping.
-  const knownAaSlugs = aliasFile.entries.map((e) => e.aaModelSlug);
+  const frontier = frontierAliases(options.frontierModels ?? [], catalog);
+  const catalogIds = new Set(catalog.map((model) => model.id));
+  const additions = [...frontier.entries, ...curated.filter((entry) => catalogIds.has(entry.openrouterId))];
+  const existingSlugs = new Set(aliasFile.entries.map((entry) => entry.aaModelSlug));
+  const uniqueAdditions = additions.filter((entry) => !existingSlugs.has(entry.aaModelSlug));
+  const entries: AliasEntry[] = [...aliasFile.entries, ...uniqueAdditions];
+  const effectiveAliasFile = { ...aliasFile, entries };
+  const effectiveProvisionalUsed = provisionalAliases(effectiveAliasFile).map((e) => e.aaModelSlug);
+
+  // Advisory suggestions for human curation; frontier entries are already
+  // admitted above because they were selected by a deterministic rule.
+  const knownAaSlugs = entries.map((e) => e.aaModelSlug);
   const suggestions = suggestAliases(knownAaSlugs, catalog);
   // AA models we do not map at all cannot be suggested from here (we only
   // know AA slugs present in the alias file), so unmatched refers to those.
@@ -160,7 +180,7 @@ export async function collectOpenRouterPricing(
   const records: OpenRouterModelPricing[] = [];
   const failures: ModelFailure[] = [];
 
-  await mapWithConcurrency(aliasFile.entries, concurrency, async (entry: AliasEntry) => {
+  await mapWithConcurrency(entries, concurrency, async (entry: AliasEntry) => {
     try {
       const canonicalSlug = resolveCanonicalSlug(rawCatalog, entry.openrouterId);
       if (canonicalSlug === undefined || canonicalSlug.startsWith("~")) {
@@ -237,12 +257,16 @@ export async function collectOpenRouterPricing(
   const report: CollectorReport = {
     observedAt,
     mappingRef: OPENROUTER_SOURCE_METADATA.mappingRef,
-    provisionalUsed,
+    provisionalUsed: effectiveProvisionalUsed,
     suggestedObvious: suggestions.obvious.filter(
-      (s) => !aliasFile.entries.some((e) => e.aaModelSlug === s.aaModelSlug),
+      (s) => !effectiveAliasFile.entries.some((e) => e.aaModelSlug === s.aaModelSlug),
     ),
     suggestedAmbiguous: suggestions.ambiguous,
     unmatchedCatalogModels,
+    unmatchedFrontierModels: [
+      ...frontier.unmatched,
+      ...frontier.ambiguous.map((model) => model.aaModelSlug),
+    ].sort(),
     records: records.sort((a, b) => (a.aaModelSlug < b.aaModelSlug ? -1 : a.aaModelSlug > b.aaModelSlug ? 1 : 0)),
     failures,
   };
@@ -295,6 +319,9 @@ export function formatReport(report: CollectorReport): string {
       `AMBIGUOUS matches needing human curation: ` +
         report.suggestedAmbiguous.map((s) => `${s.aaModelSlug} -> [${s.candidates.join(", ")}]`).join("; "),
     );
+  }
+  if (report.unmatchedFrontierModels.length > 0) {
+    lines.push(`unmatched AA frontier models: ${report.unmatchedFrontierModels.join(", ")}`);
   }
   for (const failure of report.failures) {
     lines.push(`FAILURE [${failure.category}] ${failure.aaModelSlug} (${failure.openrouterId}): ${failure.detail}`);

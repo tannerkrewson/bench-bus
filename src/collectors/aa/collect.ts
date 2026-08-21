@@ -58,7 +58,8 @@ async function main(): Promise<void> {
       `[aa-collector] models=${records.length} ` +
       `raw=${result.stats.rawCount} ` +
       `incompleteDiscarded=${result.stats.incompleteCount} ` +
-      `duplicatesDropped=${result.stats.duplicateCount}\n` +
+      `duplicatesDropped=${result.stats.duplicateCount} ` +
+      `frontier=${result.frontier.map((model) => model.slug).join(",")}\n` +
       `[aa-collector] observedAt=${result.payload.observedAt}\n`,
   );
 }

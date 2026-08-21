@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { nonEmptyString } from "../../schemas/primitives";
+import type { AaFrontierIdentity } from "../aa/frontier";
+import type { CuratedModel } from "./curated";
 
 /**
  * Explicit, version-controlled mapping from Artificial Analysis model identity
@@ -147,4 +149,39 @@ export function suggestAliases(
  */
 export function provisionalAliases(file: AliasFile): AliasEntry[] {
   return file.entries.filter((e) => e.status === "provisional");
+}
+
+/**
+ * Resolve automatic AA frontier identities against the catalog without
+ * guessing: only one exact basename candidate is accepted. These entries are
+ * provisional because the identity was selected by the pipeline, not a human.
+ */
+export function frontierAliases(
+  frontier: readonly AaFrontierIdentity[],
+  catalog: readonly CatalogModel[],
+): { entries: AliasEntry[]; unmatched: string[]; ambiguous: { aaModelSlug: string; candidates: string[] }[] } {
+  const suggestions = suggestAliases(frontier.map((model) => model.slug), [...catalog]);
+  const bySlug = new Map(frontier.map((model) => [model.slug, model]));
+  const entries = suggestions.obvious.map((match) => {
+    const identity = bySlug.get(match.aaModelSlug)!;
+    return {
+      aaModelSlug: identity.slug,
+      aaModelId: identity.id,
+      openrouterId: match.openrouterId,
+      status: "provisional" as const,
+      note: "Automatically included because this AA-listed model is on the deterministic frontier.",
+    };
+  });
+  return { entries, unmatched: suggestions.unmatched, ambiguous: suggestions.ambiguous };
+}
+
+/** Convert explicit forced models to alias entries while preserving provenance. */
+export function curatedAliases(models: readonly CuratedModel[]): AliasEntry[] {
+  return models.map((model) => ({
+    aaModelSlug: model.aaModelSlug,
+    aaModelId: model.aaModelId,
+    openrouterId: model.openrouterId,
+    status: "confirmed" as const,
+    ...(model.note ? { note: model.note } : {}),
+  }));
 }

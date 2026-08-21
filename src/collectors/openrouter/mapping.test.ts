@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   AliasFileError,
+  curatedAliases,
+  frontierAliases,
   loadAliasFile,
   parseAliasFile,
   provisionalAliases,
@@ -113,6 +115,35 @@ describe("suggestAliases", () => {
       catalog("anthropic/claude-opus-5", "anthropic/claude-opus-5:batch", "~anthropic/claude-opus-5"),
     );
     expect(result.obvious.map((s) => s.openrouterId)).toEqual(["anthropic/claude-opus-5"]);
+  });
+});
+
+describe("frontier and curated aliases", () => {
+  it("admits a uniquely matched frontier identity before unmatched models are dropped", () => {
+    const result = frontierAliases(
+      [{ slug: "frontier", id: "aa-frontier" }, { slug: "missing", id: "aa-missing" }],
+      catalog("vendor/frontier"),
+    );
+    expect(result.entries).toEqual([expect.objectContaining({
+      aaModelSlug: "frontier",
+      aaModelId: "aa-frontier",
+      openrouterId: "vendor/frontier",
+      status: "provisional",
+    })]);
+    expect(result.unmatched).toEqual(["missing"]);
+  });
+
+  it("preserves explicit forced curated identity and note", () => {
+    expect(curatedAliases([{
+      aaModelSlug: "deepseek-v4-0731-flash",
+      aaModelId: "aa-deepseek-v4-0731-flash",
+      openrouterId: "deepseek/deepseek-v4-flash-0731",
+      note: "forced",
+    }])).toEqual([expect.objectContaining({
+      aaModelSlug: "deepseek-v4-0731-flash",
+      openrouterId: "deepseek/deepseek-v4-flash-0731",
+      note: "forced",
+    })]);
   });
 });
 

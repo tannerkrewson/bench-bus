@@ -10,6 +10,7 @@ import {
   type ArtificialAnalysisModel,
 } from "../../schemas";
 import type { RawAaModel } from "./flight";
+import { computeAaListedParetoFrontier, type AaFrontierIdentity } from "./frontier";
 
 /** Fields required for a complete canonical record, in output key order. */
 const REQUIRED_TOP_LEVEL = [
@@ -72,6 +73,8 @@ export function normalizeModel(raw: RawAaModel): ArtificialAnalysisModel | null 
 export interface AaCollectionResult {
   /** Complete, deduped, schema-valid records sorted by identity key. */
   records: ArtificialAnalysisModel[];
+  /** Listed-price frontier identities, sorted deterministically by cost. */
+  frontier: AaFrontierIdentity[];
   /** Number of raw model objects found before normalization. */
   rawCount: number;
   /** Raw objects discarded because required fields were missing/null. */
@@ -122,5 +125,6 @@ export function buildAaCollection(rawModels: RawAaModel[]): AaCollectionResult {
   }
 
   const records = [...byKey.values()].sort((a, b) => aaModelIdentityKey(a).localeCompare(aaModelIdentityKey(b)));
-  return { records, rawCount: rawModels.length, incompleteCount, duplicateCount };
+  const frontier = computeAaListedParetoFrontier(records).map(({ slug, id }) => ({ slug, id }));
+  return { records, frontier, rawCount: rawModels.length, incompleteCount, duplicateCount };
 }

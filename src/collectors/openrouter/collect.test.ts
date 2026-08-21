@@ -117,6 +117,51 @@ describe("collectOpenRouterPricing", () => {
     expect(payload.records[0]?.providerSummaries.length).toBeGreaterThan(0);
   });
 
+  it("looks up frontier and forced curated identities before unmatched models are discarded", async () => {
+    const catalogWithExtras = {
+      ...catalogFixture,
+      data: [
+        ...catalogFixture.data,
+        {
+          id: "vendor/frontier-model",
+          canonical_slug: "vendor/frontier-model-20260821",
+          name: "Frontier Model",
+        },
+        {
+          id: "deepseek/deepseek-v4-flash-0731",
+          canonical_slug: "deepseek/deepseek-v4-flash-20260731",
+          name: "DeepSeek V4 0731 Flash",
+        },
+      ],
+    };
+    const report = await collectOpenRouterPricing(baseOptions({
+      frontierModels: [{ slug: "frontier-model", id: "aa-frontier" }],
+      curatedModels: [{
+        aaModelSlug: "deepseek-v4-0731-flash",
+        aaModelId: "aa-deepseek",
+        openrouterId: "deepseek/deepseek-v4-flash-0731",
+      }],
+      fetchImpl: routerFetch({
+        "api/v1/models": catalogWithExtras,
+        "frontier-model-20260821": fullPricing,
+        "deepseek-v4-flash-20260731": fullPricing,
+        "claude-opus-5-20260723": fullPricing,
+        "claude-sonnet-5-20260630": fullPricing,
+        "gpt-5.6-sol-20260709": fullPricing,
+        "gemini-3.7-flash-20260813": fullPricing,
+        "glm-5.3-20260816": fullPricing,
+        "kimi-k3-20260715": fullPricing,
+        "grok-4.6-20260810": fullPricing,
+        "deepseek-v4-pro-20260813": fullPricing,
+        "qwen3.8-max-20260803": fullPricing,
+        "nemotron-3-super-120b-a12b-20230311": fullPricing,
+      }),
+    }));
+    expect(report.records.map((record) => record.aaModelSlug)).toContain("frontier-model");
+    expect(report.records.map((record) => record.aaModelSlug)).toContain("deepseek-v4-0731-flash");
+    expect(report.unmatchedFrontierModels).toEqual([]);
+  });
+
   it("preserves catalog listed prices and explicit effective-provider discount metadata", async () => {
     const catalogWithPricing = {
       ...catalogFixture,
