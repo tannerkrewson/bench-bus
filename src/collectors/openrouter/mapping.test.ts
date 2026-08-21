@@ -54,15 +54,15 @@ describe("alias file validation", () => {
     ).toThrow(/duplicate/);
   });
 
-  it("rejects two AA models mapped to the same OpenRouter id", () => {
+  it("allows effort variants to share one OpenRouter base-model identity", () => {
     expect(() =>
       parseAliasFile(
         JSON.stringify({
           version: 1,
-          entries: [VALID_ENTRY, { ...VALID_ENTRY, aaModelSlug: "claude-opus-5-fast" }],
+          entries: [VALID_ENTRY, { ...VALID_ENTRY, aaModelSlug: "claude-opus-5-high" }],
         }),
       ),
-    ).toThrow(/duplicate/);
+    ).not.toThrow();
   });
 
   it("fails closed when the file cannot be read", () => {

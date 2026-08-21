@@ -262,6 +262,7 @@ export async function collectOpenRouterPricing(
     }
   });
 
+  const mappedAaSlugs = new Set(effectiveAliasFile.entries.map((entry) => entry.aaModelSlug));
   const report: CollectorReport = {
     observedAt,
     mappingRef: OPENROUTER_SOURCE_METADATA.mappingRef,
@@ -273,8 +274,10 @@ export async function collectOpenRouterPricing(
     unmatchedCatalogModels,
     unmatchedCuratedModels,
     unmatchedFrontierModels: [
-      ...frontier.unmatched,
-      ...frontier.ambiguous.map((model) => model.aaModelSlug),
+      ...frontier.unmatched.filter((slug) => !mappedAaSlugs.has(slug)),
+      ...frontier.ambiguous
+        .filter((model) => !mappedAaSlugs.has(model.aaModelSlug))
+        .map((model) => model.aaModelSlug),
     ].sort(),
     records: records.sort((a, b) => (a.aaModelSlug < b.aaModelSlug ? -1 : a.aaModelSlug > b.aaModelSlug ? 1 : 0)),
     failures,

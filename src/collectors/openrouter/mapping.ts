@@ -40,10 +40,9 @@ export const aliasFileSchema = z
   .refine(
     (file) => {
       const aaSlugs = file.entries.map((e) => e.aaModelSlug);
-      const orIds = file.entries.map((e) => e.openrouterId);
-      return new Set(aaSlugs).size === aaSlugs.length && new Set(orIds).size === orIds.length;
+      return new Set(aaSlugs).size === aaSlugs.length;
     },
-    { message: "duplicate aaModelSlug or openrouterId in alias file" },
+    { message: "duplicate aaModelSlug in alias file" },
   );
 
 export type AliasFile = z.infer<typeof aliasFileSchema>;

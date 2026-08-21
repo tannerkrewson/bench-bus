@@ -30,6 +30,9 @@ function routerFetch(routes: Record<string, unknown | (() => Response)>): typeof
         return Promise.resolve(typeof body === "function" ? (body as () => Response)() : jsonResponse(body));
       }
     }
+    if (url.includes("gpt-5.6-luna-20260709")) {
+      return Promise.resolve(jsonResponse(fullPricing));
+    }
     return Promise.resolve(jsonResponse({}, 404));
   }) as typeof fetch;
 }
@@ -115,6 +118,14 @@ describe("collectOpenRouterPricing", () => {
       records: report.records,
     });
     expect(payload.records[0]?.providerSummaries.length).toBeGreaterThan(0);
+  });
+
+  it("does not report a frontier alias as unmatched when it shares a base-model id", async () => {
+    const report = await collectOpenRouterPricing(baseOptions({
+      frontierModels: [{ slug: "claude-opus-5-high", id: "aa-opus-high" }],
+    }));
+    expect(report.records.map((record) => record.aaModelSlug)).toContain("claude-opus-5-high");
+    expect(report.unmatchedFrontierModels).not.toContain("claude-opus-5-high");
   });
 
   it("looks up frontier and forced curated identities before unmatched models are discarded", async () => {
