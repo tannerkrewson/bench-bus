@@ -13,6 +13,7 @@ import type {
  *   chart.<benchmarkId>.scale        = log|linear
  *   chart.<benchmarkId>.q            = search query
  *   chart.<benchmarkId>.sel          = comma-separated selected ids
+ *   chart.<benchmarkId>.labels       = false when model labels are hidden
  *   chart.<benchmarkId>.c.<control>  = control value (string form)
  *
  * Parsing is forgiving: unknown or invalid values fall back to defaults
@@ -22,6 +23,7 @@ import type {
 const SCALE_KEY = "scale";
 const QUERY_KEY = "q";
 const SELECTED_KEY = "sel";
+const LABELS_KEY = "labels";
 const CONTROL_PREFIX = "c.";
 
 function key(benchmarkId: string, field: string): string {
@@ -38,6 +40,9 @@ export function chartStateToParams(
   if (state.query !== "") params.set(key(benchmarkId, QUERY_KEY), state.query);
   if (state.selectedIds.length > 0) {
     params.set(key(benchmarkId, SELECTED_KEY), state.selectedIds.join(","));
+  }
+  if (state.showLabels === false) {
+    params.set(key(benchmarkId, LABELS_KEY), "false");
   }
   for (const [id, value] of Object.entries(state.controls)) {
     params.set(key(benchmarkId, CONTROL_PREFIX + id), String(value));
@@ -101,6 +106,10 @@ export function chartStateFromParams(
         .filter((s) => s !== "")
     : [];
 
+  const labelsRaw = params.get(key(benchmarkId, LABELS_KEY));
+  const showLabels =
+    labelsRaw === "false" ? false : labelsRaw === "true" ? true : undefined;
+
   const controls: PricingControlState = { ...defaults.controls };
   for (const spec of controlSpecs) {
     const raw = params.get(key(benchmarkId, CONTROL_PREFIX + spec.id));
@@ -109,7 +118,7 @@ export function chartStateFromParams(
     if (parsed !== null) controls[spec.id] = parsed;
   }
 
-  return { scale, query, selectedIds, controls };
+  return { scale, query, selectedIds, controls, ...(showLabels === undefined ? {} : { showLabels }) };
 }
 
 /** Convenience: full query-string serialization (no leading "?" ). */

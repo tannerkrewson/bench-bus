@@ -11,12 +11,27 @@ import type { Component } from "solid-js";
 /** X-axis scale mode. Log is the default for cost axes spanning decades. */
 export type XScale = "log" | "linear";
 
+/** Provider family used for point color and label styling. */
+export type ModelBrand =
+  | "anthropic"
+  | "openai"
+  | "google"
+  | "cursor"
+  | "meta"
+  | "mistral"
+  | "deepseek"
+  | "qwen"
+  | "xai"
+  | "other";
+
 /** One plottable model point. x is estimated cost in USD, y is the score. */
 export interface PlottablePoint {
   /** Stable model identity (slug or table row id). */
   id: string;
   /** Human-readable display name. */
   label: string;
+  /** Provider family used to select a recognizable point color. */
+  brand?: ModelBrand;
   /** Estimated benchmark workload cost, USD. Must be > 0 for log scale. */
   x: number;
   /** Benchmark score. */
@@ -106,6 +121,8 @@ export interface ChartViewState {
   selectedIds: string[];
   /** Values for adapter.controlSpecs, keyed by spec id. */
   controls: PricingControlState;
+  /** Whether model labels should be rendered next to plotted points. */
+  showLabels?: boolean;
 }
 
 /** Result of mapping records through an adapter under a query filter. */

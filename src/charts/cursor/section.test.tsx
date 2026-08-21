@@ -29,10 +29,11 @@ describe("CursorBenchChartSection", () => {
     expect(logBtn.getAttribute("aria-pressed")).toBe("true");
 
     const toggle = container.querySelector(
-      "[data-testid='chart-controls'] input[type='checkbox']",
+      "[data-testid='chart-controls'] input[aria-label^='Third-party surcharge']",
     ) as HTMLInputElement;
     expect(toggle).not.toBeNull();
     expect(toggle.checked).toBe(false);
+    expect((container.querySelector("#chart-control-showLabels") as HTMLInputElement).checked).toBe(true);
     dispose();
   });
 
@@ -60,7 +61,7 @@ describe("CursorBenchChartSection", () => {
     expect(last.controls[SURCHARGE_CONTROL_ID]).toBe(true);
 
     const toggle = container.querySelector(
-      "[data-testid='chart-controls'] input[type='checkbox']",
+      "[data-testid='chart-controls'] input[aria-label^='Third-party surcharge']",
     ) as HTMLInputElement;
     expect(toggle.checked).toBe(true);
     dispose();
@@ -76,7 +77,7 @@ describe("CursorBenchChartSection", () => {
     ));
 
     const toggle = container.querySelector(
-      "[data-testid='chart-controls'] input[type='checkbox']",
+      "[data-testid='chart-controls'] input[aria-label^='Third-party surcharge']",
     ) as HTMLInputElement;
     toggle.click();
     expect(toggle.checked).toBe(true);

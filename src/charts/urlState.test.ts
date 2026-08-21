@@ -44,6 +44,21 @@ describe("chart URL state", () => {
     expect(parsed).toEqual(state);
   });
 
+  it("round-trips the optional label visibility setting", () => {
+    const state = {
+      scale: "log" as const,
+      query: "",
+      selectedIds: [],
+      controls: {},
+      showLabels: false,
+    };
+    const params = chartStateToParams(state, "aa-demo");
+    expect(params.get("chart.aa-demo.labels")).toBe("false");
+    expect(
+      chartStateFromParams(params, "aa-demo", specs, defaults).showLabels,
+    ).toBe(false);
+  });
+
   it("namespaces per benchmark so two charts coexist", () => {
     const params = chartStateToParams(
       { scale: "linear", query: "", selectedIds: [], controls: { mode: "weighted" } },

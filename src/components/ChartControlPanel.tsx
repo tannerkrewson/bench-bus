@@ -9,6 +9,9 @@ export interface ChartControlPanelProps {
   specs: readonly PricingControlSpec[];
   controls: () => Readonly<PricingControlState>;
   onControlChange: (id: string, value: number | boolean | string) => void;
+  /** Optional chart display toggle, enabled by chart sections that show labels. */
+  showLabels?: () => boolean;
+  onShowLabelsChange?: (show: boolean) => void;
   /** Optional predicate for controls whose visibility depends on another control. */
   isControlVisible?: (spec: PricingControlSpec) => boolean;
 }
@@ -66,6 +69,27 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
           aria-label="Filter models by name"
           onInput={(e) => props.onQueryChange(e.currentTarget.value)}
         />
+      </div>
+
+      <Show when={props.showLabels && props.onShowLabelsChange}>
+        <div>
+          <label class="label cursor-pointer gap-2 text-sm font-medium" for="chart-control-showLabels">
+            <span>Model labels</span>
+            <input
+              id="chart-control-showLabels"
+              type="checkbox"
+              class="toggle toggle-sm toggle-primary"
+              aria-label="Show model labels"
+              checked={props.showLabels?.() ?? true}
+              onChange={(e) => props.onShowLabelsChange?.(e.currentTarget.checked)}
+            />
+          </label>
+        </div>
+      </Show>
+
+      <div class="flex items-center gap-2 text-sm text-base-content/70" aria-label="Pareto frontier (dotted line)">
+        <span class="w-6 border-t-2 border-dashed border-primary" aria-hidden="true" />
+        <span>Pareto frontier</span>
       </div>
 
       <For each={props.specs}>

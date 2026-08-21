@@ -35,6 +35,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
   const [selectedIds, setSelectedIds] = createSignal<string[]>(
     props.initialState?.selectedIds ?? [],
   );
+  const [showLabels, setShowLabels] = createSignal(props.initialState?.showLabels ?? true);
   const [controls, setControls] = createSignal<PricingControlState>({
     ...defaultControls(),
     ...props.initialState?.controls,
@@ -72,6 +73,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
       query: query(),
       selectedIds: selectedIds(),
       controls: controls(),
+      showLabels: showLabels(),
     });
   };
   createEffect(emitState);
@@ -100,6 +102,8 @@ export default function AaChartSection(props: AaChartSectionProps) {
           specs={aaAdapter.controlSpecs}
           controls={controls}
           onControlChange={setControl}
+          showLabels={showLabels}
+          onShowLabelsChange={setShowLabels}
           isControlVisible={(spec) =>
             spec.id !== "cacheHitRate" || controls().pricingMode === "listed"
           }
@@ -132,6 +136,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
                   points={() => build().entries.map((e) => e.point)}
                   scale={scale}
                   selectedId={selectedId}
+                  showLabels={showLabels}
                   xAxisLabel={() => aaAdapter.xAxisLabel}
                   yAxisLabel={() => aaAdapter.yAxisLabel}
                   onHover={(id, pos) =>

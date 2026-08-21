@@ -40,6 +40,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
   const [selectedIds, setSelectedIds] = createSignal<string[]>(
     props.initialState?.selectedIds ?? [],
   );
+  const [showLabels, setShowLabels] = createSignal(props.initialState?.showLabels ?? true);
   const [controls, setControls] = createSignal<PricingControlState>({
     ...defaultControls(),
     ...props.initialState?.controls,
@@ -75,6 +76,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
       query: query(),
       selectedIds: selectedIds(),
       controls: controls(),
+      showLabels: showLabels(),
     });
   };
   createEffect(emitState);
@@ -101,6 +103,8 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
           specs={props.adapter.controlSpecs}
           controls={controls}
           onControlChange={setControl}
+          showLabels={showLabels}
+          onShowLabelsChange={setShowLabels}
         />
 
         <Show
@@ -134,6 +138,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
                   points={() => build().entries.map((e) => e.point)}
                   scale={scale}
                   selectedId={selectedId}
+                  showLabels={showLabels}
                   xAxisLabel={() => props.adapter.xAxisLabel}
                   yAxisLabel={() => props.adapter.yAxisLabel}
                   onHover={(id, pos) =>

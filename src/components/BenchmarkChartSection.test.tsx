@@ -151,8 +151,14 @@ describe("BenchmarkChartSection (Cursor fixture shape)", () => {
       />
     ));
 
-    const toggle = container.querySelector("input[type='checkbox']") as HTMLInputElement;
+    const toggle = container.querySelector(
+      "input[aria-label^='Third-party surcharge']",
+    ) as HTMLInputElement;
     expect(toggle.checked).toBe(false);
+    const labels = container.querySelector("#chart-control-showLabels") as HTMLInputElement;
+    expect(labels.checked).toBe(true);
+    labels.click();
+    expect(labels.checked).toBe(false);
     toggle.click();
     expect(toggle.checked).toBe(true);
     const last = states[states.length - 1]!;

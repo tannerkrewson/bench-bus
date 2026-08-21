@@ -5,6 +5,7 @@ import type {
   PricingControlState,
   TooltipLine,
 } from "../types";
+import { inferModelBrand } from "../brand";
 import {
   AA_DEFAULT_CACHE_HIT_RATE,
   listedCostUsd,
@@ -90,7 +91,13 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
         cost = null;
     }
     if (cost === null || !Number.isFinite(cost) || cost <= 0) return null;
-    return { id: record.slug, label: record.name, x: cost, y: record.intelligenceIndex };
+    return {
+      id: record.slug,
+      label: record.name,
+      brand: inferModelBrand(record.name, record.slug),
+      x: cost,
+      y: record.intelligenceIndex,
+    };
   },
 
   searchText: (record) => `${record.name} ${record.shortName} ${record.slug}`,

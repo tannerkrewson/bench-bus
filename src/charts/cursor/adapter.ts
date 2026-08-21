@@ -9,6 +9,7 @@ import type {
   PricingControlState,
   TooltipLine,
 } from "../types";
+import { inferModelBrand } from "../brand";
 
 /**
  * Real CursorBench adapter (bench-bus-0cd.11).
@@ -104,7 +105,13 @@ export const cursorBenchAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord>
       Boolean(controls[SURCHARGE_CONTROL_ID] ?? SURCHARGE_CONTROL.default),
     );
     if (cost === null) return null;
-    return { id: record.modelId, label: record.modelName, x: cost, y: record.score };
+    return {
+      id: record.modelId,
+      label: record.modelName,
+      brand: inferModelBrand(record.modelName, record.provider, record.modelId),
+      x: cost,
+      y: record.score,
+    };
   },
   searchText: (record) => `${record.modelName} ${record.provider} ${record.modelId}`,
   tooltipLines: (record, point): readonly TooltipLine[] => {

@@ -76,3 +76,33 @@ export function toHighlightY(
 ): (number | null)[] {
   return series.ids.map((id, i) => (id === selectedId ? (series.y[i] as number) : null));
 }
+
+/**
+ * Return the non-dominated cost/score points in increasing-cost order.
+ * Lower x and higher y are better; equal-cost points are reduced to the
+ * highest score before dominance is evaluated.
+ */
+export function paretoFrontier(points: readonly PlottablePoint[]): PlottablePoint[] {
+  const sorted = [...points]
+    .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y))
+    .sort((a, b) => a.x - b.x || b.y - a.y || a.id.localeCompare(b.id));
+  const frontier: PlottablePoint[] = [];
+  let bestScore = -Infinity;
+
+  for (let i = 0; i < sorted.length; ) {
+    const point = sorted[i]!;
+    let bestAtCost = point;
+    let j = i + 1;
+    while (j < sorted.length && sorted[j]!.x === point.x) {
+      if (sorted[j]!.y > bestAtCost.y) bestAtCost = sorted[j]!;
+      j += 1;
+    }
+    if (bestAtCost.y > bestScore) {
+      frontier.push(bestAtCost);
+      bestScore = bestAtCost.y;
+    }
+    i = j;
+  }
+
+  return frontier;
+}

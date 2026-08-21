@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AA_FIXTURE_RECORDS, aaDemoAdapter } from "./fixtures";
-import { buildChartPlot, toHighlightY, toPlotSeries } from "./plotData";
+import { buildChartPlot, paretoFrontier, toHighlightY, toPlotSeries } from "./plotData";
 
 const controls = { pricingMode: "cheapest", cacheHitRate: 0.9 };
 
@@ -49,6 +49,27 @@ describe("toPlotSeries", () => {
     );
     expect(s.ids).toEqual(["a"]);
     expect(s.droppedIds).toEqual(["zero", "neg"]);
+  });
+});
+
+describe("paretoFrontier", () => {
+  it("keeps increasing-score frontier points and removes dominated points", () => {
+    const frontier = paretoFrontier([
+      { id: "cheap-low", label: "Cheap low", x: 1, y: 40 },
+      { id: "cheap-high", label: "Cheap high", x: 1, y: 45 },
+      { id: "middle", label: "Middle", x: 2, y: 44 },
+      { id: "better", label: "Better", x: 3, y: 60 },
+      { id: "dominated", label: "Dominated", x: 4, y: 55 },
+    ]);
+    expect(frontier.map((point) => point.id)).toEqual(["cheap-high", "better"]);
+  });
+
+  it("does not include equal-score points at a higher cost", () => {
+    const frontier = paretoFrontier([
+      { id: "first", label: "First", x: 1, y: 50 },
+      { id: "same-score", label: "Same score", x: 2, y: 50 },
+    ]);
+    expect(frontier.map((point) => point.id)).toEqual(["first"]);
   });
 });
 

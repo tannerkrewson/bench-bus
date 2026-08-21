@@ -9,6 +9,7 @@ import type {
   PricingControlState,
   TooltipLine,
 } from "./types";
+import { inferModelBrand } from "./brand";
 
 /**
  * Fixture datasets shaped exactly like the derived browser contracts plus
@@ -174,7 +175,13 @@ export const aaDemoAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
       }
     }
     if (cost === null || !Number.isFinite(cost) || cost <= 0) return null;
-    return { id: record.slug, label: record.name, x: cost, y: record.intelligenceIndex };
+    return {
+      id: record.slug,
+      label: record.name,
+      brand: inferModelBrand(record.name, record.slug),
+      x: cost,
+      y: record.intelligenceIndex,
+    };
   },
   searchText: (record) => `${record.name} ${record.shortName} ${record.slug}`,
   tooltipLines: (record, point): readonly TooltipLine[] => [
@@ -212,7 +219,13 @@ export const cursorDemoAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord> 
       cost += (tokens / 1e6) * CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS;
     }
     if (!Number.isFinite(cost) || cost <= 0) return null;
-    return { id: record.modelId, label: record.modelName, x: cost, y: record.score };
+    return {
+      id: record.modelId,
+      label: record.modelName,
+      brand: inferModelBrand(record.modelName, record.provider, record.modelId),
+      x: cost,
+      y: record.score,
+    };
   },
   searchText: (record) => `${record.modelName} ${record.provider}`,
   tooltipLines: (record, point): readonly TooltipLine[] => [
