@@ -1,4 +1,20 @@
 @import "tailwindcss";
-@plugin "daisyui";
+@plugin "daisyui" {
+  themes: caramellatte --default, halloween --prefersdark, light, dark, cupcake, pastel, valentine, retro, garden, lofi, fantasy, wireframe, cmyk, autumn, acid, lemonade, winter, nord, silk, emerald, corporate, bumblebee, synthwave, forest, aqua, black, luxury, dracula, business, night, coffee, dim, sunset, abyss;
+  logs: false;
+}
+
+:root {
+  font-family: "Sora Variable", Sora, ui-sans-serif, system-ui, sans-serif;
+}
 
 /* Bench Bus application styles. Shared chart/control styles land in later issues. */
+
+[data-theme] {
+  font-family: "Sora Variable", Sora, ui-sans-serif, system-ui, sans-serif;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
+}

@@ -10,14 +10,19 @@
     <title>Bench Bus</title>
     <script>
       (() => {
+        const lightThemes = ["light", "caramellatte", "cupcake", "pastel", "valentine", "retro", "garden", "lofi", "fantasy", "wireframe", "cmyk", "autumn", "acid", "lemonade", "winter", "nord", "silk", "emerald", "corporate", "bumblebee"];
+        const darkThemes = ["dark", "halloween", "synthwave", "forest", "aqua", "black", "luxury", "dracula", "business", "night", "coffee", "dim", "sunset", "abyss"];
+        const themes = [...lightThemes, ...darkThemes];
         let theme = null;
         try {
           theme = window.localStorage.getItem("bench-bus-theme");
         } catch {
           // Storage can be unavailable in private browsing.
         }
-        if (theme !== "light" && theme !== "dark") {
-          theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        if (theme === "light") theme = "caramellatte";
+        if (theme === "dark") theme = "halloween";
+        if (!themes.includes(theme)) {
+          theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "halloween" : "caramellatte";
         }
         document.documentElement.dataset.theme = theme;
       })();
