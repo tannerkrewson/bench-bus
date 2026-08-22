@@ -1,7 +1,7 @@
 import { For, Show, createEffect, createMemo, createSignal, on, onCleanup, onMount } from "solid-js";
 import { Crown } from "lucide-solid";
 import uPlot, { type Options } from "uplot";
-import { isDarkTheme } from "../components/ThemeToggle";
+import { COLOR_BLIND_CHANGE_EVENT, isColorBlindMode, isDarkTheme } from "../components/ThemeToggle";
 import "uplot/dist/uPlot.min.css";
 import { inferModelBrand, modelGroupColor } from "./brand";
 import { modelGroupKey } from "./modelMetadata";
@@ -186,6 +186,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     return currentSeries;
   };
 
+  const groupColor = (groupKey: string, dark: boolean): string =>
+    modelGroupColor(groupKey, dark, isColorBlindMode());
+
   const themeStyles = () => {
     const styles = getComputedStyle(container ?? document.documentElement);
     const dark = isDarkTheme(document.documentElement.dataset.theme);
@@ -368,7 +371,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       right: overRect.right - rootRect.left - 4,
       bottom: overRect.bottom - rootRect.top - 4,
     };
-    const dark = themeStyles().dark;
+    const styles = themeStyles();
+    const dark = styles.dark;
     const representativeById = new Map(
       currentSeries.variantGroups.flatMap((group) =>
         group.members.map((member) => [member.id, group.representativeId] as const),
@@ -400,7 +404,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         labelLeft: (preLeft + effectiveLeft) / 2,
         percentage: discount.percentage,
         groupKey: discount.groupKey,
-        color: modelGroupColor(discount.groupKey, dark),
+        color: groupColor(discount.groupKey, dark),
         providerRole: discount.providerRole,
       }];
     });
@@ -423,7 +427,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           label: currentSeries.labels[index] ?? id,
           anchorLeft: overRect.left - rootRect.left + currentPlot.valToPos(x, "x"),
           anchorTop: overRect.top - rootRect.top + currentPlot.valToPos(y, "y"),
-          color: modelGroupColor(currentSeries.groupKeys[index] ?? modelGroupKey(currentSeries.labels[index] ?? id, id), dark),
+          color: groupColor(currentSeries.groupKeys[index] ?? modelGroupKey(currentSeries.labels[index] ?? id, id), dark),
           priority: currentSeries.frontierIds.includes(id) ? 1 : 0,
         },
       ];
@@ -669,14 +673,14 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         {},
         ...currentSeries.variantGroups.map((group) => ({
           label: `${group.baseLabel} effort variants`,
-          stroke: modelGroupColor(group.key, styles.dark),
+          stroke: groupColor(group.key, styles.dark),
           width: 1.5,
           alpha: 0.62,
           points: { show: false },
         })),
         ...currentSeries.discounts.map((discount) => ({
           label: `${discount.percentage}% discount: ${discount.providerName ?? "provider"}`,
-          stroke: modelGroupColor(discount.groupKey, styles.dark),
+          stroke: groupColor(discount.groupKey, styles.dark),
           width: 1.5,
           // Dotted, rather than solid or Pareto-dashed, so price adjustments
           // have an unambiguous visual grammar.
@@ -684,7 +688,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           points: { show: false },
         })),
         ...pointGroups.map((groupKey) => {
-          const color = modelGroupColor(groupKey, styles.dark);
+          const color = groupColor(groupKey, styles.dark);
           return {
             label: `${groupKey} models`,
             stroke: color,
@@ -694,14 +698,14 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         }),
         ...currentSeries.discounts.map((discount) => ({
           label: `${discount.percentage}% discount before price`,
-          stroke: modelGroupColor(discount.groupKey, styles.dark),
+          stroke: groupColor(discount.groupKey, styles.dark),
           width: 0,
           points: {
             show: true,
             size: DISCOUNT_DOT_SIZE,
             width: 1.5,
-            stroke: modelGroupColor(discount.groupKey, styles.dark),
-            fill: modelGroupColor(discount.groupKey, styles.dark),
+            stroke: groupColor(discount.groupKey, styles.dark),
+            fill: groupColor(discount.groupKey, styles.dark),
           },
         })),
         {
@@ -822,7 +826,11 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
     const onThemeChange = () => createPlot();
     window.addEventListener("bench-bus-theme-change", onThemeChange);
-    onCleanup(() => window.removeEventListener("bench-bus-theme-change", onThemeChange));
+    window.addEventListener(COLOR_BLIND_CHANGE_EVENT, onThemeChange);
+    onCleanup(() => {
+      window.removeEventListener("bench-bus-theme-change", onThemeChange);
+      window.removeEventListener(COLOR_BLIND_CHANGE_EVENT, onThemeChange);
+    });
 
     onCleanup(() => {
       plot?.destroy();
@@ -932,7 +940,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           y1: previous.top,
           x2: current.left,
           y2: current.top,
-          color: modelGroupColor(group.key, dark),
+          color: groupColor(group.key, dark),
         });
       }
     }
@@ -941,12 +949,12 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       .flatMap((discount) => {
         const pre = plotPosition(currentPlot.valToPos(discount.preX, "x"), currentPlot.valToPos(discount.y, "y"));
         const effective = plotPosition(currentPlot.valToPos(discount.effectiveX, "x"), currentPlot.valToPos(discount.y, "y"));
-        const color = modelGroupColor(discount.groupKey, dark);
+        const color = groupColor(discount.groupKey, dark);
         return pre && effective ? [{ ...pre, color }, { ...effective, color }] : [];
       });
     return {
       point,
-      pointColor: modelGroupColor(currentSeries.groupKeys[index] ?? modelGroupKey(currentSeries.labels[index] ?? id, id), dark),
+      pointColor: groupColor(currentSeries.groupKeys[index] ?? modelGroupKey(currentSeries.labels[index] ?? id, id), dark),
       connectors,
       discountDots,
     };

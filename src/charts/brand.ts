@@ -54,6 +54,37 @@ const MODEL_GROUP_PALETTE = [
   "#15803d", // forest
 ] as const;
 
+// The color-blind palette is based on the Okabe-Ito hues, with darker
+// light-theme variants and brighter dark-theme variants to preserve contrast
+// against either chart surface. No slot is white or black, so points never
+// disappear into a theme background.
+const COLOR_BLIND_MODEL_GROUP_PALETTE = {
+  light: [
+    "#005a9c", // blue
+    "#b54708", // orange
+    "#007a5e", // green
+    "#b3311f", // vermilion
+    "#7a4eab", // purple
+    "#007c91", // teal
+    "#8a6500", // gold
+    "#a23b72", // magenta
+    "#245a9a", // indigo
+    "#4f6d2f", // olive
+  ],
+  dark: [
+    "#56b4e9", // sky blue
+    "#e69f00", // orange
+    "#009e73", // green
+    "#d55e00", // vermilion
+    "#cc79a7", // purple
+    "#7cc7e8", // teal
+    "#f0e442", // yellow
+    "#e58bb8", // magenta
+    "#86bdf2", // indigo
+    "#a6d854", // olive
+  ],
+} as const;
+
 const WELL_KNOWN_GROUP_SLOTS: Readonly<Record<string, number>> = {
   "opus-5": 0,
   "sonnet-5": 1,
@@ -80,21 +111,28 @@ function stableHash(value: string): number {
   return Math.abs(hash);
 }
 
-/** Stable family color shared by dots, connectors, arrows, and both charts. */
-export function modelGroupColor(groupKey: string, dark: boolean): string {
+/**
+ * Stable family color shared by dots, connectors, arrows, and both charts.
+ * `colorBlind` switches the complete shared palette, rather than changing
+ * only dots, so every visual representation of a family remains aligned.
+ */
+export function modelGroupColor(groupKey: string, dark: boolean, colorBlind = false): string {
   const key = canonicalGroupKey(groupKey);
   const explicitSlot = WELL_KNOWN_GROUP_SLOTS[key];
-  const slot = explicitSlot ?? stableHash(key) % MODEL_GROUP_PALETTE.length;
-  const color = MODEL_GROUP_PALETTE[slot % MODEL_GROUP_PALETTE.length]!;
+  const palette = colorBlind
+    ? (dark ? COLOR_BLIND_MODEL_GROUP_PALETTE.dark : COLOR_BLIND_MODEL_GROUP_PALETTE.light)
+    : MODEL_GROUP_PALETTE;
+  const slot = explicitSlot ?? stableHash(key) % palette.length;
+  const color = palette[slot % palette.length]!;
   // Amber needs a little more luminance on dark backgrounds; it remains the
   // same family color in the two charts and is never replaced with white.
-  if (dark && color === "#ca8a04") return "#facc15";
+  if (!colorBlind && dark && color === "#ca8a04") return "#facc15";
   return color;
 }
 
 /** Backwards-compatible name for effort-variant connection colors. */
-export function effortGroupColor(groupKey: string, dark: boolean): string {
-  return modelGroupColor(groupKey, dark);
+export function effortGroupColor(groupKey: string, dark: boolean, colorBlind = false): string {
+  return modelGroupColor(groupKey, dark, colorBlind);
 }
 
 /** Stable fallback colors for ungrouped/provider-only UI elements. */
