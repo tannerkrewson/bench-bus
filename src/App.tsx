@@ -173,11 +173,7 @@ const App: Component = () => {
 
           <Charts bundle={bundle()} />
 
-          <footer
-            class="mt-6 px-4 py-4 text-center text-sm text-base-content/80"
-            aria-label="Site information"
-            role="contentinfo"
-          >
+          <footer class="mt-6 px-4 py-4 text-center text-sm text-base-content/80">
             <div class="flex flex-col items-center justify-center gap-y-1">
               <span>
                 Bench Bus by{" "}
