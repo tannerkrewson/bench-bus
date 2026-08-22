@@ -39,6 +39,12 @@ export interface BenchmarkScatterChartProps {
 
 const DOT_SIZE = 9;
 const DISCOUNT_DOT_SIZE = 7;
+const POINT_STROKE_WIDTH = 1.5;
+// uPlot's point size is a diameter, while SVG circle r is a radius. Keep
+// overlay emphasis circles exactly the same size as the canvas points so
+// hover never creates a second, visibly larger dot.
+const MODEL_DOT_RADIUS = (DOT_SIZE - POINT_STROKE_WIDTH) / 2;
+const DISCOUNT_DOT_RADIUS = (DISCOUNT_DOT_SIZE - POINT_STROKE_WIDTH) / 2;
 const MODEL_LABEL_FONT_SIZE = 13;
 const MODEL_LABEL_LINE_HEIGHT = 20;
 const DOT_HIT_RADIUS = 14;
@@ -67,6 +73,34 @@ export function crosshairGuideGeometry(
   return {
     horizontal: { left: 0, width: left },
     vertical: { left, top, height: Math.max(0, overHeight - top) },
+  };
+}
+
+export interface ConnectorHitSegment {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+/** Keep connector hit lines out of the direct-dot hit radius. */
+export function trimConnectorHitSegment(
+  start: { left: number; top: number },
+  end: { left: number; top: number },
+  inset = DOT_HIT_RADIUS,
+): ConnectorHitSegment | null {
+  const dx = end.left - start.left;
+  const dy = end.top - start.top;
+  const length = Math.hypot(dx, dy);
+  if (![start.left, start.top, end.left, end.top, inset].every(Number.isFinite) || inset < 0 || length <= inset * 2) {
+    return null;
+  }
+  const ratio = inset / length;
+  return {
+    x1: start.left + dx * ratio,
+    y1: start.top + dy * ratio,
+    x2: end.left - dx * ratio,
+    y2: end.top - dy * ratio,
   };
 }
 
@@ -645,6 +679,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   const setConnectorHover = (id: string) => {
     hoveredConnectorId = id;
+    hoveredIndex = null;
+    setHoveredPosition(null);
     setModelLabelHover(id);
   };
 
@@ -653,6 +689,16 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     hoveredConnectorId = null;
     setLabelHover(null);
     props.onHover?.(null);
+  };
+
+  const clearPointerInteraction = () => {
+    hoveredIndex = null;
+    hoveredConnectorId = null;
+    hoveredLabelBounds = null;
+    setHoveredLabelId(null);
+    setHoveredPosition(null);
+    props.onHover?.(null);
+    if (plot) applyCrosshairDirections(plot, { left: null, top: null });
   };
 
   const cursorPosition = (u: uPlot) => {
@@ -711,7 +757,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     // do not let the root overlay's passive bookkeeping clear that focus.
     if (hoveredConnectorId !== null) return;
     const currentId = hoveredLabelId();
-    const padding = 10;
+    // Keep label hit bounds close to the painted text. A large invisible
+    // padding overlaps neighboring dots and creates the reported two-stage
+    // tooltip/de-emphasis transition.
+    const padding = 2;
     const contains = (rect: { left: number; top: number; right: number; bottom: number }) =>
       pointer !== undefined && pointer.left >= rect.left - padding && pointer.left <= rect.right + padding &&
       pointer.top >= rect.top - padding && pointer.top <= rect.bottom + padding;
@@ -892,7 +941,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
             label: `${groupKey} models`,
             stroke: color,
             width: 0,
-            points: { show: true, size: DOT_SIZE, width: 1.5, stroke: color, fill: color },
+            points: { show: true, size: DOT_SIZE, width: POINT_STROKE_WIDTH, stroke: color, fill: color },
           };
         }),
         ...currentSeries.discounts.map((discount) => ({
@@ -902,7 +951,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           points: {
             show: true,
             size: DISCOUNT_DOT_SIZE,
-            width: 1.5,
+            width: POINT_STROKE_WIDTH,
             stroke: groupColor(discount.groupKey, styles.dark),
             fill: groupColor(discount.groupKey, styles.dark),
           },
@@ -937,8 +986,24 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 : undefined;
             })();
             const rawPointer = rawPlotPointer ? plotPosition(rawPlotPointer.left, rawPlotPointer.top) : pointer;
-            updateLabelHover(rawPointer);
             const target = hoveredTarget(u, rawPlotPointer);
+            // A direct dot hit wins over the padded label bounds. This keeps
+            // one deterministic owner as the pointer crosses a label's edge.
+            if (target && hoveredConnectorId === null) updateLabelHover(undefined);
+            else updateLabelHover(rawPointer);
+            // Labels and connector hit lines own family emphasis only. They
+            // never promote a nearby dot into a second tooltip/de-emphasis
+            // state while their overlay remains under the pointer.
+            if ((hoveredLabelId() !== null && !target) || hoveredConnectorId !== null) {
+              if (rawPlotPointer) {
+                u.setCursor(rawPlotPointer, false);
+                applyCrosshairDirections(u, rawPlotPointer);
+              }
+              hoveredIndex = null;
+              setHoveredPosition(null);
+              props.onHover?.(null);
+              return;
+            }
             hoveredIndex = target && target.pointIndex >= 0 ? target.pointIndex : null;
             if (!target || hoveredIndex === null) {
               // A prior hit snaps the crosshair to the dot. Restore the raw
@@ -1042,6 +1107,30 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   onMount(() => {
     createPlot();
+
+    // Overlay labels and uPlot's canvas are separate event surfaces. A
+    // document-level boundary check guarantees stale guides are cleared when
+    // the pointer leaves above/right (or any other edge) without relying on a
+    // particular child surface to dispatch a leave event.
+    const clearWhenOutside = (event: MouseEvent) => {
+      const root = container?.parentElement;
+      const rect = root?.getBoundingClientRect();
+      if (!rect) return;
+      if (event.clientX < rect.left || event.clientX > rect.right ||
+          event.clientY < rect.top || event.clientY > rect.bottom) {
+        clearPointerInteraction();
+      }
+    };
+    document.addEventListener("pointermove", clearWhenOutside, true);
+    document.addEventListener("mousemove", clearWhenOutside, true);
+    document.addEventListener("pointerout", clearWhenOutside, true);
+    document.addEventListener("mouseout", clearWhenOutside, true);
+    onCleanup(() => {
+      document.removeEventListener("pointermove", clearWhenOutside, true);
+      document.removeEventListener("mousemove", clearWhenOutside, true);
+      document.removeEventListener("pointerout", clearWhenOutside, true);
+      document.removeEventListener("mouseout", clearWhenOutside, true);
+    });
 
     const resize = () => {
       if (!container || !plot) return;
@@ -1168,13 +1257,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           return index < 0 ? null : pointPosition(currentPlot, index);
         })
         .filter((position): position is { left: number; top: number } => position !== undefined && position !== null);
-      return points.slice(1).map((point, index) => ({
-        x1: points[index]!.left,
-        y1: points[index]!.top,
-        x2: point.left,
-        y2: point.top,
-        representativeId: group.representativeId,
-      }));
+      return points.slice(1).flatMap((point, index) => {
+        const segment = trimConnectorHitSegment(points[index]!, point);
+        return segment ? [{ ...segment, representativeId: group.representativeId }] : [];
+      });
     });
   });
 
@@ -1262,8 +1348,21 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       top: event.clientY - overRect.top,
     };
     const rawPointer = plotPosition(rawPlotPointer.left, rawPlotPointer.top);
-    updateLabelHover(rawPointer);
     const target = hoveredTarget(plot, rawPlotPointer);
+    // Prefer the actual dot hit over the label's generous pointer padding;
+    // labels remain passive when no dot owns this pointer location.
+    if (target && hoveredConnectorId === null) updateLabelHover(undefined);
+    else updateLabelHover(rawPointer);
+    // Keep label/connector hover passive with respect to dot ownership while
+    // still moving the raw guides with the pointer.
+    if ((hoveredLabelId() !== null && !target) || hoveredConnectorId !== null) {
+      plot.setCursor(rawPlotPointer, false);
+      applyCrosshairDirections(plot, rawPlotPointer);
+      hoveredIndex = null;
+      setHoveredPosition(null);
+      props.onHover?.(null);
+      return;
+    }
     hoveredIndex = target && target.pointIndex >= 0 ? target.pointIndex : null;
     if (!target || hoveredIndex === null) {
       plot.setCursor(rawPlotPointer, false);
@@ -1283,6 +1382,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     <div
       class="relative w-full"
       onPointerMove={handleOverlayPointerMove}
+      onPointerLeave={clearPointerInteraction}
+      onMouseLeave={clearPointerInteraction}
       data-hovered-label-id={hoveredLabelId() ?? undefined}
       role="group"
       aria-label={`Scatter chart of ${props.yAxisLabel()} versus ${props.xAxisLabel()}`}
@@ -1340,9 +1441,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                   <circle
                     cx={dot.left}
                     cy={dot.top}
-                    r={DISCOUNT_DOT_SIZE / 2}
+                    r={DISCOUNT_DOT_RADIUS}
                     fill={dot.color}
                     stroke={dot.color}
+                    stroke-width={POINT_STROKE_WIDTH}
                     data-testid="focused-discount-dot"
                   />
                 )}
@@ -1352,9 +1454,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                   <circle
                     cx={dot.left}
                     cy={dot.top}
-                    r={DOT_SIZE / 2}
+                    r={MODEL_DOT_RADIUS}
                     fill={dot.color}
                     stroke={dot.color}
+                    stroke-width={POINT_STROKE_WIDTH}
                     data-testid="focused-model-dot"
                     data-model-id={dot.id}
                   />
@@ -1443,7 +1546,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         <For each={labelPositions()}>
           {(label) => (
             <span
-              class="pointer-events-auto absolute z-1 cursor-default whitespace-nowrap rounded bg-base-100/80 px-1 text-left text-xs leading-5 shadow-sm"
+              class="pointer-events-none absolute z-1 cursor-default whitespace-nowrap rounded bg-base-100/80 px-1 text-left text-xs leading-5 shadow-sm"
               style={{
                 left: `${label.left}px`,
                 top: `${label.top}px`,
@@ -1462,11 +1565,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
               aria-label={label.accessibleLabel ?? label.label}
               title={label.accessibleLabel ?? label.label}
               tabIndex="0"
-              onMouseEnter={() => setModelLabelHover(label.id)}
-              onMouseLeave={() => {
-                setLabelHover(null);
-                props.onHover?.(null);
-              }}
               onFocus={() => setModelLabelHover(label.id)}
               onBlur={() => {
                 setLabelHover(null);

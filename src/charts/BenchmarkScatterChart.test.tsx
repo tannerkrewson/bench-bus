@@ -12,6 +12,7 @@ import BenchmarkScatterChart, {
   filterTenPointGridSplits,
   seriesAlphasForFocus,
   snapToDotPosition,
+  trimConnectorHitSegment,
 } from "./BenchmarkScatterChart";
 import type { PlottablePoint } from "./types";
 
@@ -49,6 +50,16 @@ describe("BenchmarkScatterChart pure interaction policies", () => {
     const dot = { left: 100, top: 80 };
     expect(snapToDotPosition({ left: 108, top: 86 }, dot, 10)).toEqual(dot);
     expect(snapToDotPosition({ left: 111, top: 80 }, dot, 10)).toBeNull();
+  });
+
+  it("keeps connector hit lines outside direct-dot ownership", () => {
+    expect(trimConnectorHitSegment({ left: 0, top: 0 }, { left: 100, top: 0 }, 14)).toMatchObject({
+      x1: expect.closeTo(14),
+      y1: 0,
+      x2: expect.closeTo(86),
+      y2: 0,
+    });
+    expect(trimConnectorHitSegment({ left: 0, top: 0 }, { left: 20, top: 0 }, 14)).toBeNull();
   });
 
   it("keeps every focused family point and connector series at its base alpha", () => {
@@ -398,14 +409,22 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect(familyLabel.textContent).toBe("Opus 5");
     expect(familyLabel.getAttribute("aria-label")).toBe("Opus 5 high");
     expect(otherLabel).not.toBeNull();
-    familyLabel.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    const root = container.querySelector("[data-testid='benchmark-scatter']") as HTMLElement;
+    root.dispatchEvent(new MouseEvent("pointermove", {
+      bubbles: true,
+      clientX: Number.parseFloat(familyLabel.style.left) + 2,
+      clientY: Number.parseFloat(familyLabel.style.top) + 2,
+    }));
     expect(familyLabel.style.opacity).toBe("1");
     expect(otherLabel.style.opacity).toBe("0.2");
     expect(container.querySelectorAll("[data-testid='focused-connector']")).toHaveLength(1);
     expect(container.querySelectorAll("[data-testid='focused-model-dot']")).toHaveLength(2);
+    const focusedDots = [...container.querySelectorAll<SVGCircleElement>("[data-testid='focused-model-dot']")];
+    expect(focusedDots).toHaveLength(2);
+    expect(focusedDots.every((dot) => Number(dot.getAttribute("r")) === (9 - 1.5) / 2)).toBe(true);
     expect(container.querySelector("[data-testid='focused-model-dot'][data-model-id='opus-low']")).not.toBeNull();
     expect(container.querySelector("[data-testid='focused-model-dot'][data-model-id='opus-high']")).not.toBeNull();
-    familyLabel.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+    root.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: 300, clientY: 300 }));
     expect(otherLabel.style.opacity).toBe("1");
     expect(container.querySelectorAll("[data-testid='focused-connector']")).toHaveLength(0);
 
@@ -460,6 +479,16 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect(vertical.style.left).toBe("0px");
     expect(vertical.style.transform).toBe(`translate(${labelLeft}px,0px)`);
     expect(horizontal.style.transform).toBe(`translate(0px,${labelTop}px)`);
+    root.dispatchEvent(new MouseEvent("pointerleave", { bubbles: true, clientX: labelLeft, clientY: labelTop }));
+    expect(container.querySelector("[data-testid='hovered-dot']")).toBeNull();
+    expect(vertical.style.height).toBe("0px");
+    expect(horizontal.style.width).toBe("0px");
+    root.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: 240, clientY: 120 }));
+    expect(horizontal.style.width).toBe("240px");
+    document.dispatchEvent(new MouseEvent("mousemove", { bubbles: true, clientX: 801, clientY: 120 }));
+    expect(container.querySelector("[data-testid='hovered-dot']")).toBeNull();
+    expect(vertical.style.height).toBe("0px");
+    expect(horizontal.style.width).toBe("0px");
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     dispose();
   });
@@ -481,11 +510,15 @@ describe("BenchmarkScatterChart discount annotations", () => {
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     const familyLabel = container.querySelector("[data-testid='model-label'][data-model-id='opus-high']") as HTMLElement;
-    familyLabel.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    const root = container.querySelector("[data-testid='benchmark-scatter']") as HTMLElement;
+    root.dispatchEvent(new MouseEvent("pointermove", {
+      bubbles: true,
+      clientX: Number.parseFloat(familyLabel.style.left) + 2,
+      clientY: Number.parseFloat(familyLabel.style.top) + 2,
+    }));
     const dot = container.querySelector("[data-testid='focused-model-dot'][data-model-id='opus-low']") as SVGCircleElement;
     const left = Number.parseFloat(dot.getAttribute("cx")!);
     const top = Number.parseFloat(dot.getAttribute("cy")!);
-    const root = container.querySelector("[data-testid='benchmark-scatter']") as HTMLElement;
     root.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: left, clientY: top }));
     expect(container.querySelector("[data-testid='hovered-dot']")).not.toBeNull();
     const vertical = container.querySelector(".u-cursor-x") as HTMLElement;
@@ -520,7 +553,12 @@ describe("BenchmarkScatterChart discount annotations", () => {
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     const familyLabel = container.querySelector("[data-testid='model-label'][data-model-id='opus-high']") as HTMLElement;
     const otherLabel = container.querySelector("[data-testid='model-label'][data-model-id='other']") as HTMLElement;
-    familyLabel.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    const root = container.querySelector("[data-testid='benchmark-scatter']") as HTMLElement;
+    root.dispatchEvent(new MouseEvent("pointermove", {
+      bubbles: true,
+      clientX: Number.parseFloat(familyLabel.style.left) + 2,
+      clientY: Number.parseFloat(familyLabel.style.top) + 2,
+    }));
     expect(container.querySelector("[data-hovered-label-id='opus-high']")).not.toBeNull();
     expect(otherLabel.style.opacity).toBe("0.2");
 
