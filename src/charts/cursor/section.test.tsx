@@ -5,7 +5,12 @@ import CursorBenchChartSection, {
   cursorChartStateFromParams,
   cursorChartStateToParams,
 } from "./CursorBenchChartSection";
-import { CURSOR_BENCH_ID, SURCHARGE_CONTROL_ID, TOKEN_MIX_CONTROL_ID } from "./adapter";
+import {
+  CURSOR_BENCH_ID,
+  SURCHARGE_CONTROL_ID,
+  TOKEN_MIX_CONTROL_ID,
+  cursorBenchAdapter,
+} from "./adapter";
 import { CURSOR_FIXTURE_RECORDS } from "../fixtures";
 import type { ChartViewState } from "../types";
 
@@ -146,6 +151,12 @@ describe("CursorBenchChartSection", () => {
     expect(container.querySelector("[data-testid='chart-decorations']")).not.toBeNull();
     expect(container.querySelector("[data-testid='benchmark-scatter-plot'] canvas")).not.toBeNull();
     expect((container.querySelector("[data-testid='chart-controls'] input[type='range']") as HTMLInputElement).value).toBe("100");
+    const finalPoint = cursorBenchAdapter.computePoint(CURSOR_FIXTURE_RECORDS[1]!, {
+      [SURCHARGE_CONTROL_ID]: true,
+      [TOKEN_MIX_CONTROL_ID]: 100,
+    });
+    expect(finalPoint).not.toBeNull();
+    expect(container.querySelector("[data-testid='benchmark-scatter-plot']")?.getAttribute("data-plot-x")?.split(",").map(Number)).toContain(finalPoint!.x);
     dispose();
     consoleError.mockRestore();
   });

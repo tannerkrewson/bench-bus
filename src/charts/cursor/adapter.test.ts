@@ -42,6 +42,14 @@ describe("cursorBenchAdapter identity + axes", () => {
       { ...byId("composer-2"), modelId: "new-model", modelName: "New Model" },
     ];
     expect(cursorDefaultVisibleIds(records)).toEqual(["composer-2", "new-model"]);
+    const points = records.flatMap((record) => {
+      const point = cursorBenchAdapter.computePoint(record, OFF);
+      return point ? [point] : [];
+    });
+    expect(cursorBenchAdapter.defaultSelectionIds?.(records, points)).toEqual([
+      "composer-2",
+      "new-model",
+    ]);
   });
 });
 

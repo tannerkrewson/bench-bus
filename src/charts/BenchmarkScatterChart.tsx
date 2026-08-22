@@ -44,6 +44,54 @@ const DOT_HIT_RADIUS = 14;
 const LABEL_DOT_RADIUS = 8;
 const LEADER_LINE_GAP = 3;
 
+/** Geometry for the leftward horizontal and downward vertical cursor guides. */
+export interface CrosshairGuideGeometry {
+  horizontal: { left: number; width: number };
+  vertical: { left: number; top: number; height: number };
+}
+
+export function crosshairGuideGeometry(
+  cursorLeft: number | null | undefined,
+  cursorTop: number | null | undefined,
+  overHeight: number,
+): CrosshairGuideGeometry {
+  if (cursorLeft == null || cursorTop == null) {
+    return {
+      horizontal: { left: 0, width: 0 },
+      vertical: { left: 0, top: 0, height: 0 },
+    };
+  }
+  const left = Math.max(0, cursorLeft);
+  const top = Math.max(0, cursorTop);
+  return {
+    horizontal: { left: 0, width: left },
+    vertical: { left, top, height: Math.max(0, overHeight - top) },
+  };
+}
+
+/** Return the dot position only when the pointer is within the hit radius. */
+export function snapToDotPosition(
+  pointer: { left: number; top: number },
+  dot: { left: number; top: number },
+  radius = DOT_HIT_RADIUS,
+): { left: number; top: number } | null {
+  if (![pointer.left, pointer.top, dot.left, dot.top, radius].every(Number.isFinite) || radius < 0) return null;
+  return Math.hypot(pointer.left - dot.left, pointer.top - dot.top) <= radius ? dot : null;
+}
+
+/** uPlot split filters kept pure so axis and grid policies stay regression-testable. */
+export function filterDollarAxisSplits(splits: readonly number[]): (number | null)[] {
+  return splits.map((value) => formatDollarTick(value) !== "" ? value : null);
+}
+
+export function filterIntegerAxisSplits(splits: readonly number[]): (number | null)[] {
+  return splits.map((value) => Number.isInteger(value) ? value : null);
+}
+
+export function filterTenPointGridSplits(splits: readonly number[]): (number | null)[] {
+  return splits.map((value) => Number.isInteger(value) && value % 10 === 0 ? value : null);
+}
+
 type DiscountAnnotation = {
   id: string;
   pointId: string;
@@ -109,6 +157,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   const [hoveredLabelId, setHoveredLabelId] = createSignal<string | null>(null);
   const [pointDecorations, setPointDecorations] = createSignal<{ id: string; left: number; top: number; color: string }[]>([]);
   const [discountDecorations, setDiscountDecorations] = createSignal<DiscountDecoration[]>([]);
+  const [plotXSnapshot, setPlotXSnapshot] = createSignal("");
   let hoveredLabelBounds: { left: number; top: number; right: number; bottom: number } | null = null;
   let baseSeriesAlphas: number[] = [];
 
@@ -350,7 +399,11 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       (best, target) => target.distance < (best?.distance ?? Infinity) ? target : best,
       null,
     );
-    return nearest && nearest.distance <= DOT_HIT_RADIUS ? nearest : null;
+    return nearest && snapToDotPosition(
+      pointer,
+      { left: nearest.plotLeft, top: nearest.plotTop },
+      DOT_HIT_RADIUS,
+    ) ? nearest : null;
   };
 
   const updateLabelPositions = () => {
@@ -588,18 +641,12 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     const horizontal = container?.querySelector<HTMLElement>(".u-cursor-y");
     const vertical = container?.querySelector<HTMLElement>(".u-cursor-x");
     if (!over || !horizontal || !vertical) return;
-    if (u.cursor.left == null || u.cursor.top == null) {
-      horizontal.style.width = "0px";
-      vertical.style.height = "0px";
-      return;
-    }
-    const left = Math.max(0, u.cursor.left);
-    const top = Math.max(0, u.cursor.top);
-    horizontal.style.left = "0px";
-    horizontal.style.width = `${left}px`;
-    vertical.style.left = `${left}px`;
-    vertical.style.top = `${top}px`;
-    vertical.style.height = `${Math.max(0, over.clientHeight - top)}px`;
+    const geometry = crosshairGuideGeometry(u.cursor.left, u.cursor.top, over.clientHeight);
+    horizontal.style.left = `${geometry.horizontal.left}px`;
+    horizontal.style.width = `${geometry.horizontal.width}px`;
+    vertical.style.left = `${geometry.vertical.left}px`;
+    vertical.style.top = `${geometry.vertical.top}px`;
+    vertical.style.height = `${geometry.vertical.height}px`;
   };
 
   const buildOptions = (): Options => {
@@ -649,7 +696,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           stroke: styles.textColor,
           font: "14px Sora, sans-serif",
           labelFont: "600 15px Sora, sans-serif",
-          filter: (_u, splits) => splits.map((value) => formatDollarTick(value) !== "" ? value : null),
+          filter: (_u, splits) => filterDollarAxisSplits(splits),
           values: (_u, splits) => splits.map(formatDollarTick),
           grid: {
             stroke: styles.gridColor,
@@ -671,12 +718,12 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           ),
           labelSize: 44,
           labelGap: 16,
-          filter: (_u, splits) => splits.map((value) => Number.isInteger(value) ? value : null),
+          filter: (_u, splits) => filterIntegerAxisSplits(splits),
           values: (_u, splits) => splits.map((value) => /score/i.test(props.yAxisLabel()) ? formatPercentTick(value) : String(value)),
           grid: {
             stroke: styles.gridColor,
             width: 0.5,
-            filter: (_u, splits) => splits.map((value) => Number.isInteger(value) && value % 10 === 0 ? value : null),
+            filter: (_u, splits) => filterTenPointGridSplits(splits),
           },
         },
       ],
@@ -815,6 +862,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     const hoveredId = hoveredIndex === null ? null : currentSeries.ids[hoveredIndex];
     const scrollY = typeof window !== "undefined" ? window.scrollY : 0;
     refreshSeries();
+    setPlotXSnapshot(currentSeries.x.join(","));
     plot?.destroy();
     plot = new uPlot(buildOptions(), dataFor(), container);
     baseSeriesAlphas = plot.series.map((series) => series.alpha ?? 1);
@@ -866,6 +914,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   const applyPlotData = () => {
     const hoveredId = hoveredIndex === null ? null : currentSeries.ids[hoveredIndex];
     refreshSeries();
+    setPlotXSnapshot(currentSeries.x.join(","));
     const data = dataFor();
     hoveredIndex = hoveredId === undefined || hoveredId === null
       ? null
@@ -1014,6 +1063,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         ref={container}
         class="w-full"
         data-testid="benchmark-scatter-plot"
+        data-plot-x={plotXSnapshot()}
       />
       <svg
         class="pointer-events-none absolute inset-0 z-1 overflow-visible"
