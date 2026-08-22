@@ -6,6 +6,7 @@ import BenchmarkScatterChart, {
   crosshairGuideGeometry,
   filterDollarAxisSplits,
   filterIntegerAxisSplits,
+  filterLogDollarAxisSplits,
   formatFilteredAxisValues,
   filterTenPointGridSplits,
   seriesAlphasForFocus,
@@ -16,6 +17,12 @@ import type { PlottablePoint } from "./types";
 describe("BenchmarkScatterChart pure interaction policies", () => {
   it("filters axis and grid splits without changing accepted values", () => {
     expect(filterDollarAxisSplits([0.5, Number.NaN, 1_000])).toEqual([0.5, null, 1_000]);
+    expect(filterLogDollarAxisSplits([
+      0.001, 0.002, 0.01, 0.02, 0.1, 0.2, 1, 2, 10, 20, 100,
+    ])).toEqual([
+      0.001, null, 0.01, null, 0.1, null, 1, null, 10, null, 100,
+    ]);
+    expect(filterLogDollarAxisSplits([0.003, 0.01, 0.02, 0.3])).toEqual([0.003, 0.01, null, 0.3]);
     expect(filterIntegerAxisSplits([69, 69.5, 70])).toEqual([69, null, 70]);
     expect(filterTenPointGridSplits([60, 65, 70, 70.5])).toEqual([60, null, 70, null]);
   });
@@ -125,7 +132,7 @@ function mountSizedChart(ui: () => JSX.Element) {
 }
 
 describe("BenchmarkScatterChart discount annotations", () => {
-  it("keeps Pareto DOM and crowns absent by default, then removes them when disabled", async () => {
+  it("keeps Pareto crowns visible independently of the frontier line toggle", async () => {
     const [showFrontier, setShowFrontier] = createSignal(false);
     const { container, dispose } = mountSizedChart(() => (
       <BenchmarkScatterChart
@@ -142,15 +149,14 @@ describe("BenchmarkScatterChart discount annotations", () => {
       />
     ));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    expect(container.querySelector("[data-testid='pareto-crown']")).toBeNull();
+    expect(container.querySelector("[data-testid='chart-decorations']")?.querySelectorAll("[data-testid='pareto-crown']")).toHaveLength(2);
     setShowFrontier(true);
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    expect(container.querySelector("[data-testid='pareto-crown']")).not.toBeNull();
     expect(container.querySelector("[data-testid='chart-decorations']")?.querySelectorAll("[data-testid='pareto-crown']")).toHaveLength(2);
     setShowFrontier(false);
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    expect(container.querySelector("[data-testid='pareto-crown']")).toBeNull();
+    expect(container.querySelector("[data-testid='chart-decorations']")?.querySelectorAll("[data-testid='pareto-crown']")).toHaveLength(2);
     dispose();
   });
 
@@ -183,6 +189,10 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect(arrows[0]?.getAttribute("data-discount-id")).toBe("discounted-model");
     expect(arrows[0]?.getAttribute("data-discount-percentage")).toBe("40");
     expect(arrows[0]?.querySelector("line")).not.toBeNull();
+    expect(arrows[0]?.querySelector("line")?.getAttribute("stroke-dasharray")).toBe("1 4");
+    expect(arrows[0]?.querySelector("line")?.getAttribute("stroke-width")).toBe("1");
+    expect(arrows[0]?.getAttribute("stroke-dasharray")).toBe("1 4");
+    expect(arrows[0]?.getAttribute("stroke-width")).toBe("1");
     expect(arrows[0]?.querySelector("path")).toBeNull();
 
     setScale("linear");

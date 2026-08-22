@@ -84,6 +84,19 @@ export function filterDollarAxisSplits(splits: readonly number[]): (number | nul
   return splits.map((value) => formatDollarTick(value) !== "" ? value : null);
 }
 
+/** Keep log-dollar powers of ten and the valid endpoints of the active range. */
+export function filterLogDollarAxisSplits(splits: readonly number[]): (number | null)[] {
+  const valid = splits.filter((value) => Number.isFinite(value) && value > 0);
+  const first = valid[0];
+  const last = valid[valid.length - 1];
+  return splits.map((value) => {
+    if (!Number.isFinite(value) || value <= 0) return null;
+    const exponent = Math.log10(value);
+    const isPowerOfTen = Math.abs(exponent - Math.round(exponent)) < 1e-10;
+    return isPowerOfTen || value === first || value === last ? value : null;
+  });
+}
+
 export function filterIntegerAxisSplits(splits: readonly number[]): (number | null)[] {
   return splits.map((value) => Number.isInteger(value) ? value : null);
 }
@@ -729,14 +742,19 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           stroke: styles.textColor,
           font: "14px Sora, sans-serif",
           labelFont: "600 15px Sora, sans-serif",
-          filter: (_u, splits) => filterDollarAxisSplits(splits),
+          filter: (_u, splits) => scale === "log"
+            ? filterLogDollarAxisSplits(splits)
+            : filterDollarAxisSplits(splits),
           values: (_u, splits) => formatFilteredAxisValues(splits, formatDollarTick),
           grid: {
             stroke: styles.gridColor,
             width: 0.5,
             // Log axes have many minor splits; only draw grid lines where a
-            // labeled dollar tick is actually rendered.
-            filter: (_u, splits) => filterDollarAxisSplits(splits),
+            // labeled dollar tick is actually rendered. Linear axes retain
+            // their existing formatting and split policy.
+            filter: (_u, splits) => scale === "log"
+              ? filterLogDollarAxisSplits(splits)
+              : filterDollarAxisSplits(splits),
           },
         },
         {
@@ -787,7 +805,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         ...currentSeries.discounts.map((discount) => ({
           label: `${discount.percentage}% discount: ${discount.providerName ?? "provider"}`,
           stroke: groupColor(discount.groupKey, styles.dark),
-          width: 1.5,
+          width: 1,
           // Dotted, rather than solid or Pareto-dashed, so price adjustments
           // have an unambiguous visual grammar.
           dash: [1, 4],
@@ -1236,27 +1254,26 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
             </>
           )}
         </Show>
-        <Show when={props.showFrontier?.() ?? false}>
-          <For each={pointDecorations()}>
-            {(point) => (
-              <g
-                transform={`translate(${point.left - 9} ${point.top - 27})`}
-                fill="none"
-                stroke={point.color}
-                opacity={isFocusedFamilyId(point.id) ? 1 : 0.2}
-              >
-                <Crown width={18} height={18} aria-hidden="true" data-testid="pareto-crown" />
-              </g>
-            )}
-          </For>
-        </Show>
+        <For each={pointDecorations()}>
+          {(point) => (
+            <g
+              transform={`translate(${point.left - 9} ${point.top - 27})`}
+              fill="none"
+              stroke={point.color}
+              opacity={isFocusedFamilyId(point.id) ? 1 : 0.2}
+            >
+              <Crown width={18} height={18} aria-hidden="true" data-testid="pareto-crown" />
+            </g>
+          )}
+        </For>
         <For each={discountDecorations()}>
           {(discount) => {
             return (
               <g
                 fill="none"
                 stroke={discount.color}
-                stroke-width="2"
+                stroke-width="1"
+                stroke-dasharray="1 4"
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 data-testid="discount-line"
@@ -1265,7 +1282,14 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 data-discount-provider-role={discount.providerRole ?? "plotted"}
                 opacity={hoveredLabelId() === null || hoveredLabelId() === discount.pointId ? 1 : 0.2}
               >
-                <line x1={discount.preLeft} y1={discount.top} x2={discount.effectiveLeft} y2={discount.top} />
+                <line
+                  x1={discount.preLeft}
+                  y1={discount.top}
+                  x2={discount.effectiveLeft}
+                  y2={discount.top}
+                  stroke-width="1"
+                  stroke-dasharray="1 4"
+                />
               </g>
             );
           }}
