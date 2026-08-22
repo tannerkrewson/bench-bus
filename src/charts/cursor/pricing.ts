@@ -40,6 +40,10 @@ function profile(
 
 // Cursor's Luna card has distinct input, cache-read, and cache-write prices.
 const LUNA_PROFILE = profile(0.2, 0.02, 0.25, 1.2);
+// Keep this rate card aligned with Cursor's published Claude Fable 5 table:
+// input $10/M, cache write $12.5/M, cache read $1/M, output $50/M.
+// This must be updated from the source URL if Cursor changes the card.
+const FABLE_5_PROFILE = profile(10, 1, 12.5, 50);
 
 /**
  * Profiles are keyed by the derived model id, not display text. Values mirror
@@ -54,6 +58,7 @@ const PROFILE_BY_MODEL_ID: ReadonlyArray<readonly [RegExp, CursorTokenRateProfil
   [/^grok-4-6(?:-|$)/, profile(2, 0.5, undefined, 6)],
   [/^grok-4-5(?:-|$)/, profile(2, 0.5, undefined, 6)],
   [/^opus-5(?:-|$)/, profile(5, 0.5, undefined, 25)],
+  [/^fable-5(?:-|$)/, FABLE_5_PROFILE],
   [/^sonnet-5(?:-|$)/, profile(2, 0.2, undefined, 10)],
   [/^gemini-3-1-pro(?:-|$)/, profile(2, 0.2, undefined, 12)],
   [/^gemini-3-7-flash(?:-|$)/, profile(0.75, 0.075, undefined, 3.5)],

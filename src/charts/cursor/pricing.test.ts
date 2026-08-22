@@ -26,7 +26,31 @@ const composer: DerivedCursorChartRecord = {
   isThirdParty: false,
 };
 
+const fable: DerivedCursorChartRecord = {
+  ...luna,
+  modelId: "fable-5-max",
+  modelName: "Fable 5 Max",
+  provider: "unknown",
+  tokensPerTask: 103_525,
+  publishedCostUsd: 17.32,
+};
+
 describe("Cursor token-rate pricing", () => {
+  it("matches Fable 5 variants to the published Cursor rate card", () => {
+    const profile = cursorTokenRateProfile(fable)!;
+    expect(profile).toEqual({
+      inputPriceUsdPerMillion: 10,
+      cacheReadPriceUsdPerMillion: 1,
+      cacheWritePriceUsdPerMillion: 12.5,
+      outputPriceUsdPerMillion: 50,
+    });
+    const estimate = estimateCursorTokenRate(fable, 50);
+    expect(estimate).not.toBeNull();
+    expect(estimate?.completionTokens).toBe(103_525);
+    expect(estimate?.outputCostUsd).toBeCloseTo(5.17625, 8);
+    expect(estimate?.adjustedCostUsd).toBeGreaterThan(fable.publishedCostUsd!);
+  });
+
   it("uses cache-read, input, and cache-write rates for Luna endpoints", () => {
     const profile = cursorTokenRateProfile(luna)!;
     expect(cursorNonOutputPrices(profile)).toEqual([0.2, 0.02, 0.25]);
