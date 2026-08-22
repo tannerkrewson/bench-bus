@@ -640,8 +640,15 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       radius: 11,
     }));
     const discountGeometry = currentSeries.discounts.flatMap((discount) => {
+      const pointIndex = currentSeries.ids.indexOf(discount.pointId);
+      const plottedX = pointIndex >= 0 ? currentSeries.x[pointIndex] : undefined;
+      if (plottedX === undefined) return [];
       const preLeft = overRect.left - rootRect.left + currentPlot.valToPos(discount.preX, "x");
-      const effectiveLeft = overRect.left - rootRect.left + currentPlot.valToPos(discount.effectiveX, "x");
+      // The plotted model dot is the single effective endpoint for the chart.
+      // Alternative provider metadata may have a different effectiveX, but
+      // drawing that second provider endpoint creates a false visual gap from
+      // the model's actual plotted price.
+      const effectiveLeft = overRect.left - rootRect.left + currentPlot.valToPos(plottedX, "x");
       const top = overRect.top - rootRect.top + currentPlot.valToPos(discount.y, "y");
       if (![preLeft, effectiveLeft, top].every(Number.isFinite)) return [];
       return [{
@@ -770,16 +777,14 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     props.onHover?.(null);
   };
 
-  const setDiscountEndpointHover = (discount: DiscountDecoration, endpoint: "pre" | "effective") => {
+  const setDiscountEndpointHover = (discount: DiscountDecoration) => {
     if (!plot) return;
     const pointIndex = currentSeries.ids.indexOf(discount.pointId);
     if (pointIndex < 0) return;
-    const cost = endpoint === "pre" ? discount.preX : discount.effectiveX;
-    const left = endpoint === "pre" ? discount.preLeft : discount.effectiveLeft;
-    const plotLeft = plot.valToPos(cost, "x");
+    const plotLeft = plot.valToPos(discount.preX, "x");
     const plotTop = plot.valToPos(discount.y, "y");
     if (!Number.isFinite(plotLeft) || !Number.isFinite(plotTop)) return;
-    hoveredDiscountEndpointId = `${discount.id}:${endpoint}`;
+    hoveredDiscountEndpointId = `${discount.id}:pre`;
     hoveredConnectorId = null;
     hoveredIndex = pointIndex;
     hoveredLabelBounds = null;
@@ -790,9 +795,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       plotLeft,
       plotTop,
       dataIndex: pointIndex,
-      cost,
+      cost: discount.preX,
     };
-    const dot = { left, top: discount.top };
+    const dot = { left: discount.preLeft, top: discount.top };
     plot.setCursor({ left: plotLeft, top: plotTop }, false);
     applyCrosshairDirections(plot, { left: plotLeft, top: plotTop });
     publishHoveredPosition(dot ?? null);
@@ -985,7 +990,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                     ...(u.data?.[0]
                       ? Array.from(u.data[0] as ArrayLike<number>)
                       : []),
-                    ...currentSeries.discounts.flatMap((discount) => [discount.preX, discount.effectiveX]),
+                    ...currentSeries.discounts.map((discount) => discount.preX),
                   ].filter((value) => Number.isFinite(value) && value > 0);
                   if (values.length === 0) return [min, max];
                   return [Math.min(...values) / 1.2, Math.max(...values) * 1.2];
@@ -995,7 +1000,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                     ...(u.data?.[0]
                       ? Array.from(u.data[0] as ArrayLike<number>)
                       : []),
-                    ...currentSeries.discounts.flatMap((discount) => [discount.preX, discount.effectiveX]),
+                    ...currentSeries.discounts.map((discount) => discount.preX),
                   ].filter((value) => Number.isFinite(value));
                   if (values.length === 0) return [min, max];
                   const low = Math.min(...values);
@@ -1690,7 +1695,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         </Show>
         <For each={discountDecorations()}>
           {(discount) => {
-            const segment = trimDiscountSegment(discount.preLeft, discount.effectiveLeft);
+            // Paint the dashed connector underneath the solid endpoint dot;
+            // trimming here leaves the exact gap users see on DeepSeek.
+            const segment = trimDiscountSegment(discount.preLeft, discount.effectiveLeft, 0);
             return (
               <g
                 fill="none"
@@ -1705,10 +1712,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 data-discount-provider-role={discount.providerRole ?? "plotted"}
                 opacity={hoveredLabelId() === null || hoveredLabelId() === discount.pointId ? 1 : 0.2}
               >
-                {/* Plotted discounts terminate at the real uPlot dot. An
-                    alternative provider discount gets its own clean endpoint
-                    circle because its effective cost is not the plotted dot.
-                    Paint dashes first and explicitly reset circle dashing. */}
+                {/* The model's plotted dot is the effective endpoint for every
+                    discount line, including alternative-provider metadata.
+                    Paint dashes first and explicitly reset circle dashing so
+                    the source endpoint cannot be cut into chunks. */}
                 {segment && (
                   <line
                     x1={segment.x1}
@@ -1735,23 +1742,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                     transition: "cx 180ms ease-out, cy 180ms ease-out",
                   }}
                 />
-                {discount.providerRole === "alternative" && (
-                  <circle
-                    cx={discount.effectiveLeft}
-                    cy={discount.top}
-                    r={MODEL_DOT_RADIUS}
-                    fill={discount.color}
-                    stroke={discount.color}
-                    stroke-width={POINT_STROKE_WIDTH}
-                    stroke-dasharray="none"
-                    data-testid="discount-endpoint-dot"
-                    data-discount-endpoint="effective"
-                    style={{
-                      "pointer-events": "none",
-                      transition: "cx 180ms ease-out, cy 180ms ease-out",
-                    }}
-                  />
-                )}
               </g>
             );
           }}
@@ -1792,26 +1782,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 data-testid="discount-endpoint-hit"
                 data-discount-id={discount.id}
                 data-discount-endpoint="pre"
-                onMouseEnter={() => setDiscountEndpointHover(discount, "pre")}
+                onMouseEnter={() => setDiscountEndpointHover(discount)}
                 onMouseLeave={() => clearDiscountEndpointHover(`${discount.id}:pre`)}
               />
-              {discount.providerRole === "alternative" && (
-                <span
-                  class="pointer-events-auto absolute z-3"
-                  style={{
-                    left: `${discount.effectiveLeft - DOT_HIT_RADIUS}px`,
-                    top: `${discount.top - DOT_HIT_RADIUS}px`,
-                    width: `${DOT_HIT_RADIUS * 2}px`,
-                    height: `${DOT_HIT_RADIUS * 2}px`,
-                    transition: "left 180ms ease-out, top 180ms ease-out",
-                  }}
-                  data-testid="discount-endpoint-hit"
-                  data-discount-id={discount.id}
-                  data-discount-endpoint="effective"
-                  onMouseEnter={() => setDiscountEndpointHover(discount, "effective")}
-                  onMouseLeave={() => clearDiscountEndpointHover(`${discount.id}:effective`)}
-                />
-              )}
             </>
           );
         }}

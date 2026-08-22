@@ -283,7 +283,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
     dispose();
   });
 
-  it("renders the DeepSeek discount endpoint as a solid dot with a clean connector gap", async () => {
+  it("renders the DeepSeek discount endpoint as a solid dot without a connector gap", async () => {
     const { container, dispose } = mount(() => (
       <BenchmarkScatterChart
         points={() => [{
@@ -304,11 +304,11 @@ describe("BenchmarkScatterChart discount annotations", () => {
     const endpoint = container.querySelector("[data-testid='discount-endpoint-dot']")!;
     expect(line.getAttribute("stroke-dasharray")).toBe("4 4");
     expect(endpoint.getAttribute("stroke-dasharray")).toBe("none");
-    expect(Math.abs(Number(endpoint.getAttribute("cx")) - Number(line.getAttribute("x1")))).toBeGreaterThan(5);
+    expect(Number(line.getAttribute("x1"))).toBeCloseTo(Number(endpoint.getAttribute("cx")), 5);
     dispose();
   });
 
-  it("paints and routes an alternative discount endpoint separately from the plotted dot", async () => {
+  it("uses the plotted dot as the endpoint for an alternative-provider discount", async () => {
     const { container, dispose } = mountSizedChart(() => (
       <BenchmarkScatterChart
         points={() => [{
@@ -327,16 +327,11 @@ describe("BenchmarkScatterChart discount annotations", () => {
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     const discount = container.querySelector("[data-testid='discount-line']")!;
     expect(discount.getAttribute("data-discount-provider-role")).toBe("alternative");
-    expect(discount.querySelectorAll("[data-testid='discount-endpoint-dot']")).toHaveLength(2);
-    expect(discount.querySelector("[data-discount-endpoint='effective']")?.getAttribute("stroke-dasharray")).toBe("none");
+    expect(discount.querySelectorAll("[data-testid='discount-endpoint-dot']")).toHaveLength(1);
+    expect(discount.querySelector("[data-discount-endpoint='effective']")).toBeNull();
+    expect(container.querySelectorAll("[data-testid='discount-endpoint-hit'][data-discount-endpoint='effective']")).toHaveLength(0);
     const line = discount.querySelector("line")!;
-    const effective = discount.querySelector("[data-discount-endpoint='effective']")!;
-    expect(Math.abs(Number(line.getAttribute("x2")) - Number(effective.getAttribute("cx")))).toBeGreaterThan(1);
-    const effectiveHit = container.querySelector("[data-testid='discount-endpoint-hit'][data-discount-endpoint='effective']") as HTMLElement;
-    effectiveHit.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
-    expect(container.querySelector("[data-testid='hovered-dot']")).not.toBeNull();
-    expect(container.querySelector("[data-testid='hover-axis-readouts']")?.textContent).toContain("$4");
-    effectiveHit.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+    expect(Math.abs(Number(line.getAttribute("x2")) - Number(line.getAttribute("x1")))).toBeGreaterThan(1);
     dispose();
   });
 
