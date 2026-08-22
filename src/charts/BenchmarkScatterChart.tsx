@@ -226,14 +226,15 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       row[currentSeries.frontierIds.length + currentSeries.variantGroups.reduce((n, group) => n + group.members.length, 0) + index * 2 + 1] = discount.y;
       return row;
     });
-    const dark = themeStyles().dark;
-    const pointColorKeys = [...new Set(
-      currentSeries.brands.map((brand) => modelBrandColor(brand, dark)),
-    )];
-    const pointRows = pointColorKeys.map((color) => {
+    // Keep one uPlot series per brand, even when two brands share a theme
+    // color (for example OpenAI and xAI in dark mode). The series options and
+    // aligned data must have identical lengths or uPlot's scale pass can read
+    // an undefined row and leave the entire chart at zero dimensions.
+    const pointBrands = [...new Set(currentSeries.brands)];
+    const pointRows = pointBrands.map((brandKey) => {
       const row = new Array<number | null>(dataX.length).fill(null);
       currentSeries.brands.forEach((brand, index) => {
-        if (modelBrandColor(brand, dark) === color) row[actualOffset + index] = currentSeries.y[index]!;
+        if (brand === brandKey) row[actualOffset + index] = currentSeries.y[index]!;
       });
       return row;
     });
