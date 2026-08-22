@@ -1,4 +1,4 @@
-import { For, Show, createEffect, createSignal, on, onCleanup, onMount } from "solid-js";
+import { For, Show, createEffect, createMemo, createSignal, on, onCleanup, onMount } from "solid-js";
 import { Crown } from "lucide-solid";
 import uPlot, { type Options } from "uplot";
 import { isDarkTheme } from "../components/ThemeToggle";
@@ -728,12 +728,18 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   const chartHeight = () => props.height ?? (typeof window !== "undefined" && window.innerWidth < 640 ? 520 : 700);
 
+  const applyPlotEmphasis = () => {
+    const canvas = container?.querySelector<HTMLCanvasElement>("canvas");
+    if (canvas) canvas.style.opacity = hoveredLabelId() === null ? "1" : "0.2";
+  };
+
   const createPlot = () => {
     if (!container) return;
     const hoveredId = hoveredIndex === null ? null : currentSeries.ids[hoveredIndex];
     const scrollY = typeof window !== "undefined" ? window.scrollY : 0;
     plot?.destroy();
     plot = new uPlot(buildOptions(), dataFor(), container);
+    applyPlotEmphasis();
     hoveredIndex = hoveredId === undefined || hoveredId === null
       ? null
       : currentSeries.ids.indexOf(hoveredId);
@@ -836,6 +842,59 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   createEffect(on(() => [props.xAxisLabel(), props.yAxisLabel()] as const, createPlot, { defer: true }));
 
+  createEffect(() => {
+    hoveredLabelId();
+    applyPlotEmphasis();
+  });
+
+  const focusedGeometry = createMemo(() => {
+    const id = hoveredLabelId();
+    const labels = labelPositions();
+    if (id === null || !plot || !labels.some((label) => label.id === id)) return null;
+    const index = currentSeries.ids.indexOf(id);
+    if (index < 0) return null;
+    const currentPlot = plot;
+    const point = pointPosition(currentPlot, index);
+    if (!point) return null;
+    const dark = themeStyles().dark;
+    const connectors: { x1: number; y1: number; x2: number; y2: number; color: string }[] = [];
+    const group = currentSeries.variantGroups.find((candidate) =>
+      candidate.members.some((member) => member.id === id),
+    );
+    if (group) {
+      const memberPoints = group.members
+        .map((member) => {
+          const memberIndex = currentSeries.ids.indexOf(member.id);
+          return memberIndex < 0 ? null : pointPosition(currentPlot, memberIndex);
+        })
+        .filter((position): position is { left: number; top: number } => position !== null);
+      for (let memberIndex = 1; memberIndex < memberPoints.length; memberIndex += 1) {
+        const previous = memberPoints[memberIndex - 1]!;
+        const current = memberPoints[memberIndex]!;
+        connectors.push({
+          x1: previous.left,
+          y1: previous.top,
+          x2: current.left,
+          y2: current.top,
+          color: effortGroupColor(group.key, dark),
+        });
+      }
+    }
+    const discountDots = currentSeries.discounts
+      .filter((discount) => discount.pointId === id)
+      .flatMap((discount) => {
+        const pre = plotPosition(currentPlot.valToPos(discount.preX, "x"), currentPlot.valToPos(discount.y, "y"));
+        const effective = plotPosition(currentPlot.valToPos(discount.effectiveX, "x"), currentPlot.valToPos(discount.y, "y"));
+        return pre && effective ? [pre, effective] : [];
+      });
+    return {
+      point,
+      pointColor: modelBrandColor(currentSeries.brands[index] ?? "other", dark),
+      connectors,
+      discountDots,
+    };
+  });
+
   return (
     <div
       class="relative w-full"
@@ -847,7 +906,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       <div
         ref={container}
         class="w-full"
-        style={{ opacity: hoveredLabelId() === null ? 1 : 0.2 }}
         data-testid="benchmark-scatter-plot"
       />
       <svg
@@ -865,6 +923,45 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
               <circle cx={label.anchorLeft} cy={label.anchorTop} r="8" fill="none" stroke={label.color} stroke-width="2" data-testid="label-hover-highlight" />
             ) : null;
           }}
+        </Show>
+        <Show when={focusedGeometry()}>
+          {(focused) => (
+            <>
+              <For each={focused().connectors}>
+                {(segment) => (
+                  <line
+                    x1={segment.x1}
+                    y1={segment.y1}
+                    x2={segment.x2}
+                    y2={segment.y2}
+                    stroke={segment.color}
+                    stroke-width="2"
+                    data-testid="focused-connector"
+                  />
+                )}
+              </For>
+              <For each={focused().discountDots}>
+                {(dot) => (
+                  <circle
+                    cx={dot.left}
+                    cy={dot.top}
+                    r={DISCOUNT_DOT_SIZE / 2}
+                    fill={themeStyles().discountColor}
+                    stroke={themeStyles().discountColor}
+                    data-testid="focused-discount-dot"
+                  />
+                )}
+              </For>
+              <circle
+                cx={focused().point.left}
+                cy={focused().point.top}
+                r={DOT_SIZE / 2}
+                fill={focused().pointColor}
+                stroke={focused().pointColor}
+                data-testid="focused-model-dot"
+              />
+            </>
+          )}
         </Show>
         <Show when={props.showFrontier?.() ?? true}>
           <For each={pointDecorations()}>
