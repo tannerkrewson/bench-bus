@@ -214,9 +214,12 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect(arrows[0]?.getAttribute("data-discount-id")).toBe("discounted-model");
     expect(arrows[0]?.getAttribute("data-discount-percentage")).toBe("40");
     expect(arrows[0]?.querySelector("line")).not.toBeNull();
-    expect(arrows[0]?.querySelector("line")?.getAttribute("stroke-dasharray")).toBe("1 4");
+    expect(arrows[0]?.querySelector("line")?.getAttribute("stroke-dasharray")).toBe("4 4");
+    expect(container.querySelectorAll("[data-testid='focused-discount-dot']")).toHaveLength(0);
+    const line = arrows[0]?.querySelector("line");
+    expect([line?.getAttribute("x1"), line?.getAttribute("x2"), line?.getAttribute("y1")].every((value) => Number.isFinite(Number(value)))).toBe(true);
     expect(arrows[0]?.querySelector("line")?.getAttribute("stroke-width")).toBe("1");
-    expect(arrows[0]?.getAttribute("stroke-dasharray")).toBe("1 4");
+    expect(arrows[0]?.getAttribute("stroke-dasharray")).toBe("4 4");
     expect(arrows[0]?.getAttribute("stroke-width")).toBe("1");
     expect(arrows[0]?.querySelector("path")).toBeNull();
 

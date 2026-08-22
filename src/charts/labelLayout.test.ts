@@ -107,6 +107,33 @@ describe("layoutModelLabels", () => {
     expect(label!.top + label!.height < 94 || label!.top > 106).toBe(true);
   });
 
+  it("keeps labels clear of larger crown obstacles", () => {
+    const [label] = layoutModelLabels(
+      [{ id: "frontier", label: "Frontier model", anchorLeft: 150, anchorTop: 100, color: "red", priority: 1 }],
+      bounds,
+      { obstacles: [{ id: "crown:frontier", left: 150, top: 82, radius: 11 }] },
+    );
+    expect(label).toBeDefined();
+    const closestLeft = Math.min(Math.max(150, label!.left), label!.left + label!.width);
+    const closestTop = Math.min(Math.max(82, label!.top), label!.top + label!.height);
+    expect(Math.hypot(150 - closestLeft, 82 - closestTop)).toBeGreaterThanOrEqual(11);
+  });
+
+  it("moves a label rather than routing its leader through another dot", () => {
+    const [label] = layoutModelLabels(
+      [{ id: "owner", label: "Owner model", anchorLeft: 100, anchorTop: 100, color: "red" }],
+      bounds,
+      {
+        obstacles: [{ id: "other", left: 115, top: 100 }],
+        leaderObstacles: [{ id: "other", left: 115, top: 100 }],
+      },
+    );
+    expect(label).toBeDefined();
+    // The default right-side candidate would terminate immediately beside the
+    // unrelated dot; the collision pass must choose the opposite side/offset.
+    expect(label!.left + label!.width < 107 || label!.top !== 90).toBe(true);
+  });
+
   it("honors an opposite-side preference for a hovered label", () => {
     const [label] = layoutModelLabels(
       [{ id: "hovered", label: "Hovered model", anchorLeft: 150, anchorTop: 100, color: "red" }],

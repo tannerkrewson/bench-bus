@@ -52,6 +52,8 @@ export interface LabelLayoutPoint {
   id: string;
   left: number;
   top: number;
+  /** Optional collision radius, used for larger crown glyphs. */
+  radius?: number;
 }
 
 export interface LabelLayoutLine {
@@ -66,6 +68,8 @@ export interface LabelLayoutOptions {
   obstacles?: readonly LabelLayoutPoint[];
   /** Discount/annotation lines that labels should not cover. */
   lines?: readonly LabelLayoutLine[];
+  /** Dot/crown obstacles that leader lines must not cross. */
+  leaderObstacles?: readonly LabelLayoutPoint[];
   /** Overrides the first side tried for a label (used while hovering it). */
   preferredSides?: ReadonlyMap<string, "left" | "right">;
 }
@@ -170,7 +174,44 @@ function overlaps(a: PositionedLabel, b: PositionedLabel): boolean {
 function coversPoint(label: PositionedLabel, point: LabelLayoutPoint): boolean {
   const closestLeft = clamp(point.left, label.left, label.left + label.width);
   const closestTop = clamp(point.top, label.top, label.top + label.height);
-  return Math.hypot(point.left - closestLeft, point.top - closestTop) < LABEL_DOT_RADIUS;
+  return Math.hypot(point.left - closestLeft, point.top - closestTop) < (point.radius ?? LABEL_DOT_RADIUS);
+}
+
+function labelLeaderEndpoint(label: PositionedLabel): { left: number; top: number } {
+  return {
+    left: clamp(label.anchorLeft, label.left, label.left + label.width),
+    top: clamp(label.anchorTop, label.top, label.top + label.height),
+  };
+}
+
+function distanceToSegment(
+  point: LabelLayoutPoint,
+  start: { left: number; top: number },
+  end: { left: number; top: number },
+): number {
+  const dx = end.left - start.left;
+  const dy = end.top - start.top;
+  const lengthSquared = dx * dx + dy * dy;
+  if (lengthSquared === 0) return Math.hypot(point.left - start.left, point.top - start.top);
+  const progress = clamp(
+    ((point.left - start.left) * dx + (point.top - start.top) * dy) / lengthSquared,
+    0,
+    1,
+  );
+  return Math.hypot(
+    point.left - (start.left + progress * dx),
+    point.top - (start.top + progress * dy),
+  );
+}
+
+function leaderCrossesPoint(label: PositionedLabel, point: LabelLayoutPoint): boolean {
+  if (point.id === label.id) return false;
+  const endpoint = labelLeaderEndpoint(label);
+  return distanceToSegment(
+    point,
+    { left: label.anchorLeft, top: label.anchorTop },
+    endpoint,
+  ) < (point.radius ?? LABEL_DOT_RADIUS);
 }
 
 function coversLine(label: PositionedLabel, line: LabelLayoutLine): boolean {
@@ -271,6 +312,7 @@ export function layoutModelLabels(
       if (obstacles.some((point) => point.id !== anchor.id && coversPoint(positioned, point))) continue;
       if (coversPoint(positioned, { id: anchor.id, left: anchor.anchorLeft, top: anchor.anchorTop })) continue;
       if (options.lines?.some((line) => coversLine(positioned, line))) continue;
+      if (options.leaderObstacles?.some((point) => leaderCrossesPoint(positioned, point))) continue;
       const targetLeft = preferredSide === "left"
         ? anchor.anchorLeft - width - sideOffset
         : anchor.anchorLeft + sideOffset;

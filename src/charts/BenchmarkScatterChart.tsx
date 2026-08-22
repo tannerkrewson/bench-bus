@@ -39,18 +39,17 @@ export interface BenchmarkScatterChartProps {
 }
 
 const DOT_SIZE = 9;
-const DISCOUNT_DOT_SIZE = 7;
 const POINT_STROKE_WIDTH = 1.5;
 // uPlot's point size is a diameter, while SVG circle r is a radius. Keep
 // overlay emphasis circles exactly the same size as the canvas points so
 // hover never creates a second, visibly larger dot.
 const MODEL_DOT_RADIUS = (DOT_SIZE - POINT_STROKE_WIDTH) / 2;
-const DISCOUNT_DOT_RADIUS = (DISCOUNT_DOT_SIZE - POINT_STROKE_WIDTH) / 2;
 const MODEL_LABEL_FONT_SIZE = 13;
 const MODEL_LABEL_LINE_HEIGHT = 20;
 const DOT_HIT_RADIUS = 14;
-const LABEL_DOT_RADIUS = 8;
-const LEADER_LINE_GAP = 3;
+// Keep leaders visually attached to the real dot edge; the layout collision
+// pass, not a large decorative gap, keeps them out of nearby dots.
+const LEADER_LINE_GAP = 1;
 
 /** Geometry for the leftward horizontal and downward vertical cursor guides. */
 export interface CrosshairGuideGeometry {
@@ -385,19 +384,21 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     const discountPathSlots = currentSeries.discounts.flatMap((discount) => [discount.preX, discount.effectiveX]);
     const pathX = [...pathIds.map((id) => pointById.get(id)?.x ?? 0), ...discountPathSlots];
     const pathLength = pathX.length;
+    // Discount endpoints are part of pathX solely to draw the connector.
+    // Do not append a separate endpoint series: the old duplicate pre-price
+    // series created an unintended visible/hittable dot and tooltip target.
     const discountOffset = pathLength;
-    const actualOffset = discountOffset + currentSeries.discounts.length;
+    const actualOffset = discountOffset;
     const actualLength = currentSeries.ids.length;
     const dataX = [
       ...pathX,
-      ...currentSeries.discounts.map((discount) => discount.preX),
       ...currentSeries.x,
     ];
     const frontierY = [
       ...(props.showFrontier?.() ?? false)
         ? currentSeries.frontierIds.map((id) => pointById.get(id)?.y ?? null)
         : new Array<number | null>(currentSeries.frontierIds.length).fill(null),
-      ...new Array<number | null>(pathLength - currentSeries.frontierIds.length + currentSeries.discounts.length + actualLength).fill(null),
+      ...new Array<number | null>(pathLength - currentSeries.frontierIds.length + actualLength).fill(null),
     ];
     let groupOffset = 0;
     const connectorRows = currentSeries.variantGroups.map((group) => {
@@ -424,16 +425,11 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       });
       return row;
     });
-    const discountDots = currentSeries.discounts.map((discount, index) => {
-      const row = new Array<number | null>(dataX.length).fill(null);
-      row[discountOffset + index] = discount.y;
-      return row;
-    });
     // uPlot accepts null-gapped plain arrays at runtime; its typings only
     // cover TypedArrays, so the sparse rows are cast at this boundary.
     // Pareto is deliberately the final data row so uPlot paints it above all
     // model-family connectors and discount segments.
-    return [Float64Array.from(dataX), ...connectorRows, ...discountRows, ...pointRows, ...discountDots, frontierY] as unknown as uPlot.AlignedData;
+    return [Float64Array.from(dataX), ...connectorRows, ...discountRows, ...pointRows, frontierY] as unknown as uPlot.AlignedData;
   };
 
   type HoverTarget = {
@@ -464,7 +460,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       0,
     );
     const discountOffset = connectorLength + currentSeries.discounts.length * 2;
-    const actualOffset = discountOffset + currentSeries.discounts.length;
+    const actualOffset = discountOffset;
     const targets: (HoverTarget & { distance: number })[] = [];
     currentSeries.ids.forEach((id, index) => {
       const x = currentSeries.x[index];
@@ -481,30 +477,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         dataIndex: actualOffset + index,
         distance: Math.hypot(plotLeft - pointer.left, plotTop - pointer.top),
       });
-    });
-    currentSeries.discounts.forEach((discount, index) => {
-      const plotTop = u.valToPos(discount.y, "y");
-      const preLeft = u.valToPos(discount.preX, "x");
-      const effectiveLeft = u.valToPos(discount.effectiveX, "x");
-      if (plotTop === undefined || preLeft === undefined || effectiveLeft === undefined) return;
-      targets.push(
-        {
-          pointIndex: currentSeries.ids.indexOf(discount.pointId),
-          id: discount.pointId,
-          plotLeft: preLeft,
-          plotTop,
-          dataIndex: discountOffset + index,
-          distance: Math.hypot(preLeft - pointer.left, plotTop - pointer.top),
-        },
-        {
-          pointIndex: currentSeries.ids.indexOf(discount.pointId),
-          id: discount.pointId,
-          plotLeft: effectiveLeft,
-          plotTop,
-          dataIndex: connectorLength + index * 2 + 1,
-          distance: Math.hypot(effectiveLeft - pointer.left, plotTop - pointer.top),
-        },
-      );
     });
     const nearest = targets.reduce<((typeof targets)[number]) | null>(
       (best, target) => target.distance < (best?.distance ?? Infinity) ? target : best,
@@ -574,9 +546,14 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       }];
     });
     const retainedCrownIds = new Set(selectCrownPoints(allCrownDecorations, crownDots).map((crown) => crown.id));
-    setPointDecorations((props.showCrowns?.() ?? true)
-      ? allCrownDecorations.filter((crown) => retainedCrownIds.has(crown.id))
-      : []);
+    const retainedCrowns = allCrownDecorations.filter((crown) => retainedCrownIds.has(crown.id));
+    setPointDecorations((props.showCrowns?.() ?? true) ? retainedCrowns : []);
+    const crownObstacles = retainedCrowns.map((crown) => ({
+      id: `crown:${crown.id}`,
+      left: crown.left,
+      top: crown.top - 18,
+      radius: 11,
+    }));
     const discountGeometry = currentSeries.discounts.flatMap((discount) => {
       const preLeft = overRect.left - rootRect.left + currentPlot.valToPos(discount.preX, "x");
       const effectiveLeft = overRect.left - rootRect.left + currentPlot.valToPos(discount.effectiveX, "x");
@@ -647,7 +624,11 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         top: overRect.top - rootRect.top + currentPlot.valToPos(y, "y"),
       }];
     });
-    const baseLabels = layoutModelLabels(anchors, bounds, { obstacles, lines: discountLines });
+    const baseLabels = layoutModelLabels(anchors, bounds, {
+      obstacles: [...obstacles, ...crownObstacles],
+      lines: discountLines,
+      leaderObstacles: [...obstacles, ...crownObstacles],
+    });
     const labels = baseLabels;
     setLabelPositions(props.showLabels?.() ?? true ? labels : []);
     // Re-read the dot position after uPlot has laid out the plot. This keeps
@@ -940,9 +921,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           label: `${discount.percentage}% discount: ${discount.providerName ?? "provider"}`,
           stroke: groupColor(discount.groupKey, styles.dark),
           width: 1,
-          // Dotted, rather than solid or Pareto-dashed, so price adjustments
-          // have an unambiguous visual grammar.
-          dash: [1, 4],
+          // Use one simple, conventional dash rhythm for every discount
+          // connector; keep it distinct from the Pareto frontier dash.
+          dash: [4, 4],
           points: { show: false },
         })),
         ...pointGroups.map((groupKey) => {
@@ -954,18 +935,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
             points: { show: true, size: DOT_SIZE, width: POINT_STROKE_WIDTH, stroke: color, fill: color },
           };
         }),
-        ...currentSeries.discounts.map((discount) => ({
-          label: `${discount.percentage}% discount before price`,
-          stroke: groupColor(discount.groupKey, styles.dark),
-          width: 0,
-          points: {
-            show: true,
-            size: DISCOUNT_DOT_SIZE,
-            width: POINT_STROKE_WIDTH,
-            stroke: groupColor(discount.groupKey, styles.dark),
-            fill: groupColor(discount.groupKey, styles.dark),
-          },
-        })),
+
         {
           label: "Pareto frontier",
           // This is the last series so uPlot paints the opaque frontier above
@@ -1338,20 +1308,11 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         });
       }
     }
-    const discountDots = currentSeries.discounts
-      .filter((discount) => discount.pointId === id)
-      .flatMap((discount) => {
-        const pre = plotPosition(currentPlot.valToPos(discount.preX, "x"), currentPlot.valToPos(discount.y, "y"));
-        const effective = plotPosition(currentPlot.valToPos(discount.effectiveX, "x"), currentPlot.valToPos(discount.y, "y"));
-        const color = groupColor(discount.groupKey, dark);
-        return pre && effective ? [{ ...pre, color }, { ...effective, color }] : [];
-      });
     return {
       point,
       pointColor: groupColor(currentSeries.groupKeys[index] ?? modelGroupKey(currentSeries.labels[index] ?? id, id), dark),
       familyDots,
       connectors,
-      discountDots,
     };
   });
 
@@ -1454,19 +1415,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                   />
                 )}
               </For>
-              <For each={focused().discountDots}>
-                {(dot) => (
-                  <circle
-                    cx={dot.left}
-                    cy={dot.top}
-                    r={DISCOUNT_DOT_RADIUS}
-                    fill={dot.color}
-                    stroke={dot.color}
-                    stroke-width={POINT_STROKE_WIDTH}
-                    data-testid="focused-discount-dot"
-                  />
-                )}
-              </For>
+
               <For each={focused().familyDots}>
                 {(dot) => (
                   <circle
@@ -1510,7 +1459,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 fill="none"
                 stroke={discount.color}
                 stroke-width="1"
-                stroke-dasharray="1 4"
+                stroke-dasharray="4 4"
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 data-testid="discount-line"
@@ -1525,7 +1474,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                   x2={discount.effectiveLeft}
                   y2={discount.top}
                   stroke-width="1"
-                  stroke-dasharray="1 4"
+                  stroke-dasharray="4 4"
                 />
               </g>
             );
@@ -1545,14 +1494,13 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
               const deltaLeft = endLeft - label.anchorLeft;
               const deltaTop = endTop - label.anchorTop;
               const distance = Math.hypot(deltaLeft, deltaTop);
-              // Start the leader beyond the dot edge, rather than at its
-              // center. Layout already keeps labels clear of all obstacles;
-              // this small gap prevents the line from visually touching the
-              // dot while retaining leaders for short connections.
+              // Start just beyond the rendered dot edge. The layout collision
+              // pass rejects candidate segments that cross another dot/crown,
+              // so this remains close without drawing through the plot.
               const directionLeft = distance > 0 ? deltaLeft / distance : 1;
               const directionTop = distance > 0 ? deltaTop / distance : 0;
-              const startLeft = label.anchorLeft + directionLeft * (LABEL_DOT_RADIUS + LEADER_LINE_GAP);
-              const startTop = label.anchorTop + directionTop * (LABEL_DOT_RADIUS + LEADER_LINE_GAP);
+              const startLeft = label.anchorLeft + directionLeft * (DOT_SIZE / 2 + LEADER_LINE_GAP);
+              const startTop = label.anchorTop + directionTop * (DOT_SIZE / 2 + LEADER_LINE_GAP);
               return (
                 <line
                   x1={startLeft}
