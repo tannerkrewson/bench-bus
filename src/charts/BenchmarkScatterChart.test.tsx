@@ -315,6 +315,94 @@ describe("BenchmarkScatterChart discount annotations", () => {
     familyLabel.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
     expect(otherLabel.style.opacity).toBe("1");
     expect(container.querySelectorAll("[data-testid='focused-connector']")).toHaveLength(0);
+
+    const connector = container.querySelector("[data-testid='family-connector-hit']") as SVGLineElement;
+    expect(connector).not.toBeNull();
+    connector.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    expect(container.querySelector("[data-hovered-label-id='opus-high']")).not.toBeNull();
+    expect(familyLabel.style.opacity).toBe("1");
+    expect(otherLabel.style.opacity).toBe("0.2");
+    expect(container.querySelectorAll("[data-testid='focused-connector']")).toHaveLength(1);
+    expect(container.querySelectorAll("[data-testid='focused-model-dot']")).toHaveLength(2);
+    connector.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+    expect(container.querySelector("[data-hovered-label-id]")).toBeNull();
+    expect(otherLabel.style.opacity).toBe("1");
+    expect(container.querySelectorAll("[data-testid='focused-connector']")).toHaveLength(0);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    dispose();
+  });
+
+  it("keeps raw overlay pointer coordinates in uPlot transform space", async () => {
+    const { container, dispose } = mountSizedChart(() => (
+      <BenchmarkScatterChart
+        points={() => [
+          { id: "first", label: "First", x: 4, y: 60 },
+          { id: "second", label: "Second", x: 12, y: 80 },
+        ]}
+        scale={() => "linear"}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        height={320}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const root = container.querySelector("[data-testid='benchmark-scatter']") as HTMLElement;
+    const vertical = container.querySelector(".u-cursor-x") as HTMLElement;
+    const horizontal = container.querySelector(".u-cursor-y") as HTMLElement;
+    root.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: 123, clientY: 87 }));
+    expect(vertical.style.left).toBe("0px");
+    expect(vertical.style.transform).toBe("translate(123px,0px)");
+    expect(horizontal.style.transform).toBe("translate(0px,87px)");
+    expect(vertical.style.height).toBe("233px");
+    const label = container.querySelector("[data-testid='model-label']") as HTMLElement;
+    expect(label).not.toBeNull();
+    const labelLeft = Number.parseFloat(label.style.left) + 2;
+    const labelTop = Number.parseFloat(label.style.top) + 2;
+    label.dispatchEvent(new MouseEvent("pointermove", {
+      bubbles: true,
+      clientX: labelLeft,
+      clientY: labelTop,
+    }));
+    expect(container.querySelector("[data-testid='hovered-dot']")).toBeNull();
+    expect(vertical.style.left).toBe("0px");
+    expect(vertical.style.transform).toBe(`translate(${labelLeft}px,0px)`);
+    expect(horizontal.style.transform).toBe(`translate(0px,${labelTop}px)`);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    dispose();
+  });
+
+  it("snaps guides and the hover circle only for a direct dot hit", async () => {
+    const { container, dispose } = mountSizedChart(() => (
+      <BenchmarkScatterChart
+        points={() => [
+          { id: "opus-low", label: "Opus low", x: 4, y: 60, effortGroup: "opus", effort: "low" },
+          { id: "opus-high", label: "Opus high", x: 8, y: 80, effortGroup: "opus", effort: "high" },
+          { id: "other", label: "Other", x: 14, y: 70 },
+        ]}
+        scale={() => "linear"}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        height={320}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const familyLabel = container.querySelector("[data-testid='model-label'][data-model-id='opus-high']") as HTMLElement;
+    familyLabel.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    const dot = container.querySelector("[data-testid='focused-model-dot'][data-model-id='opus-low']") as SVGCircleElement;
+    const left = Number.parseFloat(dot.getAttribute("cx")!);
+    const top = Number.parseFloat(dot.getAttribute("cy")!);
+    const root = container.querySelector("[data-testid='benchmark-scatter']") as HTMLElement;
+    root.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: left, clientY: top }));
+    expect(container.querySelector("[data-testid='hovered-dot']")).not.toBeNull();
+    const vertical = container.querySelector(".u-cursor-x") as HTMLElement;
+    const horizontal = container.querySelector(".u-cursor-y") as HTMLElement;
+    expect(vertical.style.transform).toBe(`translate(${left}px,0px)`);
+    expect(horizontal.style.transform).toBe(`translate(0px,${top}px)`);
+    root.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: left + 40, clientY: top + 40 }));
+    expect(container.querySelector("[data-testid='hovered-dot']")).toBeNull();
+    expect(vertical.style.transform).toBe(`translate(${left + 40}px,0px)`);
+    expect(horizontal.style.transform).toBe(`translate(0px,${top + 40}px)`);
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     dispose();
   });

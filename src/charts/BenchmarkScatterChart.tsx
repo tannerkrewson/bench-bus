@@ -204,7 +204,12 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   const [pointDecorations, setPointDecorations] = createSignal<{ id: string; left: number; top: number; color: string }[]>([]);
   const [discountDecorations, setDiscountDecorations] = createSignal<DiscountDecoration[]>([]);
   const [plotXSnapshot, setPlotXSnapshot] = createSignal("");
+  const [plotVersion, setPlotVersion] = createSignal(0);
   let hoveredLabelBounds: { left: number; top: number; right: number; bottom: number } | null = null;
+  // Connector hit lines sit above the uPlot surface, so retain their owner
+  // independently from the cursor state. Labels use the same family focus,
+  // but never own a dot tooltip or snapped cursor.
+  let hoveredConnectorId: string | null = null;
   let baseSeriesAlphas: number[] = [];
 
   const refreshSeries = () => {
@@ -391,8 +396,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     return undefined;
   };
 
-  const hoveredTarget = (u: uPlot): HoverTarget | null => {
-    const pointer = pointerPlotPosition(u);
+  const hoveredTarget = (u: uPlot, pointer = pointerPlotPosition(u)): HoverTarget | null => {
     if (!pointer) return null;
     const connectorLength = currentSeries.frontierIds.length + currentSeries.variantGroups.reduce(
       (total, group) => total + group.members.length,
@@ -594,6 +598,18 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     props.onHover?.(null);
   };
 
+  const setConnectorHover = (id: string) => {
+    hoveredConnectorId = id;
+    setModelLabelHover(id);
+  };
+
+  const clearConnectorHover = (id: string) => {
+    if (hoveredConnectorId !== id) return;
+    hoveredConnectorId = null;
+    setLabelHover(null);
+    props.onHover?.(null);
+  };
+
   const cursorPosition = (u: uPlot) => {
     const over = container?.querySelector<HTMLElement>(".u-over");
     const parent = container?.parentElement;
@@ -609,18 +625,17 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   // uPlot updates cursor.left/top to the snapped dot position. Its last DOM
   // event still carries the pointer's actual position, which is needed to
   // undo that snap as soon as the pointer leaves the hit radius.
+  /** Mouse coordinates in uPlot's .u-over coordinate space. */
   const pointerEventPosition = (u: uPlot) => {
     const event = (u.cursor as uPlot.Cursor & { event?: MouseEvent }).event;
     const over = container?.querySelector<HTMLElement>(".u-over");
-    const parent = container?.parentElement;
-    if (!event || !over || !parent || !Number.isFinite(event.clientX) || !Number.isFinite(event.clientY)) {
+    if (!event || !over || !Number.isFinite(event.clientX) || !Number.isFinite(event.clientY)) {
       return undefined;
     }
-    const parentRect = parent.getBoundingClientRect();
     const overRect = over.getBoundingClientRect();
     return {
-      left: overRect.left - parentRect.left + event.clientX - overRect.left,
-      top: overRect.top - parentRect.top + event.clientY - overRect.top,
+      left: event.clientX - overRect.left,
+      top: event.clientY - overRect.top,
     };
   };
 
@@ -647,6 +662,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   };
 
   const updateLabelHover = (pointer: { left: number; top: number } | undefined) => {
+    // Pointer movement over a connector belongs to its family hit target;
+    // do not let the root overlay's passive bookkeeping clear that focus.
+    if (hoveredConnectorId !== null) return;
     const currentId = hoveredLabelId();
     const padding = 10;
     const contains = (rect: { left: number; top: number; right: number; bottom: number }) =>
@@ -682,17 +700,26 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     setHoveredLabelId(nextId);
   };
 
-  const applyCrosshairDirections = (u: uPlot) => {
+  const applyCrosshairDirections = (
+    u: uPlot,
+    position: { left?: number | null; top?: number | null } = u.cursor,
+  ) => {
     const over = container?.querySelector<HTMLElement>(".u-over");
     const horizontal = container?.querySelector<HTMLElement>(".u-cursor-y");
     const vertical = container?.querySelector<HTMLElement>(".u-cursor-x");
     if (!over || !horizontal || !vertical) return;
-    const geometry = crosshairGuideGeometry(u.cursor.left, u.cursor.top, over.clientHeight);
+    const geometry = crosshairGuideGeometry(position.left, position.top, over.clientHeight);
     horizontal.style.left = `${geometry.horizontal.left}px`;
     horizontal.style.width = `${geometry.horizontal.width}px`;
-    vertical.style.left = `${geometry.vertical.left}px`;
+    vertical.style.left = "0px";
     vertical.style.top = `${geometry.vertical.top}px`;
     vertical.style.height = `${geometry.vertical.height}px`;
+    // uPlot positions these elements with transform(). Setting left as well
+    // would apply the x coordinate twice (the reported ~2x offset). Keep the
+    // library's transform contract and update it explicitly for overlay events
+    // that do not pass through uPlot's .u-over handler.
+    vertical.style.transform = `translate(${geometry.vertical.left}px,0px)`;
+    horizontal.style.transform = `translate(0px,${geometry.horizontal.width === 0 ? 0 : geometry.vertical.top}px)`;
   };
 
   const buildOptions = (): Options => {
@@ -849,31 +876,32 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           (u) => {
             applyCrosshairDirections(u);
             const pointer = u.cursor.left === null || u.cursor.top === null ? undefined : cursorPosition(u);
-            const rawPointer = pointerEventPosition(u) ?? pointer;
+            const rawPlotPointer = pointerEventPosition(u) ?? (() => {
+              const over = container?.querySelector<HTMLElement>(".u-over");
+              const parent = container?.parentElement;
+              const parentRect = parent?.getBoundingClientRect();
+              const overRect = over?.getBoundingClientRect();
+              return pointer && parentRect && overRect
+                ? {
+                    left: pointer.left - (overRect.left - parentRect.left),
+                    top: pointer.top - (overRect.top - parentRect.top),
+                  }
+                : undefined;
+            })();
+            const rawPointer = rawPlotPointer ? plotPosition(rawPlotPointer.left, rawPlotPointer.top) : pointer;
             updateLabelHover(rawPointer);
-            const target = hoveredTarget(u);
+            const target = hoveredTarget(u, rawPlotPointer);
             hoveredIndex = target && target.pointIndex >= 0 ? target.pointIndex : null;
             if (!target || hoveredIndex === null) {
               // A prior hit snaps the crosshair to the dot. Restore the raw
-              // pointer position when it leaves the hit radius so guides do
+              // .u-over position when it leaves the hit radius so guides do
               // not remain frozen at the last hovered point.
-              if (rawPointer && (
-                Math.abs((u.cursor.left ?? rawPointer.left) - rawPointer.left) > 0.5 ||
-                Math.abs((u.cursor.top ?? rawPointer.top) - rawPointer.top) > 0.5
+              if (rawPlotPointer && (
+                Math.abs((u.cursor.left ?? rawPlotPointer.left) - rawPlotPointer.left) > 0.5 ||
+                Math.abs((u.cursor.top ?? rawPlotPointer.top) - rawPlotPointer.top) > 0.5
               )) {
-                const over = container?.querySelector<HTMLElement>(".u-over");
-                if (over) {
-                  const overRect = over.getBoundingClientRect();
-                  const parent = container?.parentElement;
-                  const parentRect = parent?.getBoundingClientRect();
-                  if (parentRect) {
-                    u.setCursor({
-                      left: rawPointer.left - (overRect.left - parentRect.left),
-                      top: rawPointer.top - (overRect.top - parentRect.top),
-                    }, false);
-                    applyCrosshairDirections(u);
-                  }
-                }
+                u.setCursor(rawPlotPointer, false);
+                applyCrosshairDirections(u, rawPlotPointer);
               }
               setHoveredPosition(null);
               props.onHover?.(null);
@@ -950,6 +978,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     setPlotXSnapshot(currentSeries.x.join(","));
     plot?.destroy();
     plot = new uPlot(buildOptions(), dataFor(), container);
+    setPlotVersion((version) => version + 1);
     baseSeriesAlphas = plot.series.map((series) => series.alpha ?? 1);
     applyPlotEmphasis();
     hoveredIndex = hoveredId === undefined || hoveredId === null
@@ -968,6 +997,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     const resize = () => {
       if (!container || !plot) return;
       plot.setSize({ width: container.clientWidth, height: chartHeight() });
+      setPlotVersion((version) => version + 1);
       scheduleLabelPositions();
     };
     if (typeof ResizeObserver !== "undefined") {
@@ -1010,6 +1040,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     if (!plot || nextStructureKey !== plotStructureKey) createPlot();
     else {
       plot.setData(data);
+      setPlotVersion((version) => version + 1);
       hoveredIndex = hoveredId === undefined || hoveredId === null
         ? null
         : currentSeries.ids.indexOf(hoveredId);
@@ -1077,6 +1108,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   });
 
   const connectorHitGeometry = createMemo(() => {
+    plotVersion();
     if (!plot) return [] as { x1: number; y1: number; x2: number; y2: number; representativeId: string }[];
     const currentPlot = plot;
     return currentSeries.variantGroups.flatMap((group) => {
@@ -1168,9 +1200,38 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     };
   });
 
+  /** Keep cursor state alive while labels/connectors (outside .u-over) own the pointer. */
+  const handleOverlayPointerMove = (event: PointerEvent) => {
+    if (!plot) return;
+    const over = container?.querySelector<HTMLElement>(".u-over");
+    if (!over) return;
+    const overRect = over.getBoundingClientRect();
+    const rawPlotPointer = {
+      left: event.clientX - overRect.left,
+      top: event.clientY - overRect.top,
+    };
+    const rawPointer = plotPosition(rawPlotPointer.left, rawPlotPointer.top);
+    updateLabelHover(rawPointer);
+    const target = hoveredTarget(plot, rawPlotPointer);
+    hoveredIndex = target && target.pointIndex >= 0 ? target.pointIndex : null;
+    if (!target || hoveredIndex === null) {
+      plot.setCursor(rawPlotPointer, false);
+      applyCrosshairDirections(plot, rawPlotPointer);
+      setHoveredPosition(null);
+      props.onHover?.(null);
+      return;
+    }
+    const dot = plotPosition(target.plotLeft, target.plotTop);
+    plot.setCursor({ left: target.plotLeft, top: target.plotTop }, false);
+    applyCrosshairDirections(plot, { left: target.plotLeft, top: target.plotTop });
+    setHoveredPosition(dot ?? null);
+    props.onHover?.(target.id, rawPointer ?? dot);
+  };
+
   return (
     <div
       class="relative w-full"
+      onPointerMove={handleOverlayPointerMove}
       data-hovered-label-id={hoveredLabelId() ?? undefined}
       role="group"
       aria-label={`Scatter chart of ${props.yAxisLabel()} versus ${props.xAxisLabel()}`}
@@ -1202,11 +1263,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
               style={{ "pointer-events": "stroke" }}
               data-testid="family-connector-hit"
               data-model-id={segment.representativeId}
-              onMouseEnter={() => setModelLabelHover(segment.representativeId)}
-              onMouseLeave={() => {
-                setLabelHover(null);
-                props.onHover?.(null);
-              }}
+              onMouseEnter={() => setConnectorHover(segment.representativeId)}
+              onMouseLeave={() => clearConnectorHover(segment.representativeId)}
             />
           )}
         </For>
