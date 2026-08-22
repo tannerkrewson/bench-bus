@@ -105,7 +105,6 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
         class="btn btn-outline btn-sm list-none gap-2"
         aria-haspopup="dialog"
         aria-expanded={open()}
-        aria-controls={controlId("panel")}
         aria-label="Chart settings"
         onClick={(event) => {
           // Keep one disclosure control while making the native details
