@@ -58,7 +58,16 @@ const MODEL_GROUP_PALETTE = [
 // light-theme variants and brighter dark-theme variants to preserve contrast
 // against either chart surface. No slot is white or black, so points never
 // disappear into a theme background.
-const COLOR_BLIND_MODEL_GROUP_PALETTE = {
+/**
+ * Color-blind family slots. These are exported so the contrast contract can
+ * be tested without depending on a rendered browser canvas. Keep both arrays
+ * the same length as WELL_KNOWN_GROUP_SLOTS below.
+ *
+ * The dark slots are intentionally lighter than the canonical Okabe-Ito
+ * swatches. Aqua's base-100 surface is the brightest supported dark surface,
+ * so every dark slot targets 4.5:1 there (the text-sized contrast threshold).
+ */
+export const COLOR_BLIND_MODEL_GROUP_PALETTE = {
   light: [
     "#005a9c", // blue
     "#b54708", // orange
@@ -70,18 +79,41 @@ const COLOR_BLIND_MODEL_GROUP_PALETTE = {
     "#a23b72", // magenta
     "#245a9a", // indigo
     "#4f6d2f", // olive
+    "#5b3f8c", // violet
   ],
   dark: [
     "#56b4e9", // sky blue
     "#e69f00", // orange
-    "#009e73", // green
-    "#d55e00", // vermilion
-    "#cc79a7", // purple
+    "#40c99a", // green
+    "#ff8566", // vermilion
+    "#c59bd8", // purple
     "#7cc7e8", // teal
     "#f0e442", // yellow
-    "#e58bb8", // magenta
+    "#ed9bc3", // magenta
     "#86bdf2", // indigo
     "#a6d854", // olive
+    "#c2a0f5", // violet
+  ],
+} as const;
+
+/** WCAG contrast target used for colored model labels and chart marks. */
+export const COLOR_BLIND_CONTRAST_TARGET = 4.5;
+
+/**
+ * sRGB conversions of representative DaisyUI 5.7.20 base-100 swatches.
+ * Aqua, Black, Luxury, and Halloween are the supported dark themes whose
+ * base surfaces exercise the hardest dark-theme contrast cases.
+ */
+export const COLOR_BLIND_SURFACE_SWATCHES = {
+  light: [
+    { theme: "light", color: "#ffffff" },
+    { theme: "caramellatte", color: "#fff7ed" },
+  ],
+  dark: [
+    { theme: "aqua", color: "#1a368b" },
+    { theme: "black", color: "#000000" },
+    { theme: "luxury", color: "#09090b" },
+    { theme: "halloween", color: "#1b1816" },
   ],
 } as const;
 
