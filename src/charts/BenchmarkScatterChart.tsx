@@ -92,6 +92,14 @@ export function filterTenPointGridSplits(splits: readonly number[]): (number | n
   return splits.map((value) => Number.isInteger(value) && value % 10 === 0 ? value : null);
 }
 
+/** Convert filtered uPlot splits to labels without rendering filtered nulls. */
+export function formatFilteredAxisValues(
+  splits: readonly (number | null)[],
+  formatter: (value: number) => string,
+): string[] {
+  return splits.map((value) => value === null ? "" : formatter(value));
+}
+
 /**
  * Keep the focused family at its normal series alpha while de-emphasizing
  * every unrelated uPlot series. Point rows are grouped by model-family key;
@@ -722,7 +730,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           font: "14px Sora, sans-serif",
           labelFont: "600 15px Sora, sans-serif",
           filter: (_u, splits) => filterDollarAxisSplits(splits),
-          values: (_u, splits) => splits.map(formatDollarTick),
+          values: (_u, splits) => formatFilteredAxisValues(splits, formatDollarTick),
           grid: {
             stroke: styles.gridColor,
             width: 0.5,
@@ -744,7 +752,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           labelSize: 44,
           labelGap: 16,
           filter: (_u, splits) => filterIntegerAxisSplits(splits),
-          values: (_u, splits) => splits.map((value) => /score/i.test(props.yAxisLabel()) ? formatPercentTick(value) : String(value)),
+          values: (_u, splits) => formatFilteredAxisValues(
+            splits,
+            (value) => /score/i.test(props.yAxisLabel()) ? formatPercentTick(value) : String(value),
+          ),
           grid: {
             stroke: styles.gridColor,
             width: 0.5,

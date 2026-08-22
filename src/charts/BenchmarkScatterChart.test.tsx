@@ -6,6 +6,7 @@ import BenchmarkScatterChart, {
   crosshairGuideGeometry,
   filterDollarAxisSplits,
   filterIntegerAxisSplits,
+  formatFilteredAxisValues,
   filterTenPointGridSplits,
   seriesAlphasForFocus,
   snapToDotPosition,
@@ -17,6 +18,10 @@ describe("BenchmarkScatterChart pure interaction policies", () => {
     expect(filterDollarAxisSplits([0.5, Number.NaN, 1_000])).toEqual([0.5, null, 1_000]);
     expect(filterIntegerAxisSplits([69, 69.5, 70])).toEqual([69, null, 70]);
     expect(filterTenPointGridSplits([60, 65, 70, 70.5])).toEqual([60, null, 70, null]);
+  });
+
+  it("formats filtered axis splits as blank labels instead of literal null", () => {
+    expect(formatFilteredAxisValues([69, null, 70], String)).toEqual(["69", "", "70"]);
   });
 
   it("draws crosshair guides left and down from the snapped cursor", () => {
