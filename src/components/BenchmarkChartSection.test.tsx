@@ -81,6 +81,8 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     const slider = container.querySelector("input[type='range']") as HTMLInputElement;
 
     settings.click();
+    expect(popup.getAttribute("role")).toBe("dialog");
+    expect(popup.getAttribute("aria-label")).toBe("Chart settings");
     expect(popup.classList.contains("top-full")).toBe(true);
     expect(popup.classList.contains("right-0")).toBe(true);
     expect(panel.style.opacity).toBe("1");
