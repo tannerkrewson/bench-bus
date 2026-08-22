@@ -1326,6 +1326,22 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       left: event.clientX - overRect.left,
       top: event.clientY - overRect.top,
     };
+    const targetElement = event.target instanceof Element ? event.target : null;
+    const isOverlayTarget = targetElement?.closest(
+      "[data-testid='model-label'], [data-testid='family-connector-hit']",
+    ) !== null;
+    // The chart root is larger than uPlot's actual plot surface because it
+    // also contains labels, watermark, and axis space. Pointer movement in
+    // that empty right/bottom gutter must clear the guides rather than feed
+    // an out-of-bounds position back into uPlot. Labels/connectors remain
+    // valid overlay targets even when they sit just outside .u-over.
+    if (!isOverlayTarget && (
+      rawPlotPointer.left < 0 || rawPlotPointer.left > overRect.width ||
+      rawPlotPointer.top < 0 || rawPlotPointer.top > overRect.height
+    )) {
+      clearPointerInteraction();
+      return;
+    }
     const rawPointer = plotPosition(rawPlotPointer.left, rawPlotPointer.top);
     const target = hoveredTarget(plot, rawPlotPointer);
     // Prefer the actual dot hit over the label's generous pointer padding;
