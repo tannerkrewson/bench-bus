@@ -397,6 +397,34 @@ describe("BenchmarkScatterChart discount annotations", () => {
     requestFrame.mockRestore();
   });
 
+  it("animates shared overlays when a token-rate update removes a model", async () => {
+    const [points, setPoints] = createSignal<readonly PlottablePoint[]>([
+      { id: "first", label: "Model", x: 4, y: 60 },
+      { id: "second", label: "Model", x: 6, y: 70 },
+    ]);
+    const { container, dispose } = mountSizedChart(() => (
+      <BenchmarkScatterChart
+        points={points}
+        scale={() => "log"}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        height={320}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const before = (container.querySelector("[data-testid='model-label'][data-model-id='first']") as HTMLElement).style.left;
+    const requestFrame = vi.spyOn(window, "requestAnimationFrame");
+    requestFrame.mockClear();
+    setPoints([{ id: "first", label: "Model", x: 12, y: 60 }]);
+    await new Promise((resolve) => setTimeout(resolve, 220));
+    const after = (container.querySelector("[data-testid='model-label'][data-model-id='first']") as HTMLElement).style.left;
+    expect(requestFrame.mock.calls.length).toBeGreaterThan(3);
+    expect(after).not.toBe(before);
+    dispose();
+    requestFrame.mockRestore();
+  });
+
   it("refreshes family connector overlays after repeated plot updates", async () => {
     const [points, setPoints] = createSignal<readonly PlottablePoint[]>([
       { id: "opus-low", label: "Opus low", x: 4, y: 60, effortGroup: "opus", effort: "low" },

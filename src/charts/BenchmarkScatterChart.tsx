@@ -279,7 +279,15 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   let plotUpdateFrame: number | null = null;
   let plotAnimationFrame: number | null = null;
   let labelUpdateFrame: number | null = null;
-  let previousPlotData: uPlot.AlignedData | null = null;
+  type PlotDataShape = {
+    pathIds: string[];
+    pathSlots: string[];
+    pointIds: string[];
+    connectorGroupKeys: string[];
+    pointGroupKeys: string[];
+  };
+  type PlotDataSnapshot = { shape: PlotDataShape };
+  let previousPlotData: PlotDataSnapshot | null = null;
   let currentSeries: CurrentSeries = {
     x: [],
     y: [],
@@ -446,14 +454,31 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     };
   };
 
-  const dataFor = (): uPlot.AlignedData => {
-    const pointById = new Map(
-      currentSeries.ids.map((id, index) => [id, { x: currentSeries.x[index]!, y: currentSeries.y[index]! }]),
-    );
+  const plotDataShape = (): PlotDataShape => {
     const pathIds = [
       ...currentSeries.frontierIds,
       ...currentSeries.variantGroups.flatMap((group) => group.members.map((member) => member.id)),
     ];
+    const pathOccurrences = new Map<string, number>();
+    const pathSlots = pathIds.map((id) => {
+      const occurrence = pathOccurrences.get(id) ?? 0;
+      pathOccurrences.set(id, occurrence + 1);
+      return `${id}#${occurrence}`;
+    });
+    return {
+      pathIds,
+      pathSlots,
+      pointIds: [...currentSeries.ids],
+      connectorGroupKeys: currentSeries.variantGroups.map((group) => group.key),
+      pointGroupKeys: [...new Set(currentSeries.groupKeys)],
+    };
+  };
+
+  const dataFor = (): uPlot.AlignedData => {
+    const pointById = new Map(
+      currentSeries.ids.map((id, index) => [id, { x: currentSeries.x[index]!, y: currentSeries.y[index]! }]),
+    );
+    const { pathIds, pointGroupKeys } = plotDataShape();
     // Discount endpoints are rendered only by the SVG overlay. Do not append
     // their x values to uPlot's aligned data: alternative-provider endpoints
     // can be out of order with plotted points, and uPlot requires sorted x data
@@ -483,8 +508,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     });
     // Keep one uPlot series per model family. The same family key drives its
     // point, effort connector, discount arrow, and selector color.
-    const pointGroups = [...new Set(currentSeries.groupKeys)];
-    const pointRows = pointGroups.map((groupKey) => {
+    const pointRows = pointGroupKeys.map((groupKey) => {
       const row = new Array<number | null>(dataX.length).fill(null);
       currentSeries.groupKeys.forEach((pointGroupKey, index) => {
         if (pointGroupKey === groupKey) row[actualOffset + index] = currentSeries.y[index]!;
@@ -609,25 +633,23 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       ),
     );
     const allCrownDecorations = currentSeries.ids.flatMap((id, index) => {
-      const x = currentSeries.x[index];
-      const y = currentSeries.y[index];
-      if (x === undefined || y === undefined || !currentSeries.frontierIds.includes(id)) return [];
+      const position = pointPosition(currentPlot, index);
+      if (!position || !currentSeries.frontierIds.includes(id)) return [];
       return [{
         id,
-        left: overRect.left - rootRect.left + currentPlot.valToPos(x, "x"),
-        top: overRect.top - rootRect.top + currentPlot.valToPos(y, "y"),
+        left: position.left,
+        top: position.top,
         color: themeStyles().textColor,
         modelLabel: currentSeries.labels[index] ?? id,
       }];
     });
     const crownDots = currentSeries.ids.flatMap((id, index) => {
-      const x = currentSeries.x[index];
-      const y = currentSeries.y[index];
-      if (x === undefined || y === undefined) return [];
+      const position = pointPosition(currentPlot, index);
+      if (!position) return [];
       return [{
         id,
-        left: overRect.left - rootRect.left + currentPlot.valToPos(x, "x"),
-        top: overRect.top - rootRect.top + currentPlot.valToPos(y, "y"),
+        left: position.left,
+        top: position.top,
       }];
     });
     const retainedCrownIds = new Set(selectCrownPoints(allCrownDecorations, crownDots).map((crown) => crown.id));
@@ -641,15 +663,15 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     }));
     const discountGeometry = currentSeries.discounts.flatMap((discount) => {
       const pointIndex = currentSeries.ids.indexOf(discount.pointId);
-      const plottedX = pointIndex >= 0 ? currentSeries.x[pointIndex] : undefined;
-      if (plottedX === undefined) return [];
+      const plottedPosition = pointIndex >= 0 ? pointPosition(currentPlot, pointIndex) : undefined;
+      if (!plottedPosition) return [];
       const preLeft = overRect.left - rootRect.left + currentPlot.valToPos(discount.preX, "x");
       // The plotted model dot is the single effective endpoint for the chart.
       // Alternative provider metadata may have a different effectiveX, but
       // drawing that second provider endpoint creates a false visual gap from
       // the model's actual plotted price.
-      const effectiveLeft = overRect.left - rootRect.left + currentPlot.valToPos(plottedX, "x");
-      const top = overRect.top - rootRect.top + currentPlot.valToPos(discount.y, "y");
+      const effectiveLeft = plottedPosition.left;
+      const top = plottedPosition.top;
       if (![preLeft, effectiveLeft, top].every(Number.isFinite)) return [];
       return [{
         id: discount.id,
@@ -676,10 +698,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     const anchors = currentSeries.ids.flatMap((id, index) => {
       const representativeId = representativeById.get(id);
       if (representativeId !== undefined && representativeId !== id) return [];
-      const x = currentSeries.x[index];
-      const y = currentSeries.y[index];
-      if (x === undefined || y === undefined) return [];
       const pointLabel = currentSeries.labelParts[index] ?? modelLabelParts(currentSeries.labels[index] ?? id, null);
+      const position = pointPosition(currentPlot, index);
+      if (!position) return [];
       const representativeGroup = representativeId === undefined
         ? undefined
         : currentSeries.variantGroups.find((group) => group.representativeId === representativeId);
@@ -702,21 +723,20 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           mainLabel,
           discountLabel: pointLabel.discountLabel,
           accessibleLabel: pointLabel.accessibleLabel,
-          anchorLeft: overRect.left - rootRect.left + currentPlot.valToPos(x, "x"),
-          anchorTop: overRect.top - rootRect.top + currentPlot.valToPos(y, "y"),
+          anchorLeft: position.left,
+          anchorTop: position.top,
           color: groupColor(currentSeries.groupKeys[index] ?? modelGroupKey(currentSeries.labels[index] ?? id, id), dark),
           priority: currentSeries.frontierIds.includes(id) ? 1 : 0,
         },
       ];
     });
     const obstacles = currentSeries.ids.flatMap((id, index) => {
-      const x = currentSeries.x[index];
-      const y = currentSeries.y[index];
-      if (x === undefined || y === undefined) return [];
+      const position = pointPosition(currentPlot, index);
+      if (!position) return [];
       return [{
         id,
-        left: overRect.left - rootRect.left + currentPlot.valToPos(x, "x"),
-        top: overRect.top - rootRect.top + currentPlot.valToPos(y, "y"),
+        left: position.left,
+        top: position.top,
       }];
     });
     const baseLabels = layoutModelLabels(anchors, bounds, {
@@ -867,9 +887,21 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   };
 
   const pointPosition = (u: uPlot, index: number) => {
-    const x = currentSeries.x[index];
-    const y = currentSeries.y[index];
-    if (x === undefined || y === undefined) return undefined;
+    // Read the model's values from uPlot's current data, not currentSeries.
+    // During a transition currentSeries already contains the destination while
+    // u.data contains the interpolated frame; using the former made labels,
+    // crowns, and connector overlays jump before the canvas dots moved.
+    const pathLength = currentSeries.frontierIds.length + currentSeries.variantGroups.reduce(
+      (total, group) => total + group.members.length,
+      0,
+    );
+    const pointGroups = [...new Set(currentSeries.groupKeys)];
+    const groupIndex = pointGroups.indexOf(currentSeries.groupKeys[index]!);
+    if (groupIndex < 0) return undefined;
+    const dataIndex = pathLength + index;
+    const x = u.data[0]?.[dataIndex];
+    const y = u.data[1 + currentSeries.variantGroups.length + groupIndex]?.[dataIndex];
+    if (typeof x !== "number" || typeof y !== "number") return undefined;
     const plotLeft = u.valToPos(x, "x");
     const plotTop = u.valToPos(y, "y");
     if (!Number.isFinite(plotLeft) || !Number.isFinite(plotTop)) return undefined;
@@ -1234,7 +1266,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     }
     const initialData = dataFor();
     plot = new uPlot(buildOptions(), initialData, container);
-    previousPlotData = initialData;
+    previousPlotData = { shape: plotDataShape() };
     setPlotRevision((revision) => revision + 1);
     baseSeriesAlphas = plot.series.map((series) => series.alpha ?? 1);
     applyPlotEmphasis();
@@ -1306,40 +1338,87 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   // Axis scale changes uPlot's distr, which is construction-time only.
   createEffect(on(() => props.scale(), createPlot, { defer: true }));
 
-  const animatePlotData = (nextData: uPlot.AlignedData) => {
+  const animatePlotData = (nextData: uPlot.AlignedData, nextShape: PlotDataShape) => {
     if (!plot) return;
     if (plotAnimationFrame !== null && typeof window !== "undefined") {
       window.cancelAnimationFrame(plotAnimationFrame);
       plotAnimationFrame = null;
     }
-    const fromData = previousPlotData;
-    const canInterpolate = fromData !== null && fromData.length === nextData.length &&
-      fromData.every((series, index) => series.length === nextData[index]!.length);
-    if (!canInterpolate || typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
+    const fromSnapshot = previousPlotData;
+    if (fromSnapshot === null || typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
       plot.setData(nextData);
-      previousPlotData = nextData;
+      previousPlotData = { shape: nextShape };
       return;
     }
+
+    // A second toggle can arrive before the first animation completes. Use
+    // uPlot's live interpolated frame as the source so rapid toggles do not
+    // snap back to the previous destination.
+    const fromData = plot.data;
+    const fromShape = fromSnapshot.shape;
+    const oldPathIndexes = new Map(fromShape.pathSlots.map((slot, index) => [slot, index]));
+    const oldPointIndexes = new Map(fromShape.pointIds.map((id, index) => [id, index]));
+    const oldConnectorRows = new Map(fromShape.connectorGroupKeys.map((key, index) => [key, 1 + index]));
+    const oldPointRows = new Map(fromShape.pointGroupKeys.map((key, index) => [key, 1 + fromShape.connectorGroupKeys.length + index]));
+    const oldActualOffset = fromShape.pathSlots.length;
+    const nextActualOffset = nextShape.pathSlots.length;
+    const nextConnectorStart = 1;
+    const nextPointStart = nextConnectorStart + nextShape.connectorGroupKeys.length;
+    const nextFrontierRow = nextData.length - 1;
+
+    const previousValue = (rowIndex: number, valueIndex: number): number | null | undefined => {
+      let oldRowIndex: number | undefined;
+      let oldValueIndex: number | undefined;
+      if (rowIndex === 0) {
+        if (valueIndex < nextActualOffset) {
+          oldValueIndex = oldPathIndexes.get(nextShape.pathSlots[valueIndex]!);
+        } else {
+          const pointIndex = oldPointIndexes.get(nextShape.pointIds[valueIndex - nextActualOffset]!);
+          oldValueIndex = pointIndex === undefined ? undefined : oldActualOffset + pointIndex;
+        }
+        oldRowIndex = 0;
+      } else if (rowIndex >= nextConnectorStart && rowIndex < nextPointStart) {
+        const groupKey = nextShape.connectorGroupKeys[rowIndex - nextConnectorStart];
+        oldRowIndex = groupKey === undefined ? undefined : oldConnectorRows.get(groupKey);
+        oldValueIndex = oldPathIndexes.get(nextShape.pathSlots[valueIndex]!);
+      } else if (rowIndex >= nextPointStart && rowIndex < nextFrontierRow) {
+        const groupKey = nextShape.pointGroupKeys[rowIndex - nextPointStart];
+        oldRowIndex = groupKey === undefined ? undefined : oldPointRows.get(groupKey);
+        const pointIndex = oldPointIndexes.get(nextShape.pointIds[valueIndex - nextActualOffset]!);
+        oldValueIndex = pointIndex === undefined ? undefined : oldActualOffset + pointIndex;
+      } else if (rowIndex === nextFrontierRow && valueIndex < nextActualOffset) {
+        oldRowIndex = fromData.length - 1;
+        oldValueIndex = oldPathIndexes.get(nextShape.pathSlots[valueIndex]!);
+      }
+      return oldRowIndex === undefined || oldValueIndex === undefined
+        ? undefined
+        : (fromData[oldRowIndex] as ArrayLike<number | null> | undefined)?.[oldValueIndex];
+    };
+
     const startedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
     const frame = (timestamp: number) => {
       if (!plot) return;
       const progress = Math.min(1, Math.max(0, (timestamp - startedAt) / PLOT_ANIMATION_DURATION));
       const eased = 1 - (1 - progress) ** 3;
-      const interpolated = nextData.map((series, seriesIndex) => {
-        const previous = fromData[seriesIndex]!;
-        return Array.from(series as ArrayLike<number | null>, (value, valueIndex) => {
-          const oldValue = (previous as ArrayLike<number | null>)[valueIndex];
+      const interpolated = nextData.map((series, seriesIndex) =>
+        Array.from(series as ArrayLike<number | null>, (value, valueIndex) => {
+          const oldValue = previousValue(seriesIndex, valueIndex);
           return typeof value === "number" && typeof oldValue === "number"
             ? oldValue + (value - oldValue) * eased
             : value;
-        });
-      }) as unknown as uPlot.AlignedData;
+        }),
+      ) as unknown as uPlot.AlignedData;
       plot.setData(interpolated);
+      // The canvas moves with uPlot's interpolated data. Rebuild the SVG/HTML
+      // overlay from that same frame so labels, crowns, and connector hit
+      // targets travel with the dots instead of jumping to the destination.
+      updateLabelPositions();
+      setPlotRevision((revision) => revision + 1);
       if (progress < 1) {
         plotAnimationFrame = window.requestAnimationFrame(frame);
       } else {
         plotAnimationFrame = null;
-        previousPlotData = nextData;
+        previousPlotData = { shape: nextShape };
       }
     };
     plotAnimationFrame = window.requestAnimationFrame(frame);
@@ -1350,6 +1429,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     refreshSeries();
     setPlotXSnapshot(currentSeries.x.join(","));
     const data = dataFor();
+    const shape = plotDataShape();
     hoveredIndex = hoveredId === undefined || hoveredId === null
       ? null
       : currentSeries.ids.indexOf(hoveredId);
@@ -1358,7 +1438,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       .join("|")}|${[...new Set(currentSeries.groupKeys)].join("|")}`;
     if (!plot || nextStructureKey !== plotStructureKey) createPlot();
     else {
-      animatePlotData(data);
+      animatePlotData(data, shape);
       setPlotRevision((revision) => revision + 1);
       hoveredIndex = hoveredId === undefined || hoveredId === null
         ? null
