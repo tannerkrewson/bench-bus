@@ -50,7 +50,37 @@ describe("BenchmarkScatterChart discount annotations", () => {
 
     setPoints([initialPoints[1]!]);
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     expect(container.querySelectorAll("[data-testid='discount-arrow']")).toHaveLength(0);
+    dispose();
+  });
+
+  it("coalesces rapid point updates and renders the latest data", async () => {
+    const [points, setPoints] = createSignal<readonly PlottablePoint[]>([
+      { id: "first", label: "First", x: 6, y: 70, discount: { percentage: 10, preDiscountX: 8 } },
+    ]);
+    const { container, dispose } = mount(() => (
+      <BenchmarkScatterChart
+        points={points}
+        scale={() => "log"}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        height={320}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    for (let index = 0; index < 100; index += 1) {
+      setPoints([{
+        id: `model-${index}`,
+        label: `Model ${index}`,
+        x: index + 1,
+        y: 70,
+        discount: { percentage: index, preDiscountX: index + 2 },
+      }]);
+    }
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(container.querySelector("[data-testid='discount-arrow']")?.getAttribute("data-discount-id")).toBe("model-99");
     dispose();
   });
 
@@ -81,6 +111,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect(arrows[0]?.getAttribute("data-discount-id")).toBe("multi-discount");
     expect(arrows[0]?.getAttribute("data-discount-percentage")).toBe("40");
     setShowDiscounts(false);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     expect(container.querySelectorAll("[data-testid='discount-arrow']")).toHaveLength(0);
     dispose();

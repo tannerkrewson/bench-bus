@@ -79,6 +79,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   let plot: uPlot | null = null;
   let plotStructureKey = "";
   let hoveredIndex: number | null = null;
+  let plotUpdateFrame: number | null = null;
   let currentSeries: CurrentSeries = {
     x: [],
     y: [],
@@ -748,33 +749,57 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   // Axis scale changes uPlot's distr, which is construction-time only.
   createEffect(on(() => props.scale(), createPlot, { defer: true }));
 
+  const applyPlotData = () => {
+    const hoveredId = hoveredIndex === null ? null : currentSeries.ids[hoveredIndex];
+    const data = dataFor();
+    hoveredIndex = hoveredId === undefined || hoveredId === null
+      ? null
+      : currentSeries.ids.indexOf(hoveredId);
+    const nextStructureKey = `${currentSeries.discounts.length}|${currentSeries.variantGroups
+      .map((group) => `${group.key}:${group.members.length}`)
+      .join("|")}|${[...new Set(currentSeries.brands)].join("|")}`;
+    if (!plot || nextStructureKey !== plotStructureKey) createPlot();
+    else {
+      plot.setData(data);
+      hoveredIndex = hoveredId === undefined || hoveredId === null
+        ? null
+        : currentSeries.ids.indexOf(hoveredId);
+      setHoveredPosition(hoveredIndex === null || hoveredIndex < 0
+        ? null
+        : pointPosition(plot, hoveredIndex) ?? null);
+    }
+    scheduleLabelPositions();
+  };
+
+  // Slider input can arrive much faster than a frame. Coalesce pending
+  // updates so uPlot only allocates one bounded data set per rendered frame;
+  // the callback always reads the latest reactive points when it runs.
+  const schedulePlotData = () => {
+    if (plotUpdateFrame !== null) return;
+    if (typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
+      applyPlotData();
+      return;
+    }
+    plotUpdateFrame = window.requestAnimationFrame(() => {
+      plotUpdateFrame = null;
+      applyPlotData();
+    });
+  };
+
   createEffect(
     on(
       () => [props.points(), props.showFrontier?.() ?? true, props.showDiscounts?.() ?? true] as const,
-      () => {
-        const hoveredId = hoveredIndex === null ? null : currentSeries.ids[hoveredIndex];
-        const data = dataFor();
-        hoveredIndex = hoveredId === undefined || hoveredId === null
-          ? null
-          : currentSeries.ids.indexOf(hoveredId);
-        const nextStructureKey = `${currentSeries.discounts.length}|${currentSeries.variantGroups
-          .map((group) => `${group.key}:${group.members.length}`)
-          .join("|")}|${[...new Set(currentSeries.brands)].join("|")}`;
-        if (!plot || nextStructureKey !== plotStructureKey) createPlot();
-        else {
-          plot.setData(data);
-          hoveredIndex = hoveredId === undefined || hoveredId === null
-            ? null
-            : currentSeries.ids.indexOf(hoveredId);
-          setHoveredPosition(hoveredIndex === null || hoveredIndex < 0
-            ? null
-            : pointPosition(plot, hoveredIndex) ?? null);
-        }
-        scheduleLabelPositions();
-      },
+      schedulePlotData,
       { defer: true },
     ),
   );
+
+  onCleanup(() => {
+    if (plotUpdateFrame !== null && typeof window !== "undefined") {
+      window.cancelAnimationFrame(plotUpdateFrame);
+      plotUpdateFrame = null;
+    }
+  });
 
   createEffect(
     on(
