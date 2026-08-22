@@ -12,6 +12,11 @@ const VARIANT_POINTS: readonly PlottablePoint[] = [
   { id: "gpt", label: "GPT-5", brand: "openai", x: 4, y: 73 },
 ];
 
+const BASE_WITH_VARIANT_POINTS: readonly PlottablePoint[] = [
+  { id: "opus", label: "Opus 5", brand: "anthropic", effortGroup: "opus-5", x: 1, y: 70 },
+  { id: "opus-low", label: "Opus 5 Low", brand: "anthropic", effortGroup: "opus-5", effort: "low", x: 2, y: 71 },
+];
+
 function mount(ui: () => JSX.Element) {
   const container = document.createElement("div");
   document.body.appendChild(container);
@@ -20,6 +25,23 @@ function mount(ui: () => JSX.Element) {
 }
 
 describe("ModelList effort selection", () => {
+  it("keeps a non-reasoning base separate from a single effort variant", () => {
+    const { container, dispose } = mount(() => (
+      <ModelList
+        points={() => BASE_WITH_VARIANT_POINTS}
+        selectedIds={() => []}
+        onToggleSelect={() => undefined}
+        unplottable={() => []}
+        searchId="model-test-search-base"
+      />
+    ));
+
+    expect(container.querySelectorAll("[data-testid='model-list'] input[type='checkbox']")).toHaveLength(2);
+    expect(container.querySelector("[aria-label='Show Opus 5']")).not.toBeNull();
+    expect(container.querySelector("[aria-label='Show Opus 5 Low']")).not.toBeNull();
+    dispose();
+  });
+
   it("defaults to combined family rows and toggles every effort variant together", () => {
     const [selected, setSelected] = createSignal<string[]>([]);
     const { container, dispose } = mount(() => (

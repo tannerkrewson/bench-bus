@@ -60,7 +60,10 @@ function modelItems(points: readonly PlottablePoint[]): ModelListItem[] {
 
   for (const point of sorted) {
     const parts = modelVariantParts(point.label);
-    if (!parts && !point.effortGroup) {
+    // An effortGroup is also assigned to ordinary base models by adapters, so
+    // it cannot by itself make a selector family. Only labels with an explicit
+    // reasoning-effort suffix participate in combined rows.
+    if (!parts) {
       individual.push({
         key: `model:${point.id}`,
         label: point.label,
@@ -70,9 +73,9 @@ function modelItems(points: readonly PlottablePoint[]): ModelListItem[] {
       });
       continue;
     }
-    const colorKey = point.effortGroup ?? modelGroupKey(parts?.baseLabel ?? point.label, point.id);
+    const colorKey = point.effortGroup ?? modelGroupKey(parts.baseLabel, point.id);
     const group = groups.get(colorKey) ?? {
-      label: parts?.baseLabel ?? point.effortGroup!,
+      label: parts.baseLabel,
       members: [],
       colorKey,
     };
