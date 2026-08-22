@@ -14,6 +14,7 @@ import BenchmarkScatterChart, {
   seriesAlphasForFocus,
   snapToDotPosition,
   pointToSegmentDistance,
+  trimDiscountSegment,
   trimConnectorHitSegment,
 } from "./BenchmarkScatterChart";
 import type { PlottablePoint } from "./types";
@@ -41,6 +42,12 @@ describe("BenchmarkScatterChart pure interaction policies", () => {
   it("measures the nearest point on a connector segment", () => {
     expect(pointToSegmentDistance({ left: 5, top: 4 }, { left: 0, top: 0 }, { left: 10, top: 0 })).toBe(4);
     expect(pointToSegmentDistance({ left: -2, top: 0 }, { left: 0, top: 0 }, { left: 10, top: 0 })).toBe(2);
+  });
+
+  it("trims discount connectors clear of both endpoint dots", () => {
+    expect(trimDiscountSegment(100, 20, 5)).toEqual({ x1: 95, x2: 25 });
+    expect(trimDiscountSegment(20, 100, 5)).toEqual({ x1: 25, x2: 95 });
+    expect(trimDiscountSegment(20, 28, 5)).toBeNull();
   });
 
   it("draws crosshair guides left and down from the snapped cursor", () => {
@@ -256,6 +263,12 @@ describe("BenchmarkScatterChart discount annotations", () => {
     discountHit.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
     expect(container.querySelector("[data-hovered-label-id='discounted-model']")).not.toBeNull();
     discountHit.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+    const endpointHit = container.querySelector("[data-testid='discount-endpoint-hit']") as HTMLElement;
+    endpointHit.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    expect(container.querySelector("[data-testid='hovered-dot']")).not.toBeNull();
+    expect(container.querySelector("[data-testid='hover-axis-readouts']")?.textContent).toContain("$10");
+    endpointHit.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+    expect(container.querySelector("[data-testid='hovered-dot']")).toBeNull();
     expect(arrows[0]?.getAttribute("stroke-width")).toBe("1");
     expect(arrows[0]?.querySelector("path")).toBeNull();
 

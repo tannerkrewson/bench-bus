@@ -49,6 +49,7 @@ const MODEL_LABEL_LINE_HEIGHT = 20;
 const DOT_HIT_RADIUS = 14;
 const HOVER_RING_RADIUS = MODEL_DOT_RADIUS + 3;
 const DISCOUNT_HIT_RADIUS = 8;
+const DISCOUNT_ENDPOINT_GAP = MODEL_DOT_RADIUS + 2;
 const PLOT_ANIMATION_DURATION = 180;
 // Keep leaders visually attached to the real dot edge; the layout collision
 // pass, not a large decorative gap, keeps them out of nearby dots.
@@ -130,6 +131,22 @@ export function pointToSegmentDistance(
   if (lengthSquared === 0) return Math.hypot(point.left - start.left, point.top - start.top);
   const projection = Math.max(0, Math.min(1, ((point.left - start.left) * dx + (point.top - start.top) * dy) / lengthSquared));
   return Math.hypot(point.left - (start.left + projection * dx), point.top - (start.top + projection * dy));
+}
+
+/** Trim a horizontal discount connector clear of both endpoint dot strokes. */
+export function trimDiscountSegment(
+  preLeft: number,
+  effectiveLeft: number,
+  gap = DISCOUNT_ENDPOINT_GAP,
+): { x1: number; x2: number } | null {
+  if (![preLeft, effectiveLeft, gap].every(Number.isFinite) || gap < 0) return null;
+  const distance = Math.abs(effectiveLeft - preLeft);
+  if (distance <= gap * 2) return null;
+  const direction = effectiveLeft > preLeft ? 1 : -1;
+  return {
+    x1: preLeft + direction * gap,
+    x2: effectiveLeft - direction * gap,
+  };
 }
 
 /** uPlot split filters kept pure so axis and grid policies stay regression-testable. */
@@ -224,6 +241,8 @@ type DiscountAnnotation = {
 type DiscountDecoration = {
   id: string;
   pointId: string;
+  preX: number;
+  y: number;
   preLeft: number;
   effectiveLeft: number;
   top: number;
@@ -314,6 +333,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   // independently from the cursor state. Labels use the same family focus,
   // but never own a dot tooltip or snapped cursor.
   let hoveredConnectorId: string | null = null;
+  let hoveredDiscountEndpointId: string | null = null;
   let baseSeriesAlphas: number[] = [];
 
   const refreshSeries = () => {
@@ -588,7 +608,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         id,
         left: overRect.left - rootRect.left + currentPlot.valToPos(x, "x"),
         top: overRect.top - rootRect.top + currentPlot.valToPos(y, "y"),
-        color: themeStyles().frontierColor,
+        color: themeStyles().textColor,
         modelLabel: currentSeries.labels[index] ?? id,
       }];
     });
@@ -619,6 +639,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       return [{
         id: discount.id,
         pointId: discount.pointId,
+        preX: discount.preX,
+        y: discount.y,
         preLeft,
         effectiveLeft,
         top,
@@ -739,9 +761,47 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     props.onHover?.(null);
   };
 
+  const setDiscountEndpointHover = (discount: DiscountDecoration) => {
+    if (!plot) return;
+    const pointIndex = currentSeries.ids.indexOf(discount.pointId);
+    if (pointIndex < 0) return;
+    const plotLeft = plot.valToPos(discount.preX, "x");
+    const plotTop = plot.valToPos(discount.y, "y");
+    if (!Number.isFinite(plotLeft) || !Number.isFinite(plotTop)) return;
+    hoveredDiscountEndpointId = discount.id;
+    hoveredConnectorId = null;
+    hoveredIndex = pointIndex;
+    hoveredLabelBounds = null;
+    setHoveredLabelId(null);
+    const target: HoverTarget = {
+      pointIndex,
+      id: discount.pointId,
+      plotLeft,
+      plotTop,
+      dataIndex: pointIndex,
+      cost: discount.preX,
+    };
+    const dot = { left: discount.preLeft, top: discount.top };
+    plot.setCursor({ left: plotLeft, top: plotTop }, false);
+    applyCrosshairDirections(plot, { left: plotLeft, top: plotTop });
+    publishHoveredPosition(dot ?? null);
+    publishHoveredReadout(target, dot);
+    props.onHover?.(discount.pointId, dot);
+  };
+
+  const clearDiscountEndpointHover = (id: string) => {
+    if (hoveredDiscountEndpointId !== id) return;
+    hoveredDiscountEndpointId = null;
+    hoveredIndex = null;
+    clearHoveredPoint();
+    props.onHover?.(null);
+    if (plot) applyCrosshairDirections(plot, { left: null, top: null });
+  };
+
   const clearPointerInteraction = () => {
     hoveredIndex = null;
     hoveredConnectorId = null;
+    hoveredDiscountEndpointId = null;
     hoveredLabelBounds = null;
     setHoveredLabelId(null);
     clearHoveredPoint();
@@ -1451,15 +1511,19 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       top: event.clientY - overRect.top,
     };
     const targetElement = event.target instanceof Element ? event.target : null;
-    const isOverlayTarget = targetElement?.closest(
-      "[data-testid='model-label'], [data-testid='family-connector-hit']",
+    const isChartOverlayTarget = targetElement?.closest(
+      "[data-testid='model-label'], [data-testid='family-connector-hit'], [data-testid='discount-line-hit']",
     ) !== null;
+    // These overlays own their complete interaction lifecycle. Letting the
+    // root pointer handler re-run dot snapping here can replace a crown or
+    // discount-endpoint tooltip with the neighboring plotted dot.
+    if (targetElement?.closest("[data-testid='pareto-crown'], [data-testid='discount-endpoint-hit']")) return;
     // The chart root is larger than uPlot's actual plot surface because it
     // also contains labels, watermark, and axis space. Pointer movement in
     // that empty right/bottom gutter must clear the guides rather than feed
     // an out-of-bounds position back into uPlot. Labels/connectors remain
     // valid overlay targets even when they sit just outside .u-over.
-    if (!isOverlayTarget && (
+    if (!isChartOverlayTarget && (
       rawPlotPointer.left < 0 || rawPlotPointer.left > overRect.width ||
       rawPlotPointer.top < 0 || rawPlotPointer.top > overRect.height
     )) {
@@ -1611,6 +1675,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         </Show>
         <For each={discountDecorations()}>
           {(discount) => {
+            const segment = trimDiscountSegment(discount.preLeft, discount.effectiveLeft);
             return (
               <g
                 fill="none"
@@ -1630,15 +1695,17 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                     endpoint is visible without creating another hit target.
                     Paint the dash first so it cannot cut chunks through the
                     clean endpoint circle. */}
-                <line
-                  x1={discount.preLeft}
-                  y1={discount.top}
-                  x2={discount.effectiveLeft}
-                  y2={discount.top}
-                  stroke-width="1"
-                  stroke-dasharray="4 4"
-                  style={{ transition: "x1 180ms ease-out, x2 180ms ease-out, y1 180ms ease-out, y2 180ms ease-out" }}
-                />
+                {segment && (
+                  <line
+                    x1={segment.x1}
+                    y1={discount.top}
+                    x2={segment.x2}
+                    y2={discount.top}
+                    stroke-width="1"
+                    stroke-dasharray="4 4"
+                    style={{ transition: "x1 180ms ease-out, x2 180ms ease-out, y1 180ms ease-out, y2 180ms ease-out" }}
+                  />
+                )}
                 <circle
                   cx={discount.preLeft}
                   cy={discount.top}
@@ -1662,24 +1729,25 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           layer capture pointer movement from the uPlot surface. */}
       <For each={discountDecorations()}>
         {(discount) => {
-          const left = Math.min(discount.preLeft, discount.effectiveLeft);
-          const width = Math.max(12, Math.abs(discount.effectiveLeft - discount.preLeft));
+          const segment = trimDiscountSegment(discount.preLeft, discount.effectiveLeft);
           return (
             <>
-              <span
-                class="pointer-events-auto absolute z-2"
-                style={{
-                  left: `${left - 6}px`,
-                  top: `${discount.top - DISCOUNT_HIT_RADIUS}px`,
-                  width: `${width + 12}px`,
-                  height: `${DISCOUNT_HIT_RADIUS * 2}px`,
-                  transition: "left 180ms ease-out, top 180ms ease-out, width 180ms ease-out",
-                }}
-                data-testid="discount-line-hit"
-                data-discount-id={discount.id}
-                onMouseEnter={() => setConnectorHover(discount.pointId)}
-                onMouseLeave={() => clearConnectorHover(discount.pointId)}
-              />
+              {segment && (
+                <span
+                  class="pointer-events-auto absolute z-2"
+                  style={{
+                    left: `${Math.min(segment.x1, segment.x2)}px`,
+                    top: `${discount.top - DISCOUNT_HIT_RADIUS}px`,
+                    width: `${Math.abs(segment.x2 - segment.x1)}px`,
+                    height: `${DISCOUNT_HIT_RADIUS * 2}px`,
+                    transition: "left 180ms ease-out, top 180ms ease-out, width 180ms ease-out",
+                  }}
+                  data-testid="discount-line-hit"
+                  data-discount-id={discount.id}
+                  onMouseEnter={() => setConnectorHover(discount.pointId)}
+                  onMouseLeave={() => clearConnectorHover(discount.pointId)}
+                />
+              )}
               <span
                 class="pointer-events-auto absolute z-3"
                 style={{
@@ -1692,6 +1760,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 data-testid="discount-endpoint-hit"
                 data-discount-id={discount.id}
                 data-discount-endpoint="pre"
+                onMouseEnter={() => setDiscountEndpointHover(discount)}
+                onMouseLeave={() => clearDiscountEndpointHover(discount.id)}
               />
             </>
           );
