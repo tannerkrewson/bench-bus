@@ -42,7 +42,9 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect(arrows[0]?.getAttribute("data-discount-id")).toBe("discounted-model");
     expect(arrows[0]?.getAttribute("data-discount-percentage")).toBe("40");
     expect(arrows[0]?.querySelector("path")?.getAttribute("d")).toMatch(/^M /);
-    expect(arrows[0]?.textContent).toContain("40% off");
+    const discountLabel = container.querySelector("[data-testid='discount-label']");
+    expect(discountLabel?.textContent).toContain("40% off");
+    expect(discountLabel?.getAttribute("aria-label")).toContain("discount");
 
     setScale("linear");
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
@@ -81,6 +83,28 @@ describe("BenchmarkScatterChart discount annotations", () => {
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     expect(container.querySelector("[data-testid='discount-arrow']")?.getAttribute("data-discount-id")).toBe("model-99");
+    dispose();
+  });
+
+  it("opens model and discount tooltip state from accessible label hover targets", async () => {
+    let hovered: string | null = null;
+    const { container, dispose } = mount(() => (
+      <BenchmarkScatterChart
+        points={() => [{ id: "model", label: "Model", x: 6, y: 70, discount: { percentage: 40, preDiscountX: 10 } }]}
+        scale={() => "log"}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        height={320}
+        onHover={(id) => { hovered = id; }}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const discountLabel = container.querySelector<HTMLElement>("[data-testid='discount-label']");
+    expect(discountLabel?.tabIndex).toBe(0);
+    discountLabel?.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true, clientX: 20, clientY: 20 }));
+    expect(hovered).toBe("model");
+    discountLabel?.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+    expect(hovered).toBeNull();
     dispose();
   });
 

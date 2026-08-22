@@ -52,9 +52,11 @@ type DiscountAnnotation = {
 
 type DiscountDecoration = {
   id: string;
+  pointId: string;
   preLeft: number;
   effectiveLeft: number;
   top: number;
+  labelLeft: number;
   percentage: number;
   providerRole?: "plotted" | "alternative";
 };
@@ -375,9 +377,11 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       if (![preLeft, effectiveLeft, top].every(Number.isFinite)) return [];
       return [{
         id: discount.id,
+        pointId: discount.pointId,
         preLeft,
         effectiveLeft,
         top,
+        labelLeft: (preLeft + effectiveLeft) / 2,
         percentage: discount.percentage,
         providerRole: discount.providerRole,
       }];
@@ -417,18 +421,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       }];
     });
     const baseLabels = layoutModelLabels(anchors, bounds, { obstacles, lines: discountLines });
-    const activeId = hoveredLabelId();
-    const activeBase = activeId === null ? undefined : baseLabels.find((label) => label.id === activeId);
-    const preferredSides = activeBase
-      ? new Map([[activeId!, activeBase.left + activeBase.width / 2 < activeBase.anchorLeft ? "right" : "left"] as const])
-      : undefined;
-    const labels = activeBase
-      ? layoutModelLabels(anchors, bounds, { obstacles, lines: discountLines, preferredSides })
-      : baseLabels;
-    if (activeId !== null && !labels.some((label) => label.id === activeId)) {
-      hoveredLabelBounds = null;
-      setHoveredLabelId(null);
-    }
+    const labels = baseLabels;
     setLabelPositions(props.showLabels?.() ?? true ? labels : []);
     // Re-read the dot position after uPlot has laid out the plot. This keeps
     // the hover emphasis centered when a scale or container size changes.
@@ -443,6 +436,19 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     } else {
       updateLabelPositions();
     }
+  };
+
+  const pointerPositionFromEvent = (event: { clientX: number; clientY: number }) => {
+    const over = container?.querySelector<HTMLElement>(".u-over");
+    const parent = container?.parentElement;
+    if (!over || !parent) return undefined;
+    const parentRect = parent.getBoundingClientRect();
+    return { left: event.clientX - parentRect.left, top: event.clientY - parentRect.top };
+  };
+
+  const setLabelHover = (id: string | null) => {
+    setHoveredLabelId(id);
+    hoveredLabelBounds = null;
   };
 
   const cursorPosition = (u: uPlot) => {
@@ -531,7 +537,25 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       ? { left: next.left, top: next.top, right: next.left + next.width, bottom: next.top + next.height }
       : null;
     setHoveredLabelId(nextId);
-    scheduleLabelPositions();
+  };
+
+  const applyCrosshairDirections = (u: uPlot) => {
+    const over = container?.querySelector<HTMLElement>(".u-over");
+    const horizontal = container?.querySelector<HTMLElement>(".u-cursor-y");
+    const vertical = container?.querySelector<HTMLElement>(".u-cursor-x");
+    if (!over || !horizontal || !vertical) return;
+    if (u.cursor.left == null || u.cursor.top == null) {
+      horizontal.style.width = "0px";
+      vertical.style.height = "0px";
+      return;
+    }
+    const left = Math.max(0, u.cursor.left);
+    const top = Math.max(0, u.cursor.top);
+    horizontal.style.left = "0px";
+    horizontal.style.width = `${left}px`;
+    vertical.style.left = `${left}px`;
+    vertical.style.top = `${top}px`;
+    vertical.style.height = `${Math.max(0, over.clientHeight - top)}px`;
   };
 
   const buildOptions = (): Options => {
@@ -653,9 +677,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         })),
       ],
       hooks: {
-        ready: [scheduleLabelPositions],
+        ready: [(u) => { applyCrosshairDirections(u); scheduleLabelPositions(); }],
         setCursor: [
           (u) => {
+            applyCrosshairDirections(u);
             const pointer = u.cursor.left === null || u.cursor.top === null ? undefined : cursorPosition(u);
             const rawPointer = pointerEventPosition(u) ?? pointer;
             updateLabelHover(rawPointer);
@@ -814,11 +839,17 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   return (
     <div
       class="relative w-full"
-      role="img"
+      data-hovered-label-id={hoveredLabelId() ?? undefined}
+      role="group"
       aria-label={`Scatter chart of ${props.yAxisLabel()} versus ${props.xAxisLabel()}`}
       data-testid="benchmark-scatter"
     >
-      <div ref={container} class="w-full" data-testid="benchmark-scatter-plot" />
+      <div
+        ref={container}
+        class="w-full"
+        style={{ opacity: hoveredLabelId() === null ? 1 : 0.2 }}
+        data-testid="benchmark-scatter-plot"
+      />
       <svg
         class="pointer-events-none absolute inset-0 z-1 overflow-visible"
         aria-hidden="true"
@@ -827,10 +858,23 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         <Show when={hoveredPosition()}>
           {(position) => <circle cx={position().left} cy={position().top} r="6" fill="none" stroke="currentColor" stroke-width="2" data-testid="hovered-dot" />}
         </Show>
+        <Show when={hoveredLabelId()}>
+          {(id) => {
+            const label = labelPositions().find((candidate) => candidate.id === id());
+            return label ? (
+              <circle cx={label.anchorLeft} cy={label.anchorTop} r="8" fill="none" stroke={label.color} stroke-width="2" data-testid="label-hover-highlight" />
+            ) : null;
+          }}
+        </Show>
         <Show when={props.showFrontier?.() ?? true}>
           <For each={pointDecorations()}>
             {(point) => (
-              <g transform={`translate(${point.left - 9} ${point.top - 27})`} fill="none" stroke={point.color}>
+              <g
+                transform={`translate(${point.left - 9} ${point.top - 27})`}
+                fill="none"
+                stroke={point.color}
+                opacity={hoveredLabelId() === null || hoveredLabelId() === point.id ? 1 : 0.2}
+              >
                 <Crown width={18} height={18} aria-hidden="true" data-testid="pareto-crown" />
               </g>
             )}
@@ -840,7 +884,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           {(discount) => {
             const direction = discount.effectiveLeft >= discount.preLeft ? 1 : -1;
             const headStart = discount.effectiveLeft - direction * 7;
-            const labelLeft = (discount.preLeft + discount.effectiveLeft) / 2;
             return (
               <g
                 fill="none"
@@ -852,24 +895,44 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 data-discount-id={discount.id}
                 data-discount-percentage={discount.percentage}
                 data-discount-provider-role={discount.providerRole ?? "plotted"}
+                opacity={hoveredLabelId() === null || hoveredLabelId() === discount.pointId ? 1 : 0.2}
               >
                 <path d={`M ${headStart} ${discount.top - 4} L ${discount.effectiveLeft} ${discount.top} L ${headStart} ${discount.top + 4}`} />
-                <text
-                  x={labelLeft}
-                  y={discount.top - 8}
-                  fill={themeStyles().discountColor}
-                  stroke="none"
-                  text-anchor="middle"
-                  font-size="11"
-                  font-weight="600"
-                >
-                  {discount.percentage}% off
-                </text>
               </g>
             );
           }}
         </For>
       </svg>
+      <For each={discountDecorations()}>
+        {(discount) => (
+          <button
+            type="button"
+            class="pointer-events-auto absolute z-2 -translate-x-1/2 whitespace-nowrap rounded bg-base-100/90 px-1 text-[11px] font-semibold text-base-content shadow-sm"
+            style={{ left: `${discount.labelLeft}px`, top: `${discount.top - 24}px`, opacity: hoveredLabelId() === null || hoveredLabelId() === discount.pointId ? 1 : 0.2 }}
+            data-testid="discount-label"
+            data-discount-id={discount.id}
+            aria-label={`${discount.percentage}% discount; show discount details`}
+            onMouseEnter={(event) => {
+              setLabelHover(discount.pointId);
+              props.onHover?.(discount.pointId, pointerPositionFromEvent(event));
+            }}
+            onMouseLeave={() => {
+              setLabelHover(null);
+              props.onHover?.(null);
+            }}
+            onFocus={() => {
+              setLabelHover(discount.pointId);
+              props.onHover?.(discount.pointId, { left: discount.labelLeft, top: discount.top });
+            }}
+            onBlur={() => {
+              setLabelHover(null);
+              props.onHover?.(null);
+            }}
+          >
+            {discount.percentage}% off
+          </button>
+        )}
+      </For>
       <Show when={props.showLabels?.() ?? true}>
         <svg
           class="pointer-events-none absolute inset-0 z-0 overflow-visible"
@@ -898,7 +961,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                   x2={endLeft}
                   y2={endTop}
                   stroke={themeStyles().leaderColor}
-                  stroke-opacity="0.72"
+                  stroke-opacity={hoveredLabelId() === null || hoveredLabelId() === label.id ? "0.72" : "0.15"}
                   stroke-width="1"
                   data-testid="model-label-leader"
                 />
@@ -909,7 +972,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         <For each={labelPositions()}>
           {(label) => (
             <span
-              class="pointer-events-none absolute z-1 whitespace-nowrap rounded bg-base-100/90 px-1 text-left text-sm leading-[22px] shadow-sm"
+              class="pointer-events-auto absolute z-1 cursor-help whitespace-nowrap rounded bg-base-100/90 px-1 text-left text-sm leading-[22px] shadow-sm"
               title={label.label}
               style={{
                 left: `${label.left}px`,
@@ -917,11 +980,29 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 width: `${label.width}px`,
                 height: `${label.height}px`,
                 color: label.color,
+                opacity: hoveredLabelId() === null || hoveredLabelId() === label.id ? 1 : 0.2,
                 "font-size": "14px",
                 "line-height": "22px",
               }}
               data-testid="model-label"
               data-model-id={label.id}
+              tabIndex="0"
+              onMouseEnter={(event) => {
+                setLabelHover(label.id);
+                props.onHover?.(label.id, pointerPositionFromEvent(event));
+              }}
+              onMouseLeave={() => {
+                setLabelHover(null);
+                props.onHover?.(null);
+              }}
+              onFocus={() => {
+                setLabelHover(label.id);
+                props.onHover?.(label.id, { left: label.anchorLeft, top: label.anchorTop });
+              }}
+              onBlur={() => {
+                setLabelHover(null);
+                props.onHover?.(null);
+              }}
             >
               {label.label}
             </span>
