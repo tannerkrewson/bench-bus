@@ -61,8 +61,8 @@ describe("model brand colors", () => {
       COLOR_BLIND_MODEL_GROUP_PALETTE.light[8],
       COLOR_BLIND_MODEL_GROUP_PALETTE.light[2],
       COLOR_BLIND_MODEL_GROUP_PALETTE.light[3],
-      COLOR_BLIND_MODEL_GROUP_PALETTE.light[4],
       COLOR_BLIND_MODEL_GROUP_PALETTE.light[5],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.light[4],
       COLOR_BLIND_MODEL_GROUP_PALETTE.light[6],
       COLOR_BLIND_MODEL_GROUP_PALETTE.light[7],
       COLOR_BLIND_MODEL_GROUP_PALETTE.light[1],
@@ -74,8 +74,8 @@ describe("model brand colors", () => {
       COLOR_BLIND_MODEL_GROUP_PALETTE.dark[8],
       COLOR_BLIND_MODEL_GROUP_PALETTE.dark[2],
       COLOR_BLIND_MODEL_GROUP_PALETTE.dark[3],
-      COLOR_BLIND_MODEL_GROUP_PALETTE.dark[4],
       COLOR_BLIND_MODEL_GROUP_PALETTE.dark[5],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.dark[4],
       COLOR_BLIND_MODEL_GROUP_PALETTE.dark[6],
       COLOR_BLIND_MODEL_GROUP_PALETTE.dark[7],
       COLOR_BLIND_MODEL_GROUP_PALETTE.dark[1],
@@ -88,6 +88,19 @@ describe("model brand colors", () => {
     const keys = ["gpt-5-6-sol", "gpt-5-5", "gemini-3-7-flash", "opus-5"];
     expect(new Set(keys.map((key) => modelGroupColor(key, false))).size).toBe(keys.length);
     expect(new Set(keys.map((key) => modelGroupColor(key, true))).size).toBe(keys.length);
+    const rgbDistance = (first: string, second: string) => {
+      const channels = (color: string) => [1, 3, 5].map((offset) => Number.parseInt(color.slice(offset, offset + 2), 16));
+      const a = channels(first);
+      const b = channels(second);
+      return Math.hypot(a[0]! - b[0]!, a[1]! - b[1]!, a[2]! - b[2]!);
+    };
+    expect(rgbDistance(modelGroupColor("gpt-5-6-sol", false), modelGroupColor("gemini-3-7-flash", false))).toBeGreaterThan(75);
+    expect(rgbDistance(modelGroupColor("gpt-5-6-sol", true), modelGroupColor("gemini-3-7-flash", true))).toBeGreaterThan(75);
+    const visibleKeys = ["gpt-5-6-sol", "gemini-3-7-flash"];
+    const visibleLight = modelGroupColors(visibleKeys, false);
+    const visibleDark = modelGroupColors(visibleKeys, true);
+    expect(rgbDistance(visibleLight.get(visibleKeys[0]!)!, visibleLight.get(visibleKeys[1]!)!)).toBeGreaterThan(75);
+    expect(rgbDistance(visibleDark.get(visibleKeys[0]!)!, visibleDark.get(visibleKeys[1]!)!)).toBeGreaterThan(75);
   });
 
   it("allocates collision-free colors for all families visible in a chart", () => {

@@ -289,7 +289,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
               </Show>
               <Show when={showCrowns()}>
                 <div class="flex items-center gap-2" role="img" aria-label="Pareto crown (best value frontier model)">
-                  <span class="text-primary" aria-hidden="true">
+                  <span class="text-base-content" aria-hidden="true" data-testid="legend-crown">
                     <Crown size={18} stroke-width={2.5} />
                   </span>
                   <span>Frontier crown</span>

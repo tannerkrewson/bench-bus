@@ -102,10 +102,12 @@ const WELL_KNOWN_GROUP_SLOTS: Readonly<Record<string, number>> = {
   "grok-4-5": 2,
   luna: 3,
   "gpt-5-6-luna": 3,
-  sol: 4,
-  "gpt-5-6-sol": 4,
-  terra: 5,
-  "gpt-5-6-terra": 5,
+  // Keep Sol teal and Gemini violet: these were previously adjacent in the
+  // purple range and looked identical despite having different hex values.
+  sol: 5,
+  "gpt-5-6-sol": 5,
+  terra: 4,
+  "gpt-5-6-terra": 4,
   "fable-5": 6,
   "composer-2-5": 7,
   "opus-4-8": 8,
@@ -134,6 +136,8 @@ function stableHash(value: string): number {
 const PREFERRED_MODEL_GROUP_SLOTS: readonly [RegExp, number][] = [
   [/^deepseek(?:-|$)/, 0], // blue / sky blue
   [/^opus(?:-|$)/, 1], // orange
+  [/(?:^|-)sol(?:-|$)/, 5], // teal; intentionally far from Gemini violet
+  [/^gemini(?:-|$)/, 10], // violet; intentionally far from Sol teal
 ];
 
 function preferredModelGroupSlot(key: string): number | undefined {
