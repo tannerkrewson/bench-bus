@@ -1,3 +1,4 @@
+import { Crown } from "lucide-solid";
 import { createEffect, createMemo, createSignal, Show } from "solid-js";
 import BenchmarkScatterChart from "../charts/BenchmarkScatterChart";
 import ChartTooltip from "../charts/ChartTooltip";
@@ -56,9 +57,10 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
   );
   const [showLabels, setShowLabels] = createSignal(props.initialState?.showLabels ?? true);
   const [showFrontier, setShowFrontier] = createSignal(props.initialState?.showFrontier ?? false);
-  const discountsEnabled = props.showDiscountsControl !== false;
+  const showDiscountsControl = props.showDiscountsControl !== false;
+  const [showCrowns, setShowCrowns] = createSignal(props.initialState?.showCrowns ?? true);
   const [showDiscounts, setShowDiscounts] = createSignal(
-    discountsEnabled ? props.initialState?.showDiscounts ?? true : false,
+    showDiscountsControl ? props.initialState?.showDiscounts ?? true : false,
   );
   const [controls, setControls] = createSignal<PricingControlState>({
     ...defaultControls(),
@@ -120,7 +122,8 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
       controls: controls(),
       showLabels: showLabels(),
       showFrontier: showFrontier(),
-      ...(discountsEnabled ? { showDiscounts: showDiscounts() } : {}),
+      showCrowns: showCrowns(),
+      ...(showDiscountsControl ? { showDiscounts: showDiscounts() } : {}),
     });
   };
   createEffect(emitState);
@@ -169,8 +172,10 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
           onShowLabelsChange={setShowLabels}
           showFrontier={showFrontier}
           onShowFrontierChange={setShowFrontier}
-          showDiscounts={discountsEnabled ? showDiscounts : undefined}
-          onShowDiscountsChange={discountsEnabled ? setShowDiscounts : undefined}
+          showCrowns={showCrowns}
+          onShowCrownsChange={setShowCrowns}
+          showDiscounts={showDiscountsControl ? showDiscounts : undefined}
+          onShowDiscountsChange={showDiscountsControl ? setShowDiscounts : undefined}
         />
 
         <Show when={props.records().length > 0}>
@@ -231,7 +236,8 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
                     scale={scale}
                     showLabels={showLabels}
                     showFrontier={showFrontier}
-                    showDiscounts={discountsEnabled ? showDiscounts : undefined}
+                    showCrowns={showCrowns}
+                    showDiscounts={showDiscountsControl ? showDiscounts : undefined}
                     xAxisLabel={() => props.adapter.xAxisLabel}
                     yAxisLabel={() => props.adapter.yAxisLabel}
                     onHover={(id, pos) =>
@@ -248,12 +254,20 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
               </div>
               <ChartWatermark />
             </Show>
-            <Show when={showFrontier()}>
-              <div class="mt-2 flex items-center justify-center gap-2 text-sm text-base-content/70" role="img" aria-label="Pareto frontier (dotted line)">
-                <span class="w-6 border-t-2 border-dashed border-primary" aria-hidden="true" />
-                <span>Frontier line</span>
-              </div>
-            </Show>
+            <div class="mt-2 flex flex-wrap items-center justify-center gap-4 text-sm text-base-content/70">
+              <Show when={showFrontier()}>
+                <div class="flex items-center gap-2" role="img" aria-label="Pareto frontier (dotted line)">
+                  <span class="w-6 border-t-2 border-dashed border-primary" aria-hidden="true" />
+                  <span>Frontier line</span>
+                </div>
+              </Show>
+              <Show when={showCrowns()}>
+                <div class="flex items-center gap-2" role="img" aria-label="Pareto crown (best value frontier model)">
+                  <Crown size={18} aria-hidden="true" />
+                  <span>Frontier crown</span>
+                </div>
+              </Show>
+            </div>
           </Show>
         </div>
 

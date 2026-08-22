@@ -1,3 +1,4 @@
+import { Crown } from "lucide-solid";
 import { createEffect, createMemo, createSignal, Show } from "solid-js";
 import BenchmarkScatterChart from "../BenchmarkScatterChart";
 import ChartTooltip from "../ChartTooltip";
@@ -48,6 +49,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
   );
   const [showLabels, setShowLabels] = createSignal(props.initialState?.showLabels ?? true);
   const [showFrontier, setShowFrontier] = createSignal(props.initialState?.showFrontier ?? false);
+  const [showCrowns, setShowCrowns] = createSignal(props.initialState?.showCrowns ?? true);
   const [showDiscounts, setShowDiscounts] = createSignal(props.initialState?.showDiscounts ?? true);
   const [controls, setControls] = createSignal<PricingControlState>({
     ...defaultControls(),
@@ -148,6 +150,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
       controls: controls(),
       showLabels: showLabels(),
       showFrontier: showFrontier(),
+      showCrowns: showCrowns(),
       showDiscounts: showDiscounts(),
     });
   };
@@ -190,6 +193,8 @@ export default function AaChartSection(props: AaChartSectionProps) {
           onShowLabelsChange={setShowLabels}
           showFrontier={showFrontier}
           onShowFrontierChange={setShowFrontier}
+          showCrowns={showCrowns}
+          onShowCrownsChange={setShowCrowns}
           showDiscounts={showDiscounts}
           onShowDiscountsChange={setShowDiscounts}
           isControlVisible={(spec) =>
@@ -249,6 +254,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
                     scale={scale}
                     showLabels={showLabels}
                     showFrontier={showFrontier}
+                    showCrowns={showCrowns}
                     showDiscounts={showDiscounts}
                     xAxisLabel={() => aaAdapter.xAxisLabel}
                     yAxisLabel={() => aaAdapter.yAxisLabel}
@@ -266,12 +272,20 @@ export default function AaChartSection(props: AaChartSectionProps) {
               </div>
               <ChartWatermark />
             </Show>
-            <Show when={showFrontier()}>
-              <div class="mt-2 flex items-center justify-center gap-2 text-sm text-base-content/70" role="img" aria-label="Pareto frontier (dotted line)">
-                <span class="w-6 border-t-2 border-dashed border-primary" aria-hidden="true" />
-                <span>Frontier line</span>
-              </div>
-            </Show>
+            <div class="mt-2 flex flex-wrap items-center justify-center gap-4 text-sm text-base-content/70">
+              <Show when={showFrontier()}>
+                <div class="flex items-center gap-2" role="img" aria-label="Pareto frontier (dotted line)">
+                  <span class="w-6 border-t-2 border-dashed border-primary" aria-hidden="true" />
+                  <span>Frontier line</span>
+                </div>
+              </Show>
+              <Show when={showCrowns()}>
+                <div class="flex items-center gap-2" role="img" aria-label="Pareto crown (best value frontier model)">
+                  <Crown size={18} aria-hidden="true" />
+                  <span>Frontier crown</span>
+                </div>
+              </Show>
+            </div>
           </Show>
         </div>
         <Show when={visibleRecords().length > 0 && build().unplottable.length > 0}>

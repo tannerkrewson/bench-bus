@@ -167,8 +167,10 @@ export interface ChartViewState {
   controls: PricingControlState;
   /** Whether model labels should be rendered next to plotted points. */
   showLabels?: boolean;
-  /** Whether the Pareto frontier line and crown decorations are visible. */
+  /** Whether the Pareto frontier line is visible. */
   showFrontier?: boolean;
+  /** Whether Pareto crown decorations are visible. Defaults to true. */
+  showCrowns?: boolean;
   /** Whether the largest source-backed discount annotation is visible. */
   showDiscounts?: boolean;
 }

@@ -14,7 +14,8 @@ import type {
  *   chart.<benchmarkId>.q            = search query
  *   chart.<benchmarkId>.sel          = comma-separated selected ids
  *   chart.<benchmarkId>.labels       = false when model labels are hidden
- *   chart.<benchmarkId>.frontier     = false when Pareto decorations are hidden
+ *   chart.<benchmarkId>.frontier     = false when the Pareto line is hidden
+ *   chart.<benchmarkId>.crowns       = false when crown decorations are hidden
  *   chart.<benchmarkId>.discounts     = false when discount annotations are hidden
  *   chart.<benchmarkId>.c.<control>  = control value (string form)
  *
@@ -27,6 +28,7 @@ const QUERY_KEY = "q";
 const SELECTED_KEY = "sel";
 const LABELS_KEY = "labels";
 const FRONTIER_KEY = "frontier";
+const CROWNS_KEY = "crowns";
 const DISCOUNTS_KEY = "discounts";
 const CONTROL_PREFIX = "c.";
 
@@ -39,6 +41,7 @@ export interface ChartStateSerializationDefaults extends ChartStateDefaults {
   query?: string;
   showLabels?: boolean;
   showFrontier?: boolean;
+  showCrowns?: boolean;
   showDiscounts?: boolean;
 }
 
@@ -68,6 +71,11 @@ export function chartStateToParams(
     params.set(key(benchmarkId, FRONTIER_KEY), String(state.showFrontier));
   } else if (!serializationDefaults && state.showFrontier === false) {
     params.set(key(benchmarkId, FRONTIER_KEY), "false");
+  }
+  if (serializationDefaults && state.showCrowns !== undefined && state.showCrowns !== (serializationDefaults.showCrowns ?? true)) {
+    params.set(key(benchmarkId, CROWNS_KEY), String(state.showCrowns));
+  } else if (!serializationDefaults && state.showCrowns === false) {
+    params.set(key(benchmarkId, CROWNS_KEY), "false");
   }
   if (serializationDefaults && state.showDiscounts !== undefined && state.showDiscounts !== (serializationDefaults.showDiscounts ?? true)) {
     params.set(key(benchmarkId, DISCOUNTS_KEY), String(state.showDiscounts));
@@ -147,6 +155,9 @@ export function chartStateFromParams(
   const frontierRaw = params.get(key(benchmarkId, FRONTIER_KEY));
   const showFrontier =
     frontierRaw === "false" ? false : frontierRaw === "true" ? true : undefined;
+  const crownsRaw = params.get(key(benchmarkId, CROWNS_KEY));
+  const showCrowns =
+    crownsRaw === "false" ? false : crownsRaw === "true" ? true : undefined;
   const discountsRaw = params.get(key(benchmarkId, DISCOUNTS_KEY));
   const showDiscounts =
     discountsRaw === "false" ? false : discountsRaw === "true" ? true : undefined;
@@ -167,6 +178,7 @@ export function chartStateFromParams(
     ...(selectionSpecified ? { selectionSpecified: true } : {}),
     ...(showLabels === undefined ? {} : { showLabels }),
     ...(showFrontier === undefined ? {} : { showFrontier }),
+    ...(showCrowns === undefined ? {} : { showCrowns }),
     ...(showDiscounts === undefined ? {} : { showDiscounts }),
   };
 }

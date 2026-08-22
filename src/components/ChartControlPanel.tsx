@@ -13,9 +13,12 @@ export interface ChartControlPanelProps {
   /** Optional chart display toggle, enabled by chart sections that show labels. */
   showLabels?: () => boolean;
   onShowLabelsChange?: (show: boolean) => void;
-  /** Optional Pareto frontier visibility toggle. */
+  /** Optional Pareto frontier-line visibility toggle. */
   showFrontier?: () => boolean;
   onShowFrontierChange?: (show: boolean) => void;
+  /** Optional Pareto crown visibility toggle, enabled by default. */
+  showCrowns?: () => boolean;
+  onShowCrownsChange?: (show: boolean) => void;
   /** Optional source-backed discount visibility toggle. */
   showDiscounts?: () => boolean;
   onShowDiscountsChange?: (show: boolean) => void;
@@ -191,6 +194,22 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
                     aria-label="Show Pareto frontier"
                     checked={props.showFrontier?.() ?? false}
                     onChange={(e) => props.onShowFrontierChange?.(e.currentTarget.checked)}
+                  />
+                </label>
+              </div>
+            </Show>
+
+            <Show when={props.showCrowns && props.onShowCrownsChange}>
+              <div>
+                <label class="label cursor-pointer gap-2 text-base font-medium" for={controlId("show-crowns")}>
+                  <span>Pareto crowns</span>
+                  <input
+                    id={controlId("show-crowns")}
+                    type="checkbox"
+                    class="toggle toggle-sm toggle-primary"
+                    aria-label="Show Pareto crowns"
+                    checked={props.showCrowns?.() ?? true}
+                    onChange={(e) => props.onShowCrownsChange?.(e.currentTarget.checked)}
                   />
                 </label>
               </div>

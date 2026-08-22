@@ -31,6 +31,7 @@ export interface BenchmarkScatterChartProps {
   /** Model labels are enabled by default and controlled by the section toggle. */
   showLabels?: () => boolean;
   showFrontier?: () => boolean;
+  showCrowns?: () => boolean;
   showDiscounts?: () => boolean;
   height?: number;
   /** Hover changes only when the pointer is within the hit radius of a dot. */
@@ -251,7 +252,13 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   const [labelPositions, setLabelPositions] = createSignal<ReturnType<typeof layoutModelLabels>>([]);
   const [hoveredPosition, setHoveredPosition] = createSignal<{ left: number; top: number } | null>(null);
   const [hoveredLabelId, setHoveredLabelId] = createSignal<string | null>(null);
-  const [pointDecorations, setPointDecorations] = createSignal<{ id: string; left: number; top: number; color: string }[]>([]);
+  const [pointDecorations, setPointDecorations] = createSignal<{
+    id: string;
+    left: number;
+    top: number;
+    color: string;
+    modelLabel: string;
+  }[]>([]);
   const [discountDecorations, setDiscountDecorations] = createSignal<DiscountDecoration[]>([]);
   const [plotXSnapshot, setPlotXSnapshot] = createSignal("");
   // currentSeries and plot are intentionally kept outside Solid because uPlot
@@ -553,6 +560,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         left: overRect.left - rootRect.left + currentPlot.valToPos(x, "x"),
         top: overRect.top - rootRect.top + currentPlot.valToPos(y, "y"),
         color: themeStyles().frontierColor,
+        modelLabel: currentSeries.labels[index] ?? id,
       }];
     });
     const crownDots = currentSeries.ids.flatMap((id, index) => {
@@ -566,7 +574,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       }];
     });
     const retainedCrownIds = new Set(selectCrownPoints(allCrownDecorations, crownDots).map((crown) => crown.id));
-    setPointDecorations(allCrownDecorations.filter((crown) => retainedCrownIds.has(crown.id)));
+    setPointDecorations((props.showCrowns?.() ?? true)
+      ? allCrownDecorations.filter((crown) => retainedCrownIds.has(crown.id))
+      : []);
     const discountGeometry = currentSeries.discounts.flatMap((discount) => {
       const preLeft = overRect.left - rootRect.left + currentPlot.valToPos(discount.preX, "x");
       const effectiveLeft = overRect.left - rootRect.left + currentPlot.valToPos(discount.effectiveX, "x");
@@ -1222,6 +1232,14 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   createEffect(
     on(
+      () => props.showCrowns?.() ?? true,
+      () => scheduleLabelPositions(),
+      { defer: true },
+    ),
+  );
+
+  createEffect(
+    on(
       () => props.showLabels?.() ?? true,
       (showLabels) => {
         if (!showLabels) {
@@ -1473,8 +1491,15 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
               fill="none"
               stroke={point.color}
               opacity={isFocusedFamilyId(point.id) ? 1 : 0.2}
+              role="img"
+              aria-label={`${point.modelLabel} is on the Pareto frontier, meaning no plotted model is both cheaper and higher-scoring.`}
+              style={{ "pointer-events": "auto" }}
+              data-testid="pareto-crown"
+              data-model-id={point.id}
             >
-              <Crown width={18} height={18} aria-hidden="true" data-testid="pareto-crown" />
+              <title>{`${point.modelLabel} is on the Pareto frontier, meaning no plotted model is both cheaper and higher-scoring.`}</title>
+              <rect width="18" height="18" fill="transparent" pointer-events="all" aria-hidden="true" />
+              <Crown width={18} height={18} aria-hidden="true" />
             </g>
           )}
         </For>

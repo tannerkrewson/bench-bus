@@ -93,6 +93,21 @@ describe("chart URL state", () => {
     expect(chartStateFromParams(params, "aa-demo", specs, defaults).showFrontier).toBe(false);
   });
 
+  it("round-trips crown visibility independently of the frontier line", () => {
+    const state = {
+      scale: "log" as const,
+      query: "",
+      selectedIds: [],
+      controls: {},
+      showFrontier: false,
+      showCrowns: false,
+    };
+    const params = chartStateToParams(state, "aa-demo");
+    expect(params.get("chart.aa-demo.frontier")).toBe("false");
+    expect(params.get("chart.aa-demo.crowns")).toBe("false");
+    expect(chartStateFromParams(params, "aa-demo", specs, defaults)).toMatchObject(state);
+  });
+
   it("round-trips discount visibility", () => {
     const state = {
       scale: "log" as const,

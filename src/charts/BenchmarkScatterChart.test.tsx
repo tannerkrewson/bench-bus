@@ -148,6 +148,7 @@ function mountSizedChart(ui: () => JSX.Element) {
 describe("BenchmarkScatterChart discount annotations", () => {
   it("keeps Pareto crowns visible independently of the frontier line toggle", async () => {
     const [showFrontier, setShowFrontier] = createSignal(false);
+    const [showCrowns, setShowCrowns] = createSignal(true);
     const { container, dispose } = mountSizedChart(() => (
       <BenchmarkScatterChart
         points={() => [
@@ -157,13 +158,17 @@ describe("BenchmarkScatterChart discount annotations", () => {
         ]}
         scale={() => "linear"}
         showFrontier={showFrontier}
+        showCrowns={showCrowns}
         xAxisLabel={() => "Cost"}
         yAxisLabel={() => "Score"}
         height={320}
       />
     ));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    expect(container.querySelector("[data-testid='chart-decorations']")?.querySelectorAll("[data-testid='pareto-crown']")).toHaveLength(2);
+    const crowns = container.querySelector("[data-testid='chart-decorations']")?.querySelectorAll("[data-testid='pareto-crown']");
+    expect(crowns).toHaveLength(2);
+    expect(crowns?.[0]?.getAttribute("aria-label")).toContain("Cheap");
+    expect(crowns?.[0]?.querySelector("title")?.textContent).toContain("Pareto frontier");
     setShowFrontier(true);
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
@@ -171,6 +176,12 @@ describe("BenchmarkScatterChart discount annotations", () => {
     setShowFrontier(false);
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     expect(container.querySelector("[data-testid='chart-decorations']")?.querySelectorAll("[data-testid='pareto-crown']")).toHaveLength(2);
+    setShowCrowns(false);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(container.querySelectorAll("[data-testid='pareto-crown']")).toHaveLength(0);
+    setShowFrontier(true);
+    expect(container.querySelectorAll("[data-testid='pareto-crown']")).toHaveLength(0);
     dispose();
   });
 

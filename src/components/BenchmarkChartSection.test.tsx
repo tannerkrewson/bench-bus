@@ -76,6 +76,24 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     dispose();
   });
 
+  it("keeps crown visibility default-on and independent from the frontier line", () => {
+    const { container, dispose } = mount(() => (
+      <BenchmarkChartSection adapter={aaDemoAdapter} records={() => AA_FIXTURE_RECORDS} />
+    ));
+    const crowns = container.querySelector("input[aria-label='Show Pareto crowns']") as HTMLInputElement;
+    const frontier = container.querySelector("input[aria-label='Show Pareto frontier']") as HTMLInputElement;
+    expect(crowns.checked).toBe(true);
+    expect(container.querySelector("[aria-label^='Pareto crown']")).not.toBeNull();
+    crowns.click();
+    expect(crowns.checked).toBe(false);
+    expect(container.querySelector("[aria-label^='Pareto crown']")).toBeNull();
+    frontier.click();
+    expect(frontier.checked).toBe(true);
+    expect(container.querySelector("[aria-label='Pareto frontier (dotted line)']")).not.toBeNull();
+    expect(crowns.checked).toBe(false);
+    dispose();
+  });
+
   it("makes the settings popup translucent only during slider interaction and keeps it below the button", () => {
     const { container, dispose } = mount(() => (
       <BenchmarkChartSection adapter={aaDemoAdapter} records={() => AA_FIXTURE_RECORDS} />
