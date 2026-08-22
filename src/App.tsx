@@ -176,6 +176,7 @@ const App: Component = () => {
           <footer
             class="mt-6 px-4 py-4 text-center text-sm text-base-content/80"
             aria-label="Site information"
+            role="contentinfo"
           >
             <div class="flex flex-col items-center justify-center gap-y-1">
               <span>
