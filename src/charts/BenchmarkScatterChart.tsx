@@ -92,6 +92,31 @@ export function filterTenPointGridSplits(splits: readonly number[]): (number | n
   return splits.map((value) => Number.isInteger(value) && value % 10 === 0 ? value : null);
 }
 
+/**
+ * Keep the focused family at its normal series alpha while de-emphasizing
+ * every unrelated uPlot series. Point rows are grouped by model-family key;
+ * connector rows are grouped by variant-group order.
+ */
+export function seriesAlphasForFocus(
+  baseAlphas: readonly number[],
+  focused: boolean,
+  connectorCount: number,
+  discountCount: number,
+  pointGroupKeys: readonly string[],
+  focusedConnectorIndex: number | null,
+  focusedPointGroupKeys: ReadonlySet<string> | null,
+): number[] {
+  if (!focused) return [...baseAlphas];
+  const pointOffset = 1 + connectorCount + discountCount;
+  return baseAlphas.map((baseAlpha, index) => {
+    const connectorFocused = focusedConnectorIndex !== null && index === 1 + focusedConnectorIndex;
+    const pointGroupIndex = index - pointOffset;
+    const pointFocused = pointGroupIndex >= 0 && pointGroupIndex < pointGroupKeys.length &&
+      focusedPointGroupKeys?.has(pointGroupKeys[pointGroupIndex]!) === true;
+    return connectorFocused || pointFocused ? baseAlpha : Math.min(baseAlpha, 0.2);
+  });
+}
+
 type DiscountAnnotation = {
   id: string;
   pointId: string;
@@ -842,14 +867,42 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   const applyPlotEmphasis = () => {
     const root = container?.querySelector<HTMLElement>(".uplot");
-    const focused = hoveredLabelId() !== null;
+    const focusedId = hoveredLabelId();
+    const focused = focusedId !== null;
+    const pointGroupKeys = [...new Set(currentSeries.groupKeys)];
+    const focusedConnectorIndex = focusedId === null
+      ? null
+      : currentSeries.variantGroups.findIndex((group) =>
+          group.members.some((member) => member.id === focusedId),
+        );
+    const focusedVariantGroup = focusedConnectorIndex === null || focusedConnectorIndex < 0
+      ? undefined
+      : currentSeries.variantGroups[focusedConnectorIndex];
+    const focusedPointGroupKeys = focusedVariantGroup
+      ? new Set(focusedVariantGroup.members.map((member) => {
+          const index = currentSeries.ids.indexOf(member.id);
+          return index < 0 ? null : currentSeries.groupKeys[index];
+        }).filter((key): key is string => key !== undefined && key !== null))
+      : focusedId === null
+        ? null
+        : new Set([currentSeries.groupKeys[currentSeries.ids.indexOf(focusedId)]].filter(
+            (key): key is string => key !== undefined,
+          ));
     // Dim uPlot series individually instead of the whole canvas. The latter
     // also dims grid/axis pixels; series alpha leaves axes and their labels
-    // fully readable while the selected model is redrawn in the SVG overlay.
+    // fully readable. Keep every point and solid connector series belonging
+    // to the focused effort family at its normal alpha.
     if (plot) {
-      plot.series.forEach((series, index) => {
-        series.alpha = focused ? Math.min(baseSeriesAlphas[index] ?? 1, 0.2) : (baseSeriesAlphas[index] ?? 1);
-      });
+      const alphas = seriesAlphasForFocus(
+        baseSeriesAlphas,
+        focused,
+        currentSeries.variantGroups.length,
+        currentSeries.discounts.length,
+        pointGroupKeys,
+        focusedConnectorIndex !== null && focusedConnectorIndex >= 0 ? focusedConnectorIndex : null,
+        focusedPointGroupKeys,
+      );
+      plot.series.forEach((series, index) => { series.alpha = alphas[index] ?? 1; });
       plot.redraw(false, false);
     }
     root?.querySelectorAll<HTMLElement>(".u-axis, .u-title, .u-value, .u-label").forEach((axis) => {
@@ -1002,6 +1055,15 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     });
   });
 
+  const isFocusedFamilyId = (id: string): boolean => {
+    const focusedId = hoveredLabelId();
+    if (focusedId === null) return true;
+    const group = currentSeries.variantGroups.find((candidate) =>
+      candidate.members.some((member) => member.id === focusedId),
+    );
+    return group ? group.members.some((member) => member.id === id) : focusedId === id;
+  };
+
   const focusedGeometry = createMemo(() => {
     const id = hoveredLabelId();
     const labels = labelPositions();
@@ -1016,6 +1078,19 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     const group = currentSeries.variantGroups.find((candidate) =>
       candidate.members.some((member) => member.id === id),
     );
+    const familyDots = (group?.members ?? [{ id }]).flatMap((member) => {
+      const memberIndex = currentSeries.ids.indexOf(member.id);
+      const position = memberIndex < 0 ? null : pointPosition(currentPlot, memberIndex);
+      if (!position) return [];
+      return [{
+        ...position,
+        id: member.id,
+        color: groupColor(
+          currentSeries.groupKeys[memberIndex] ?? modelGroupKey(currentSeries.labels[memberIndex] ?? member.id, member.id),
+          dark,
+        ),
+      }];
+    });
     if (group) {
       const memberPoints = group.members
         .map((member) => {
@@ -1046,6 +1121,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     return {
       point,
       pointColor: groupColor(currentSeries.groupKeys[index] ?? modelGroupKey(currentSeries.labels[index] ?? id, id), dark),
+      familyDots,
       connectors,
       discountDots,
     };
@@ -1121,14 +1197,19 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                   />
                 )}
               </For>
-              <circle
-                cx={focused().point.left}
-                cy={focused().point.top}
-                r={DOT_SIZE / 2}
-                fill={focused().pointColor}
-                stroke={focused().pointColor}
-                data-testid="focused-model-dot"
-              />
+              <For each={focused().familyDots}>
+                {(dot) => (
+                  <circle
+                    cx={dot.left}
+                    cy={dot.top}
+                    r={DOT_SIZE / 2}
+                    fill={dot.color}
+                    stroke={dot.color}
+                    data-testid="focused-model-dot"
+                    data-model-id={dot.id}
+                  />
+                )}
+              </For>
             </>
           )}
         </Show>
@@ -1139,7 +1220,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 transform={`translate(${point.left - 9} ${point.top - 27})`}
                 fill="none"
                 stroke={point.color}
-                opacity={hoveredLabelId() === null || hoveredLabelId() === point.id ? 1 : 0.2}
+                opacity={isFocusedFamilyId(point.id) ? 1 : 0.2}
               >
                 <Crown width={18} height={18} aria-hidden="true" data-testid="pareto-crown" />
               </g>

@@ -7,6 +7,7 @@ import BenchmarkScatterChart, {
   filterDollarAxisSplits,
   filterIntegerAxisSplits,
   filterTenPointGridSplits,
+  seriesAlphasForFocus,
   snapToDotPosition,
 } from "./BenchmarkScatterChart";
 import type { PlottablePoint } from "./types";
@@ -33,6 +34,28 @@ describe("BenchmarkScatterChart pure interaction policies", () => {
     const dot = { left: 100, top: 80 };
     expect(snapToDotPosition({ left: 108, top: 86 }, dot, 10)).toEqual(dot);
     expect(snapToDotPosition({ left: 111, top: 80 }, dot, 10)).toBeNull();
+  });
+
+  it("keeps every focused family point and connector series at its base alpha", () => {
+    const focusedAlphas = seriesAlphasForFocus(
+      [1, 0.62, 0.62, 1, 1, 1, 1],
+      true,
+      2,
+      1,
+      ["opus", "other"],
+      0,
+      new Set(["opus"]),
+    );
+    expect(focusedAlphas).toEqual([0.2, 0.62, 0.2, 0.2, 1, 0.2, 0.2]);
+    expect(seriesAlphasForFocus(
+      [1, 0.62, 0.62, 1, 1, 1, 1],
+      false,
+      2,
+      1,
+      ["opus", "other"],
+      null,
+      null,
+    )).toEqual([1, 0.62, 0.62, 1, 1, 1, 1]);
   });
 });
 
@@ -270,6 +293,9 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect(familyLabel.style.opacity).toBe("1");
     expect(otherLabel.style.opacity).toBe("0.2");
     expect(container.querySelectorAll("[data-testid='focused-connector']")).toHaveLength(1);
+    expect(container.querySelectorAll("[data-testid='focused-model-dot']")).toHaveLength(2);
+    expect(container.querySelector("[data-testid='focused-model-dot'][data-model-id='opus-low']")).not.toBeNull();
+    expect(container.querySelector("[data-testid='focused-model-dot'][data-model-id='opus-high']")).not.toBeNull();
     familyLabel.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
     expect(otherLabel.style.opacity).toBe("1");
     expect(container.querySelectorAll("[data-testid='focused-connector']")).toHaveLength(0);
