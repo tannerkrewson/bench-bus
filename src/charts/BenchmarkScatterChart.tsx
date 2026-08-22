@@ -1037,7 +1037,16 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   createEffect(
     on(
       () => props.showLabels?.() ?? true,
-      () => scheduleLabelPositions(),
+      (showLabels) => {
+        if (!showLabels) {
+          // A hidden label cannot remain the source of family emphasis. Clear
+          // the DOM hover bounds before rebuilding the overlay so the next
+          // label-enabled render starts neutral too.
+          hoveredLabelBounds = null;
+          setHoveredLabelId(null);
+        }
+        scheduleLabelPositions();
+      },
       { defer: true },
     ),
   );

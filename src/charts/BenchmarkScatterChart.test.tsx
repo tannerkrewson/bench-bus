@@ -309,6 +309,46 @@ describe("BenchmarkScatterChart discount annotations", () => {
     dispose();
   });
 
+  it("clears label emphasis when labels are hidden and stays neutral when re-enabled", async () => {
+    const [showLabels, setShowLabels] = createSignal(true);
+    const { container, dispose } = mountSizedChart(() => (
+      <BenchmarkScatterChart
+        points={() => [
+          { id: "opus-low", label: "Opus low", x: 4, y: 60, brand: "anthropic", effortGroup: "opus", effort: "low" },
+          { id: "opus-high", label: "Opus high", x: 6, y: 70, brand: "anthropic", effortGroup: "opus", effort: "high" },
+          { id: "other", label: "Other", x: 12, y: 80, brand: "openai" },
+        ]}
+        scale={() => "linear"}
+        showLabels={showLabels}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        height={320}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const familyLabel = container.querySelector("[data-testid='model-label'][data-model-id='opus-high']") as HTMLElement;
+    const otherLabel = container.querySelector("[data-testid='model-label'][data-model-id='other']") as HTMLElement;
+    familyLabel.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    expect(container.querySelector("[data-hovered-label-id='opus-high']")).not.toBeNull();
+    expect(otherLabel.style.opacity).toBe("0.2");
+
+    setShowLabels(false);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(container.querySelector("[data-hovered-label-id]")).toBeNull();
+    expect(container.querySelectorAll("[data-testid='model-label']")).toHaveLength(0);
+    expect(container.querySelectorAll("[data-testid='focused-connector'], [data-testid='focused-model-dot']")).toHaveLength(0);
+
+    setShowLabels(true);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(container.querySelector("[data-hovered-label-id]")).toBeNull();
+    expect(container.querySelectorAll("[data-testid='model-label']")).not.toHaveLength(0);
+    expect([...container.querySelectorAll<HTMLElement>("[data-testid='model-label']")].every((label) => label.style.opacity === "1")).toBe(true);
+    dispose();
+  });
+
   it("renders only the largest provider discount for one model and can hide it", async () => {
     const [showDiscounts, setShowDiscounts] = createSignal(true);
     const { container, dispose } = mount(() => (
