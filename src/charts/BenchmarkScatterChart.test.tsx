@@ -308,6 +308,38 @@ describe("BenchmarkScatterChart discount annotations", () => {
     dispose();
   });
 
+  it("paints and routes an alternative discount endpoint separately from the plotted dot", async () => {
+    const { container, dispose } = mountSizedChart(() => (
+      <BenchmarkScatterChart
+        points={() => [{
+          id: "deepseek-alternative",
+          label: "DeepSeek alternative",
+          x: 6,
+          y: 70,
+          discount: { percentage: 40, preDiscountX: 10, effectiveX: 4 },
+        }]}
+        scale={() => "log"}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        height={320}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const discount = container.querySelector("[data-testid='discount-line']")!;
+    expect(discount.getAttribute("data-discount-provider-role")).toBe("alternative");
+    expect(discount.querySelectorAll("[data-testid='discount-endpoint-dot']")).toHaveLength(2);
+    expect(discount.querySelector("[data-discount-endpoint='effective']")?.getAttribute("stroke-dasharray")).toBe("none");
+    const line = discount.querySelector("line")!;
+    const effective = discount.querySelector("[data-discount-endpoint='effective']")!;
+    expect(Math.abs(Number(line.getAttribute("x2")) - Number(effective.getAttribute("cx")))).toBeGreaterThan(1);
+    const effectiveHit = container.querySelector("[data-testid='discount-endpoint-hit'][data-discount-endpoint='effective']") as HTMLElement;
+    effectiveHit.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    expect(container.querySelector("[data-testid='hovered-dot']")).not.toBeNull();
+    expect(container.querySelector("[data-testid='hover-axis-readouts']")?.textContent).toContain("$4");
+    effectiveHit.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+    dispose();
+  });
+
   it("keeps a valid 100% annotation while omitting its zero log-scale endpoint", async () => {
     const [scale, setScale] = createSignal<"log" | "linear">("log");
     const { container, dispose } = mount(() => (
