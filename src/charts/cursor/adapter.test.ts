@@ -8,6 +8,7 @@ import {
   TOKEN_MIX_CONTROL_ID,
   completionTokensForCursorRate,
   cursorBenchAdapter,
+  cursorDefaultVisibleIds,
   effectiveCursorCostUsd,
   formatCursorCostUsd,
   surchargeApplies,
@@ -30,6 +31,17 @@ describe("cursorBenchAdapter identity + axes", () => {
   it("uses the cursor URL namespace and defaults to a logarithmic price axis", () => {
     expect(cursorBenchAdapter.benchmarkId).toBe(CURSOR_BENCH_ID);
     expect(cursorBenchAdapter.defaultXScale).toBe("log");
+  });
+
+  it("hides the current Kimi, Gemini 3.6 Flash, and GLM families by default", () => {
+    const records = [
+      byId("composer-2"),
+      { ...byId("composer-2"), modelId: "kimi-k3-max", modelName: "Kimi K3 Max" },
+      { ...byId("composer-2"), modelId: "gemini-3-6-flash-high", modelName: "Gemini 3.6 Flash High" },
+      { ...byId("composer-2"), modelId: "glm-5-2-high", modelName: "GLM 5.2 High" },
+      { ...byId("composer-2"), modelId: "new-model", modelName: "New Model" },
+    ];
+    expect(cursorDefaultVisibleIds(records)).toEqual(["composer-2", "new-model"]);
   });
 });
 

@@ -44,7 +44,7 @@ const EFFORT_ORDER: Record<string, number> = {
   low: 0,
   medium: 1,
   high: 2,
-  "extra high": 3,
+  xhigh: 3,
   max: 4,
 };
 

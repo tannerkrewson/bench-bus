@@ -39,6 +39,26 @@ describe("CursorBenchChartSection", () => {
     dispose();
   });
 
+  it("preserves an explicit URL selection for a family hidden by defaults", () => {
+    const hidden = {
+      ...CURSOR_FIXTURE_RECORDS[0]!,
+      modelId: "kimi-k3-max",
+      modelName: "Kimi K3 Max",
+    };
+    const { container, dispose } = mount(() => (
+      <CursorBenchChartSection
+        records={() => [...CURSOR_FIXTURE_RECORDS, hidden]}
+        initialState={{ selectedIds: [hidden.modelId], selectionSpecified: true }}
+      />
+    ));
+    const checkbox = container.querySelector(
+      "[data-testid='model-list'] input[aria-label='Show Kimi K3 Max']",
+    ) as HTMLInputElement;
+    expect(checkbox).not.toBeNull();
+    expect(checkbox.checked).toBe(true);
+    dispose();
+  });
+
   it("switching to linear preserves surcharge/query/selection state", () => {
     const states: ChartViewState[] = [];
     const { container, dispose } = mount(() => (

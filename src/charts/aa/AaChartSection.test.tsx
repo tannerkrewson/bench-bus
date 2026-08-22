@@ -86,6 +86,44 @@ describe("AaChartSection", () => {
     dispose();
   });
 
+  it("includes every reasoning variant of a frontier family but not its non-reasoning base", () => {
+    const familyBase = {
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug: "frontier-family",
+      name: "Frontier Family",
+      shortName: "Frontier Family",
+      intelligenceIndex: 40,
+      canonicalTokens: { input: 100_000_000, output: 10_000_000 },
+      listed: { price1mInputTokens: 2, price1mOutputTokens: 2, cacheHitPrice: 1 },
+    };
+    const familyHigh = {
+      ...familyBase,
+      slug: "frontier-family-high",
+      name: "Frontier Family High",
+      intelligenceIndex: 99,
+      listed: { price1mInputTokens: 0.01, price1mOutputTokens: 0.01, cacheHitPrice: 0.01 },
+    };
+    const familyLow = {
+      ...familyBase,
+      slug: "frontier-family-low",
+      name: "Frontier Family (Adaptive Reasoning, Low Effort)",
+      intelligenceIndex: 50,
+      listed: { price1mInputTokens: 0.02, price1mOutputTokens: 0.02, cacheHitPrice: 0.01 },
+    };
+    const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
+    const { dispose } = mount(() => (
+      <AaChartSection
+        records={() => [...AA_FIXTURE_RECORDS, familyBase, familyHigh, familyLow]}
+        onStateChange={(state) => states.push(state)}
+      />
+    ));
+    const selected = states[states.length - 1]?.selectedIds ?? [];
+    expect(selected).toContain("frontier-family-high");
+    expect(selected).toContain("frontier-family-low");
+    expect(selected).not.toContain("frontier-family");
+    dispose();
+  });
+
   it("updates frontier defaults with snapshots and preserves explicit selections", () => {
     const frontierRecord = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
@@ -169,7 +207,7 @@ describe("AaChartSection", () => {
     ));
 
     expect(states[states.length - 1]?.selectedIds).toEqual(["gpt-5.6-sol"]);
-    expect(container.querySelector("[data-testid='aa-filter-count']")?.textContent).toContain("2 model");
+    expect(container.querySelector("[data-testid='aa-filter-count']")).toBeNull();
     const selected = [...container.querySelectorAll("[data-testid='model-list'] input[type='checkbox']")]
       .filter((input) => (input as HTMLInputElement).checked);
     expect(selected).toHaveLength(1);

@@ -48,15 +48,27 @@ const CURSOR_KNOWN_MODEL_GROUPS = new Set([
   ...CURSOR_DEFAULT_MODEL_GROUPS,
   "opus-4-8",
   "sonnet-5",
+  "gemini-3-6-flash",
   "gemini-3-7-flash",
+  "kimi-k3",
+  "glm-5-2",
+  "glm-5-3",
 ]);
+
+/** Families intentionally omitted from the initial Cursor view. */
+export function isCursorHiddenDefaultGroup(groupKey: string): boolean {
+  return groupKey === "kimi-k3" || groupKey.startsWith("kimi-") ||
+    groupKey === "gemini-3-6-flash" ||
+    groupKey.startsWith("glm-");
+}
 
 export function cursorDefaultVisibleIds(records: readonly DerivedCursorChartRecord[]): string[] {
   return records
     .filter((record) => {
       const groupKey = modelDisplayMetadata(record.modelName, record.modelId).groupKey;
-      return CURSOR_DEFAULT_MODEL_GROUPS.includes(groupKey as (typeof CURSOR_DEFAULT_MODEL_GROUPS)[number]) ||
-        !CURSOR_KNOWN_MODEL_GROUPS.has(groupKey);
+      return !isCursorHiddenDefaultGroup(groupKey) &&
+        (CURSOR_DEFAULT_MODEL_GROUPS.includes(groupKey as (typeof CURSOR_DEFAULT_MODEL_GROUPS)[number]) ||
+          !CURSOR_KNOWN_MODEL_GROUPS.has(groupKey));
     })
     .map((record) => record.modelId);
 }
@@ -145,6 +157,7 @@ export const cursorBenchAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord>
       selectionLabel: record.modelName,
       brand: inferModelBrand(record.modelName, record.provider, record.modelId),
       effortGroup: metadata.groupKey,
+      ...(metadata.effort ? { effort: metadata.effort } : {}),
       x: cost,
       y: record.score,
     };

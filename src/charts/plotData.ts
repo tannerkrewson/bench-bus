@@ -23,13 +23,9 @@ export function buildChartPlot<TRecord>(
   const needle = query.trim().toLowerCase();
   const entries: { record: TRecord; point: PlottablePoint }[] = [];
   const unplottable: { record: TRecord; reason: string }[] = [];
-  let filteredOut = 0;
 
   for (const record of records) {
-    if (needle !== "" && !adapter.searchText(record).toLowerCase().includes(needle)) {
-      filteredOut += 1;
-      continue;
-    }
+    if (needle !== "" && !adapter.searchText(record).toLowerCase().includes(needle)) continue;
     const point = adapter.computePoint(record, controls);
     if (point === null) {
       unplottable.push({ record, reason: "no computable cost for the current pricing mode" });
@@ -38,7 +34,7 @@ export function buildChartPlot<TRecord>(
     entries.push({ record, point });
   }
 
-  return { entries, unplottable, filteredOut };
+  return { entries, unplottable };
 }
 
 /** Validate one explicit source-backed discount annotation. */

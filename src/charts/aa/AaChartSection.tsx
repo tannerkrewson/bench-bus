@@ -69,10 +69,18 @@ export default function AaChartSection(props: AaChartSectionProps) {
       { ...defaultControls(), pricingMode: "listed", cacheHitRate: AA_DEFAULT_CACHE_HIT_RATE },
       "",
     );
-    const frontierIds = paretoFrontier(listedBuild.entries.map((entry) => entry.point)).map(
-      (point) => point.id,
+    const frontierPoints = paretoFrontier(listedBuild.entries.map((entry) => entry.point));
+    const frontierGroups = new Set(
+      frontierPoints.map((point) => point.effortGroup).filter((group): group is string => group !== undefined),
     );
-    return [...new Set([...AA_DEFAULT_MODEL_SLUGS, ...frontierIds])];
+    // A frontier family represents a connected reasoning-effort family, not
+    // just the one variant that happened to win. Include every other
+    // reasoning variant with the same name/version, while never pulling in a
+    // non-reasoning base model merely because it shares that family key.
+    const frontierVariantIds = listedBuild.entries
+      .filter(({ point }) => point.effortGroup !== undefined && point.effort !== undefined && frontierGroups.has(point.effortGroup))
+      .map(({ point }) => point.id);
+    return [...new Set([...AA_DEFAULT_MODEL_SLUGS, ...frontierPoints.map((point) => point.id), ...frontierVariantIds])];
   });
   const [selectedIds, setSelectedIds] = createSignal<string[]>(
     selectionSpecified()
@@ -96,7 +104,6 @@ export default function AaChartSection(props: AaChartSectionProps) {
       // Unplottable records remain visible in the selector regardless of
       // selection so missing upstream pricing is explained, never estimated.
       unplottable: candidate.unplottable,
-      filteredOut: candidate.entries.filter((entry) => !selected.has(entry.point.id)).length,
     };
   });
 
@@ -279,12 +286,6 @@ export default function AaChartSection(props: AaChartSectionProps) {
             </Show>
           </p>
         </Show>
-        <Show when={props.records().length > 0 && build().filteredOut > 0}>
-          <p class="text-xs text-base-content/60" role="status" data-testid="aa-filter-count">
-            {build().filteredOut} model(s) hidden by model selection.
-          </p>
-        </Show>
-
       </div>
     </section>
   );

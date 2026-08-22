@@ -161,6 +161,7 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
       selectionLabel: record.name,
       brand: inferModelBrand(record.name, record.slug),
       effortGroup: metadata.groupKey,
+      ...(metadata.effort ? { effort: metadata.effort } : {}),
       x: cost,
       y: record.intelligenceIndex,
       ...(discount ? { discount } : {}),

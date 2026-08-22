@@ -130,6 +130,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         label: point.label,
         brand: point.brand ?? inferModelBrand(point.label, id),
         effortGroup: point.effortGroup,
+        effort: point.effort,
         x: point.x,
         y: point.y,
       }];

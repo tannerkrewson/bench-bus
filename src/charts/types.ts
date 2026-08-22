@@ -55,6 +55,8 @@ export interface PlottablePoint {
   discounts?: readonly PriceDiscountAnnotation[];
   /** Stable model-family key shared by all effort variants and both charts. */
   effortGroup?: string;
+  /** Normalized reasoning effort, when this point is an effort variant. */
+  effort?: string;
   /** Benchmark score. */
   y: number;
 }
@@ -177,8 +179,6 @@ export interface ChartPlotBuild<TRecord> {
   entries: { record: TRecord; point: PlottablePoint }[];
   /** Records matching the filter but excluded because computePoint returned null. */
   unplottable: { record: TRecord; reason: string }[];
-  /** Records hidden by the query filter. */
-  filteredOut: number;
 }
 
 /** Convenience view of just the plotted points, in record order. */

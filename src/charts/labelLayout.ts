@@ -1,4 +1,5 @@
 import type { ModelBrand } from "./types";
+import { formatEffort, modelEffortOrder, preferredFamilyLabel } from "./modelMetadata";
 
 export interface LabelLayoutAnchor {
   id: string;
@@ -14,6 +15,7 @@ export interface ModelVariantMember {
   label: string;
   brand: ModelBrand;
   effortGroup?: string;
+  effort?: string;
   x: number;
   y: number;
 }
@@ -68,20 +70,13 @@ const LABEL_DOT_RADIUS = 8;
 // Keep a conservative width estimate while the rendered 13px label remains
 // smaller; this avoids collisions caused by font-metric differences.
 const LABEL_FONT_WIDTH = 7.6;
-const EFFORT_SUFFIX = /^(.*?)\s+(Extra\s+High|Low|Medium|High|Max)$/i;
-const EFFORT_ORDER: Record<string, number> = {
-  low: 0,
-  medium: 1,
-  high: 2,
-  "extra high": 3,
-  max: 4,
-};
+const EFFORT_SUFFIX = /^(.*?)\s+(xhigh|extra\s+high|low|medium|high|max)$/i;
 
 /** Return the model family and effort suffix used by Cursor's variants. */
 export function modelVariantParts(label: string): { baseLabel: string; effort: string } | null {
   const match = label.trim().match(EFFORT_SUFFIX);
   if (!match?.[1] || !match[2]) return null;
-  return { baseLabel: match[1].trim(), effort: match[2].toLowerCase() };
+  return { baseLabel: match[1].trim(), effort: formatEffort(match[2]) };
 }
 
 /** Group explicit effort groups or same-brand model families with multiple effort levels. */
@@ -94,11 +89,16 @@ export function groupModelVariants(
   >();
 
   for (const member of members) {
-    const parts = modelVariantParts(member.label);
+    const parts = member.effort
+      ? { baseLabel: member.label.replace(/\s+(?:xhigh|extra\s+high|low|medium|high|max)$/i, "").trim(), effort: formatEffort(member.effort) }
+      : modelVariantParts(member.label);
     if (!parts && !member.effortGroup) continue;
+    // A family key is authoritative when supplied by an adapter, but only
+    // reasoning-effort members participate in a connector group.
+    if (!parts) continue;
     const key = member.effortGroup
       ? `effort:${member.effortGroup}`
-      : `${member.brand}:${parts!.baseLabel.toLowerCase()}`;
+      : `${member.brand}:${parts.baseLabel.toLowerCase()}`;
     const group = groups.get(key) ?? {
       baseLabel: parts?.baseLabel ?? member.effortGroup!,
       brand: member.brand,
@@ -120,11 +120,22 @@ export function groupModelVariants(
         baseLabel: group.baseLabel,
         members: [...group.members].sort(
           (a, b) =>
-            (EFFORT_ORDER[modelVariantParts(a.label)?.effort ?? ""] ?? 99) -
-              (EFFORT_ORDER[modelVariantParts(b.label)?.effort ?? ""] ?? 99) ||
+            modelEffortOrder(a.effort ?? modelVariantParts(a.label)?.effort) -
+              modelEffortOrder(b.effort ?? modelVariantParts(b.label)?.effort) ||
             a.label.localeCompare(b.label),
         ),
-        representativeId: sorted[0]!.id,
+        // One family gets one label. Prefer high effort, then the highest
+        // available effort, rather than whichever point has the best score.
+        representativeId: (() => {
+          const preferred = preferredFamilyLabel(
+            group.members.map((member) => ({
+              label: member.label,
+              effort: member.effort ?? modelVariantParts(member.label)?.effort,
+            })),
+            group.baseLabel,
+          );
+          return group.members.find((member) => member.label === preferred)?.id ?? sorted[0]!.id;
+        })(),
       };
     });
 }

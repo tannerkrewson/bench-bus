@@ -21,7 +21,6 @@ describe("buildChartPlot", () => {
   it("filters by adapter search text", () => {
     const build = buildChartPlot(AA_FIXTURE_RECORDS, aaDemoAdapter, controls, "gemini");
     expect(build.entries.map((e) => e.point.id)).toEqual(["gemini-3.7-flash"]);
-    expect(build.filteredOut).toBe(3);
   });
 });
 

@@ -98,7 +98,7 @@ describe("layoutModelLabels", () => {
   it("groups same-brand effort variants but keeps model families separate", () => {
     expect(modelVariantParts("Opus 5 Extra High")).toEqual({
       baseLabel: "Opus 5",
-      effort: "extra high",
+      effort: "xhigh",
     });
     const groups = groupModelVariants([
       { id: "opus-high", label: "Opus 5 High", brand: "anthropic", x: 2, y: 60 },
