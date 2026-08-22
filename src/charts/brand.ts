@@ -97,7 +97,7 @@ const WELL_KNOWN_GROUP_SLOTS: Readonly<Record<string, number>> = {
   // Sol visually indistinguishable in some feeds.
   "opus-5": 0,
   "claude-opus-5": 0,
-  "sonnet-5": 1,
+  "sonnet-5": 8,
   "grok-4-6": 2,
   "grok-4-5": 2,
   luna: 3,
@@ -111,6 +111,9 @@ const WELL_KNOWN_GROUP_SLOTS: Readonly<Record<string, number>> = {
   "opus-4-8": 8,
   "deepseek-v4-flash-0731": 9,
   "gemini-3-7-flash": 10,
+  // Reserve independent slots for model families that previously fell into
+  // the same hash bucket as Sol or each other.
+  "gpt-5-5": 9,
 };
 
 function canonicalGroupKey(groupKey: string): string {
@@ -142,13 +145,58 @@ function preferredModelGroupSlot(key: string): number | undefined {
  * The only palette is the color-blind-compliant palette above, so every
  * visual representation of a family remains aligned in either theme.
  */
-export function modelGroupColor(groupKey: string, dark: boolean): string {
-  const key = canonicalGroupKey(groupKey);
-  const explicitSlot = WELL_KNOWN_GROUP_SLOTS[key];
-  const preferredSlot = preferredModelGroupSlot(key);
+/**
+ * Allocate colors for all families visible in one chart at once. Preferred
+ * slots are honored first, then stable hash slots are linearly probed so a
+ * newly added family cannot silently reuse a visible family's color.
+ */
+export function modelGroupColors(
+  groupKeys: readonly string[],
+  dark: boolean,
+): ReadonlyMap<string, string> {
   const palette = dark ? COLOR_BLIND_MODEL_GROUP_PALETTE.dark : COLOR_BLIND_MODEL_GROUP_PALETTE.light;
-  const slot = preferredSlot ?? explicitSlot ?? stableHash(key) % palette.length;
-  return palette[slot % palette.length]!;
+  const canonicalKeys = [...new Set(groupKeys.map(canonicalGroupKey))].filter(Boolean).sort();
+  const assignments = new Map<string, string>();
+  const usedSlots = new Set<number>();
+  const slots = new Map<string, number>();
+
+  const reserve = (key: string, preferred: number | undefined): boolean => {
+    if (preferred === undefined || usedSlots.has(preferred) || preferred >= palette.length) return false;
+    slots.set(key, preferred);
+    usedSlots.add(preferred);
+    return true;
+  };
+
+  canonicalKeys.forEach((key) => {
+    reserve(key, preferredModelGroupSlot(key) ?? WELL_KNOWN_GROUP_SLOTS[key]);
+  });
+  canonicalKeys.forEach((key) => {
+    if (slots.has(key)) return;
+    const start = stableHash(key) % palette.length;
+    for (let offset = 0; offset < palette.length; offset += 1) {
+      const candidate = (start + offset) % palette.length;
+      if (!usedSlots.has(candidate)) {
+        slots.set(key, candidate);
+        usedSlots.add(candidate);
+        return;
+      }
+    }
+    // The palette currently has more slots than any supported chart. Keep a
+    // deterministic fallback if a future feed exceeds that capacity.
+    slots.set(key, start);
+  });
+
+  groupKeys.forEach((groupKey) => {
+    const key = canonicalGroupKey(groupKey);
+    const slot = slots.get(key);
+    if (slot !== undefined) assignments.set(groupKey, palette[slot]!);
+  });
+  return assignments;
+}
+
+export function modelGroupColor(groupKey: string, dark: boolean): string {
+  return modelGroupColors([groupKey], dark).get(groupKey) ??
+    (dark ? COLOR_BLIND_MODEL_GROUP_PALETTE.dark : COLOR_BLIND_MODEL_GROUP_PALETTE.light)[0]!;
 }
 
 /** Backwards-compatible name for effort-variant connection colors. */

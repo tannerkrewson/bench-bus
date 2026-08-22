@@ -3,7 +3,7 @@ import { Crown } from "lucide-solid";
 import uPlot, { type Options } from "uplot";
 import { isDarkTheme } from "../components/ThemeToggle";
 import "uplot/dist/uPlot.min.css";
-import { inferModelBrand, modelGroupColor } from "./brand";
+import { inferModelBrand, modelGroupColor, modelGroupColors } from "./brand";
 import { modelGroupKey } from "./modelMetadata";
 import {
   groupModelVariants,
@@ -420,7 +420,14 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     return currentSeries;
   };
 
-  const groupColor = (groupKey: string, dark: boolean): string => modelGroupColor(groupKey, dark);
+  const groupColor = (groupKey: string, dark: boolean): string => {
+    const visibleGroups = [
+      ...currentSeries.groupKeys,
+      ...currentSeries.variantGroups.map((group) => group.key),
+      ...currentSeries.discounts.map((discount) => discount.groupKey),
+    ];
+    return modelGroupColors(visibleGroups, dark).get(groupKey) ?? modelGroupColor(groupKey, dark);
+  };
 
   const themeStyles = () => {
     const styles = getComputedStyle(container ?? document.documentElement);
@@ -1713,6 +1720,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                   fill={discount.color}
                   stroke={discount.color}
                   stroke-width={POINT_STROKE_WIDTH}
+                  stroke-dasharray="none"
                   data-testid="discount-endpoint-dot"
                   data-discount-endpoint="pre"
                   style={{

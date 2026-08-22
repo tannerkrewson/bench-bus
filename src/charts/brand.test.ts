@@ -7,6 +7,7 @@ import {
   inferModelBrand,
   modelBrandColor,
   modelGroupColor,
+  modelGroupColors,
 } from "./brand";
 
 function relativeLuminance(hex: string): number {
@@ -57,7 +58,7 @@ describe("model brand colors", () => {
 
     expect(lightColors).toEqual([
       COLOR_BLIND_MODEL_GROUP_PALETTE.light[1],
-      COLOR_BLIND_MODEL_GROUP_PALETTE.light[1],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.light[8],
       COLOR_BLIND_MODEL_GROUP_PALETTE.light[2],
       COLOR_BLIND_MODEL_GROUP_PALETTE.light[3],
       COLOR_BLIND_MODEL_GROUP_PALETTE.light[4],
@@ -70,7 +71,7 @@ describe("model brand colors", () => {
     ]);
     expect(darkColors).toEqual([
       COLOR_BLIND_MODEL_GROUP_PALETTE.dark[1],
-      COLOR_BLIND_MODEL_GROUP_PALETTE.dark[1],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.dark[8],
       COLOR_BLIND_MODEL_GROUP_PALETTE.dark[2],
       COLOR_BLIND_MODEL_GROUP_PALETTE.dark[3],
       COLOR_BLIND_MODEL_GROUP_PALETTE.dark[4],
@@ -83,17 +84,27 @@ describe("model brand colors", () => {
     ]);
   });
 
-  it("keeps Luna, Sol, and Opus source keys visibly distinct", () => {
-    expect(new Set([
-      modelGroupColor("gpt-5-6-luna", false),
-      modelGroupColor("gpt-5-6-sol", false),
-      modelGroupColor("opus-5", false),
-    ]).size).toBe(3);
-    expect(new Set([
-      modelGroupColor("gpt-5-6-luna", true),
-      modelGroupColor("gpt-5-6-sol", true),
-      modelGroupColor("opus-5", true),
-    ]).size).toBe(3);
+  it("keeps adjacent GPT, Sol, Gemini, and Opus families visibly distinct", () => {
+    const keys = ["gpt-5-6-sol", "gpt-5-5", "gemini-3-7-flash", "opus-5"];
+    expect(new Set(keys.map((key) => modelGroupColor(key, false))).size).toBe(keys.length);
+    expect(new Set(keys.map((key) => modelGroupColor(key, true))).size).toBe(keys.length);
+  });
+
+  it("allocates collision-free colors for all families visible in a chart", () => {
+    const keys = [
+      "opus-5",
+      "sonnet-5",
+      "grok-4-6",
+      "gpt-5-6-luna",
+      "gpt-5-6-sol",
+      "gpt-5-5",
+      "gemini-3-7-flash",
+      "deepseek-v4-flash-0731",
+      "fable-5",
+      "composer-2-5",
+    ];
+    expect(new Set([...modelGroupColors(keys, false).values()]).size).toBe(keys.length);
+    expect(new Set([...modelGroupColors(keys, true).values()]).size).toBe(keys.length);
   });
 
   it("reserves compliant blue for all DeepSeek variants and orange for Opus variants", () => {

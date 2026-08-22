@@ -283,6 +283,31 @@ describe("BenchmarkScatterChart discount annotations", () => {
     dispose();
   });
 
+  it("renders the DeepSeek discount endpoint as a solid dot with a clean connector gap", async () => {
+    const { container, dispose } = mount(() => (
+      <BenchmarkScatterChart
+        points={() => [{
+          id: "deepseek-v4-flash",
+          label: "DeepSeek v4 Flash 0731",
+          x: 6,
+          y: 70,
+          discount: { percentage: 43.1, preDiscountX: 10 },
+        }]}
+        scale={() => "log"}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        height={320}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const line = container.querySelector("[data-testid='discount-line'] line")!;
+    const endpoint = container.querySelector("[data-testid='discount-endpoint-dot']")!;
+    expect(line.getAttribute("stroke-dasharray")).toBe("4 4");
+    expect(endpoint.getAttribute("stroke-dasharray")).toBe("none");
+    expect(Math.abs(Number(endpoint.getAttribute("cx")) - Number(line.getAttribute("x1")))).toBeGreaterThan(5);
+    dispose();
+  });
+
   it("keeps a valid 100% annotation while omitting its zero log-scale endpoint", async () => {
     const [scale, setScale] = createSignal<"log" | "linear">("log");
     const { container, dispose } = mount(() => (
