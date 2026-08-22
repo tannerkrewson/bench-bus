@@ -268,6 +268,36 @@ describe("BenchmarkScatterChart discount annotations", () => {
     requestFrame.mockRestore();
   });
 
+  it("refreshes family connector overlays after repeated plot updates", async () => {
+    const [points, setPoints] = createSignal<readonly PlottablePoint[]>([
+      { id: "opus-low", label: "Opus low", x: 4, y: 60, effortGroup: "opus", effort: "low" },
+      { id: "opus-high", label: "Opus high", x: 6, y: 70, effortGroup: "opus", effort: "high" },
+    ]);
+    const { container, dispose } = mountSizedChart(() => (
+      <BenchmarkScatterChart
+        points={points}
+        scale={() => "linear"}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        height={320}
+      />
+    ));
+
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(container.querySelectorAll("[data-testid='family-connector-hit']")).toHaveLength(1);
+    for (let value = 0; value < 20; value += 1) {
+      setPoints([
+        { id: "opus-low", label: "Opus low", x: 4 + value, y: 60, effortGroup: "opus", effort: "low" },
+        { id: "opus-high", label: "Opus high", x: 6 + value, y: 70, effortGroup: "opus", effort: "high" },
+      ]);
+    }
+    setPoints([{ id: "opus-low", label: "Opus low", x: 24, y: 60, effortGroup: "opus", effort: "low" }]);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(container.querySelectorAll("[data-testid='family-connector-hit']")).toHaveLength(0);
+    dispose();
+  });
+
   it("appends discount text to model labels and removes standalone discount labels", async () => {
     const { container, dispose } = mountSizedChart(() => (
       <BenchmarkScatterChart

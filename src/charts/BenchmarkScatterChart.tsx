@@ -204,7 +204,11 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   const [pointDecorations, setPointDecorations] = createSignal<{ id: string; left: number; top: number; color: string }[]>([]);
   const [discountDecorations, setDiscountDecorations] = createSignal<DiscountDecoration[]>([]);
   const [plotXSnapshot, setPlotXSnapshot] = createSignal("");
-  const [plotVersion, setPlotVersion] = createSignal(0);
+  // currentSeries and plot are intentionally kept outside Solid because uPlot
+  // owns their lifecycle. Publish a revision after each completed plot render
+  // or resize so SVG memos never retain geometry from the previous uPlot
+  // instance/data.
+  const [plotRevision, setPlotRevision] = createSignal(0);
   let hoveredLabelBounds: { left: number; top: number; right: number; bottom: number } | null = null;
   // Connector hit lines sit above the uPlot surface, so retain their owner
   // independently from the cursor state. Labels use the same family focus,
@@ -978,7 +982,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     setPlotXSnapshot(currentSeries.x.join(","));
     plot?.destroy();
     plot = new uPlot(buildOptions(), dataFor(), container);
-    setPlotVersion((version) => version + 1);
+    setPlotRevision((revision) => revision + 1);
     baseSeriesAlphas = plot.series.map((series) => series.alpha ?? 1);
     applyPlotEmphasis();
     hoveredIndex = hoveredId === undefined || hoveredId === null
@@ -988,6 +992,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       ? null
       : pointPosition(plot, hoveredIndex) ?? null);
     if (typeof window !== "undefined" && window.scrollY !== scrollY) window.scrollTo(window.scrollX, scrollY);
+    setPlotRevision((revision) => revision + 1);
     scheduleLabelPositions();
   };
 
@@ -997,7 +1002,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     const resize = () => {
       if (!container || !plot) return;
       plot.setSize({ width: container.clientWidth, height: chartHeight() });
-      setPlotVersion((version) => version + 1);
+      setPlotRevision((revision) => revision + 1);
       scheduleLabelPositions();
     };
     if (typeof ResizeObserver !== "undefined") {
@@ -1040,7 +1045,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     if (!plot || nextStructureKey !== plotStructureKey) createPlot();
     else {
       plot.setData(data);
-      setPlotVersion((version) => version + 1);
+      setPlotRevision((revision) => revision + 1);
       hoveredIndex = hoveredId === undefined || hoveredId === null
         ? null
         : currentSeries.ids.indexOf(hoveredId);
@@ -1048,6 +1053,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         ? null
         : pointPosition(plot, hoveredIndex) ?? null);
     }
+    setPlotRevision((revision) => revision + 1);
     scheduleLabelPositions();
   };
 
@@ -1108,7 +1114,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   });
 
   const connectorHitGeometry = createMemo(() => {
-    plotVersion();
+    // This dependency is the synchronization boundary between uPlot's
+    // imperative data lifecycle and Solid's declarative SVG overlays.
+    plotRevision();
     if (!plot) return [] as { x1: number; y1: number; x2: number; y2: number; representativeId: string }[];
     const currentPlot = plot;
     return currentSeries.variantGroups.flatMap((group) => {
@@ -1138,6 +1146,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   };
 
   const focusedGeometry = createMemo(() => {
+    plotRevision();
     const id = hoveredLabelId();
     const labels = labelPositions();
     if (id === null || !plot || !labels.some((label) => label.id === id)) return null;
