@@ -37,23 +37,21 @@ describe("BenchmarkScatterChart discount annotations", () => {
     ));
 
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    const arrows = container.querySelectorAll("[data-testid='discount-arrow']");
+    const arrows = container.querySelectorAll("[data-testid='discount-line']");
     expect(arrows).toHaveLength(1);
     expect(arrows[0]?.getAttribute("data-discount-id")).toBe("discounted-model");
     expect(arrows[0]?.getAttribute("data-discount-percentage")).toBe("40");
-    expect(arrows[0]?.querySelector("path")?.getAttribute("d")).toMatch(/^M /);
-    const discountLabel = container.querySelector("[data-testid='discount-label']");
-    expect(discountLabel?.textContent).toContain("40% off");
-    expect(discountLabel?.getAttribute("aria-label")).toContain("discount");
+    expect(arrows[0]?.querySelector("line")).not.toBeNull();
+    expect(arrows[0]?.querySelector("path")).toBeNull();
 
     setScale("linear");
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    expect(container.querySelectorAll("[data-testid='discount-arrow']")).toHaveLength(1);
+    expect(container.querySelectorAll("[data-testid='discount-line']")).toHaveLength(1);
 
     setPoints([initialPoints[1]!]);
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    expect(container.querySelectorAll("[data-testid='discount-arrow']")).toHaveLength(0);
+    expect(container.querySelectorAll("[data-testid='discount-line']")).toHaveLength(0);
     dispose();
   });
 
@@ -83,7 +81,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
     }
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    expect(container.querySelector("[data-testid='discount-arrow']")?.getAttribute("data-discount-id")).toBe("model-99");
+    expect(container.querySelector("[data-testid='discount-line']")?.getAttribute("data-discount-id")).toBe("model-99");
     // One frame-coalesced render handles all 100 slider updates; no
     // update/render feedback loop can enqueue one render per input.
     expect(requestFrame.mock.calls.length).toBeLessThanOrEqual(4);
@@ -91,8 +89,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
     requestFrame.mockRestore();
   });
 
-  it("opens model and discount tooltip state from accessible label hover targets", async () => {
-    let hovered: string | null = null;
+  it("keeps model labels passive and removes standalone discount labels", async () => {
     const { container, dispose } = mount(() => (
       <BenchmarkScatterChart
         points={() => [{ id: "model", label: "Model", x: 6, y: 70, discount: { percentage: 40, preDiscountX: 10 } }]}
@@ -100,16 +97,11 @@ describe("BenchmarkScatterChart discount annotations", () => {
         xAxisLabel={() => "Cost"}
         yAxisLabel={() => "Score"}
         height={320}
-        onHover={(id) => { hovered = id; }}
       />
     ));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    const discountLabel = container.querySelector<HTMLElement>("[data-testid='discount-label']");
-    expect(discountLabel?.tabIndex).toBe(0);
-    discountLabel?.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true, clientX: 20, clientY: 20 }));
-    expect(hovered).toBe("model");
-    discountLabel?.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
-    expect(hovered).toBeNull();
+    expect(container.querySelector("[data-testid='discount-label']")).toBeNull();
+    expect(container.querySelector("[data-testid='label-hover-highlight']")).toBeNull();
     dispose();
   });
 
@@ -135,14 +127,14 @@ describe("BenchmarkScatterChart discount annotations", () => {
       />
     ));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    const arrows = container.querySelectorAll("[data-testid='discount-arrow']");
+    const arrows = container.querySelectorAll("[data-testid='discount-line']");
     expect(arrows).toHaveLength(1);
     expect(arrows[0]?.getAttribute("data-discount-id")).toBe("multi-discount");
     expect(arrows[0]?.getAttribute("data-discount-percentage")).toBe("40");
     setShowDiscounts(false);
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    expect(container.querySelectorAll("[data-testid='discount-arrow']")).toHaveLength(0);
+    expect(container.querySelectorAll("[data-testid='discount-line']")).toHaveLength(0);
     dispose();
   });
 });

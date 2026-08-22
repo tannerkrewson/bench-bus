@@ -59,13 +59,19 @@ export function chartStateToParams(
   if (state.selectionSpecified === true || (!serializationDefaults && state.selectedIds.length > 0)) {
     params.set(key(benchmarkId, SELECTED_KEY), state.selectedIds.join(","));
   }
-  if (state.showLabels === false && serializationDefaults?.showLabels !== false) {
+  if (serializationDefaults && state.showLabels !== undefined && state.showLabels !== (serializationDefaults.showLabels ?? true)) {
+    params.set(key(benchmarkId, LABELS_KEY), String(state.showLabels));
+  } else if (!serializationDefaults && state.showLabels === false) {
     params.set(key(benchmarkId, LABELS_KEY), "false");
   }
-  if (state.showFrontier === false && serializationDefaults?.showFrontier !== false) {
+  if (serializationDefaults && state.showFrontier !== undefined && state.showFrontier !== (serializationDefaults.showFrontier ?? true)) {
+    params.set(key(benchmarkId, FRONTIER_KEY), String(state.showFrontier));
+  } else if (!serializationDefaults && state.showFrontier === false) {
     params.set(key(benchmarkId, FRONTIER_KEY), "false");
   }
-  if (state.showDiscounts === false && serializationDefaults?.showDiscounts !== false) {
+  if (serializationDefaults && state.showDiscounts !== undefined && state.showDiscounts !== (serializationDefaults.showDiscounts ?? true)) {
+    params.set(key(benchmarkId, DISCOUNTS_KEY), String(state.showDiscounts));
+  } else if (!serializationDefaults && state.showDiscounts === false) {
     params.set(key(benchmarkId, DISCOUNTS_KEY), "false");
   }
   for (const [id, value] of Object.entries(state.controls)) {

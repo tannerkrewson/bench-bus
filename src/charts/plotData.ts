@@ -55,6 +55,13 @@ export function explicitDiscountForAnnotation(
  * dropped (they are unrepresentable); callers get the dropped ids so the UI
  * can explain why a point disappeared after a scale switch.
  */
+export function modelLabelWithDiscount(
+  label: string,
+  discount: PriceDiscountAnnotation | null,
+): string {
+  return discount ? `${label} (${discount.percentage}% off)` : label;
+}
+
 export function explicitDiscountCandidates(point: PlottablePoint): PriceDiscountAnnotation[] {
   const candidates = point.discounts ?? (point.discount ? [point.discount] : []);
   return candidates.flatMap((candidate) => {
@@ -110,6 +117,47 @@ export function toPlotSeries(
     y.push(p.y);
   }
   return { x, y, ids, droppedIds };
+}
+
+export interface CrownPoint {
+  id: string;
+  left: number;
+  top: number;
+}
+
+/**
+ * Keep the top-most crown in a crowded vertical cluster. Crowns sit above
+ * their dots, so a lower crown that reaches an intervening dot or an already
+ * retained crown is redundant and visually misleading.
+ */
+export function selectCrownPoints(
+  crowns: readonly CrownPoint[],
+  dots: readonly CrownPoint[],
+): CrownPoint[] {
+  const retained: CrownPoint[] = [];
+  const crownHalfWidth = 9;
+  const crownTopOffset = 27;
+  const crownHeight = 18;
+  const dotRadius = 8;
+  const intersectsCrown = (candidate: CrownPoint, other: CrownPoint) =>
+    Math.abs(candidate.left - other.left) < crownHalfWidth * 2 &&
+    candidate.top - crownTopOffset < other.top - crownTopOffset + crownHeight &&
+    candidate.top - crownTopOffset + crownHeight > other.top - crownTopOffset;
+  const intersectsDot = (candidate: CrownPoint, dot: CrownPoint) => {
+    const closestLeft = Math.max(candidate.left - crownHalfWidth, Math.min(dot.left, candidate.left + crownHalfWidth));
+    const closestTop = Math.max(candidate.top - crownTopOffset, Math.min(dot.top, candidate.top - crownTopOffset + crownHeight));
+    return Math.hypot(dot.left - closestLeft, dot.top - closestTop) < dotRadius;
+  };
+
+  for (const candidate of [...crowns].sort((a, b) => a.top - b.top || a.left - b.left)) {
+    const hasInterveningDot = dots.some((dot) =>
+      dot.id !== candidate.id && dot.top < candidate.top - crownTopOffset + crownHeight &&
+      dot.top >= candidate.top - crownTopOffset && intersectsDot(candidate, dot),
+    );
+    if (hasInterveningDot || retained.some((crown) => intersectsCrown(candidate, crown))) continue;
+    retained.push(candidate);
+  }
+  return retained;
 }
 
 /**

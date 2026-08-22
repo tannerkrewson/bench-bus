@@ -13,7 +13,9 @@ import {
 } from "./labelLayout";
 import {
   largestExplicitDiscountForPoint,
+  modelLabelWithDiscount,
   paretoFrontier,
+  selectCrownPoints,
   toPlotSeries,
 } from "./plotData";
 import { formatDollarTick, formatPercentTick } from "../utils/format";
@@ -60,7 +62,6 @@ type DiscountDecoration = {
   preLeft: number;
   effectiveLeft: number;
   top: number;
-  labelLeft: number;
   percentage: number;
   groupKey: string;
   color: string;
@@ -172,7 +173,12 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       y: orderedIds.map((id) => series.y[indexById.get(id)!]!),
       ids: orderedIds,
       droppedIds: series.droppedIds,
-      labels: orderedIds.map((id) => pointById.get(id)?.label ?? id),
+      labels: orderedIds.map((id) => {
+        const point = pointById.get(id);
+        if (!point) return id;
+        const discount = props.showDiscounts?.() ?? true ? largestExplicitDiscountForPoint(point) : null;
+        return modelLabelWithDiscount(point.label, discount);
+      }),
       effortGroups: orderedIds.map((id) => groupById.get(id) ?? null),
       groupKeys: orderedIds.map((id) => groupKeyById.get(id) ?? modelGroupKey(id, id)),
       brands: orderedIds.map((id) => {
@@ -224,7 +230,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       ...currentSeries.x,
     ];
     const frontierY = [
-      ...(props.showFrontier?.() ?? true)
+      ...(props.showFrontier?.() ?? false)
         ? currentSeries.frontierIds.map((id) => pointById.get(id)?.y ?? null)
         : new Array<number | null>(currentSeries.frontierIds.length).fill(null),
       ...new Array<number | null>(pathLength - currentSeries.frontierIds.length + currentSeries.discounts.length + actualLength).fill(null),
@@ -378,7 +384,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         group.members.map((member) => [member.id, group.representativeId] as const),
       ),
     );
-    const decorations = currentSeries.ids.flatMap((id, index) => {
+    const allCrownDecorations = currentSeries.ids.flatMap((id, index) => {
       const x = currentSeries.x[index];
       const y = currentSeries.y[index];
       if (x === undefined || y === undefined || !currentSeries.frontierIds.includes(id)) return [];
@@ -389,7 +395,18 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         color: themeStyles().frontierColor,
       }];
     });
-    setPointDecorations(decorations);
+    const crownDots = currentSeries.ids.flatMap((id, index) => {
+      const x = currentSeries.x[index];
+      const y = currentSeries.y[index];
+      if (x === undefined || y === undefined) return [];
+      return [{
+        id,
+        left: overRect.left - rootRect.left + currentPlot.valToPos(x, "x"),
+        top: overRect.top - rootRect.top + currentPlot.valToPos(y, "y"),
+      }];
+    });
+    const retainedCrownIds = new Set(selectCrownPoints(allCrownDecorations, crownDots).map((crown) => crown.id));
+    setPointDecorations(allCrownDecorations.filter((crown) => retainedCrownIds.has(crown.id)));
     const discountGeometry = currentSeries.discounts.flatMap((discount) => {
       const preLeft = overRect.left - rootRect.left + currentPlot.valToPos(discount.preX, "x");
       const effectiveLeft = overRect.left - rootRect.left + currentPlot.valToPos(discount.effectiveX, "x");
@@ -401,7 +418,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         preLeft,
         effectiveLeft,
         top,
-        labelLeft: (preLeft + effectiveLeft) / 2,
         percentage: discount.percentage,
         groupKey: discount.groupKey,
         color: groupColor(discount.groupKey, dark),
@@ -462,14 +478,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     } else {
       updateLabelPositions();
     }
-  };
-
-  const pointerPositionFromEvent = (event: { clientX: number; clientY: number }) => {
-    const over = container?.querySelector<HTMLElement>(".u-over");
-    const parent = container?.parentElement;
-    if (!over || !parent) return undefined;
-    const parentRect = parent.getBoundingClientRect();
-    return { left: event.clientX - parentRect.left, top: event.clientY - parentRect.top };
   };
 
   const setLabelHover = (id: string | null) => {
@@ -638,8 +646,12 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           stroke: styles.textColor,
           font: "14px Sora, sans-serif",
           labelFont: "600 15px Sora, sans-serif",
+          filter: (_u, splits) => splits.map((value) => formatDollarTick(value) !== "" ? value : null),
           values: (_u, splits) => splits.map(formatDollarTick),
-          grid: { stroke: styles.gridColor },
+          grid: {
+            stroke: styles.gridColor,
+            width: 0.5,
+          },
         },
         {
           label: props.yAxisLabel(),
@@ -656,8 +668,13 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           ),
           labelSize: 44,
           labelGap: 16,
+          filter: (_u, splits) => splits.map((value) => Number.isInteger(value) ? value : null),
           values: (_u, splits) => splits.map((value) => /score/i.test(props.yAxisLabel()) ? formatPercentTick(value) : String(value)),
-          grid: { stroke: styles.gridColor },
+          grid: {
+            stroke: styles.gridColor,
+            width: 0.5,
+            filter: (_u, splits) => splits.map((value) => Number.isInteger(value) && value % 10 === 0 ? value : null),
+          },
         },
       ],
       legend: { show: false },
@@ -712,7 +729,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           label: "Pareto frontier",
           // This is the last series so uPlot paints the opaque frontier above
           // every model-family connector.
-          stroke: props.showFrontier?.() ?? true ? styles.frontierColor : "rgba(0,0,0,0)",
+          stroke: props.showFrontier?.() ?? false ? styles.frontierColor : "rgba(0,0,0,0)",
           width: 2,
           alpha: 1,
           dash: [5, 4],
@@ -747,6 +764,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                       left: rawPointer.left - (overRect.left - parentRect.left),
                       top: rawPointer.top - (overRect.top - parentRect.top),
                     }, false);
+                    applyCrosshairDirections(u);
                   }
                 }
               }
@@ -760,6 +778,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
               if (Math.abs((u.cursor.left ?? target.plotLeft) - target.plotLeft) > 0.5 ||
                   Math.abs((u.cursor.top ?? target.plotTop) - target.plotTop) > 0.5) {
                 u.setCursor({ left: target.plotLeft, top: target.plotTop }, false);
+                applyCrosshairDirections(u);
               }
               props.onHover?.(target.id, rawPointer ?? dot);
             }
@@ -881,7 +900,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   createEffect(
     on(
-      () => [props.points(), props.showFrontier?.() ?? true, props.showDiscounts?.() ?? true] as const,
+      () => [props.points(), props.showFrontier?.() ?? false, props.showDiscounts?.() ?? true] as const,
       schedulePlotData,
       { defer: true },
     ),
@@ -909,6 +928,26 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   createEffect(() => {
     hoveredLabelId();
     applyPlotEmphasis();
+  });
+
+  const connectorHitGeometry = createMemo(() => {
+    if (!plot) return [] as { x1: number; y1: number; x2: number; y2: number; representativeId: string }[];
+    const currentPlot = plot;
+    return currentSeries.variantGroups.flatMap((group) => {
+      const points = group.members
+        .map((member) => {
+          const index = currentSeries.ids.indexOf(member.id);
+          return index < 0 ? null : pointPosition(currentPlot, index);
+        })
+        .filter((position): position is { left: number; top: number } => position !== null);
+      return points.slice(1).map((point, index) => ({
+        x1: points[index]!.left,
+        y1: points[index]!.top,
+        x2: point.left,
+        y2: point.top,
+        representativeId: group.representativeId,
+      }));
+    });
   });
 
   const focusedGeometry = createMemo(() => {
@@ -979,16 +1018,28 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         data-testid="chart-decorations"
       >
         <Show when={hoveredPosition()}>
-          {(position) => <circle cx={position().left} cy={position().top} r="6" fill="none" stroke="currentColor" stroke-width="2" data-testid="hovered-dot" />}
+          {(position) => <circle cx={position().left} cy={position().top} r="8" fill="none" stroke="currentColor" stroke-width="2" data-testid="hovered-dot" />}
         </Show>
-        <Show when={hoveredLabelId()}>
-          {(id) => {
-            const label = labelPositions().find((candidate) => candidate.id === id());
-            return label ? (
-              <circle cx={label.anchorLeft} cy={label.anchorTop} r="8" fill="none" stroke={label.color} stroke-width="2" data-testid="label-hover-highlight" />
-            ) : null;
-          }}
-        </Show>
+        <For each={connectorHitGeometry()}>
+          {(segment) => (
+            <line
+              x1={segment.x1}
+              y1={segment.y1}
+              x2={segment.x2}
+              y2={segment.y2}
+              stroke="transparent"
+              stroke-width="12"
+              style={{ "pointer-events": "stroke" }}
+              data-testid="family-connector-hit"
+              data-model-id={segment.representativeId}
+              onMouseEnter={() => setModelLabelHover(segment.representativeId)}
+              onMouseLeave={() => {
+                setLabelHover(null);
+                props.onHover?.(null);
+              }}
+            />
+          )}
+        </For>
         <Show when={focusedGeometry()}>
           {(focused) => (
             <>
@@ -1028,7 +1079,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
             </>
           )}
         </Show>
-        <Show when={props.showFrontier?.() ?? true}>
+        <Show when={props.showFrontier?.() ?? false}>
           <For each={pointDecorations()}>
             {(point) => (
               <g
@@ -1044,8 +1095,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         </Show>
         <For each={discountDecorations()}>
           {(discount) => {
-            const direction = discount.effectiveLeft >= discount.preLeft ? 1 : -1;
-            const headStart = discount.effectiveLeft - direction * 7;
             return (
               <g
                 fill="none"
@@ -1053,48 +1102,18 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 stroke-width="2"
                 stroke-linecap="round"
                 stroke-linejoin="round"
-                data-testid="discount-arrow"
+                data-testid="discount-line"
                 data-discount-id={discount.id}
                 data-discount-percentage={discount.percentage}
                 data-discount-provider-role={discount.providerRole ?? "plotted"}
                 opacity={hoveredLabelId() === null || hoveredLabelId() === discount.pointId ? 1 : 0.2}
               >
-                <path d={`M ${headStart} ${discount.top - 4} L ${discount.effectiveLeft} ${discount.top} L ${headStart} ${discount.top + 4}`} />
+                <line x1={discount.preLeft} y1={discount.top} x2={discount.effectiveLeft} y2={discount.top} />
               </g>
             );
           }}
         </For>
       </svg>
-      <For each={discountDecorations()}>
-        {(discount) => (
-          <button
-            type="button"
-            class="pointer-events-auto absolute z-2 -translate-x-1/2 whitespace-nowrap rounded bg-base-100/90 px-1 text-[11px] font-semibold text-base-content shadow-sm"
-            style={{ left: `${discount.labelLeft}px`, top: `${discount.top - 24}px`, opacity: hoveredLabelId() === null || hoveredLabelId() === discount.pointId ? 1 : 0.2 }}
-            data-testid="discount-label"
-            data-discount-id={discount.id}
-            aria-label={`${discount.percentage}% discount; show discount details`}
-            onMouseEnter={(event) => {
-              setLabelHover(discount.pointId);
-              props.onHover?.(discount.pointId, pointerPositionFromEvent(event));
-            }}
-            onMouseLeave={() => {
-              setLabelHover(null);
-              props.onHover?.(null);
-            }}
-            onFocus={() => {
-              setLabelHover(discount.pointId);
-              props.onHover?.(discount.pointId, { left: discount.labelLeft, top: discount.top });
-            }}
-            onBlur={() => {
-              setLabelHover(null);
-              props.onHover?.(null);
-            }}
-          >
-            {discount.percentage}% off
-          </button>
-        )}
-      </For>
       <Show when={props.showLabels?.() ?? true}>
         <svg
           class="pointer-events-none absolute inset-0 z-0 overflow-visible"
@@ -1134,16 +1153,16 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         <For each={labelPositions()}>
           {(label) => (
             <span
-              class="pointer-events-auto absolute z-1 cursor-help whitespace-nowrap rounded bg-base-100/90 px-1 text-left text-xs leading-5 shadow-sm"
+              class="pointer-events-auto absolute z-1 cursor-default whitespace-nowrap rounded bg-base-100/80 px-1 text-left text-xs leading-5 shadow-sm"
               style={{
                 left: `${label.left}px`,
                 top: `${label.top}px`,
                 width: `${label.width}px`,
                 height: `${label.height}px`,
                 color: label.color,
-                // Text labels remain readable while the plot data is
-                // de-emphasized; the outlined anchor identifies the focus.
-                opacity: 1,
+                // Labels participate in family emphasis but never expose a
+                // tooltip cursor or an additional hover circle.
+                opacity: hoveredLabelId() === null || hoveredLabelId() === label.id ? 1 : 0.2,
                 "font-size": `${MODEL_LABEL_FONT_SIZE}px`,
                 "line-height": `${MODEL_LABEL_LINE_HEIGHT}px`,
               }}

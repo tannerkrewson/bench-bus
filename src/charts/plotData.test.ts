@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AA_FIXTURE_RECORDS, aaDemoAdapter } from "./fixtures";
-import { buildChartPlot, explicitDiscountForPoint, paretoFrontier, toPlotSeries } from "./plotData";
+import { buildChartPlot, explicitDiscountForPoint, modelLabelWithDiscount, paretoFrontier, selectCrownPoints, toPlotSeries } from "./plotData";
 
 const controls = { pricingMode: "cheapest", cacheHitRate: 0.9 };
 
@@ -21,6 +21,13 @@ describe("buildChartPlot", () => {
   it("filters by adapter search text", () => {
     const build = buildChartPlot(AA_FIXTURE_RECORDS, aaDemoAdapter, controls, "gemini");
     expect(build.entries.map((e) => e.point.id)).toEqual(["gemini-3.7-flash"]);
+  });
+});
+
+describe("modelLabelWithDiscount", () => {
+  it("appends discount percentage without creating a standalone label", () => {
+    expect(modelLabelWithDiscount("Model", { percentage: 40, preDiscountX: 10 })).toBe("Model (40% off)");
+    expect(modelLabelWithDiscount("Model", null)).toBe("Model");
   });
 });
 
@@ -71,6 +78,22 @@ describe("toPlotSeries", () => {
     );
     expect(s.ids).toEqual(["a"]);
     expect(s.droppedIds).toEqual(["zero", "neg"]);
+  });
+});
+
+describe("selectCrownPoints", () => {
+  it("keeps only the top crown when nearby crowns overlap", () => {
+    expect(selectCrownPoints(
+      [{ id: "top", left: 100, top: 100 }, { id: "lower", left: 100, top: 115 }],
+      [{ id: "top", left: 100, top: 100 }, { id: "lower", left: 100, top: 115 }],
+    ).map((point) => point.id)).toEqual(["top"]);
+  });
+
+  it("drops a lower crown that would cover an intervening dot", () => {
+    expect(selectCrownPoints(
+      [{ id: "top", left: 100, top: 90 }, { id: "lower", left: 100, top: 120 }],
+      [{ id: "top", left: 100, top: 90 }, { id: "intervening", left: 100, top: 100 }, { id: "lower", left: 100, top: 120 }],
+    ).map((point) => point.id)).toEqual(["top"]);
   });
 });
 

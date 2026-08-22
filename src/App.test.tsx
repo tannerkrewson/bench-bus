@@ -19,6 +19,7 @@ describe("App", () => {
     expect(container.querySelector("section[data-benchmark='cursor'] canvas")).not.toBeNull();
     expect(container.querySelectorAll("[data-testid='chart-watermark']")).toHaveLength(2);
     expect(container.querySelector("[data-testid='chart-watermark']")?.textContent).toContain("benchb.us");
+    expect([...container.querySelectorAll<HTMLInputElement>("input[aria-label='Show Pareto frontier']")].every((input) => !input.checked)).toBe(true);
     expect(container.querySelector("button[aria-label^='Switch to']")).not.toBeNull();
     expect(container.querySelector("button[data-testid='random-theme']")).not.toBeNull();
     expect(container.querySelector("[data-testid='freshness-chips']")).toBeNull();
@@ -28,6 +29,10 @@ describe("App", () => {
     expect(footer?.textContent).toContain("View on GitHub");
     expect(footer?.className).toContain("mt-6");
     expect(footer?.className).toContain("py-4");
+    expect(footer?.className).not.toContain("border-t");
+    expect(footer?.querySelector("div")?.className).toContain("flex-col");
+    expect(footer?.querySelectorAll("a")).toHaveLength(2);
+    footer?.querySelectorAll("a").forEach((link) => expect(link.className).toContain("underline"));
     expect(container.querySelectorAll("details[data-methodology-panel]")).toHaveLength(1);
     expect(container.querySelector("footer a[href='https://tannerkrewson.com']")?.getAttribute("rel")).toBe(
       "noopener noreferrer",

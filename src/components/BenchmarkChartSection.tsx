@@ -53,7 +53,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
     props.initialState?.selectionSpecified ?? (props.initialState?.selectedIds?.length ?? 0) > 0,
   );
   const [showLabels, setShowLabels] = createSignal(props.initialState?.showLabels ?? true);
-  const [showFrontier, setShowFrontier] = createSignal(props.initialState?.showFrontier ?? true);
+  const [showFrontier, setShowFrontier] = createSignal(props.initialState?.showFrontier ?? false);
   const [showDiscounts, setShowDiscounts] = createSignal(props.initialState?.showDiscounts ?? true);
   const [controls, setControls] = createSignal<PricingControlState>({
     ...defaultControls(),
@@ -228,6 +228,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
                   setHovered(id && pos ? { id, left: pos.left, top: pos.top } : null)
                 }
               />
+              <ChartWatermark />
             </Show>
             <ChartTooltip
               left={() => hovered()?.left ?? 0}
@@ -243,7 +244,6 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
             </Show>
           </Show>
         </div>
-        <ChartWatermark />
 
       </div>
     </section>

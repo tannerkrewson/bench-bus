@@ -46,7 +46,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
     props.initialState?.selectionSpecified ?? (props.initialState?.selectedIds?.length ?? 0) > 0,
   );
   const [showLabels, setShowLabels] = createSignal(props.initialState?.showLabels ?? true);
-  const [showFrontier, setShowFrontier] = createSignal(props.initialState?.showFrontier ?? true);
+  const [showFrontier, setShowFrontier] = createSignal(props.initialState?.showFrontier ?? false);
   const [showDiscounts, setShowDiscounts] = createSignal(props.initialState?.showDiscounts ?? true);
   const [controls, setControls] = createSignal<PricingControlState>({
     ...defaultControls(),
@@ -247,6 +247,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
                   setHovered(id && pos ? { id, left: pos.left, top: pos.top } : null)
                 }
               />
+              <ChartWatermark />
             </Show>
             <ChartTooltip
               left={() => hovered()?.left ?? 0}
@@ -262,7 +263,6 @@ export default function AaChartSection(props: AaChartSectionProps) {
             </Show>
           </Show>
         </div>
-        <ChartWatermark />
         <Show when={props.records().length > 0 && build().unplottable.length > 0}>
           <p class="text-xs text-base-content/60" role="status" data-testid="aa-unplottable-count">
             {build().unplottable.length} model(s) shown in the list but not plotted: no usable

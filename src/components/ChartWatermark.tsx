@@ -5,7 +5,7 @@
 export default function ChartWatermark() {
   return (
     <div
-      class="mt-3 flex min-h-8 items-center justify-center gap-2 text-xs font-semibold tracking-wide text-base-content/70"
+      class="mt-2 flex min-h-8 items-center justify-start gap-2 text-xs font-semibold tracking-wide text-base-content/70"
       data-testid="chart-watermark"
       role="img"
       aria-label="Bench Bus watermark, benchb.us"

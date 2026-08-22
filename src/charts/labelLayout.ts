@@ -144,7 +144,7 @@ function labelWidth(label: string, bounds: LabelLayoutBounds): number | null {
   const available = Math.max(1, bounds.right - bounds.left);
   // Keep enough room for the larger label font and padding. A label wider than
   // the plot can never be shown in full, so omit it instead of clipping it.
-  const intrinsic = Math.ceil(label.length * LABEL_FONT_WIDTH + 16);
+  const intrinsic = Math.ceil(label.length * LABEL_FONT_WIDTH + 8);
   return intrinsic <= available ? intrinsic : null;
 }
 

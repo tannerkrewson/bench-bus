@@ -187,7 +187,7 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
                     type="checkbox"
                     class="toggle toggle-sm toggle-primary"
                     aria-label="Show Pareto frontier"
-                    checked={props.showFrontier?.() ?? true}
+                    checked={props.showFrontier?.() ?? false}
                     onChange={(e) => props.onShowFrontierChange?.(e.currentTarget.checked)}
                   />
                 </label>
@@ -212,7 +212,7 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
 
             {/* The visible frontier legend lives below each graph. Keep this
                 short screen-reader description with the related toggle. */}
-            <Show when={props.showFrontier?.() ?? true}>
+            <Show when={props.showFrontier?.() ?? false}>
               <span class="sr-only" role="img" aria-label="Pareto frontier (dotted line)">Pareto frontier (dotted line)</span>
             </Show>
 

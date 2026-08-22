@@ -92,14 +92,14 @@ const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
     scale: "log",
     controls: { pricingMode: "cheapest", cacheHitRate: 0.9 },
     showLabels: true,
-    showFrontier: true,
+    showFrontier: false,
     showDiscounts: true,
   };
   const cursorUrlDefaults: ChartStateSerializationDefaults = {
     scale: "log",
     controls: { surcharge: false, tokenMix: 50 },
     showLabels: true,
-    showFrontier: true,
+    showFrontier: false,
     showDiscounts: true,
   };
   return (
@@ -174,14 +174,14 @@ const App: Component = () => {
           <Charts bundle={bundle()} />
 
           <footer
-            class="mt-6 border-t border-base-300 px-4 py-4 text-center text-sm text-base-content/80"
+            class="mt-6 px-4 py-4 text-center text-sm text-base-content/80"
             aria-label="Site information"
           >
-            <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+            <div class="flex flex-col items-center justify-center gap-y-1">
               <span>
                 Bench Bus by{" "}
                 <a
-                  class="link link-hover font-semibold"
+                  class="link link-hover underline"
                   href="https://tannerkrewson.com"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -189,9 +189,8 @@ const App: Component = () => {
                   Tanner Krewson
                 </a>
               </span>
-              <span aria-hidden="true">·</span>
               <a
-                class="link link-hover"
+                class="link link-hover underline"
                 href="https://github.com/tannerkrewson/bench-bus"
                 target="_blank"
                 rel="noopener noreferrer"

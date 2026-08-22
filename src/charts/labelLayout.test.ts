@@ -72,7 +72,7 @@ describe("layoutModelLabels", () => {
       : 0;
     expect(nearestDistance).toBeGreaterThanOrEqual(8);
     for (const label of labels) {
-      expect(label.label.length * 7.6 + 16).toBeLessThanOrEqual(label.width + 1);
+      expect(label.label.length * 7.6 + 8).toBeLessThanOrEqual(label.width + 1);
     }
   });
 

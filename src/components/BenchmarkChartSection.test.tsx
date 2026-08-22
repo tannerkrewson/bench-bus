@@ -260,7 +260,7 @@ describe("Chart controls across benchmark sections", () => {
       expect(control).not.toBeNull();
     }
     expect(controls.every((panel) => panel.querySelector("[role='group'][aria-labelledby]") !== null)).toBe(true);
-    expect(controls.every((panel) => panel.querySelector("[role='img'][aria-label='Pareto frontier (dotted line)']") !== null)).toBe(true);
+    expect(controls.every((panel) => panel.querySelector("[role='img'][aria-label='Pareto frontier (dotted line)']") === null)).toBe(true);
     expect(container.querySelector("[data-testid='chart-decorations']")?.getAttribute("aria-hidden")).toBe("true");
     const crowns = container.querySelectorAll("[data-testid='pareto-crown']");
     crowns.forEach((crown) => expect(crown.getAttribute("aria-hidden")).toBe("true"));
@@ -279,13 +279,13 @@ describe("BenchmarkChartSection (Cursor fixture shape)", () => {
       />
     ));
     const frontier = container.querySelector("input[aria-label='Show Pareto frontier']") as HTMLInputElement;
-    expect(frontier.checked).toBe(true);
+    expect(frontier.checked).toBe(false);
     const canvas = container.querySelector("canvas");
     frontier.click();
-    expect(frontier.checked).toBe(false);
-    expect(container.querySelector("[role='img'][aria-label='Pareto frontier (dotted line)']")).toBeNull();
+    expect(frontier.checked).toBe(true);
+    expect(container.querySelector("[role='img'][aria-label='Pareto frontier (dotted line)']")).not.toBeNull();
     expect(container.querySelector("canvas")).toBe(canvas);
-    expect(states[states.length - 1]?.showFrontier).toBe(false);
+    expect(states[states.length - 1]?.showFrontier).toBe(true);
     dispose();
   });
 
