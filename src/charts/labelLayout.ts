@@ -3,7 +3,13 @@ import { formatEffort, modelEffortOrder, preferredFamilyLabel } from "./modelMet
 
 export interface LabelLayoutAnchor {
   id: string;
+  /** Full visual text, used for conservative collision/width measurement. */
   label: string;
+  /** Optional structured visual parts for model labels. */
+  mainLabel?: string;
+  discountLabel?: string;
+  /** Full canonical text exposed to assistive technology and tooltips. */
+  accessibleLabel?: string;
   anchorLeft: number;
   anchorTop: number;
   color: string;

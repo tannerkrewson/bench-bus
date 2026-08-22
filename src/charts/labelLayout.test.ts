@@ -8,6 +8,27 @@ import {
 const bounds = { left: 10, top: 10, right: 310, bottom: 210 };
 
 describe("layoutModelLabels", () => {
+  it("includes the parenthesized discount suffix in collision width", () => {
+    const [base] = layoutModelLabels(
+      [{ id: "base", label: "Model", anchorLeft: 120, anchorTop: 80, color: "red" }],
+      bounds,
+    );
+    const [discounted] = layoutModelLabels(
+      [{
+        id: "discounted",
+        label: "Model (43.1% off)",
+        mainLabel: "Model",
+        discountLabel: "(43.1% off)",
+        accessibleLabel: "Model (43.1% off)",
+        anchorLeft: 120,
+        anchorTop: 80,
+        color: "red",
+      }],
+      bounds,
+    );
+    expect(discounted!.width).toBeGreaterThan(base!.width);
+  });
+
   it("keeps labels inside the plot bounds", () => {
     const [label] = layoutModelLabels(
       [{ id: "right", label: "A long model name", anchorLeft: 305, anchorTop: 205, color: "red" }],
@@ -93,6 +114,15 @@ describe("layoutModelLabels", () => {
       { preferredSides: new Map([["hovered", "left"]]) },
     );
     expect(label!.left + label!.width).toBeLessThan(150);
+  });
+
+  it("keeps effort suffixes when variants need separate labels", () => {
+    const groups = groupModelVariants([
+      { id: "opus-high", label: "Opus 5 high", brand: "anthropic", x: 2, y: 60 },
+      { id: "opus-other", label: "Opus 4.8 high", brand: "anthropic", x: 1, y: 61 },
+    ]);
+    expect(groups).toEqual([]);
+    expect(modelVariantParts("Opus 5 high")?.effort).toBe("high");
   });
 
   it("groups same-brand effort variants but keeps model families separate", () => {

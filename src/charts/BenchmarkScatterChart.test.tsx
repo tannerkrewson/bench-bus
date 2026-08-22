@@ -298,7 +298,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
     dispose();
   });
 
-  it("appends discount text to model labels and removes standalone discount labels", async () => {
+  it("renders a smaller parenthesized discount suffix and removes standalone discount labels", async () => {
     const { container, dispose } = mountSizedChart(() => (
       <BenchmarkScatterChart
         points={() => [{ id: "model", label: "Model", x: 6, y: 70, discount: { percentage: 43.1, preDiscountX: 10 } }]}
@@ -309,9 +309,39 @@ describe("BenchmarkScatterChart discount annotations", () => {
       />
     ));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    expect(container.querySelector("[data-testid='model-label']")?.textContent).toBe("Model 43.1% off");
+    const label = container.querySelector("[data-testid='model-label']") as HTMLElement;
+    const discount = container.querySelector("[data-testid='model-label-discount']") as HTMLElement;
+    expect(label?.textContent).toBe("Model (43.1% off)");
+    expect(label?.getAttribute("aria-label")).toBe("Model (43.1% off)");
+    expect(discount).not.toBeNull();
+    expect(Number.parseFloat(getComputedStyle(discount).fontSize)).toBeLessThan(13);
     expect(container.querySelector("[data-testid='discount-label']")).toBeNull();
     expect(container.querySelector("[data-testid='label-hover-highlight']")).toBeNull();
+    dispose();
+  });
+
+  it("retains effort text for separate model variants and exposes full accessible names", async () => {
+    const { container, dispose } = mountSizedChart(() => (
+      <BenchmarkScatterChart
+        points={() => [
+          { id: "opus", label: "Opus 5 high", x: 4, y: 60, brand: "anthropic" },
+          { id: "sonnet", label: "Opus 4.8 high", x: 12, y: 80, brand: "anthropic" },
+        ]}
+        scale={() => "linear"}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        height={400}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const labels = [...container.querySelectorAll<HTMLElement>("[data-testid='model-label']")];
+    expect(labels.map((label) => label.getAttribute("aria-label"))).toEqual(
+      expect.arrayContaining(["Opus 5 high", "Opus 4.8 high"]),
+    );
+    expect(labels.map((label) => label.textContent)).toEqual(
+      expect.arrayContaining(["Opus 5 high", "Opus 4.8 high"]),
+    );
     dispose();
   });
 
@@ -319,8 +349,8 @@ describe("BenchmarkScatterChart discount annotations", () => {
     const { container, dispose } = mountSizedChart(() => (
       <BenchmarkScatterChart
         points={() => [
-          { id: "opus-low", label: "Opus low", x: 4, y: 60, brand: "anthropic", effortGroup: "opus", effort: "low" },
-          { id: "opus-high", label: "Opus high", x: 6, y: 70, brand: "anthropic", effortGroup: "opus", effort: "high" },
+          { id: "opus-low", label: "Opus 5 low", x: 4, y: 60, brand: "anthropic", effortGroup: "opus-5", effort: "low" },
+          { id: "opus-high", label: "Opus 5 high", x: 6, y: 70, brand: "anthropic", effortGroup: "opus-5", effort: "high" },
           { id: "other", label: "Other", x: 12, y: 80, brand: "openai" },
         ]}
         scale={() => "linear"}
@@ -334,6 +364,8 @@ describe("BenchmarkScatterChart discount annotations", () => {
     const familyLabel = container.querySelector("[data-testid='model-label'][data-model-id='opus-high']") as HTMLElement;
     const otherLabel = container.querySelector("[data-testid='model-label'][data-model-id='other']") as HTMLElement;
     expect(familyLabel).not.toBeNull();
+    expect(familyLabel.textContent).toBe("Opus 5");
+    expect(familyLabel.getAttribute("aria-label")).toBe("Opus 5 high");
     expect(otherLabel).not.toBeNull();
     familyLabel.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
     expect(familyLabel.style.opacity).toBe("1");

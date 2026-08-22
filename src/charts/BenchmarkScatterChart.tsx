@@ -13,7 +13,7 @@ import {
 } from "./labelLayout";
 import {
   largestExplicitDiscountForPoint,
-  modelLabelWithDiscount,
+  modelLabelParts,
   paretoFrontier,
   selectCrownPoints,
   toPlotSeries,
@@ -164,6 +164,7 @@ type DiscountDecoration = {
 
 type CurrentSeries = ReturnType<typeof toPlotSeries> & {
   labels: string[];
+  labelParts: ReturnType<typeof modelLabelParts>[];
   effortGroups: (string | null)[];
   groupKeys: string[];
   brands: ModelBrand[];
@@ -191,6 +192,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     ids: [],
     droppedIds: [],
     labels: [],
+    labelParts: [],
     effortGroups: [],
     groupKeys: [],
     brands: [],
@@ -275,17 +277,19 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           }];
         })
       : [];
+    const labelParts = orderedIds.map((id) => {
+      const point = pointById.get(id);
+      if (!point) return modelLabelParts(id, null);
+      const discount = props.showDiscounts?.() ?? true ? largestExplicitDiscountForPoint(point) : null;
+      return modelLabelParts(point.label, discount);
+    });
     currentSeries = {
       x: orderedIds.map((id) => series.x[indexById.get(id)!]!),
       y: orderedIds.map((id) => series.y[indexById.get(id)!]!),
       ids: orderedIds,
       droppedIds: series.droppedIds,
-      labels: orderedIds.map((id) => {
-        const point = pointById.get(id);
-        if (!point) return id;
-        const discount = props.showDiscounts?.() ?? true ? largestExplicitDiscountForPoint(point) : null;
-        return modelLabelWithDiscount(point.label, discount);
-      }),
+      labels: labelParts.map((parts) => parts.accessibleLabel),
+      labelParts,
       effortGroups: orderedIds.map((id) => groupById.get(id) ?? null),
       groupKeys: orderedIds.map((id) => groupKeyById.get(id) ?? modelGroupKey(id, id)),
       brands: orderedIds.map((id) => {
@@ -547,10 +551,25 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       const x = currentSeries.x[index];
       const y = currentSeries.y[index];
       if (x === undefined || y === undefined) return [];
+      const pointLabel = currentSeries.labelParts[index] ?? modelLabelParts(currentSeries.labels[index] ?? id, null);
+      const representativeGroup = representativeId === undefined
+        ? undefined
+        : currentSeries.variantGroups.find((group) => group.representativeId === representativeId);
+      // A connected effort group gets one concise family label. Keep the
+      // representative point's canonical effort-bearing name in aria-label
+      // and the tooltip-facing series data, while the visual label uses the
+      // family base name to avoid implying that only one effort is shown.
+      const mainLabel = representativeGroup?.baseLabel ?? pointLabel.mainLabel;
+      const visibleLabel = pointLabel.discountLabel
+        ? `${mainLabel} ${pointLabel.discountLabel}`
+        : mainLabel;
       return [
         {
           id,
-          label: currentSeries.labels[index] ?? id,
+          label: visibleLabel,
+          mainLabel,
+          discountLabel: pointLabel.discountLabel,
+          accessibleLabel: pointLabel.accessibleLabel,
           anchorLeft: overRect.left - rootRect.left + currentPlot.valToPos(x, "x"),
           anchorTop: overRect.top - rootRect.top + currentPlot.valToPos(y, "y"),
           color: groupColor(currentSeries.groupKeys[index] ?? modelGroupKey(currentSeries.labels[index] ?? id, id), dark),
@@ -1416,6 +1435,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
               }}
               data-testid="model-label"
               data-model-id={label.id}
+              aria-label={label.accessibleLabel ?? label.label}
+              title={label.accessibleLabel ?? label.label}
               tabIndex="0"
               onMouseEnter={() => setModelLabelHover(label.id)}
               onMouseLeave={() => {
@@ -1428,7 +1449,21 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 props.onHover?.(null);
               }}
             >
-              {label.label}
+              <span data-testid="model-label-main">{label.mainLabel ?? label.label}</span>
+              <Show when={label.discountLabel}>
+                {(discountLabel) => (
+                  <span
+                    data-testid="model-label-discount"
+                    style={{
+                      "font-size": "10px",
+                      "font-weight": "400",
+                      "line-height": "1",
+                    }}
+                  >
+                    {` ${discountLabel()}`}
+                  </span>
+                )}
+              </Show>
             </span>
           )}
         </For>

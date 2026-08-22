@@ -51,16 +51,33 @@ export function explicitDiscountForAnnotation(
   return discount;
 }
 
-/**
- * Assemble uPlot data arrays. On log scale, non-positive x values are
- * dropped (they are unrepresentable); callers get the dropped ids so the UI
- * can explain why a point disappeared after a scale switch.
- */
+/** Structured model-label parts keep the visual discount suffix separate from
+ * the canonical model name while retaining one complete accessible string. */
+export interface ModelLabelParts {
+  mainLabel: string;
+  discountLabel?: string;
+  accessibleLabel: string;
+}
+
+export function modelLabelParts(
+  label: string,
+  discount: PriceDiscountAnnotation | null,
+): ModelLabelParts {
+  if (!discount) return { mainLabel: label, accessibleLabel: label };
+  const discountLabel = `(${discount.percentage}% off)`;
+  return {
+    mainLabel: label,
+    discountLabel,
+    accessibleLabel: `${label} ${discountLabel}`,
+  };
+}
+
+/** Return the complete label used by tooltips and other non-visual callers. */
 export function modelLabelWithDiscount(
   label: string,
   discount: PriceDiscountAnnotation | null,
 ): string {
-  return discount ? `${label} ${discount.percentage}% off` : label;
+  return modelLabelParts(label, discount).accessibleLabel;
 }
 
 export function explicitDiscountCandidates(point: PlottablePoint): PriceDiscountAnnotation[] {

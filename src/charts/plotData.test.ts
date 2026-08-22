@@ -4,6 +4,7 @@ import {
   buildChartPlot,
   explicitDiscountForAnnotation,
   explicitDiscountForPoint,
+  modelLabelParts,
   modelLabelWithDiscount,
   paretoFrontier,
   selectCrownPoints,
@@ -33,10 +34,15 @@ describe("buildChartPlot", () => {
 });
 
 describe("modelLabelWithDiscount", () => {
-  it("appends discount percentage directly without creating a standalone label", () => {
-    expect(modelLabelWithDiscount("Model", { percentage: 43.1, preDiscountX: 10 })).toBe("Model 43.1% off");
-    expect(modelLabelWithDiscount("Model", { percentage: 100, preDiscountX: 10, effectiveX: 0 })).toBe("Model 100% off");
+  it("formats a parenthesized discount while retaining the complete accessible label", () => {
+    expect(modelLabelWithDiscount("Model", { percentage: 43.1, preDiscountX: 10 })).toBe("Model (43.1% off)");
+    expect(modelLabelWithDiscount("Model", { percentage: 100, preDiscountX: 10, effectiveX: 0 })).toBe("Model (100% off)");
     expect(modelLabelWithDiscount("Model", null)).toBe("Model");
+    expect(modelLabelParts("Model", { percentage: 43.1, preDiscountX: 10 })).toEqual({
+      mainLabel: "Model",
+      discountLabel: "(43.1% off)",
+      accessibleLabel: "Model (43.1% off)",
+    });
   });
 });
 
