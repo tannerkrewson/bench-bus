@@ -89,6 +89,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   let plotStructureKey = "";
   let hoveredIndex: number | null = null;
   let plotUpdateFrame: number | null = null;
+  let labelUpdateFrame: number | null = null;
   let currentSeries: CurrentSeries = {
     x: [],
     y: [],
@@ -201,7 +202,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   };
 
   const dataFor = (): uPlot.AlignedData => {
-    refreshSeries();
     const pointById = new Map(
       currentSeries.ids.map((id, index) => [id, { x: currentSeries.x[index]!, y: currentSeries.y[index]! }]),
     );
@@ -449,8 +449,12 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   };
 
   const scheduleLabelPositions = () => {
+    if (labelUpdateFrame !== null) return;
     if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
-      window.requestAnimationFrame(updateLabelPositions);
+      labelUpdateFrame = window.requestAnimationFrame(() => {
+        labelUpdateFrame = null;
+        updateLabelPositions();
+      });
     } else {
       updateLabelPositions();
     }
@@ -586,7 +590,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   const buildOptions = (): Options => {
     const scale = props.scale();
     const styles = themeStyles();
-    refreshSeries();
     const pointGroups = [...new Set(currentSeries.groupKeys)];
     plotStructureKey = `${currentSeries.discounts.length}|${currentSeries.variantGroups
       .map((group) => `${group.key}:${group.members.length}`)
@@ -785,6 +788,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     if (!container) return;
     const hoveredId = hoveredIndex === null ? null : currentSeries.ids[hoveredIndex];
     const scrollY = typeof window !== "undefined" ? window.scrollY : 0;
+    refreshSeries();
     plot?.destroy();
     plot = new uPlot(buildOptions(), dataFor(), container);
     baseSeriesAlphas = plot.series.map((series) => series.alpha ?? 1);
@@ -831,6 +835,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   const applyPlotData = () => {
     const hoveredId = hoveredIndex === null ? null : currentSeries.ids[hoveredIndex];
+    refreshSeries();
     const data = dataFor();
     hoveredIndex = hoveredId === undefined || hoveredId === null
       ? null
@@ -875,10 +880,12 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   );
 
   onCleanup(() => {
-    if (plotUpdateFrame !== null && typeof window !== "undefined") {
-      window.cancelAnimationFrame(plotUpdateFrame);
-      plotUpdateFrame = null;
+    if (typeof window !== "undefined") {
+      if (plotUpdateFrame !== null) window.cancelAnimationFrame(plotUpdateFrame);
+      if (labelUpdateFrame !== null) window.cancelAnimationFrame(labelUpdateFrame);
     }
+    plotUpdateFrame = null;
+    labelUpdateFrame = null;
   });
 
   createEffect(

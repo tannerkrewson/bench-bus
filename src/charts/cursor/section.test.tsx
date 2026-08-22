@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render } from "solid-js/web";
 import type { JSX } from "solid-js";
 import CursorBenchChartSection, {
@@ -116,6 +116,38 @@ describe("CursorBenchChartSection", () => {
     expect(container.querySelector("[data-testid='cursor-token-rate-assumptions']")).not.toBeNull();
     expect(container.querySelector("[data-testid='cursor-surcharge-included']")?.textContent).toContain("Surcharge included");
     dispose();
+  });
+
+  it("keeps chart layers synchronized through repeated token-mix slider updates", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { container, dispose } = mount(() => (
+      <CursorBenchChartSection records={() => CURSOR_FIXTURE_RECORDS} />
+    ));
+    const toggle = container.querySelector(
+      "[data-testid='chart-controls'] input[aria-label^='Include Cursor Token Rate']",
+    ) as HTMLInputElement;
+    toggle.click();
+    const slider = container.querySelector(
+      `#chart-cursor-control-${TOKEN_MIX_CONTROL_ID}`,
+    ) as HTMLInputElement;
+    for (let value = 0; value <= 100; value += 1) {
+      slider.value = String(value);
+      slider.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+    expect(consoleError).not.toHaveBeenCalled();
+    // The overlay roots remain mounted alongside the canvas after the latest
+    // coalesced update; their children are geometry-dependent in jsdom.
+    expect(container.querySelector("[data-testid='model-label-leaders']")).not.toBeNull();
+    expect(container.querySelector("[data-testid='chart-decorations']")).not.toBeNull();
+    expect(container.querySelector("[data-testid='benchmark-scatter-plot'] canvas")).not.toBeNull();
+    expect((container.querySelector("[data-testid='chart-controls'] input[type='range']") as HTMLInputElement).value).toBe("100");
+    dispose();
+    consoleError.mockRestore();
   });
 
   it("flipping the surcharge toggle changes plotted third-party costs and emits state", () => {

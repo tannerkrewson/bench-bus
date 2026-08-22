@@ -71,6 +71,30 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     dispose();
   });
 
+  it("makes the settings popup translucent only during slider interaction and keeps it below the button", () => {
+    const { container, dispose } = mount(() => (
+      <BenchmarkChartSection adapter={aaDemoAdapter} records={() => AA_FIXTURE_RECORDS} />
+    ));
+    const settings = container.querySelector("summary[aria-label='Chart settings']") as HTMLElement;
+    const popup = container.querySelector("[data-testid='chart-settings-popup']") as HTMLElement;
+    const panel = container.querySelector("[data-testid='chart-controls']") as HTMLElement;
+    const slider = container.querySelector("input[type='range']") as HTMLInputElement;
+
+    settings.click();
+    expect(popup.classList.contains("top-full")).toBe(true);
+    expect(popup.classList.contains("right-0")).toBe(true);
+    expect(panel.style.opacity).toBe("1");
+    slider.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    expect(panel.style.opacity).toBe("0.2");
+    document.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+    expect(panel.style.opacity).toBe("1");
+    slider.dispatchEvent(new Event("touchstart", { bubbles: true }));
+    expect(panel.style.opacity).toBe("0.2");
+    document.dispatchEvent(new Event("touchcancel", { bubbles: true }));
+    expect(panel.style.opacity).toBe("1");
+    dispose();
+  });
+
   it("switches log/linear and preserves query and selection state", () => {
     const states: ChartViewState[] = [];
     const { container, dispose } = mount(() => (

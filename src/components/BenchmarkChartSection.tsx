@@ -60,9 +60,9 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
     ...props.initialState?.controls,
   });
 
-  const buildAll = createMemo(() => buildChartPlot(props.records(), props.adapter, controls(), ""));
+  const build = createMemo(() => buildChartPlot(props.records(), props.adapter, controls(), ""));
   const defaultSelectionIds = createMemo(() => {
-    const entries = buildAll().entries;
+    const entries = build().entries;
     const points = entries.map((entry) => entry.point);
     return props.adapter.defaultSelectionIds?.(props.records(), points) ?? points.map((point) => point.id);
   });
@@ -72,8 +72,6 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
     left: number;
     top: number;
   } | null>(null);
-
-  const build = createMemo(() => buildChartPlot(props.records(), props.adapter, controls(), ""));
 
   const effectiveSelectedIds = createMemo(() =>
     selectionSpecified() ? selectedIds() : defaultSelectionIds(),
@@ -173,7 +171,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
         <Show when={props.records().length > 0}>
           <div class="mb-3 flex justify-end">
             <ModelList
-              points={() => buildAll().entries.map((e) => e.point)}
+              points={() => build().entries.map((e) => e.point)}
               selectedIds={effectiveSelectedIds}
               defaultSelectedIds={defaultSelectionIds}
               searchId={`chart-${props.adapter.benchmarkId}-model-search`}

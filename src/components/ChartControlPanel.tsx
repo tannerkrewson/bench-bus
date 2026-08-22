@@ -33,9 +33,11 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
   let summary: HTMLElement | undefined;
   let panel: HTMLFieldSetElement | undefined;
   const [open, setOpen] = createSignal(false);
+  const [sliderActive, setSliderActive] = createSignal(false);
   const controlId = (name: string) => `chart-${props.benchmarkId}-${name}`;
 
   const close = (restoreFocus = false) => {
+    setSliderActive(false);
     setOpen(false);
     if (details) details.open = false;
     if (restoreFocus) summary?.focus();
@@ -58,11 +60,28 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
         close(true);
       }
     };
+    const onSliderInteractionEnd = () => setSliderActive(false);
     document.addEventListener("click", onDocumentClick);
     document.addEventListener("keydown", onDocumentKeyDown);
+    // The pointer can leave the range input while a drag is in progress. Keep
+    // the cleanup on the document so mouse, touch, and pointer cancellation
+    // always restore the popup, including when the pointer ends outside it.
+    document.addEventListener("pointerup", onSliderInteractionEnd);
+    document.addEventListener("pointercancel", onSliderInteractionEnd);
+    document.addEventListener("mouseup", onSliderInteractionEnd);
+    document.addEventListener("touchend", onSliderInteractionEnd);
+    document.addEventListener("touchcancel", onSliderInteractionEnd);
+    document.addEventListener("cancel", onSliderInteractionEnd);
     onCleanup(() => {
+      setSliderActive(false);
       document.removeEventListener("click", onDocumentClick);
       document.removeEventListener("keydown", onDocumentKeyDown);
+      document.removeEventListener("pointerup", onSliderInteractionEnd);
+      document.removeEventListener("pointercancel", onSliderInteractionEnd);
+      document.removeEventListener("mouseup", onSliderInteractionEnd);
+      document.removeEventListener("touchend", onSliderInteractionEnd);
+      document.removeEventListener("touchcancel", onSliderInteractionEnd);
+      document.removeEventListener("cancel", onSliderInteractionEnd);
     });
   });
 
@@ -98,11 +117,15 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
         <Settings size={16} stroke-width={2.5} aria-hidden="true" />
         <span>Settings</span>
       </summary>
-      <div class="dropdown-content z-20 mt-2 w-[min(42rem,calc(100vw-2rem))] max-w-full">
+      <div
+        class="dropdown-content absolute right-0 top-full z-20 mt-2 w-[min(42rem,calc(100vw-2rem))] max-w-full"
+        data-testid="chart-settings-popup"
+      >
         <fieldset
           ref={panel}
           id={controlId("panel")}
           class="rounded-box border border-base-300 bg-base-200/95 p-4 shadow-xl"
+          style={{ opacity: sliderActive() ? 0.2 : 1, transition: "opacity 100ms ease" }}
           data-testid="chart-controls"
         >
           <legend class="px-2 text-sm font-semibold">Chart settings</legend>
@@ -232,6 +255,15 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
                           step={spec.kind === "slider" ? spec.step : 1}
                           value={Number(props.controls()[spec.id] ?? spec.default)}
                           aria-label={spec.label}
+                          onPointerDown={() => setSliderActive(true)}
+                          onPointerUp={() => setSliderActive(false)}
+                          onPointerCancel={() => setSliderActive(false)}
+                          onMouseDown={() => setSliderActive(true)}
+                          onMouseUp={() => setSliderActive(false)}
+                          onTouchStart={() => setSliderActive(true)}
+                          onTouchEnd={() => setSliderActive(false)}
+                          onTouchCancel={() => setSliderActive(false)}
+                          onCancel={() => setSliderActive(false)}
                           onInput={(e) => props.onControlChange(spec.id, e.currentTarget.valueAsNumber)}
                         />
                         <Show when={spec.description}>

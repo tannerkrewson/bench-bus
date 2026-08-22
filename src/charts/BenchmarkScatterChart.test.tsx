@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createSignal } from "solid-js";
 import { render } from "solid-js/web";
 import type { JSX } from "solid-js";
@@ -71,6 +71,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
       />
     ));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const requestFrame = vi.spyOn(window, "requestAnimationFrame");
     for (let index = 0; index < 100; index += 1) {
       setPoints([{
         id: `model-${index}`,
@@ -83,7 +84,11 @@ describe("BenchmarkScatterChart discount annotations", () => {
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     expect(container.querySelector("[data-testid='discount-arrow']")?.getAttribute("data-discount-id")).toBe("model-99");
+    // One frame-coalesced render handles all 100 slider updates; no
+    // update/render feedback loop can enqueue one render per input.
+    expect(requestFrame.mock.calls.length).toBeLessThanOrEqual(4);
     dispose();
+    requestFrame.mockRestore();
   });
 
   it("opens model and discount tooltip state from accessible label hover targets", async () => {
