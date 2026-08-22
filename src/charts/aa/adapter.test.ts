@@ -61,18 +61,14 @@ describe("aaAdapter.computePoint", () => {
       name: "GPT-5.6 Luna (Non-reasoning)",
     };
     const deepSeekPoint = aaAdapter.computePoint(deepSeek, controls)!;
-    const lunaPoint = aaAdapter.computePoint(luna, controls)!;
+    const lunaPoint = aaAdapter.computePoint(luna, controls);
     expect(deepSeekPoint).toMatchObject({
       label: "DeepSeek v4 Flash 0731 max",
       effort: "max",
       effortGroup: "deepseek-v4-flash-0731",
     });
-    expect(lunaPoint).toMatchObject({
-      label: "GPT-5.6 Luna",
-      effortGroup: "gpt-5-6-luna",
-    });
+    expect(lunaPoint).toBeNull();
     expect(deepSeekPoint.label).not.toMatch(/[()]/);
-    expect(lunaPoint.label).not.toMatch(/[()]/);
   });
 
   it("annotates only a cheapest provider with explicit listed-price discount metadata", () => {

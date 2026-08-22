@@ -19,7 +19,12 @@ type ModelEffort = (typeof EFFORT_NAMES)[number];
 // Source feeds use all of these forms, including AA's verbose reasoning
 // spellings and Cursor's concise bare suffix.
 const EFFORT_PATTERN = /^(.*?)(?:\s*\(\s*(?:(?:adaptive\s+)?reasoning\s*,\s*)?(extra\s+high|xhigh|low|medium|high|max)(?:\s+effort)?\s*\)|\s+(extra\s+high|xhigh|low|medium|high|max)(?:\s+effort)?)\s*$/i;
-const NON_REASONING_PATTERN = /\s*\(\s*non[\s-]*reasoning\s*\)\s*$/i;
+const NON_REASONING_PATTERN = /\bnon[\s-]*reasoning\b/i;
+
+/** Source feeds may publish a non-reasoning base beside reasoning variants. */
+export function isNonReasoningModel(label: string, id?: string): boolean {
+  return NON_REASONING_PATTERN.test(label) || NON_REASONING_PATTERN.test(id ?? "");
+}
 
 function normalizeWhitespace(value: string): string {
   return value.trim().replace(/\s+/g, " ");

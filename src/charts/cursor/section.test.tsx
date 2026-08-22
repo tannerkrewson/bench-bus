@@ -41,6 +41,7 @@ describe("CursorBenchChartSection", () => {
     expect(toggle).not.toBeNull();
     expect(toggle.checked).toBe(false);
     expect((container.querySelector("#chart-cursor-show-labels") as HTMLInputElement).checked).toBe(true);
+    expect(container.querySelector("input[aria-label='Show provider discounts']")).toBeNull();
     dispose();
   });
 

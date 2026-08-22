@@ -9,6 +9,7 @@ import {
 import type { DataBranchStore, ResolvedSnapshot } from "../snapshots/store";
 import type { AliasFile } from "../collectors/openrouter/mapping";
 import { DEFAULT_CURATED_MODELS, type CuratedModel } from "../collectors/openrouter/curated";
+import { isNonReasoningModel } from "../charts/modelMetadata";
 import { computeAaListedParetoFrontier, aaListedWorkloadCost } from "../collectors/aa/frontier";
 import {
   encodeAaDataset,
@@ -135,6 +136,12 @@ export function joinAaWithPricing(
   const records: DerivedAaChartRecord[] = [];
   let unmatchedAa = 0;
   for (const model of aaModels) {
+    // Keep non-reasoning base rows out of the browser-facing AA dataset;
+    // reasoning variants remain eligible for matching and plotting.
+    if (isNonReasoningModel(model.name, model.slug)) {
+      unmatchedAa += 1;
+      continue;
+    }
     const match = pricingBySlug.get(model.slug);
     const isValidListedFrontier = frontierSet.has(model.slug) && aaListedWorkloadCost(model) !== null;
     if (!match && !isValidListedFrontier) {

@@ -52,6 +52,7 @@ export default function CursorBenchChartSection(props: CursorBenchChartSectionPr
         isControlVisible={(spec, state) =>
           spec.id !== TOKEN_MIX_CONTROL_ID || Boolean(state[SURCHARGE_CONTROL_ID])
         }
+        showDiscountsControl={false}
       />
       <Show when={Boolean(controls()[SURCHARGE_CONTROL_ID])}>
         <div class="alert mt-3" role="status" data-testid="cursor-token-rate-assumptions">

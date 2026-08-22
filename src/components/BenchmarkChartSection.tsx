@@ -35,6 +35,8 @@ export interface BenchmarkChartSectionProps<TRecord> {
     spec: PricingControlSpec,
     controls: Readonly<PricingControlState>,
   ) => boolean;
+  /** Whether this benchmark supports source-backed provider discounts. */
+  showDiscountsControl?: boolean;
 }
 
 /**
@@ -54,7 +56,10 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
   );
   const [showLabels, setShowLabels] = createSignal(props.initialState?.showLabels ?? true);
   const [showFrontier, setShowFrontier] = createSignal(props.initialState?.showFrontier ?? false);
-  const [showDiscounts, setShowDiscounts] = createSignal(props.initialState?.showDiscounts ?? true);
+  const discountsEnabled = props.showDiscountsControl !== false;
+  const [showDiscounts, setShowDiscounts] = createSignal(
+    discountsEnabled ? props.initialState?.showDiscounts ?? true : false,
+  );
   const [controls, setControls] = createSignal<PricingControlState>({
     ...defaultControls(),
     ...props.initialState?.controls,
@@ -87,7 +92,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
     const entry = build().entries.find((e) => e.point.id === h.id);
     if (!entry) return null;
     const lines = [...props.adapter.tooltipLines(entry.record, entry.point, controls())];
-    const discount = showDiscounts() ? largestExplicitDiscountForPoint(entry.point) : null;
+    const discount = discountsEnabled && showDiscounts() ? largestExplicitDiscountForPoint(entry.point) : null;
     if (discount) {
       const role = discountProviderRole(entry.point, discount);
       lines.push(
@@ -115,7 +120,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
       controls: controls(),
       showLabels: showLabels(),
       showFrontier: showFrontier(),
-      showDiscounts: showDiscounts(),
+      ...(discountsEnabled ? { showDiscounts: showDiscounts() } : {}),
     });
   };
   createEffect(emitState);
@@ -164,8 +169,8 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
           onShowLabelsChange={setShowLabels}
           showFrontier={showFrontier}
           onShowFrontierChange={setShowFrontier}
-          showDiscounts={showDiscounts}
-          onShowDiscountsChange={setShowDiscounts}
+          showDiscounts={discountsEnabled ? showDiscounts : undefined}
+          onShowDiscountsChange={discountsEnabled ? setShowDiscounts : undefined}
         />
 
         <Show when={props.records().length > 0}>
@@ -226,7 +231,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
                     scale={scale}
                     showLabels={showLabels}
                     showFrontier={showFrontier}
-                    showDiscounts={showDiscounts}
+                    showDiscounts={discountsEnabled ? showDiscounts : undefined}
                     xAxisLabel={() => props.adapter.xAxisLabel}
                     yAxisLabel={() => props.adapter.yAxisLabel}
                     onHover={(id, pos) =>

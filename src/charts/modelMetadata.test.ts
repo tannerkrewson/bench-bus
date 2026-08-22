@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  isNonReasoningModel,
   modelDisplayMetadata,
   modelGroupKey,
   preferredFamilyLabel,
@@ -45,6 +46,12 @@ describe("modelDisplayMetadata", () => {
       groupKey: "gpt-5-6-luna",
     });
     expect(nonReasoning.label).not.toMatch(/[()]/);
+  });
+
+  it("identifies non-reasoning source rows without excluding reasoning variants", () => {
+    expect(isNonReasoningModel("GPT-5.6 Luna (Non-reasoning)", "gpt-5-6-luna")).toBe(true);
+    expect(isNonReasoningModel("GPT-5.6 Luna high", "gpt-5-6-luna-high")).toBe(false);
+    expect(isNonReasoningModel("GPT-5.6 Luna", "gpt-5-6-luna-non-reasoning")).toBe(true);
   });
 
   it("prefers high as a family label, then the highest available effort", () => {

@@ -19,6 +19,7 @@ import {
   paretoFrontier,
 } from "../plotData";
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
+import { isNonReasoningModel } from "../modelMetadata";
 
 export interface AaChartSectionProps {
   records: () => readonly DerivedAaChartRecord[];
@@ -58,13 +59,16 @@ export default function AaChartSection(props: AaChartSectionProps) {
     left: number;
     top: number;
   } | null>(null);
+  const visibleRecords = createMemo(() =>
+    props.records().filter((record) => !isNonReasoningModel(record.name, record.slug)),
+  );
 
   const allBuild = createMemo(() =>
-    buildChartPlot(props.records(), aaAdapter, controls(), ""),
+    buildChartPlot(visibleRecords(), aaAdapter, controls(), ""),
   );
   const dynamicDefaultIds = createMemo(() => {
     const listedBuild = buildChartPlot(
-      props.records(),
+      visibleRecords(),
       aaAdapter,
       { ...defaultControls(), pricingMode: "listed", cacheHitRate: AA_DEFAULT_CACHE_HIT_RATE },
       "",
@@ -193,7 +197,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
           }
         />
 
-        <Show when={props.records().length > 0}>
+        <Show when={visibleRecords().length > 0}>
           <div class="mb-3 flex justify-end">
             <ModelList
               points={() => allBuild().entries.map((e) => e.point)}
@@ -215,7 +219,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
         </Show>
         <div class="relative min-h-[560px] sm:min-h-[740px]" data-testid="chart-area">
           <Show
-            when={props.records().length > 0}
+            when={visibleRecords().length > 0}
             fallback={
               <p class="rounded-box bg-base-200 p-8 text-center" role="status" data-testid="aa-empty">
                 No Artificial Analysis data available yet. Snapshots are collected automatically;
@@ -270,7 +274,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
             </Show>
           </Show>
         </div>
-        <Show when={props.records().length > 0 && build().unplottable.length > 0}>
+        <Show when={visibleRecords().length > 0 && build().unplottable.length > 0}>
           <p class="text-xs text-base-content/60" role="status" data-testid="aa-unplottable-count">
             {build().unplottable.length} model(s) shown in the list but not plotted: no usable
             pricing for the current mode — never estimated as $0.

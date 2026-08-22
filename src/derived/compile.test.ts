@@ -234,6 +234,24 @@ describe("compileBundle", () => {
     ).rejects.toThrow(/not present in the alias mapping/);
   });
 
+  it("excludes non-reasoning AA models while retaining reasoning variants", () => {
+    const nonReasoning = {
+      ...validAaModel,
+      slug: "gpt-5-6-luna-non-reasoning",
+      name: "GPT-5.6 Luna (Non-reasoning)",
+      shortName: "GPT-5.6 Luna (Non-reasoning)",
+    };
+    const reasoning = {
+      ...validAaModel,
+      slug: "gpt-5-6-luna-high",
+      name: "GPT-5.6 Luna (Reasoning, High Effort)",
+      shortName: "GPT-5.6 Luna (Reasoning, High Effort)",
+    };
+    const joined = joinAaWithPricing([nonReasoning, reasoning], [], ALIASES, [nonReasoning.slug, reasoning.slug]);
+    expect(joined.records.map((record) => record.slug)).toEqual([reasoning.slug]);
+    expect(joined.unmatchedAa).toBe(1);
+  });
+
   it("retains an unmatched listed-frontier model with explicit no-data OpenRouter fields", () => {
     const joined = joinAaWithPricing(
       [validAaModel, validAaModel2],

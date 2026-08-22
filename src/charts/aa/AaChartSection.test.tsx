@@ -50,7 +50,7 @@ describe("AaChartSection", () => {
     dispose();
   });
 
-  it("renders canonical labels for verbose DeepSeek and non-reasoning Luna sources", () => {
+  it("renders canonical labels for verbose DeepSeek and excludes non-reasoning Luna sources", () => {
     const deepSeek = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
       slug: "deepseek-v4-flash-0731",
@@ -68,12 +68,12 @@ describe("AaChartSection", () => {
     ));
 
     expect(container.textContent).toContain("DeepSeek v4 Flash 0731 max");
-    expect(container.textContent).toContain("GPT-5.6 Luna");
+    expect(container.textContent).not.toContain("GPT-5.6 Luna");
     expect(container.textContent).not.toContain("Reasoning, Max Effort");
     expect(container.textContent).not.toContain("Non-reasoning");
     expect([...container.querySelectorAll<HTMLInputElement>("[data-testid='model-list'] input")]
       .map((input) => input.getAttribute("aria-label")))
-      .toEqual(expect.arrayContaining(["Show DeepSeek v4 Flash 0731 max", "Show GPT-5.6 Luna"]));
+      .toEqual(["Filter models by name", "Show DeepSeek v4 Flash 0731 max"]);
     dispose();
   });
 
@@ -113,7 +113,7 @@ describe("AaChartSection", () => {
     dispose();
   });
 
-  it("includes every reasoning variant of a frontier family but not its non-reasoning base", () => {
+  it("includes every reasoning variant of a frontier family and excludes its non-reasoning base", () => {
     const familyBase = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
       slug: "frontier-family",

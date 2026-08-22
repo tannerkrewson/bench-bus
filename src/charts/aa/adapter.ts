@@ -7,7 +7,7 @@ import type {
   PriceDiscountAnnotation,
 } from "../types";
 import { inferModelBrand } from "../brand";
-import { modelDisplayMetadata } from "../modelMetadata";
+import { isNonReasoningModel, modelDisplayMetadata } from "../modelMetadata";
 import {
   AA_DEFAULT_CACHE_HIT_RATE,
   listedCostUsd,
@@ -136,6 +136,10 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
   identity: (record) => ({ id: record.slug, label: modelDisplayMetadata(record.name, record.slug).label }),
 
   computePoint: (record, controls: Readonly<PricingControlState>): PlottablePoint | null => {
+    // AA publishes non-reasoning base rows beside reasoning variants. The
+    // chart intentionally excludes every explicitly marked non-reasoning row
+    // so it cannot leak into selection, overlays, or frontier calculations.
+    if (isNonReasoningModel(record.name, record.slug)) return null;
     const mode = controls["pricingMode"] ?? PRICING_MODE_CONTROL.default;
     const cacheHitRate = Number(controls["cacheHitRate"] ?? AA_DEFAULT_CACHE_HIT_RATE);
     const { input, output } = record.canonicalTokens;

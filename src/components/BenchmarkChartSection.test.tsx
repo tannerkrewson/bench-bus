@@ -296,6 +296,21 @@ describe("BenchmarkChartSection (Cursor fixture shape)", () => {
     dispose();
   });
 
+  it("omits provider discounts when a benchmark does not support them", () => {
+    const states: ChartViewState[] = [];
+    const { container, dispose } = mount(() => (
+      <BenchmarkChartSection
+        adapter={cursorDemoAdapter}
+        records={() => CURSOR_FIXTURE_RECORDS}
+        showDiscountsControl={false}
+        onStateChange={(state) => states.push(state)}
+      />
+    ));
+    expect(container.querySelector("input[aria-label='Show provider discounts']")).toBeNull();
+    expect(states[states.length - 1]?.showDiscounts).toBeUndefined();
+    dispose();
+  });
+
   it("keeps the model visibility selector search inside the menu", () => {
     const { container, dispose } = mount(() => (
       <BenchmarkChartSection adapter={cursorDemoAdapter} records={() => CURSOR_FIXTURE_RECORDS} />
