@@ -6,6 +6,7 @@ import BenchmarkScatterChart, {
   crosshairGuideGeometry,
   filterDollarAxisSplits,
   filterIntegerAxisSplits,
+  logDollarAxisSplits,
   filterLogDollarAxisSplits,
   formatFilteredAxisValues,
   filterTenPointGridSplits,
@@ -17,6 +18,8 @@ import type { PlottablePoint } from "./types";
 describe("BenchmarkScatterChart pure interaction policies", () => {
   it("filters axis and grid splits without changing accepted values", () => {
     expect(filterDollarAxisSplits([0.5, Number.NaN, 1_000])).toEqual([0.5, null, 1_000]);
+    expect(logDollarAxisSplits(13.3, 6200)).toEqual([100, 1000]);
+    expect(logDollarAxisSplits(0.003, 0.008)).toEqual([0.003, 0.008]);
     expect(filterLogDollarAxisSplits([
       0.001, 0.002, 0.01, 0.02, 0.1, 0.2, 1, 2, 10, 20, 100,
     ])).toEqual([
@@ -316,6 +319,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
     const discount = container.querySelector("[data-testid='model-label-discount']") as HTMLElement;
     expect(label?.textContent).toBe("Model (43.1% off)");
     expect(label?.getAttribute("aria-label")).toBe("Model (43.1% off)");
+    expect(label?.getAttribute("role")).toBe("img");
     expect(discount).not.toBeNull();
     expect(Number.parseFloat(getComputedStyle(discount).fontSize)).toBeLessThan(13);
     expect(container.querySelector("[data-testid='discount-label']")).toBeNull();

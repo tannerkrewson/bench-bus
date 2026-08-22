@@ -85,7 +85,20 @@ export function filterDollarAxisSplits(splits: readonly number[]): (number | nul
   return splits.map((value) => formatDollarTick(value) !== "" ? value : null);
 }
 
-/** Keep log-dollar powers of ten and the valid endpoints of the active range. */
+/** Generate clean major dollar ticks for a log axis instead of uPlot's
+ * additive minor split sequence (which starts at the padded minimum). */
+export function logDollarAxisSplits(scaleMin: number, scaleMax: number): number[] {
+  if (!Number.isFinite(scaleMin) || !Number.isFinite(scaleMax) || scaleMin <= 0 || scaleMax <= 0 || scaleMax < scaleMin) {
+    return [];
+  }
+  const powers: number[] = [];
+  for (let exponent = Math.ceil(Math.log10(scaleMin)); exponent <= Math.floor(Math.log10(scaleMax)); exponent += 1) {
+    powers.push(10 ** exponent);
+  }
+  return powers.length > 0 ? powers : [...new Set([scaleMin, scaleMax])];
+}
+
+/** Keep log-dollar powers of ten and the valid endpoints of an active range. */
 export function filterLogDollarAxisSplits(splits: readonly number[]): (number | null)[] {
   const valid = splits.filter((value) => Number.isFinite(value) && value > 0);
   const first = valid[0];
@@ -802,6 +815,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           stroke: styles.textColor,
           font: "14px Sora, sans-serif",
           labelFont: "600 15px Sora, sans-serif",
+          splits: scale === "log"
+            ? (_u, _axisIdx, scaleMin, scaleMax) => logDollarAxisSplits(scaleMin, scaleMax)
+            : undefined,
           filter: (_u, splits) => scale === "log"
             ? filterLogDollarAxisSplits(splits)
             : filterDollarAxisSplits(splits),
@@ -1445,6 +1461,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
               }}
               data-testid="model-label"
               data-model-id={label.id}
+              role="img"
               aria-label={label.accessibleLabel ?? label.label}
               title={label.accessibleLabel ?? label.label}
               tabIndex="0"
