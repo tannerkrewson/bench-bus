@@ -734,6 +734,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           grid: {
             stroke: styles.gridColor,
             width: 0.5,
+            // Log axes have many minor splits; only draw grid lines where a
+            // labeled dollar tick is actually rendered.
+            filter: (_u, splits) => filterDollarAxisSplits(splits),
           },
         },
         {
