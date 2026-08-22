@@ -258,10 +258,10 @@ describe("BenchmarkScatterChart discount annotations", () => {
     requestFrame.mockRestore();
   });
 
-  it("keeps model labels passive and removes standalone discount labels", async () => {
-    const { container, dispose } = mount(() => (
+  it("appends discount text to model labels and removes standalone discount labels", async () => {
+    const { container, dispose } = mountSizedChart(() => (
       <BenchmarkScatterChart
-        points={() => [{ id: "model", label: "Model", x: 6, y: 70, discount: { percentage: 40, preDiscountX: 10 } }]}
+        points={() => [{ id: "model", label: "Model", x: 6, y: 70, discount: { percentage: 43.1, preDiscountX: 10 } }]}
         scale={() => "log"}
         xAxisLabel={() => "Cost"}
         yAxisLabel={() => "Score"}
@@ -269,6 +269,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
       />
     ));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(container.querySelector("[data-testid='model-label']")?.textContent).toBe("Model 43.1% off");
     expect(container.querySelector("[data-testid='discount-label']")).toBeNull();
     expect(container.querySelector("[data-testid='label-hover-highlight']")).toBeNull();
     dispose();

@@ -33,9 +33,9 @@ describe("buildChartPlot", () => {
 });
 
 describe("modelLabelWithDiscount", () => {
-  it("appends discount percentage without creating a standalone label", () => {
-    expect(modelLabelWithDiscount("Model", { percentage: 40, preDiscountX: 10 })).toBe("Model (40% off)");
-    expect(modelLabelWithDiscount("Model", { percentage: 100, preDiscountX: 10, effectiveX: 0 })).toBe("Model (100% off)");
+  it("appends discount percentage directly without creating a standalone label", () => {
+    expect(modelLabelWithDiscount("Model", { percentage: 43.1, preDiscountX: 10 })).toBe("Model 43.1% off");
+    expect(modelLabelWithDiscount("Model", { percentage: 100, preDiscountX: 10, effectiveX: 0 })).toBe("Model 100% off");
     expect(modelLabelWithDiscount("Model", null)).toBe("Model");
   });
 });

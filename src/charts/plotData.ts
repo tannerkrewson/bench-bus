@@ -60,7 +60,7 @@ export function modelLabelWithDiscount(
   label: string,
   discount: PriceDiscountAnnotation | null,
 ): string {
-  return discount ? `${label} (${discount.percentage}% off)` : label;
+  return discount ? `${label} ${discount.percentage}% off` : label;
 }
 
 export function explicitDiscountCandidates(point: PlottablePoint): PriceDiscountAnnotation[] {
