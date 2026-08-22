@@ -19,6 +19,11 @@ describe("App", () => {
     expect(container.querySelector("section[data-benchmark='cursor'] canvas")).not.toBeNull();
     expect(container.querySelectorAll("[data-testid='chart-watermark']")).toHaveLength(2);
     expect(container.querySelector("[data-testid='chart-watermark']")?.textContent).toContain("benchb.us");
+    const crownLegends = container.querySelectorAll("[role='img'][aria-label^='Pareto crown']");
+    expect(crownLegends).toHaveLength(2);
+    crownLegends.forEach((legend) => {
+      expect(legend.querySelector("span.text-primary svg")).not.toBeNull();
+    });
     expect([...container.querySelectorAll<HTMLInputElement>("input[aria-label='Show Pareto frontier']")].every((input) => !input.checked)).toBe(true);
     expect(container.querySelector("button[aria-label^='Switch to']")).not.toBeNull();
     expect(container.querySelector("button[data-testid='random-theme']")).not.toBeNull();

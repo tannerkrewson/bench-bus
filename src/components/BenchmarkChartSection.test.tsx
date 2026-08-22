@@ -291,9 +291,15 @@ describe("Chart controls across benchmark sections", () => {
     }
     expect(controls.every((panel) => panel.querySelector("[role='group'][aria-labelledby]") !== null)).toBe(true);
     expect(controls.every((panel) => panel.querySelector("[role='img'][aria-label='Pareto frontier (dotted line)']") === null)).toBe(true);
-    expect(container.querySelector("[data-testid='chart-decorations']")?.getAttribute("aria-hidden")).toBe("true");
+    // Crown hit targets remain exposed as keyboard-focusable, model-specific
+    // accessible images while the decorative SVG itself stays pointer-passive.
+    expect(container.querySelector("[data-testid='chart-decorations']")?.getAttribute("aria-hidden")).toBeNull();
     const crowns = container.querySelectorAll("[data-testid='pareto-crown']");
-    crowns.forEach((crown) => expect(crown.getAttribute("aria-hidden")).toBe("true"));
+    crowns.forEach((crown) => {
+      expect(crown.getAttribute("aria-hidden")).toBeNull();
+      expect(crown.getAttribute("role")).toBe("img");
+      expect(crown.getAttribute("tabindex")).toBe("0");
+    });
     dispose();
   });
 });

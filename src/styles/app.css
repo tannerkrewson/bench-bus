@@ -22,7 +22,17 @@
 /* Portrait phones need the chart card's usable width more than another
    desktop-sized gutter. Keep the spacious widescreen treatment unchanged. */
 @media (max-width: 639px) {
+  .bench-bus-page-shell {
+    overflow-x: hidden;
+  }
+
   .bench-bus-page-shell [data-benchmark] > .card-body {
     padding-inline: 0.75rem;
   }
+}
+
+/* DaisyUI dropdowns are absolutely positioned; keep a closed details menu
+   out of the document's scrollable overflow until it is opened. */
+details.dropdown:not([open]) > .dropdown-content {
+  display: none;
 }

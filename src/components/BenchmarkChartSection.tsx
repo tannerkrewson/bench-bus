@@ -271,7 +271,9 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
               </Show>
               <Show when={showCrowns()}>
                 <div class="flex items-center gap-2" role="img" aria-label="Pareto crown (best value frontier model)">
-                  <Crown size={18} class="text-primary" stroke-width={2.5} aria-hidden="true" />
+                  <span class="text-primary" aria-hidden="true">
+                    <Crown size={18} stroke-width={2.5} />
+                  </span>
                   <span>Frontier crown</span>
                 </div>
               </Show>

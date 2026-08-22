@@ -928,8 +928,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
             72,
             ...(values ?? []).map((value) => String(value).length * 8 + 18),
           ),
-          labelSize: 44,
-          labelGap: 16,
+          // Keep the rotated title close to the tick labels without
+          // crowding the widest percentage value, including on phones.
+          labelSize: 40,
+          labelGap: 8,
           filter: (_u, splits) => /intelligence/i.test(props.yAxisLabel())
             ? filterIntelligenceAxisSplits(splits)
             : filterIntegerAxisSplits(splits),
@@ -1430,7 +1432,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       />
       <svg
         class="pointer-events-none absolute inset-0 z-1 overflow-visible"
-        aria-hidden="true"
         data-testid="chart-decorations"
       >
         <Show when={hoveredPosition()}>
@@ -1450,8 +1451,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         </Show>
         <Show when={hoveredAxisReadout()}>
           {(readout) => {
-            const costText = `$${String(readout().cost)}`;
-            const scoreText = `${String(readout().score)}%`;
+            const costText = `$${readout().cost.toFixed(2)}`;
+            const scoreText = `${readout().score.toFixed(1)}%`;
             return (
               <g
                 data-testid="hover-axis-readouts"
@@ -1531,29 +1532,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
             </>
           )}
         </Show>
-        <For each={pointDecorations()}>
-          {(point) => (
-            <g
-              transform={`translate(${point.left - 9} ${point.top - 27})`}
-              fill="none"
-              stroke={point.color}
-              opacity={isFocusedFamilyId(point.id) ? 1 : 0.2}
-              role="img"
-              aria-label={`${point.modelLabel} is on the Pareto frontier, meaning no plotted model is both cheaper and higher-scoring.`}
-              style={{ "pointer-events": "auto" }}
-              tabIndex="0"
-              onMouseEnter={() => setHoveredCrownId(point.id)}
-              onMouseLeave={() => setHoveredCrownId(null)}
-              onFocus={() => setHoveredCrownId(point.id)}
-              onBlur={() => setHoveredCrownId(null)}
-              data-testid="pareto-crown"
-              data-model-id={point.id}
-            >
-              <title>{`${point.modelLabel} is on the Pareto frontier, meaning no plotted model is both cheaper and higher-scoring.`}</title>
-              <Crown width={18} height={18} aria-hidden="true" />
-            </g>
-          )}
-        </For>
         <For each={discountDecorations()}>
           {(discount) => {
             return (
@@ -1597,6 +1575,36 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           }}
         </For>
       </svg>
+      {/* HTML crown hit targets sit above the canvas without making the full
+          SVG decoration layer intercept pointer movement from the plot. */}
+      <For each={pointDecorations()}>
+        {(point) => {
+          const description = `${point.modelLabel} is on the Pareto frontier, meaning no plotted model is both cheaper and higher-scoring.`;
+          return (
+            <span
+              class="pointer-events-auto absolute z-10 inline-flex h-[18px] w-[18px] items-center justify-center"
+              style={{
+                left: `${point.left - 9}px`,
+                top: `${point.top - 27}px`,
+                color: point.color,
+                opacity: isFocusedFamilyId(point.id) ? 1 : 0.2,
+              }}
+              role="img"
+              aria-label={description}
+              title={description}
+              tabIndex="0"
+              onMouseEnter={() => setHoveredCrownId(point.id)}
+              onMouseLeave={() => setHoveredCrownId(null)}
+              onFocus={() => setHoveredCrownId(point.id)}
+              onBlur={() => setHoveredCrownId(null)}
+              data-testid="pareto-crown"
+              data-model-id={point.id}
+            >
+              <Crown width={18} height={18} aria-hidden="true" />
+            </span>
+          );
+        }}
+      </For>
       <Show when={hoveredCrownId() !== null && pointDecorations().some((point) => point.id === hoveredCrownId())}>
         {(() => {
           const crown = pointDecorations().find((point) => point.id === hoveredCrownId());

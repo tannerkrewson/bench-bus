@@ -167,17 +167,17 @@ describe("BenchmarkScatterChart discount annotations", () => {
       />
     ));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    const crowns = container.querySelector("[data-testid='chart-decorations']")?.querySelectorAll("[data-testid='pareto-crown']");
+    const crowns = container.querySelectorAll("[data-testid='pareto-crown']");
     expect(crowns).toHaveLength(2);
-    expect(crowns?.[0]?.getAttribute("aria-label")).toContain("Cheap");
-    expect(crowns?.[0]?.querySelector("title")?.textContent).toContain("Pareto frontier");
+    expect(crowns[0]?.getAttribute("aria-label")).toContain("Cheap");
+    expect(crowns[0]?.getAttribute("title")).toContain("Pareto frontier");
     setShowFrontier(true);
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    expect(container.querySelector("[data-testid='chart-decorations']")?.querySelectorAll("[data-testid='pareto-crown']")).toHaveLength(2);
+    expect(container.querySelectorAll("[data-testid='pareto-crown']")).toHaveLength(2);
     setShowFrontier(false);
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    expect(container.querySelector("[data-testid='chart-decorations']")?.querySelectorAll("[data-testid='pareto-crown']")).toHaveLength(2);
+    expect(container.querySelectorAll("[data-testid='pareto-crown']")).toHaveLength(2);
     setShowCrowns(false);
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
@@ -562,7 +562,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect(container.querySelectorAll("[data-testid='hover-axis-readouts'] [data-axis='x']")).toHaveLength(2);
     expect(container.querySelectorAll("[data-testid='hover-axis-readouts'] [data-axis='y']")).toHaveLength(2);
     expect(container.querySelector("[data-testid='hover-axis-readouts']")?.textContent).toContain("$4");
-    expect(container.querySelector("[data-testid='hover-axis-readouts']")?.textContent).toContain("60%");
+    expect(container.querySelector("[data-testid='hover-axis-readouts']")?.textContent).toContain("60.0%");
     const vertical = container.querySelector(".u-cursor-x") as HTMLElement;
     const horizontal = container.querySelector(".u-cursor-y") as HTMLElement;
     expect(vertical.style.transform).toBe(`translate(${left}px,0px)`);
