@@ -49,6 +49,32 @@ describe("aaAdapter.computePoint", () => {
     );
   });
 
+  it("uses parenthesis-free labels and stable families for verbose DeepSeek and Luna sources", () => {
+    const deepSeek = {
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug: "deepseek-v4-flash-0731",
+      name: "DeepSeek V4 Flash 0731 (Reasoning, Max Effort)",
+    };
+    const luna = {
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug: "gpt-5-6-luna-non-reasoning",
+      name: "GPT-5.6 Luna (Non-reasoning)",
+    };
+    const deepSeekPoint = aaAdapter.computePoint(deepSeek, controls)!;
+    const lunaPoint = aaAdapter.computePoint(luna, controls)!;
+    expect(deepSeekPoint).toMatchObject({
+      label: "DeepSeek v4 Flash 0731 max",
+      effort: "max",
+      effortGroup: "deepseek-v4-flash-0731",
+    });
+    expect(lunaPoint).toMatchObject({
+      label: "GPT-5.6 Luna",
+      effortGroup: "gpt-5-6-luna",
+    });
+    expect(deepSeekPoint.label).not.toMatch(/[()]/);
+    expect(lunaPoint.label).not.toMatch(/[()]/);
+  });
+
   it("annotates only a cheapest provider with explicit listed-price discount metadata", () => {
     const record = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,

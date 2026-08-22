@@ -17,8 +17,9 @@ const EFFORT_ORDER = [...EFFORT_NAMES] as const;
 type ModelEffort = (typeof EFFORT_NAMES)[number];
 
 // Source feeds use all of these forms, including AA's verbose reasoning
-// spelling and Cursor's concise bare suffix.
-const EFFORT_PATTERN = /^(.*?)(?:\s*\(\s*(?:adaptive\s+reasoning\s*,\s*)?(extra\s+high|xhigh|low|medium|high|max)(?:\s+effort)?\s*\)|\s+(extra\s+high|xhigh|low|medium|high|max)(?:\s+effort)?)\s*$/i;
+// spellings and Cursor's concise bare suffix.
+const EFFORT_PATTERN = /^(.*?)(?:\s*\(\s*(?:(?:adaptive\s+)?reasoning\s*,\s*)?(extra\s+high|xhigh|low|medium|high|max)(?:\s+effort)?\s*\)|\s+(extra\s+high|xhigh|low|medium|high|max)(?:\s+effort)?)\s*$/i;
+const NON_REASONING_PATTERN = /\s*\(\s*non[\s-]*reasoning\s*\)\s*$/i;
 
 function normalizeWhitespace(value: string): string {
   return value.trim().replace(/\s+/g, " ");
@@ -30,7 +31,10 @@ function removeVendorPrefix(value: string): string {
 }
 
 function normalizeDisplayName(value: string): string {
-  let normalized = normalizeWhitespace(value);
+  // Parenthesized source annotations are metadata, not part of the model
+  // identity. Effort annotations are parsed before this cleanup; removing any
+  // remaining annotation keeps labels safe for selectors and tooltips too.
+  let normalized = normalizeWhitespace(value).replace(/\s*\([^)]*\)/g, "");
   // Artificial Analysis uses V4/V5 while the concise product labels use v4/v5.
   normalized = normalized.replace(/\bV(\d+(?:\.\d+)?)\b/g, "v$1");
   // Keep GPT in the canonical identity. A few source rows spell it as a
@@ -42,11 +46,12 @@ function normalizeDisplayName(value: string): string {
 
 function splitModelName(label: string): { base: string; effort?: ModelEffort } {
   const normalized = normalizeWhitespace(label);
-  const match = normalized.match(EFFORT_PATTERN);
+  const withoutNonReasoning = normalized.replace(NON_REASONING_PATTERN, "");
+  const match = withoutNonReasoning.match(EFFORT_PATTERN);
   const rawEffort = match?.[2] ?? match?.[3];
   const effort = rawEffort?.toLocaleLowerCase().replace("extra high", "xhigh") as ModelEffort | undefined;
   return {
-    base: normalizeDisplayName(match?.[1] ?? normalized),
+    base: normalizeDisplayName(match?.[1] ?? withoutNonReasoning),
     ...(effort && EFFORT_NAMES.includes(effort) ? { effort } : {}),
   };
 }
@@ -85,7 +90,10 @@ export function modelDisplayMetadata(label: string, id?: string): ModelDisplayMe
 }
 
 export function formatEffort(effort: string): string {
-  const normalized = effort.toLocaleLowerCase().replace("extra high", "xhigh");
+  const normalized = normalizeWhitespace(effort)
+    .toLocaleLowerCase()
+    .replace(/\s+effort$/, "")
+    .replace("extra high", "xhigh");
   return EFFORT_NAMES.includes(normalized as ModelEffort) ? normalized : effort;
 }
 

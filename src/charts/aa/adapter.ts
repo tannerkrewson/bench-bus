@@ -163,7 +163,9 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
     return {
       id: record.slug,
       label: metadata.label,
-      selectionLabel: record.name,
+      // Preserve existing concise source names, but never leak verbose
+      // parenthetical metadata into selector names.
+      selectionLabel: record.name.includes("(") ? metadata.label : record.name,
       brand: inferModelBrand(record.name, record.slug),
       effortGroup: metadata.groupKey,
       ...(metadata.effort ? { effort: metadata.effort } : {}),

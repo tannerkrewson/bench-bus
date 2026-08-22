@@ -33,7 +33,7 @@ export interface ModelListProps {
 type ModelListItem = {
   key: string;
   label: string;
-  /** Keep a stable source spelling for accessible checkbox names. */
+  /** Keep a stable concise spelling for accessible checkbox names. */
   selectionLabel?: string;
   members: readonly PlottablePoint[];
   searchText: string;

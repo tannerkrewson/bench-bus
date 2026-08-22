@@ -22,6 +22,11 @@ describe("modelDisplayMetadata", () => {
       groupKey: "deepseek-v4-flash-0731",
       effort: "max",
     });
+    expect(modelDisplayMetadata("DeepSeek V4 Flash 0731 (Reasoning, Max Effort)")).toEqual({
+      label: "DeepSeek v4 Flash 0731 max",
+      groupKey: "deepseek-v4-flash-0731",
+      effort: "max",
+    });
   });
 
   it("keeps the canonical GPT prefix and shortens extra high", () => {
@@ -33,6 +38,13 @@ describe("modelDisplayMetadata", () => {
     expect(aa.label).not.toMatch(/[()]/);
     expect(cursor.label).not.toContain("extra");
     expect(modelGroupKey("GPT-5.6 Luna (high)")).toBe("gpt-5-6-luna");
+
+    const nonReasoning = modelDisplayMetadata("GPT-5.6 Luna (Non-reasoning)", "gpt-5-6-luna-non-reasoning");
+    expect(nonReasoning).toEqual({
+      label: "GPT-5.6 Luna",
+      groupKey: "gpt-5-6-luna",
+    });
+    expect(nonReasoning.label).not.toMatch(/[()]/);
   });
 
   it("prefers high as a family label, then the highest available effort", () => {

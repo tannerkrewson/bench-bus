@@ -182,7 +182,7 @@ export const aaDemoAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
     return {
       id: record.slug,
       label: metadata.label,
-      selectionLabel: record.name,
+      selectionLabel: record.name.includes("(") ? metadata.label : record.name,
       brand: inferModelBrand(record.name, record.slug),
       effortGroup: metadata.groupKey,
       ...(metadata.effort ? { effort: metadata.effort } : {}),
@@ -230,7 +230,7 @@ export const cursorDemoAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord> 
     return {
       id: record.modelId,
       label: metadata.label,
-      selectionLabel: record.modelName,
+      selectionLabel: record.modelName.includes("(") ? metadata.label : record.modelName,
       brand: inferModelBrand(record.modelName, record.provider, record.modelId),
       effortGroup: metadata.groupKey,
       ...(metadata.effort ? { effort: metadata.effort } : {}),

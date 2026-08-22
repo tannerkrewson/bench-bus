@@ -50,6 +50,33 @@ describe("AaChartSection", () => {
     dispose();
   });
 
+  it("renders canonical labels for verbose DeepSeek and non-reasoning Luna sources", () => {
+    const deepSeek = {
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug: "deepseek-v4-flash-0731",
+      name: "DeepSeek V4 Flash 0731 (Reasoning, Max Effort)",
+      shortName: "DeepSeek V4 Flash 0731 (Reasoning, Max Effort)",
+    };
+    const luna = {
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug: "gpt-5-6-luna-non-reasoning",
+      name: "GPT-5.6 Luna (Non-reasoning)",
+      shortName: "GPT-5.6 Luna (Non-reasoning)",
+    };
+    const { container, dispose } = mount(() => (
+      <AaChartSection records={() => [deepSeek, luna]} />
+    ));
+
+    expect(container.textContent).toContain("DeepSeek v4 Flash 0731 max");
+    expect(container.textContent).toContain("GPT-5.6 Luna");
+    expect(container.textContent).not.toContain("Reasoning, Max Effort");
+    expect(container.textContent).not.toContain("Non-reasoning");
+    expect([...container.querySelectorAll<HTMLInputElement>("[data-testid='model-list'] input")]
+      .map((input) => input.getAttribute("aria-label")))
+      .toEqual(expect.arrayContaining(["Show DeepSeek v4 Flash 0731 max", "Show GPT-5.6 Luna"]));
+    dispose();
+  });
+
   it("explains listed pricing for records unavailable in the default OpenRouter mode", () => {
     const listedOnly = {
       ...AA_RECORD_UNPLOTTABLE,
