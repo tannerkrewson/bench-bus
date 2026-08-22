@@ -9,7 +9,7 @@ import type { ChartViewState, PricingControlState } from "../types";
 import {
   CURSOR_BENCH_ID,
   SURCHARGE_CONTROL_ID,
-  TOKEN_MIX_CONTROL_ID,
+  CACHE_HIT_RATE_CONTROL_ID,
   cursorBenchAdapter,
 } from "./adapter";
 import type { DerivedCursorChartRecord } from "../../schemas";
@@ -50,7 +50,7 @@ export default function CursorBenchChartSection(props: CursorBenchChartSectionPr
           props.onStateChange?.(state);
         }}
         isControlVisible={(spec, state) =>
-          spec.id !== TOKEN_MIX_CONTROL_ID || Boolean(state[SURCHARGE_CONTROL_ID])
+          spec.id !== CACHE_HIT_RATE_CONTROL_ID || Boolean(state[SURCHARGE_CONTROL_ID])
         }
         showDiscountsControl={false}
       />
@@ -78,6 +78,6 @@ export function cursorChartStateFromParams(params: Readonly<URLSearchParams>): C
     scale: cursorBenchAdapter.defaultXScale,
     // Keep the historical URL shape compact: the generic section fills the
     // slider default for rendering, while absent slider params stay absent.
-    controls: { [SURCHARGE_CONTROL_ID]: false },
+    controls: { [SURCHARGE_CONTROL_ID]: false, [CACHE_HIT_RATE_CONTROL_ID]: 90 },
   });
 }

@@ -97,7 +97,7 @@ const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
   };
   const cursorUrlDefaults: ChartStateSerializationDefaults = {
     scale: "log",
-    controls: { surcharge: false, tokenMix: 50 },
+    controls: { surcharge: false, cacheHitRate: 90 },
     showLabels: true,
     showFrontier: false,
     showDiscounts: true,

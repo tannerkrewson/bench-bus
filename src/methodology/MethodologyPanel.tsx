@@ -74,14 +74,17 @@ export const UnifiedLimitationsPanel: Component = () => (
           cursor.com/evals
         </a>
         . Values are rounded as published. The optional ${CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS}/M-token
-        third-party fee is a neutral Token mix estimate: it infers hidden
-        non-output tokens from published costs and completion tokens, using a
-        logarithmic blend across each model&apos;s valid input, cache-read, and
-        cache-write rates. This Token mix assumption is not a literal cache-hit
-        percentage. If the known output cost exceeds published cost, the
-        estimate is unavailable and published cost remains unchanged. The fee is
-        added to published cost when the estimate is valid. Raw source values
-        are not changed.
+        third-party fee is an estimate suitable for multi-step agent
+        workloads. The <strong>Estimated cache hit rate</strong> defaults to
+        90% and means the percentage of non-output prompt tokens assumed to be
+        served from cache. Higher cache reuse implies more total processed
+        tokens for the same published model cost, and therefore a larger Cursor
+        Token Rate. The estimate subtracts known output cost, infers residual
+        non-output tokens, and includes an input/cache-write uncertainty range.
+        Cursor Models (Grok 4.6, Grok 4.5, and Composer 2.5) are exempt. Do not
+        interpret 90% as a universal measured Cursor cache-hit rate. If the
+        known output cost exceeds published cost, the estimate is unavailable
+        and published cost remains unchanged. Raw source values are not changed.
       </p>
       <p>
         <strong>Limits.</strong> One score does not measure every capability,

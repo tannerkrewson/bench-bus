@@ -30,9 +30,10 @@ describe("UnifiedLimitationsPanel", () => {
     expect(text).toContain("30-day realized averages");
     expect(text).toContain("Cache-write volume is not published");
     expect(text).toContain("cursor.com/evals");
-    expect(text).toContain("third-party fee is a neutral Token mix estimate");
-    expect(text).toContain("logarithmic blend across each model's valid input, cache-read, and cache-write rates");
-    expect(text).toContain("not a literal cache-hit percentage");
+    expect(text).toContain("third-party fee is an estimate suitable for multi-step agent workloads");
+    expect(text).toContain("Estimated cache hit rate");
+    expect(text).toContain("percentage of non-output prompt tokens assumed to be served from cache");
+    expect(text).toContain("Do not interpret 90% as a universal measured Cursor cache-hit rate");
     expect(text).toContain("Historical views include only snapshots");
     dispose();
   });

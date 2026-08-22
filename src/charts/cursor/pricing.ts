@@ -9,18 +9,13 @@ import {
  * hidden non-output volume is inferred from the published task cost and rates.
  * A model without an explicit profile is deliberately left unadjusted.
  *
- * Pricing references:
- * - https://cursor.com/docs/models-and-pricing
- * - https://prod.cursor.com/docs/models/gpt-5-6-luna
+ * Prices are USD per million tokens. Cache hit rate is a physical ratio of
+ * cache-read tokens to all non-output prompt tokens, not a price-mix slider.
  */
 export interface CursorTokenRateProfile {
-  /** Published input-priced endpoint, USD per million non-output tokens. */
   inputPriceUsdPerMillion: number;
-  /** Published cache-read endpoint, USD per million non-output tokens. */
   cacheReadPriceUsdPerMillion: number;
-  /** Published cache-write endpoint, when the model's rate card includes one. */
   cacheWritePriceUsdPerMillion?: number;
-  /** Published output rate, USD per million completion tokens. */
   outputPriceUsdPerMillion: number;
 }
 
@@ -40,29 +35,27 @@ function profile(
 
 // Cursor's Luna card has distinct input, cache-read, and cache-write prices.
 const LUNA_PROFILE = profile(0.2, 0.02, 0.25, 1.2);
-// Keep this rate card aligned with Cursor's published Claude Fable 5 table:
-// input $10/M, cache write $12.5/M, cache read $1/M, output $50/M.
-// This must be updated from the source URL if Cursor changes the card.
 const FABLE_5_PROFILE = profile(10, 1, 12.5, 50);
 
 /**
- * Profiles are keyed by the derived model id, not display text. Values mirror
- * the published Cursor model table; effort variants use their model-family
- * rate card. Composer is intentionally absent because it is first-party and
- * exempt from this fee.
+ * Profiles are keyed by derived model id. These are the current rate-card
+ * values used by the estimator; effort variants share their family profile.
  */
 const PROFILE_BY_MODEL_ID: ReadonlyArray<readonly [RegExp, CursorTokenRateProfile]> = [
   [/^gpt-5-6-luna(?:-|$)/, LUNA_PROFILE],
-  [/^gpt-5-6-sol(?:-|$)/, profile(5, 0.5, undefined, 30)],
-  [/^gpt-5-6-terra(?:-|$)/, profile(2, 0.2, undefined, 12)],
-  [/^grok-4-6(?:-|$)/, profile(2, 0.5, undefined, 6)],
-  [/^grok-4-5(?:-|$)/, profile(2, 0.5, undefined, 6)],
-  [/^opus-5(?:-|$)/, profile(5, 0.5, undefined, 25)],
+  [/^gpt-5-6-sol(?:-|$)/, profile(4, 0.4, 5, 20)],
+  [/^gpt-5-6-terra(?:-|$)/, profile(2, 0.2, 2.5, 12)],
+  [/^opus-5(?:-|$)/, profile(5, 0.5, 6.25, 25)],
   [/^fable-5(?:-|$)/, FABLE_5_PROFILE],
-  [/^sonnet-5(?:-|$)/, profile(2, 0.2, undefined, 10)],
+  [/^sonnet-5(?:-|$)/, profile(2, 0.2, 2.5, 10)],
   [/^gemini-3-1-pro(?:-|$)/, profile(2, 0.2, undefined, 12)],
   [/^gemini-3-7-flash(?:-|$)/, profile(0.75, 0.075, undefined, 3.5)],
 ];
+
+/** Cursor Models are first-party and do not incur the third-party fee. */
+export function isCursorFirstPartyModel(modelId: string): boolean {
+  return /^(?:grok-4-6|grok-4-5|composer-2-5)(?:-|$)/.test(modelId);
+}
 
 export function cursorTokenRateProfile(
   record: Pick<DerivedCursorChartRecord, "modelId">,
@@ -83,45 +76,45 @@ export function cursorNonOutputPrices(profile: CursorTokenRateProfile): number[]
 }
 
 /**
- * Logarithmically blend the cheapest/cache-heavy and most expensive
- * input/write-heavy non-output rates. This is a neutral mix assumption, not a
- * measured cache-hit percentage: 0% is pMin, 50% is the geometric midpoint,
- * and 100% is pMax.
+ * Blend the cache-read rate with the central non-cached rate at a physical
+ * cache-hit percentage. When cache-write pricing exists, the non-cached
+ * portion uses the midpoint of input and cache-write rates.
  */
 export function blendCursorNonOutputPrice(
   profile: CursorTokenRateProfile,
-  tokenMixPercent: number,
+  cacheHitRatePercent: number,
 ): number | null {
-  const prices = cursorNonOutputPrices(profile);
   if (
-    prices.length === 0 ||
-    !Number.isFinite(tokenMixPercent) ||
-    tokenMixPercent < 0 ||
-    tokenMixPercent > 100
-  ) {
-    return null;
-  }
-  const pMin = Math.min(...prices);
-  const pMax = Math.max(...prices);
-  const s = tokenMixPercent / 100;
-  const value = pMin * (pMax / pMin) ** s;
+    !Number.isFinite(cacheHitRatePercent) ||
+    cacheHitRatePercent < 0 ||
+    cacheHitRatePercent > 100 ||
+    !Number.isFinite(profile.inputPriceUsdPerMillion) ||
+    profile.inputPriceUsdPerMillion <= 0 ||
+    !Number.isFinite(profile.cacheReadPriceUsdPerMillion) ||
+    profile.cacheReadPriceUsdPerMillion <= 0
+  ) return null;
+  const nonCachedRate = profile.cacheWritePriceUsdPerMillion === undefined
+    ? profile.inputPriceUsdPerMillion
+    : (profile.inputPriceUsdPerMillion + profile.cacheWritePriceUsdPerMillion) / 2;
+  if (!Number.isFinite(nonCachedRate) || nonCachedRate <= 0) return null;
+  const hitRate = cacheHitRatePercent / 100;
+  const value = hitRate * profile.cacheReadPriceUsdPerMillion + (1 - hitRate) * nonCachedRate;
   return Number.isFinite(value) && value > 0 ? value : null;
 }
 
 export interface CursorTokenRateEstimate {
+  cacheHitRatePercent: number;
   blendedNonOutputPriceUsdPerMillion: number;
-  /** Hidden non-output tokens inferred from residual cost. */
+  nonCachedRateUsdPerMillion: number;
   hiddenTokens: number;
-  /** Completion tokens plus inferred hidden non-output tokens. */
   totalTokens: number;
   completionTokens: number;
   outputCostUsd: number;
   residualNonOutputCostUsd: number;
   surchargeUsd: number;
   adjustedCostUsd: number;
-  /** Lowest/highest surcharge across all valid published non-output rates. */
+  /** Lowest/highest surcharge using input/cache-write endpoints at this hit rate. */
   surchargeRangeUsd: readonly [number, number];
-  /** Lowest/highest adjusted cost across all valid published non-output rates. */
   adjustedCostRangeUsd: readonly [number, number];
 }
 
@@ -133,17 +126,29 @@ export function cursorCompletionTokens(record: Pick<DerivedCursorChartRecord, "t
     : null;
 }
 
+function blendedRateAtNonCachedRate(
+  profile: CursorTokenRateProfile,
+  cacheHitRatePercent: number,
+  nonCachedRate: number,
+): number {
+  const hitRate = cacheHitRatePercent / 100;
+  return hitRate * profile.cacheReadPriceUsdPerMillion + (1 - hitRate) * nonCachedRate;
+}
+
+function totalTokensAtRate(residualCostUsd: number, completionTokens: number, rate: number): number {
+  return (residualCostUsd / rate) * 1e6 + completionTokens;
+}
+
 /**
- * Estimate hidden and total tokens from published task cost. The estimate is
- * unavailable unless completion tokens, output pricing, and at least one
- * valid non-output rate are all known. In particular, completion tokens are
- * never treated as total tokens or used as a fee-only fallback.
+ * Estimate hidden and total tokens from published task cost using the selected
+ * cache-read share. The estimate is unavailable for first-party Cursor models,
+ * invalid residuals, or missing completion/rate data.
  */
 export function estimateCursorTokenRate(
   record: DerivedCursorChartRecord,
-  tokenMixPercent: number,
+  cacheHitRatePercent: number,
 ): CursorTokenRateEstimate | null {
-  if (!record.isThirdParty) return null;
+  if (!record.isThirdParty || isCursorFirstPartyModel(record.modelId)) return null;
   const rateProfile = cursorTokenRateProfile(record);
   const completionTokens = cursorCompletionTokens(record);
   const publishedCost = record.publishedCostUsd;
@@ -155,42 +160,33 @@ export function estimateCursorTokenRate(
     publishedCost <= 0 ||
     !Number.isFinite(rateProfile.outputPriceUsdPerMillion) ||
     rateProfile.outputPriceUsdPerMillion <= 0
-  ) {
-    return null;
-  }
+  ) return null;
 
-  const nonOutputPrices = cursorNonOutputPrices(rateProfile);
-  if (nonOutputPrices.length === 0) return null;
+  const blended = blendCursorNonOutputPrice(rateProfile, cacheHitRatePercent);
+  if (blended === null) return null;
+  const nonCachedRate = rateProfile.cacheWritePriceUsdPerMillion === undefined
+    ? rateProfile.inputPriceUsdPerMillion
+    : (rateProfile.inputPriceUsdPerMillion + rateProfile.cacheWritePriceUsdPerMillion) / 2;
   const outputCostUsd = (completionTokens / 1e6) * rateProfile.outputPriceUsdPerMillion;
   const residualNonOutputCostUsd = publishedCost - outputCostUsd;
-  // A published output cost above the total benchmark cost is inconsistent;
-  // do not turn the negative residual into a completion-only surcharge.
-  if (
-    !Number.isFinite(outputCostUsd) ||
-    !Number.isFinite(residualNonOutputCostUsd) ||
-    residualNonOutputCostUsd < 0
-  ) {
-    return null;
-  }
-
-  const blended = blendCursorNonOutputPrice(rateProfile, tokenMixPercent);
-  if (blended === null) return null;
+  if (!Number.isFinite(outputCostUsd) || !Number.isFinite(residualNonOutputCostUsd) || residualNonOutputCostUsd < 0) return null;
 
   const hiddenTokens = (residualNonOutputCostUsd / blended) * 1e6;
   const totalTokens = hiddenTokens + completionTokens;
-  const pMin = Math.min(...nonOutputPrices);
-  const pMax = Math.max(...nonOutputPrices);
-  const minTotalTokens = totalTokensAtPrice(residualNonOutputCostUsd, completionTokens, pMax);
-  const maxTotalTokens = totalTokensAtPrice(residualNonOutputCostUsd, completionTokens, pMin);
+  const nonCachedRates = [
+    rateProfile.inputPriceUsdPerMillion,
+    rateProfile.cacheWritePriceUsdPerMillion,
+  ].filter((rate): rate is number => rate !== undefined && Number.isFinite(rate) && rate > 0);
+  const lowNonCachedRate = Math.min(...nonCachedRates);
+  const highNonCachedRate = Math.max(...nonCachedRates);
+  const lowBlendedRate = blendedRateAtNonCachedRate(rateProfile, cacheHitRatePercent, lowNonCachedRate);
+  const highBlendedRate = blendedRateAtNonCachedRate(rateProfile, cacheHitRatePercent, highNonCachedRate);
+  const minTotalTokens = totalTokensAtRate(residualNonOutputCostUsd, completionTokens, highBlendedRate);
+  const maxTotalTokens = totalTokensAtRate(residualNonOutputCostUsd, completionTokens, lowBlendedRate);
   if (
-    !Number.isFinite(hiddenTokens) ||
-    !Number.isFinite(totalTokens) ||
-    !Number.isFinite(minTotalTokens) ||
-    !Number.isFinite(maxTotalTokens) ||
-    hiddenTokens < 0
-  ) {
-    return null;
-  }
+    !Number.isFinite(hiddenTokens) || !Number.isFinite(totalTokens) || hiddenTokens < 0 ||
+    !Number.isFinite(minTotalTokens) || !Number.isFinite(maxTotalTokens)
+  ) return null;
 
   const surchargeUsd = (totalTokens / 1e6) * CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS;
   const minSurchargeUsd = (minTotalTokens / 1e6) * CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS;
@@ -198,7 +194,9 @@ export function estimateCursorTokenRate(
   if (![surchargeUsd, minSurchargeUsd, maxSurchargeUsd].every(Number.isFinite)) return null;
 
   return {
+    cacheHitRatePercent,
     blendedNonOutputPriceUsdPerMillion: blended,
+    nonCachedRateUsdPerMillion: nonCachedRate,
     hiddenTokens,
     totalTokens,
     completionTokens,
@@ -209,8 +207,4 @@ export function estimateCursorTokenRate(
     surchargeRangeUsd: [minSurchargeUsd, maxSurchargeUsd],
     adjustedCostRangeUsd: [publishedCost + minSurchargeUsd, publishedCost + maxSurchargeUsd],
   };
-}
-
-function totalTokensAtPrice(residualCostUsd: number, completionTokens: number, price: number): number {
-  return (residualCostUsd / price) * 1e6 + completionTokens;
 }
