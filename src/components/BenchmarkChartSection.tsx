@@ -94,7 +94,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
     const entry = build().entries.find((e) => e.point.id === h.id);
     if (!entry) return null;
     const lines = [...props.adapter.tooltipLines(entry.record, entry.point, controls())];
-    const discount = discountsEnabled && showDiscounts() ? largestExplicitDiscountForPoint(entry.point) : null;
+    const discount = showDiscountsControl && showDiscounts() ? largestExplicitDiscountForPoint(entry.point) : null;
     if (discount) {
       const role = discountProviderRole(entry.point, discount);
       lines.push(
