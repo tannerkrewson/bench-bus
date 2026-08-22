@@ -18,3 +18,11 @@
   outline: 3px solid var(--color-primary);
   outline-offset: 3px;
 }
+
+/* Portrait phones need the chart card's usable width more than another
+   desktop-sized gutter. Keep the spacious widescreen treatment unchanged. */
+@media (max-width: 639px) {
+  .bench-bus-page-shell [data-benchmark] > .card-body {
+    padding-inline: 0.75rem;
+  }
+}

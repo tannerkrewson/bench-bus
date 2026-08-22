@@ -175,26 +175,30 @@ export default function ThemeToggle() {
   const randomize = () => persist(randomThemeForMode(themeMode(theme())));
   const modeLabel = () => themeMode(theme());
   return (
-    <div class="join" role="group" aria-label="Theme controls">
-      <button
-        type="button"
-        class="btn btn-sm btn-outline btn-square join-item"
-        aria-label={`Switch to ${modeLabel() === "dark" ? "light" : "dark"} mode`}
-        title="Toggle light/dark mode"
-        onClick={toggle}
-      >
-        {modeLabel() === "dark" ? <Sun aria-hidden="true" size={17} /> : <Moon aria-hidden="true" size={17} />}
-      </button>
-      <button
-        type="button"
-        class="btn btn-sm btn-outline btn-square join-item"
-        data-testid="random-theme"
-        aria-label={`Choose a random ${modeLabel()} theme`}
-        title={`Choose a random ${modeLabel()} theme`}
-        onClick={randomize}
-      >
-        <Dices aria-hidden="true" size={17} />
-      </button>
+    <div class="flex gap-1" role="group" aria-label="Theme controls">
+      <div class="tooltip tooltip-bottom" data-tip="Toggle light or dark mode">
+        <button
+          type="button"
+          class="btn btn-sm btn-outline btn-square"
+          aria-label={`Switch to ${modeLabel() === "dark" ? "light" : "dark"} mode`}
+          title="Toggle light/dark mode"
+          onClick={toggle}
+        >
+          {modeLabel() === "dark" ? <Sun aria-hidden="true" size={17} /> : <Moon aria-hidden="true" size={17} />}
+        </button>
+      </div>
+      <div class="tooltip tooltip-bottom" data-tip={`Choose a random ${modeLabel()} theme`}>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline btn-square"
+          data-testid="random-theme"
+          aria-label={`Choose a random ${modeLabel()} theme`}
+          title={`Choose a random ${modeLabel()} theme`}
+          onClick={randomize}
+        >
+          <Dices aria-hidden="true" size={17} />
+        </button>
+      </div>
     </div>
   );
 }

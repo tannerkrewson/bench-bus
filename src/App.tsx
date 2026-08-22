@@ -148,7 +148,7 @@ const App: Component = () => {
       decodeBundle(JSON.parse(JSON.stringify(makeAaBundleFixture())) as { cursor: null } & Record<string, unknown>);
     return (
       <main class="min-h-screen bg-base-100 text-base-content">
-        <div class="container mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-4 sm:px-6 sm:py-8">
+        <div class="bench-bus-page-shell container mx-auto flex min-h-screen max-w-7xl flex-col px-2 py-4 sm:px-6 sm:py-8">
           <header class="navbar mb-6 rounded-box bg-base-200 px-4 shadow-sm sm:px-6">
             <div class="navbar-start gap-3">
               <img class="h-12 w-16 object-contain sm:h-14 sm:w-20" src="/logo.svg" alt="Bench Bus logo" />

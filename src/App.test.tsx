@@ -22,6 +22,9 @@ describe("App", () => {
     expect([...container.querySelectorAll<HTMLInputElement>("input[aria-label='Show Pareto frontier']")].every((input) => !input.checked)).toBe(true);
     expect(container.querySelector("button[aria-label^='Switch to']")).not.toBeNull();
     expect(container.querySelector("button[data-testid='random-theme']")).not.toBeNull();
+    expect(container.querySelector("[data-testid='time-travel-control'] summary[data-tip*='snapshot']")).not.toBeNull();
+    expect(container.querySelector("[data-testid='time-travel-control'] label")).toBeNull();
+    expect(container.textContent).not.toContain("View data as of");
     expect(container.querySelector("[data-testid='freshness-chips']")).toBeNull();
     const footer = container.querySelector("footer");
     expect(footer?.textContent).toContain("Bench Bus by");

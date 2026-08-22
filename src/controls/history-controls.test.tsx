@@ -27,28 +27,30 @@ function mount(ui: () => JSX.Element) {
 }
 
 describe("TimeTravelControl", () => {
-  it("lists latest plus every compiled time and enables return-to-latest only when away", () => {
+  it("opens an icon history picker with latest plus every compiled time", () => {
     const { container, dispose } = mount(() => (
       <TimeTravelProvider index={INDEX}>
         <TimeTravelControl />
       </TimeTravelProvider>
     ));
 
-    const select = container.querySelector("#time-travel-select") as HTMLSelectElement;
-    expect(select).not.toBeNull();
-    // "Latest data" + 3 compiled times, newest first after the latest option.
-    const options = [...select.options].map((o) => o.value);
-    expect(options).toEqual(["", T3, T2, T1]);
-    expect(select.value).toBe(""); // latest
+    const trigger = container.querySelector("summary") as HTMLElement;
+    expect(trigger).not.toBeNull();
+    expect(trigger.getAttribute("aria-label")).toContain("history");
+    expect(trigger.getAttribute("data-tip")).toContain("snapshot");
+    trigger.click();
 
-    const back = container.querySelector("button") as HTMLButtonElement;
-    expect(back.disabled).toBe(true); // already latest
+    const menu = container.querySelector("[data-testid='time-travel-menu']") as HTMLElement;
+    expect(menu).not.toBeNull();
+    const items = [...menu.querySelectorAll<HTMLButtonElement>("[role='menuitem']")];
+    // Latest plus 3 compiled times, newest first.
+    expect(items.map((item) => item.textContent?.trim())).toHaveLength(4);
+    expect(items[0]?.textContent).toContain("Latest data");
 
-    // Move to an earlier time via the control.
-    select.value = T1;
-    select.dispatchEvent(new Event("change"));
-    expect(select.value).toBe(T1);
-    expect((container.querySelector("button") as HTMLButtonElement).disabled).toBe(false);
+    // Move to an earlier time via the history menu.
+    items.at(-1)?.click();
+    expect(container.querySelector("[role='menuitem'].btn-active")?.textContent).toContain("Aug");
+    expect(menu.querySelector("button.btn-ghost")?.textContent).toContain("Return to latest");
     dispose();
   });
 
@@ -60,8 +62,10 @@ describe("TimeTravelControl", () => {
     ));
     const notice = container.querySelector("[role='status']");
     expect(notice?.textContent).toContain("predates");
-    const back = container.querySelector("button") as HTMLButtonElement;
-    expect(back.disabled).toBe(false);
+    const trigger = container.querySelector("summary") as HTMLElement;
+    trigger.click();
+    expect(container.querySelector("[data-testid='time-travel-menu'] button.btn-ghost")?.textContent)
+      .toContain("Return to latest");
     dispose();
   });
 });
