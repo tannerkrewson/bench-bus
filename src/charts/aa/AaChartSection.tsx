@@ -179,7 +179,15 @@ export default function AaChartSection(props: AaChartSectionProps) {
     >
       <div class="card-body">
         <header class="mb-1">
-          <h2 class="card-title text-2xl">{aaAdapter.title}</h2>
+          <h2 id={`chart-title-${aaAdapter.benchmarkId}`} class="card-title text-2xl">
+            <a
+              href={`#chart-title-${aaAdapter.benchmarkId}`}
+              class="link link-hover"
+              data-testid="chart-title-link"
+            >
+              {aaAdapter.title}
+            </a>
+          </h2>
           <p class="mt-1 text-sm text-base-content/70">{aaAdapter.subtitle}</p>
         </header>
         <ChartControlPanel

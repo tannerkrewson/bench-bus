@@ -27,6 +27,11 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     ));
 
     expect(container.querySelector("section[data-benchmark='aa-demo']")).not.toBeNull();
+    const title = container.querySelector("h2#chart-title-aa-demo") as HTMLHeadingElement;
+    const titleLink = title?.querySelector("a[data-testid='chart-title-link']") as HTMLAnchorElement;
+    expect(title?.textContent).toBe("Artificial Analysis model value");
+    expect(titleLink?.getAttribute("href")).toBe("#chart-title-aa-demo");
+    expect(titleLink?.textContent).toBe("Artificial Analysis model value");
     expect(container.querySelector("canvas")).not.toBeNull();
 
     // Pricing controls from the adapter.

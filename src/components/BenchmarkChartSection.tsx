@@ -157,7 +157,15 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
     >
       <div class="card-body">
         <header class="mb-1">
-          <h2 class="card-title text-2xl">{props.adapter.title}</h2>
+          <h2 id={`chart-title-${props.adapter.benchmarkId}`} class="card-title text-2xl">
+            <a
+              href={`#chart-title-${props.adapter.benchmarkId}`}
+              class="link link-hover"
+              data-testid="chart-title-link"
+            >
+              {props.adapter.title}
+            </a>
+          </h2>
           <p class="mt-1 text-sm text-base-content/70">{props.adapter.subtitle}</p>
         </header>
         <ChartControlPanel
