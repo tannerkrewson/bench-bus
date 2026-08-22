@@ -284,6 +284,9 @@ describe("BenchmarkScatterChart discount annotations", () => {
     ));
 
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const initialConnector = container.querySelector("[data-testid='family-connector-hit']") as SVGLineElement;
+    expect(initialConnector).not.toBeNull();
+    expect(["x1", "y1", "x2", "y2"].every((name) => Number.isFinite(Number(initialConnector.getAttribute(name))))).toBe(true);
     expect(container.querySelectorAll("[data-testid='family-connector-hit']")).toHaveLength(1);
     for (let value = 0; value < 20; value += 1) {
       setPoints([
@@ -317,6 +320,30 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect(Number.parseFloat(getComputedStyle(discount).fontSize)).toBeLessThan(13);
     expect(container.querySelector("[data-testid='discount-label']")).toBeNull();
     expect(container.querySelector("[data-testid='label-hover-highlight']")).toBeNull();
+    dispose();
+  });
+
+  it("uses the family base label for a singleton effort variant", async () => {
+    const { container, dispose } = mountSizedChart(() => (
+      <BenchmarkScatterChart
+        points={() => [{
+          id: "opus-high",
+          label: "Opus 5 high",
+          x: 6,
+          y: 70,
+          effortGroup: "opus-5",
+          effort: "high",
+        }]}
+        scale={() => "log"}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        height={320}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const label = container.querySelector("[data-testid='model-label']") as HTMLElement;
+    expect(label.querySelector("[data-testid='model-label-main']")?.textContent).toBe("Opus 5");
+    expect(label.getAttribute("aria-label")).toBe("Opus 5 high");
     dispose();
   });
 

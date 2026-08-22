@@ -8,6 +8,7 @@ import { modelGroupKey } from "./modelMetadata";
 import {
   groupModelVariants,
   layoutModelLabels,
+  modelVariantParts,
   type ModelVariantGroup,
   type ModelVariantMember,
 } from "./labelLayout";
@@ -244,9 +245,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       }];
     });
     const variantGroups = groupModelVariants(members);
-    const groupById = new Map(
-      variantGroups.flatMap((group) => group.members.map((member) => [member.id, group.key] as const)),
-    );
     const groupedIds = new Set(variantGroups.flatMap((group) => group.members.map((member) => member.id)));
     const orderedIds = [
       ...variantGroups.flatMap((group) => group.members.map((member) => member.id)),
@@ -290,7 +288,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       droppedIds: series.droppedIds,
       labels: labelParts.map((parts) => parts.accessibleLabel),
       labelParts,
-      effortGroups: orderedIds.map((id) => groupById.get(id) ?? null),
+      // Keep the source family key even when only one effort variant is
+      // visible; its representative label should still use the family base.
+      effortGroups: orderedIds.map((id) => pointById.get(id)?.effortGroup ?? null),
       groupKeys: orderedIds.map((id) => groupKeyById.get(id) ?? modelGroupKey(id, id)),
       brands: orderedIds.map((id) => {
         const point = pointById.get(id);
@@ -559,7 +559,11 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       // representative point's canonical effort-bearing name in aria-label
       // and the tooltip-facing series data, while the visual label uses the
       // family base name to avoid implying that only one effort is shown.
-      const mainLabel = representativeGroup?.baseLabel ?? pointLabel.mainLabel;
+      const singletonEffortBase = representativeGroup === undefined && pointLabel.mainLabel &&
+        currentSeries.effortGroups[index] !== null && currentSeries.effortGroups[index] !== undefined
+        ? modelVariantParts(pointLabel.mainLabel)?.baseLabel
+        : undefined;
+      const mainLabel = representativeGroup?.baseLabel ?? singletonEffortBase ?? pointLabel.mainLabel;
       const visibleLabel = pointLabel.discountLabel
         ? `${mainLabel} ${pointLabel.discountLabel}`
         : mainLabel;
@@ -603,9 +607,15 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       labelUpdateFrame = window.requestAnimationFrame(() => {
         labelUpdateFrame = null;
         updateLabelPositions();
+        // uPlot's first layout can complete after its constructor returns.
+        // Publish another imperative-lifecycle revision after the overlay has
+        // real DOM geometry so connector hit targets do not retain Infinity
+        // coordinates from the pre-layout plot.
+        setPlotRevision((revision) => revision + 1);
       });
     } else {
       updateLabelPositions();
+      setPlotRevision((revision) => revision + 1);
     }
   };
 
@@ -680,7 +690,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     if (x === undefined || y === undefined) return undefined;
     const plotLeft = u.valToPos(x, "x");
     const plotTop = u.valToPos(y, "y");
-    if (plotLeft === undefined || plotTop === undefined) return undefined;
+    if (!Number.isFinite(plotLeft) || !Number.isFinite(plotTop)) return undefined;
     return plotPosition(plotLeft, plotTop);
   };
 
@@ -1144,7 +1154,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           const index = currentSeries.ids.indexOf(member.id);
           return index < 0 ? null : pointPosition(currentPlot, index);
         })
-        .filter((position): position is { left: number; top: number } => position !== null);
+        .filter((position): position is { left: number; top: number } => position !== undefined && position !== null);
       return points.slice(1).map((point, index) => ({
         x1: points[index]!.left,
         y1: points[index]!.top,
@@ -1198,7 +1208,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           const memberIndex = currentSeries.ids.indexOf(member.id);
           return memberIndex < 0 ? null : pointPosition(currentPlot, memberIndex);
         })
-        .filter((position): position is { left: number; top: number } => position !== null);
+        .filter((position): position is { left: number; top: number } => position !== undefined && position !== null);
       for (let memberIndex = 1; memberIndex < memberPoints.length; memberIndex += 1) {
         const previous = memberPoints[memberIndex - 1]!;
         const current = memberPoints[memberIndex]!;
