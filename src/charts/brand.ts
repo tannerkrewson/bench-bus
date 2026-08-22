@@ -117,6 +117,18 @@ function stableHash(value: string): number {
   return Math.abs(hash);
 }
 
+// Preferred family rules intentionally match normalized family keys rather
+// than today's model IDs. This keeps newly discovered DeepSeek and Opus
+// variants on their reserved, color-blind-compliant palette slots.
+const PREFERRED_MODEL_GROUP_SLOTS: readonly [RegExp, number][] = [
+  [/^deepseek(?:-|$)/, 0], // blue / sky blue
+  [/^opus(?:-|$)/, 1], // orange
+];
+
+function preferredModelGroupSlot(key: string): number | undefined {
+  return PREFERRED_MODEL_GROUP_SLOTS.find(([pattern]) => pattern.test(key))?.[1];
+}
+
 /**
  * Stable family color shared by dots, connectors, arrows, and both charts.
  * The only palette is the color-blind-compliant palette above, so every
@@ -125,8 +137,9 @@ function stableHash(value: string): number {
 export function modelGroupColor(groupKey: string, dark: boolean): string {
   const key = canonicalGroupKey(groupKey);
   const explicitSlot = WELL_KNOWN_GROUP_SLOTS[key];
+  const preferredSlot = preferredModelGroupSlot(key);
   const palette = dark ? COLOR_BLIND_MODEL_GROUP_PALETTE.dark : COLOR_BLIND_MODEL_GROUP_PALETTE.light;
-  const slot = explicitSlot ?? stableHash(key) % palette.length;
+  const slot = preferredSlot ?? explicitSlot ?? stableHash(key) % palette.length;
   return palette[slot % palette.length]!;
 }
 

@@ -38,7 +38,7 @@ describe("model brand colors", () => {
     expect(effortGroupColor("opus", false)).not.toBe(effortGroupColor("sonnet", false));
   });
 
-  it("keeps every known family on a distinct color-blind slot by default", () => {
+  it("keeps general family slots stable while preferred families share reserved colors", () => {
     const familyKeys = [
       "opus-5",
       "sonnet-5",
@@ -55,10 +55,42 @@ describe("model brand colors", () => {
     const lightColors = familyKeys.map((key) => modelGroupColor(key, false));
     const darkColors = familyKeys.map((key) => modelGroupColor(key, true));
 
-    expect(new Set(lightColors).size).toBe(familyKeys.length);
-    expect(new Set(darkColors).size).toBe(familyKeys.length);
-    expect(lightColors).toEqual([...COLOR_BLIND_MODEL_GROUP_PALETTE.light]);
-    expect(darkColors).toEqual([...COLOR_BLIND_MODEL_GROUP_PALETTE.dark]);
+    expect(lightColors).toEqual([
+      COLOR_BLIND_MODEL_GROUP_PALETTE.light[1],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.light[1],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.light[2],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.light[3],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.light[4],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.light[5],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.light[6],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.light[7],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.light[1],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.light[0],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.light[10],
+    ]);
+    expect(darkColors).toEqual([
+      COLOR_BLIND_MODEL_GROUP_PALETTE.dark[1],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.dark[1],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.dark[2],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.dark[3],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.dark[4],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.dark[5],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.dark[6],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.dark[7],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.dark[1],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.dark[0],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.dark[10],
+    ]);
+  });
+
+  it("reserves compliant blue for all DeepSeek variants and orange for Opus variants", () => {
+    expect(modelGroupColor("deepseek-v4-flash-0731", false)).toBe(COLOR_BLIND_MODEL_GROUP_PALETTE.light[0]);
+    expect(modelGroupColor("deepseek-v5-new-variant", false)).toBe(COLOR_BLIND_MODEL_GROUP_PALETTE.light[0]);
+    expect(modelGroupColor("deepseek-v5-new-variant", true)).toBe(COLOR_BLIND_MODEL_GROUP_PALETTE.dark[0]);
+    expect(modelGroupColor("opus-5", false)).toBe(COLOR_BLIND_MODEL_GROUP_PALETTE.light[1]);
+    expect(modelGroupColor("opus-6-latest", false)).toBe(COLOR_BLIND_MODEL_GROUP_PALETTE.light[1]);
+    expect(modelGroupColor("opus-6-latest", true)).toBe(COLOR_BLIND_MODEL_GROUP_PALETTE.dark[1]);
+    expect(modelGroupColor("grok-4-6", false)).toBe(COLOR_BLIND_MODEL_GROUP_PALETTE.light[2]);
   });
 
   it("keeps every color-blind slot above the contrast target on supported surfaces", () => {
