@@ -48,6 +48,8 @@ const MODEL_LABEL_FONT_SIZE = 13;
 const MODEL_LABEL_LINE_HEIGHT = 20;
 const DOT_HIT_RADIUS = 14;
 const HOVER_RING_RADIUS = MODEL_DOT_RADIUS + 3;
+const DISCOUNT_HIT_RADIUS = 8;
+const PLOT_ANIMATION_DURATION = 180;
 // Keep leaders visually attached to the real dot edge; the layout collision
 // pass, not a large decorative gap, keeps them out of nearby dots.
 const LEADER_LINE_GAP = 1;
@@ -113,6 +115,21 @@ export function snapToDotPosition(
 ): { left: number; top: number } | null {
   if (![pointer.left, pointer.top, dot.left, dot.top, radius].every(Number.isFinite) || radius < 0) return null;
   return Math.hypot(pointer.left - dot.left, pointer.top - dot.top) <= radius ? dot : null;
+}
+
+/** Return the shortest distance from a point to a finite connector segment. */
+export function pointToSegmentDistance(
+  point: { left: number; top: number },
+  start: { left: number; top: number },
+  end: { left: number; top: number },
+): number {
+  const dx = end.left - start.left;
+  const dy = end.top - start.top;
+  const lengthSquared = dx * dx + dy * dy;
+  if (![point.left, point.top, start.left, start.top, end.left, end.top].every(Number.isFinite)) return Infinity;
+  if (lengthSquared === 0) return Math.hypot(point.left - start.left, point.top - start.top);
+  const projection = Math.max(0, Math.min(1, ((point.left - start.left) * dx + (point.top - start.top) * dy) / lengthSquared));
+  return Math.hypot(point.left - (start.left + projection * dx), point.top - (start.top + projection * dy));
 }
 
 /** uPlot split filters kept pure so axis and grid policies stay regression-testable. */
@@ -239,7 +256,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   let plotStructureKey = "";
   let hoveredIndex: number | null = null;
   let plotUpdateFrame: number | null = null;
+  let plotAnimationFrame: number | null = null;
   let labelUpdateFrame: number | null = null;
+  let previousPlotData: uPlot.AlignedData | null = null;
   let currentSeries: CurrentSeries = {
     x: [],
     y: [],
@@ -456,6 +475,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     plotLeft: number;
     plotTop: number;
     dataIndex: number;
+    cost?: number;
   };
 
   const pointerPlotPosition = (u: uPlot): { left: number; top: number } | undefined => {
@@ -493,6 +513,25 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         plotLeft,
         plotTop,
         dataIndex: actualOffset + index,
+        distance: Math.hypot(plotLeft - pointer.left, plotTop - pointer.top),
+      });
+    });
+    // A discount source endpoint is a real model interaction target too. It is
+    // kept outside uPlot's point series so it cannot create a duplicate dot,
+    // but it should still open the same model tooltip as the plotted endpoint.
+    currentSeries.discounts.forEach((discount) => {
+      const pointIndex = currentSeries.ids.indexOf(discount.pointId);
+      if (pointIndex < 0) return;
+      const plotLeft = u.valToPos(discount.preX, "x");
+      const plotTop = u.valToPos(discount.y, "y");
+      if (!Number.isFinite(plotLeft) || !Number.isFinite(plotTop)) return;
+      targets.push({
+        pointIndex,
+        id: discount.pointId,
+        plotLeft,
+        plotTop,
+        dataIndex: actualOffset + pointIndex,
+        cost: discount.preX,
         distance: Math.hypot(plotLeft - pointer.left, plotTop - pointer.top),
       });
     });
@@ -762,7 +801,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   };
 
   const publishHoveredReadout = (target: HoverTarget, dot: { left: number; top: number } | undefined) => {
-    const cost = currentSeries.x[target.pointIndex];
+    const cost = target.cost ?? currentSeries.x[target.pointIndex];
     const score = currentSeries.y[target.pointIndex];
     const over = container?.querySelector<HTMLElement>(".u-over");
     const parent = container?.parentElement;
@@ -1109,7 +1148,13 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     refreshSeries();
     setPlotXSnapshot(currentSeries.x.join(","));
     plot?.destroy();
-    plot = new uPlot(buildOptions(), dataFor(), container);
+    if (plotAnimationFrame !== null && typeof window !== "undefined") {
+      window.cancelAnimationFrame(plotAnimationFrame);
+      plotAnimationFrame = null;
+    }
+    const initialData = dataFor();
+    plot = new uPlot(buildOptions(), initialData, container);
+    previousPlotData = initialData;
     setPlotRevision((revision) => revision + 1);
     baseSeriesAlphas = plot.series.map((series) => series.alpha ?? 1);
     applyPlotEmphasis();
@@ -1181,6 +1226,45 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   // Axis scale changes uPlot's distr, which is construction-time only.
   createEffect(on(() => props.scale(), createPlot, { defer: true }));
 
+  const animatePlotData = (nextData: uPlot.AlignedData) => {
+    if (!plot) return;
+    if (plotAnimationFrame !== null && typeof window !== "undefined") {
+      window.cancelAnimationFrame(plotAnimationFrame);
+      plotAnimationFrame = null;
+    }
+    const fromData = previousPlotData;
+    const canInterpolate = fromData !== null && fromData.length === nextData.length &&
+      fromData.every((series, index) => series.length === nextData[index]!.length);
+    if (!canInterpolate || typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
+      plot.setData(nextData);
+      previousPlotData = nextData;
+      return;
+    }
+    const startedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
+    const frame = (timestamp: number) => {
+      if (!plot) return;
+      const progress = Math.min(1, Math.max(0, (timestamp - startedAt) / PLOT_ANIMATION_DURATION));
+      const eased = 1 - (1 - progress) ** 3;
+      const interpolated = nextData.map((series, seriesIndex) => {
+        const previous = fromData[seriesIndex]!;
+        return Array.from(series as ArrayLike<number | null>, (value, valueIndex) => {
+          const oldValue = (previous as ArrayLike<number | null>)[valueIndex];
+          return typeof value === "number" && typeof oldValue === "number"
+            ? oldValue + (value - oldValue) * eased
+            : value;
+        });
+      }) as unknown as uPlot.AlignedData;
+      plot.setData(interpolated);
+      if (progress < 1) {
+        plotAnimationFrame = window.requestAnimationFrame(frame);
+      } else {
+        plotAnimationFrame = null;
+        previousPlotData = nextData;
+      }
+    };
+    plotAnimationFrame = window.requestAnimationFrame(frame);
+  };
+
   const applyPlotData = () => {
     const hoveredId = hoveredIndex === null ? null : currentSeries.ids[hoveredIndex];
     refreshSeries();
@@ -1194,7 +1278,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       .join("|")}|${[...new Set(currentSeries.groupKeys)].join("|")}`;
     if (!plot || nextStructureKey !== plotStructureKey) createPlot();
     else {
-      plot.setData(data);
+      animatePlotData(data);
       setPlotRevision((revision) => revision + 1);
       hoveredIndex = hoveredId === undefined || hoveredId === null
         ? null
@@ -1233,6 +1317,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   onCleanup(() => {
     if (typeof window !== "undefined") {
       if (plotUpdateFrame !== null) window.cancelAnimationFrame(plotUpdateFrame);
+      if (plotAnimationFrame !== null) window.cancelAnimationFrame(plotAnimationFrame);
       if (labelUpdateFrame !== null) window.cancelAnimationFrame(labelUpdateFrame);
     }
     plotUpdateFrame = null;
@@ -1441,7 +1526,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
               cy={position().top}
               r={HOVER_RING_RADIUS}
               fill="none"
-              stroke="var(--color-base-100)"
+              stroke="var(--color-base-content)"
               stroke-width="2"
               vector-effect="non-scaling-stroke"
               data-testid="hovered-dot"
@@ -1461,21 +1546,13 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 stroke-width="0.75"
                 style={{ "pointer-events": "none" }}
               >
-                <g data-axis="x" data-axis-end="dot" transform={`translate(${readout().left} ${readout().top + 22})`}>
-                  <rect x="-38" y="-12" width="76" height="18" rx="3" opacity="0.92" />
-                  <text x="0" y="1" fill={readout().color} stroke="none" text-anchor="middle" font-size="11">{costText}</text>
-                </g>
                 <g data-axis="x" data-axis-end="axis" transform={`translate(${readout().left} ${readout().axisBottom + 4})`}>
                   <rect x="-38" y="-12" width="76" height="18" rx="3" opacity="0.92" />
-                  <text x="0" y="1" fill={readout().color} stroke="none" text-anchor="middle" font-size="11">{costText}</text>
-                </g>
-                <g data-axis="y" data-axis-end="dot" transform={`translate(${readout().left - 8} ${readout().top})`}>
-                  <rect x="-66" y="-12" width="64" height="18" rx="3" opacity="0.92" />
-                  <text x="-5" y="1" fill={readout().color} stroke="none" text-anchor="end" font-size="11">{scoreText}</text>
+                  <text x="0" y="1" fill={readout().color} stroke="none" text-anchor="middle" font-size="14">{costText}</text>
                 </g>
                 <g data-axis="y" data-axis-end="axis" transform={`translate(${readout().axisLeft - 8} ${readout().top})`}>
                   <rect x="-66" y="-12" width="64" height="18" rx="3" opacity="0.92" />
-                  <text x="-5" y="1" fill={readout().color} stroke="none" text-anchor="end" font-size="11">{scoreText}</text>
+                  <text x="-5" y="1" fill={readout().color} stroke="none" text-anchor="end" font-size="14">{scoreText}</text>
                 </g>
               </g>
             );
@@ -1550,7 +1627,18 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
               >
                 {/* The effective endpoint is the real plotted model dot. Draw
                     only the source pre-discount endpoint here so the right
-                    endpoint is visible without creating another hit target. */}
+                    endpoint is visible without creating another hit target.
+                    Paint the dash first so it cannot cut chunks through the
+                    clean endpoint circle. */}
+                <line
+                  x1={discount.preLeft}
+                  y1={discount.top}
+                  x2={discount.effectiveLeft}
+                  y2={discount.top}
+                  stroke-width="1"
+                  stroke-dasharray="4 4"
+                  style={{ transition: "x1 180ms ease-out, x2 180ms ease-out, y1 180ms ease-out, y2 180ms ease-out" }}
+                />
                 <circle
                   cx={discount.preLeft}
                   cy={discount.top}
@@ -1560,21 +1648,55 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                   stroke-width={POINT_STROKE_WIDTH}
                   data-testid="discount-endpoint-dot"
                   data-discount-endpoint="pre"
-                  style={{ "pointer-events": "none" }}
-                />
-                <line
-                  x1={discount.preLeft}
-                  y1={discount.top}
-                  x2={discount.effectiveLeft}
-                  y2={discount.top}
-                  stroke-width="1"
-                  stroke-dasharray="4 4"
+                  style={{
+                    "pointer-events": "none",
+                    transition: "cx 180ms ease-out, cy 180ms ease-out",
+                  }}
                 />
               </g>
             );
           }}
         </For>
       </svg>
+      {/* Keep discount lines interactive without making the SVG decoration
+          layer capture pointer movement from the uPlot surface. */}
+      <For each={discountDecorations()}>
+        {(discount) => {
+          const left = Math.min(discount.preLeft, discount.effectiveLeft);
+          const width = Math.max(12, Math.abs(discount.effectiveLeft - discount.preLeft));
+          return (
+            <>
+              <span
+                class="pointer-events-auto absolute z-2"
+                style={{
+                  left: `${left - 6}px`,
+                  top: `${discount.top - DISCOUNT_HIT_RADIUS}px`,
+                  width: `${width + 12}px`,
+                  height: `${DISCOUNT_HIT_RADIUS * 2}px`,
+                  transition: "left 180ms ease-out, top 180ms ease-out, width 180ms ease-out",
+                }}
+                data-testid="discount-line-hit"
+                data-discount-id={discount.id}
+                onMouseEnter={() => setConnectorHover(discount.pointId)}
+                onMouseLeave={() => clearConnectorHover(discount.pointId)}
+              />
+              <span
+                class="pointer-events-auto absolute z-3"
+                style={{
+                  left: `${discount.preLeft - DOT_HIT_RADIUS}px`,
+                  top: `${discount.top - DOT_HIT_RADIUS}px`,
+                  width: `${DOT_HIT_RADIUS * 2}px`,
+                  height: `${DOT_HIT_RADIUS * 2}px`,
+                  transition: "left 180ms ease-out, top 180ms ease-out",
+                }}
+                data-testid="discount-endpoint-hit"
+                data-discount-id={discount.id}
+                data-discount-endpoint="pre"
+              />
+            </>
+          );
+        }}
+      </For>
       {/* HTML crown hit targets sit above the canvas without making the full
           SVG decoration layer intercept pointer movement from the plot. */}
       <For each={pointDecorations()}>
@@ -1586,8 +1708,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
               style={{
                 left: `${point.left - 9}px`,
                 top: `${point.top - 27}px`,
-                color: point.color,
+                color: themeStyles().textColor,
                 opacity: isFocusedFamilyId(point.id) ? 1 : 0.2,
+                transition: "left 180ms ease-out, top 180ms ease-out",
               }}
               role="img"
               aria-label={description}

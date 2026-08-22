@@ -13,6 +13,7 @@ import BenchmarkScatterChart, {
   filterTenPointGridSplits,
   seriesAlphasForFocus,
   snapToDotPosition,
+  pointToSegmentDistance,
   trimConnectorHitSegment,
 } from "./BenchmarkScatterChart";
 import type { PlottablePoint } from "./types";
@@ -35,6 +36,11 @@ describe("BenchmarkScatterChart pure interaction policies", () => {
 
   it("formats filtered axis splits as blank labels instead of literal null", () => {
     expect(formatFilteredAxisValues([69, null, 70], String)).toEqual(["69", "", "70"]);
+  });
+
+  it("measures the nearest point on a connector segment", () => {
+    expect(pointToSegmentDistance({ left: 5, top: 4 }, { left: 0, top: 0 }, { left: 10, top: 0 })).toBe(4);
+    expect(pointToSegmentDistance({ left: -2, top: 0 }, { left: 0, top: 0 }, { left: 10, top: 0 })).toBe(2);
   });
 
   it("draws crosshair guides left and down from the snapped cursor", () => {
@@ -244,6 +250,12 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect([line?.getAttribute("x1"), line?.getAttribute("x2"), line?.getAttribute("y1")].every((value) => Number.isFinite(Number(value)))).toBe(true);
     expect(arrows[0]?.querySelector("line")?.getAttribute("stroke-width")).toBe("1");
     expect(arrows[0]?.getAttribute("stroke-dasharray")).toBe("4 4");
+    expect(container.querySelectorAll("[data-testid='discount-line-hit']")).toHaveLength(1);
+    expect(container.querySelectorAll("[data-testid='discount-endpoint-hit'][data-discount-endpoint='pre']")).toHaveLength(1);
+    const discountHit = container.querySelector("[data-testid='discount-line-hit']") as HTMLElement;
+    discountHit.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    expect(container.querySelector("[data-hovered-label-id='discounted-model']")).not.toBeNull();
+    discountHit.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
     expect(arrows[0]?.getAttribute("stroke-width")).toBe("1");
     expect(arrows[0]?.querySelector("path")).toBeNull();
 
@@ -559,8 +571,10 @@ describe("BenchmarkScatterChart discount annotations", () => {
     const top = Number.parseFloat(dot.getAttribute("cy")!);
     root.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: left, clientY: top }));
     expect(container.querySelector("[data-testid='hovered-dot']")).not.toBeNull();
-    expect(container.querySelectorAll("[data-testid='hover-axis-readouts'] [data-axis='x']")).toHaveLength(2);
-    expect(container.querySelectorAll("[data-testid='hover-axis-readouts'] [data-axis='y']")).toHaveLength(2);
+    expect(container.querySelectorAll("[data-testid='hover-axis-readouts'] [data-axis='x']")).toHaveLength(1);
+    expect(container.querySelectorAll("[data-testid='hover-axis-readouts'] [data-axis='y']")).toHaveLength(1);
+    expect(container.querySelectorAll("[data-testid='hover-axis-readouts'] [data-axis-end='dot']")).toHaveLength(0);
+    expect(container.querySelector("[data-testid='hover-axis-readouts'] text")?.getAttribute("font-size")).toBe("14");
     expect(container.querySelector("[data-testid='hover-axis-readouts']")?.textContent).toContain("$4");
     expect(container.querySelector("[data-testid='hover-axis-readouts']")?.textContent).toContain("60.0%");
     const vertical = container.querySelector(".u-cursor-x") as HTMLElement;
