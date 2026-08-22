@@ -1,5 +1,6 @@
 import { For, Show, createEffect, createMemo, createSignal, onCleanup, onMount } from "solid-js";
-import { effortGroupColor, inferModelBrand, modelBrandColor } from "../charts/brand";
+import { modelGroupColor } from "../charts/brand";
+import { modelGroupKey } from "../charts/modelMetadata";
 import { modelVariantParts } from "../charts/labelLayout";
 import { isDarkTheme } from "./ThemeToggle";
 import type { PlottablePoint } from "../charts/types";
@@ -32,6 +33,8 @@ export interface ModelListProps {
 type ModelListItem = {
   key: string;
   label: string;
+  /** Keep a stable source spelling for accessible checkbox names. */
+  selectionLabel?: string;
   members: readonly PlottablePoint[];
   searchText: string;
   colorKey?: string;
@@ -61,14 +64,13 @@ function modelItems(points: readonly PlottablePoint[]): ModelListItem[] {
       individual.push({
         key: `model:${point.id}`,
         label: point.label,
+        selectionLabel: point.selectionLabel,
         members: [point],
-        searchText: `${point.label} ${point.id}`,
+        searchText: `${point.label} ${point.selectionLabel ?? ""} ${point.id}`,
       });
       continue;
     }
-    const colorKey = point.effortGroup
-      ? `effort:${point.effortGroup}`
-      : `${point.brand ?? inferModelBrand(point.label, point.id)}:${parts!.baseLabel.toLowerCase()}`;
+    const colorKey = point.effortGroup ?? modelGroupKey(parts?.baseLabel ?? point.label, point.id);
     const group = groups.get(colorKey) ?? {
       label: parts?.baseLabel ?? point.effortGroup!,
       members: [],
@@ -84,8 +86,9 @@ function modelItems(points: readonly PlottablePoint[]): ModelListItem[] {
       individual.push({
         key: `model:${point.id}`,
         label: point.label,
+        selectionLabel: point.selectionLabel,
         members: [point],
-        searchText: `${point.label} ${point.id}`,
+        searchText: `${point.label} ${point.selectionLabel ?? ""} ${point.id}`,
       });
       continue;
     }
@@ -136,8 +139,9 @@ export default function ModelList(props: ModelListProps) {
     return sorted().map((point) => ({
       key: `model:${point.id}`,
       label: point.label,
+      selectionLabel: point.selectionLabel,
       members: [point],
-      searchText: `${point.label} ${point.id}`,
+      searchText: `${point.label} ${point.selectionLabel ?? ""} ${point.id}`,
       colorKey: familyColorById().get(point.id),
     }));
   });
@@ -218,9 +222,10 @@ export default function ModelList(props: ModelListProps) {
   };
   const itemColor = (item: ModelListItem) => {
     const point = item.members[0]!;
-    return item.colorKey
-      ? effortGroupColor(item.colorKey, darkTheme())
-      : modelBrandColor(point.brand ?? inferModelBrand(point.label, point.id), darkTheme());
+    return modelGroupColor(
+      item.colorKey ?? point.effortGroup ?? modelGroupKey(point.label, point.id),
+      darkTheme(),
+    );
   };
   const resetDefault = (event: MouseEvent) => {
     event.preventDefault();
@@ -327,7 +332,7 @@ export default function ModelList(props: ModelListProps) {
                     }}
                     checked={allSelected()}
                     aria-checked={partiallySelected() ? "mixed" : allSelected() ? "true" : "false"}
-                    aria-label={`Show ${item.label}`}
+                    aria-label={`Show ${item.selectionLabel ?? item.label}`}
                     onChange={() => toggleItem(item)}
                   />
                 </label>
@@ -345,7 +350,7 @@ export default function ModelList(props: ModelListProps) {
                 <span class="flex min-w-0 flex-1 items-start gap-2">
                   <span
                     class="mt-1 h-3 w-3 shrink-0 rounded-full border border-base-content/30"
-                    style={{ "background-color": modelBrandColor(inferModelBrand(item.label, item.id), darkTheme()) }}
+                    style={{ "background-color": modelGroupColor(modelGroupKey(item.label, item.id), darkTheme()) }}
                     aria-hidden="true"
                   />
                   <span class="min-w-0 whitespace-normal break-words" title={item.label}>{item.label}</span>

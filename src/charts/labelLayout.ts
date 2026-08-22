@@ -62,9 +62,11 @@ export interface LabelLayoutOptions {
   preferredSides?: ReadonlyMap<string, "left" | "right">;
 }
 
-const LABEL_HEIGHT = 22;
+const LABEL_HEIGHT = 20;
 const LABEL_GAP = 6;
 const LABEL_DOT_RADIUS = 8;
+// Keep a conservative width estimate while the rendered 13px label remains
+// smaller; this avoids collisions caused by font-metric differences.
 const LABEL_FONT_WIDTH = 7.6;
 const EFFORT_SUFFIX = /^(.*?)\s+(Extra\s+High|Low|Medium|High|Max)$/i;
 const EFFORT_ORDER: Record<string, number> = {

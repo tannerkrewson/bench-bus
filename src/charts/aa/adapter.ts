@@ -7,6 +7,7 @@ import type {
   PriceDiscountAnnotation,
 } from "../types";
 import { inferModelBrand } from "../brand";
+import { modelDisplayMetadata } from "../modelMetadata";
 import {
   AA_DEFAULT_CACHE_HIT_RATE,
   listedCostUsd,
@@ -127,7 +128,7 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
   defaultXScale: "log",
   controlSpecs: AA_CONTROL_SPECS,
 
-  identity: (record) => ({ id: record.slug, label: record.name }),
+  identity: (record) => ({ id: record.slug, label: modelDisplayMetadata(record.name, record.slug).label }),
 
   computePoint: (record, controls: Readonly<PricingControlState>): PlottablePoint | null => {
     const mode = controls["pricingMode"] ?? PRICING_MODE_CONTROL.default;
@@ -153,10 +154,13 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
         cost = null;
     }
     if (cost === null || !Number.isFinite(cost) || cost <= 0) return null;
+    const metadata = modelDisplayMetadata(record.name, record.slug);
     return {
       id: record.slug,
-      label: record.name,
+      label: metadata.label,
+      selectionLabel: record.name,
       brand: inferModelBrand(record.name, record.slug),
+      effortGroup: metadata.groupKey,
       x: cost,
       y: record.intelligenceIndex,
       ...(discount ? { discount } : {}),

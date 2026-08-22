@@ -10,6 +10,7 @@ import type {
   TooltipLine,
 } from "./types";
 import { inferModelBrand } from "./brand";
+import { modelDisplayMetadata } from "./modelMetadata";
 
 /**
  * Fixture datasets shaped exactly like the derived browser contracts plus
@@ -149,7 +150,7 @@ export const aaDemoAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
   yAxisLabel: "Intelligence Index",
   defaultXScale: "log",
   controlSpecs: [AA_MODE_CONTROL, AA_CACHE_CONTROL],
-  identity: (record) => ({ id: record.slug, label: record.name }),
+  identity: (record) => ({ id: record.slug, label: modelDisplayMetadata(record.name, record.slug).label }),
   computePoint: (record, controls: Readonly<PricingControlState>): PlottablePoint | null => {
     const mode = controls["pricingMode"] ?? AA_MODE_CONTROL.default;
     const cacheHitRate = Number(controls["cacheHitRate"] ?? AA_CACHE_CONTROL.default);
@@ -177,10 +178,13 @@ export const aaDemoAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
       }
     }
     if (cost === null || !Number.isFinite(cost) || cost <= 0) return null;
+    const metadata = modelDisplayMetadata(record.name, record.slug);
     return {
       id: record.slug,
-      label: record.name,
+      label: metadata.label,
+      selectionLabel: record.name,
       brand: inferModelBrand(record.name, record.slug),
+      effortGroup: metadata.groupKey,
       x: cost,
       y: record.intelligenceIndex,
     };
@@ -210,7 +214,7 @@ export const cursorDemoAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord> 
       description: "Applies Cursor's flat third-party-model surcharge to applicable usage.",
     },
   ],
-  identity: (record) => ({ id: record.modelId, label: record.modelName }),
+  identity: (record) => ({ id: record.modelId, label: modelDisplayMetadata(record.modelName, record.modelId).label }),
   computePoint: (record, controls): PlottablePoint | null => {
     const base = record.publishedCostUsd;
     if (base === undefined) return null;
@@ -221,10 +225,13 @@ export const cursorDemoAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord> 
       cost += (tokens / 1e6) * CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS;
     }
     if (!Number.isFinite(cost) || cost <= 0) return null;
+    const metadata = modelDisplayMetadata(record.modelName, record.modelId);
     return {
       id: record.modelId,
-      label: record.modelName,
+      label: metadata.label,
+      selectionLabel: record.modelName,
       brand: inferModelBrand(record.modelName, record.provider, record.modelId),
+      effortGroup: metadata.groupKey,
       x: cost,
       y: record.score,
     };

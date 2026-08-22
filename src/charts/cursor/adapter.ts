@@ -9,6 +9,7 @@ import type {
   TooltipLine,
 } from "../types";
 import { inferModelBrand } from "../brand";
+import { modelDisplayMetadata } from "../modelMetadata";
 import {
   blendCursorNonOutputPrice,
   cursorCompletionTokens,
@@ -29,6 +30,36 @@ export const CURSOR_BENCH_ID = "cursor";
 
 export const SURCHARGE_CONTROL_ID = "surcharge";
 export const TOKEN_MIX_CONTROL_ID = "tokenMix";
+
+/** Seven model families requested for the initial Cursor view. */
+export const CURSOR_DEFAULT_MODEL_GROUPS = [
+  "opus-5",
+  "grok-4-6",
+  "luna",
+  "sol",
+  "terra",
+  "fable-5",
+  "composer-2-5",
+] as const;
+
+// These are the families already present in the current feed. Any family not
+// in this baseline is treated as newly ingested and is visible implicitly.
+const CURSOR_KNOWN_MODEL_GROUPS = new Set([
+  ...CURSOR_DEFAULT_MODEL_GROUPS,
+  "opus-4-8",
+  "sonnet-5",
+  "gemini-3-7-flash",
+]);
+
+export function cursorDefaultVisibleIds(records: readonly DerivedCursorChartRecord[]): string[] {
+  return records
+    .filter((record) => {
+      const groupKey = modelDisplayMetadata(record.modelName, record.modelId).groupKey;
+      return CURSOR_DEFAULT_MODEL_GROUPS.includes(groupKey as (typeof CURSOR_DEFAULT_MODEL_GROUPS)[number]) ||
+        !CURSOR_KNOWN_MODEL_GROUPS.has(groupKey);
+    })
+    .map((record) => record.modelId);
+}
 
 const SURCHARGE_CONTROL = {
   kind: "toggle",
@@ -101,15 +132,19 @@ export const cursorBenchAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord>
   yAxisLabel: "CursorBench score",
   defaultXScale: "log",
   controlSpecs: [SURCHARGE_CONTROL, TOKEN_MIX_CONTROL],
-  identity: (record) => ({ id: record.modelId, label: record.modelName }),
+  identity: (record) => ({ id: record.modelId, label: modelDisplayMetadata(record.modelName, record.modelId).label }),
+  defaultSelectionIds: (records) => cursorDefaultVisibleIds(records),
   computePoint: (record, controls): PlottablePoint | null => {
     const includeTokenRate = Boolean(controls[SURCHARGE_CONTROL_ID] ?? SURCHARGE_CONTROL.default);
     const cost = effectiveCursorCostUsd(record, includeTokenRate, tokenMixFromControls(controls));
     if (cost === null) return null;
+    const metadata = modelDisplayMetadata(record.modelName, record.modelId);
     return {
       id: record.modelId,
-      label: record.modelName,
+      label: metadata.label,
+      selectionLabel: record.modelName,
       brand: inferModelBrand(record.modelName, record.provider, record.modelId),
+      effortGroup: metadata.groupKey,
       x: cost,
       y: record.score,
     };

@@ -3,7 +3,8 @@ import { Crown } from "lucide-solid";
 import uPlot, { type Options } from "uplot";
 import { isDarkTheme } from "../components/ThemeToggle";
 import "uplot/dist/uPlot.min.css";
-import { effortGroupColor, inferModelBrand, modelBrandColor } from "./brand";
+import { inferModelBrand, modelGroupColor } from "./brand";
+import { modelGroupKey } from "./modelMetadata";
 import {
   groupModelVariants,
   layoutModelLabels,
@@ -35,6 +36,8 @@ export interface BenchmarkScatterChartProps {
 
 const DOT_SIZE = 9;
 const DISCOUNT_DOT_SIZE = 7;
+const MODEL_LABEL_FONT_SIZE = 13;
+const MODEL_LABEL_LINE_HEIGHT = 20;
 const DOT_HIT_RADIUS = 14;
 const LABEL_DOT_RADIUS = 8;
 const LEADER_LINE_GAP = 3;
@@ -46,6 +49,7 @@ type DiscountAnnotation = {
   effectiveX: number;
   y: number;
   percentage: number;
+  groupKey: string;
   providerName?: string;
   providerRole?: "plotted" | "alternative";
 };
@@ -58,12 +62,15 @@ type DiscountDecoration = {
   top: number;
   labelLeft: number;
   percentage: number;
+  groupKey: string;
+  color: string;
   providerRole?: "plotted" | "alternative";
 };
 
 type CurrentSeries = ReturnType<typeof toPlotSeries> & {
   labels: string[];
   effortGroups: (string | null)[];
+  groupKeys: string[];
   brands: ModelBrand[];
   frontierIds: string[];
   variantGroups: ModelVariantGroup[];
@@ -89,6 +96,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     droppedIds: [],
     labels: [],
     effortGroups: [],
+    groupKeys: [],
     brands: [],
     frontierIds: [],
     variantGroups: [],
@@ -100,6 +108,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   const [pointDecorations, setPointDecorations] = createSignal<{ id: string; left: number; top: number; color: string }[]>([]);
   const [discountDecorations, setDiscountDecorations] = createSignal<DiscountDecoration[]>([]);
   let hoveredLabelBounds: { left: number; top: number; right: number; bottom: number } | null = null;
+  let baseSeriesAlphas: number[] = [];
 
   const refreshSeries = () => {
     const points = props.points();
@@ -109,6 +118,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       .map((id) => pointById.get(id))
       .filter((point): point is PlottablePoint => point !== undefined);
     const frontierIds = paretoFrontier(plottedPoints).map((point) => point.id);
+    const groupKeyById = new Map(series.ids.map((id) => {
+      const point = pointById.get(id);
+      return [id, point?.effortGroup ?? modelGroupKey(point?.label ?? id, id)] as const;
+    }));
     const members: ModelVariantMember[] = series.ids.flatMap((id) => {
       const point = pointById.get(id);
       if (!point) return [];
@@ -146,6 +159,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
             effectiveX: discount.effectiveX ?? point.x,
             y: point.y,
             percentage: discount.percentage,
+            groupKey: groupKeyById.get(point.id) ?? modelGroupKey(point.label, point.id),
             providerName: discount.providerName,
             providerRole: discount.providerRole,
           }];
@@ -158,6 +172,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       droppedIds: series.droppedIds,
       labels: orderedIds.map((id) => pointById.get(id)?.label ?? id),
       effortGroups: orderedIds.map((id) => groupById.get(id) ?? null),
+      groupKeys: orderedIds.map((id) => groupKeyById.get(id) ?? modelGroupKey(id, id)),
       brands: orderedIds.map((id) => {
         const point = pointById.get(id);
         return point?.brand ?? inferModelBrand(point?.label, id);
@@ -181,7 +196,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       frontierColor:
         styles.getPropertyValue("--color-primary").trim() || (dark ? "#a78bfa" : "#4f46e5"),
       leaderColor: dark ? "#94a3b8" : "#64748b",
-      discountColor: dark ? "#cbd5e1" : "#475569",
     };
   };
 
@@ -226,15 +240,13 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       row[currentSeries.frontierIds.length + currentSeries.variantGroups.reduce((n, group) => n + group.members.length, 0) + index * 2 + 1] = discount.y;
       return row;
     });
-    // Keep one uPlot series per brand, even when two brands share a theme
-    // color (for example OpenAI and xAI in dark mode). The series options and
-    // aligned data must have identical lengths or uPlot's scale pass can read
-    // an undefined row and leave the entire chart at zero dimensions.
-    const pointBrands = [...new Set(currentSeries.brands)];
-    const pointRows = pointBrands.map((brandKey) => {
+    // Keep one uPlot series per model family. The same family key drives its
+    // point, effort connector, discount arrow, and selector color.
+    const pointGroups = [...new Set(currentSeries.groupKeys)];
+    const pointRows = pointGroups.map((groupKey) => {
       const row = new Array<number | null>(dataX.length).fill(null);
-      currentSeries.brands.forEach((brand, index) => {
-        if (brand === brandKey) row[actualOffset + index] = currentSeries.y[index]!;
+      currentSeries.groupKeys.forEach((pointGroupKey, index) => {
+        if (pointGroupKey === groupKey) row[actualOffset + index] = currentSeries.y[index]!;
       });
       return row;
     });
@@ -245,7 +257,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     });
     // uPlot accepts null-gapped plain arrays at runtime; its typings only
     // cover TypedArrays, so the sparse rows are cast at this boundary.
-    return [Float64Array.from(dataX), frontierY, ...connectorRows, ...discountRows, ...pointRows, ...discountDots] as unknown as uPlot.AlignedData;
+    // Pareto is deliberately the final data row so uPlot paints it above all
+    // model-family connectors and discount segments.
+    return [Float64Array.from(dataX), ...connectorRows, ...discountRows, ...pointRows, ...discountDots, frontierY] as unknown as uPlot.AlignedData;
   };
 
   type HoverTarget = {
@@ -384,6 +398,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         top,
         labelLeft: (preLeft + effectiveLeft) / 2,
         percentage: discount.percentage,
+        groupKey: discount.groupKey,
+        color: modelGroupColor(discount.groupKey, dark),
         providerRole: discount.providerRole,
       }];
     });
@@ -406,7 +422,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           label: currentSeries.labels[index] ?? id,
           anchorLeft: overRect.left - rootRect.left + currentPlot.valToPos(x, "x"),
           anchorTop: overRect.top - rootRect.top + currentPlot.valToPos(y, "y"),
-          color: modelBrandColor(currentSeries.brands[index] ?? "other", dark),
+          color: modelGroupColor(currentSeries.groupKeys[index] ?? modelGroupKey(currentSeries.labels[index] ?? id, id), dark),
           priority: currentSeries.frontierIds.includes(id) ? 1 : 0,
         },
       ];
@@ -450,6 +466,13 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   const setLabelHover = (id: string | null) => {
     setHoveredLabelId(id);
     hoveredLabelBounds = null;
+  };
+
+  const setModelLabelHover = (id: string | null) => {
+    setLabelHover(id);
+    // A dot tooltip may already be open when the pointer enters the label.
+    // Labels intentionally own only emphasis, never tooltip content.
+    props.onHover?.(null);
   };
 
   const cursorPosition = (u: uPlot) => {
@@ -563,10 +586,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     const scale = props.scale();
     const styles = themeStyles();
     refreshSeries();
-    const pointBrands = [...new Set(currentSeries.brands)];
+    const pointGroups = [...new Set(currentSeries.groupKeys)];
     plotStructureKey = `${currentSeries.discounts.length}|${currentSeries.variantGroups
       .map((group) => `${group.key}:${group.members.length}`)
-      .join("|")}|${pointBrands.join("|")}`;
+      .join("|")}|${pointGroups.join("|")}`;
     return {
       width: container?.clientWidth ?? 0,
       height: props.height ?? (typeof window !== "undefined" && window.innerWidth < 640 ? 520 : 700),
@@ -640,31 +663,26 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       },
       series: [
         {},
-        {
-          label: "Pareto frontier",
-          stroke: props.showFrontier?.() ?? true ? styles.frontierColor : "rgba(0,0,0,0)",
-          width: 2,
-          dash: [5, 4],
-          points: { show: false },
-        },
         ...currentSeries.variantGroups.map((group) => ({
           label: `${group.baseLabel} effort variants`,
-          stroke: effortGroupColor(group.key, styles.dark),
+          stroke: modelGroupColor(group.key, styles.dark),
           width: 1.5,
           alpha: 0.62,
           points: { show: false },
         })),
         ...currentSeries.discounts.map((discount) => ({
           label: `${discount.percentage}% discount: ${discount.providerName ?? "provider"}`,
-          stroke: styles.discountColor,
+          stroke: modelGroupColor(discount.groupKey, styles.dark),
           width: 1.5,
-          dash: [4, 3],
+          // Dotted, rather than solid or Pareto-dashed, so price adjustments
+          // have an unambiguous visual grammar.
+          dash: [1, 4],
           points: { show: false },
         })),
-        ...pointBrands.map((brand) => {
-          const color = modelBrandColor(brand, styles.dark);
+        ...pointGroups.map((groupKey) => {
+          const color = modelGroupColor(groupKey, styles.dark);
           return {
-            label: `${brand} models`,
+            label: `${groupKey} models`,
             stroke: color,
             width: 0,
             points: { show: true, size: DOT_SIZE, width: 1.5, stroke: color, fill: color },
@@ -672,10 +690,26 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         }),
         ...currentSeries.discounts.map((discount) => ({
           label: `${discount.percentage}% discount before price`,
-          stroke: styles.discountColor,
+          stroke: modelGroupColor(discount.groupKey, styles.dark),
           width: 0,
-          points: { show: true, size: DISCOUNT_DOT_SIZE, width: 1.5, stroke: styles.discountColor, fill: styles.discountColor },
+          points: {
+            show: true,
+            size: DISCOUNT_DOT_SIZE,
+            width: 1.5,
+            stroke: modelGroupColor(discount.groupKey, styles.dark),
+            fill: modelGroupColor(discount.groupKey, styles.dark),
+          },
         })),
+        {
+          label: "Pareto frontier",
+          // This is the last series so uPlot paints the opaque frontier above
+          // every model-family connector.
+          stroke: props.showFrontier?.() ?? true ? styles.frontierColor : "rgba(0,0,0,0)",
+          width: 2,
+          alpha: 1,
+          dash: [5, 4],
+          points: { show: false },
+        },
       ],
       hooks: {
         ready: [(u) => { applyCrosshairDirections(u); scheduleLabelPositions(); }],
@@ -730,8 +764,20 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   const chartHeight = () => props.height ?? (typeof window !== "undefined" && window.innerWidth < 640 ? 520 : 700);
 
   const applyPlotEmphasis = () => {
-    const canvas = container?.querySelector<HTMLCanvasElement>("canvas");
-    if (canvas) canvas.style.opacity = hoveredLabelId() === null ? "1" : "0.2";
+    const root = container?.querySelector<HTMLElement>(".uplot");
+    const focused = hoveredLabelId() !== null;
+    // Dim uPlot series individually instead of the whole canvas. The latter
+    // also dims grid/axis pixels; series alpha leaves axes and their labels
+    // fully readable while the selected model is redrawn in the SVG overlay.
+    if (plot) {
+      plot.series.forEach((series, index) => {
+        series.alpha = focused ? Math.min(baseSeriesAlphas[index] ?? 1, 0.2) : (baseSeriesAlphas[index] ?? 1);
+      });
+      plot.redraw(false, false);
+    }
+    root?.querySelectorAll<HTMLElement>(".u-axis, .u-title, .u-value, .u-label").forEach((axis) => {
+      axis.style.opacity = "1";
+    });
   };
 
   const createPlot = () => {
@@ -740,6 +786,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     const scrollY = typeof window !== "undefined" ? window.scrollY : 0;
     plot?.destroy();
     plot = new uPlot(buildOptions(), dataFor(), container);
+    baseSeriesAlphas = plot.series.map((series) => series.alpha ?? 1);
     applyPlotEmphasis();
     hoveredIndex = hoveredId === undefined || hoveredId === null
       ? null
@@ -789,7 +836,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       : currentSeries.ids.indexOf(hoveredId);
     const nextStructureKey = `${currentSeries.discounts.length}|${currentSeries.variantGroups
       .map((group) => `${group.key}:${group.members.length}`)
-      .join("|")}|${[...new Set(currentSeries.brands)].join("|")}`;
+      .join("|")}|${[...new Set(currentSeries.groupKeys)].join("|")}`;
     if (!plot || nextStructureKey !== plotStructureKey) createPlot();
     else {
       plot.setData(data);
@@ -877,7 +924,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           y1: previous.top,
           x2: current.left,
           y2: current.top,
-          color: effortGroupColor(group.key, dark),
+          color: modelGroupColor(group.key, dark),
         });
       }
     }
@@ -886,11 +933,12 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       .flatMap((discount) => {
         const pre = plotPosition(currentPlot.valToPos(discount.preX, "x"), currentPlot.valToPos(discount.y, "y"));
         const effective = plotPosition(currentPlot.valToPos(discount.effectiveX, "x"), currentPlot.valToPos(discount.y, "y"));
-        return pre && effective ? [pre, effective] : [];
+        const color = modelGroupColor(discount.groupKey, dark);
+        return pre && effective ? [{ ...pre, color }, { ...effective, color }] : [];
       });
     return {
       point,
-      pointColor: modelBrandColor(currentSeries.brands[index] ?? "other", dark),
+      pointColor: modelGroupColor(currentSeries.groupKeys[index] ?? modelGroupKey(currentSeries.labels[index] ?? id, id), dark),
       connectors,
       discountDots,
     };
@@ -947,8 +995,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                     cx={dot.left}
                     cy={dot.top}
                     r={DISCOUNT_DOT_SIZE / 2}
-                    fill={themeStyles().discountColor}
-                    stroke={themeStyles().discountColor}
+                    fill={dot.color}
+                    stroke={dot.color}
                     data-testid="focused-discount-dot"
                   />
                 )}
@@ -985,7 +1033,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
             return (
               <g
                 fill="none"
-                stroke={themeStyles().discountColor}
+                stroke={discount.color}
                 stroke-width="2"
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -1059,8 +1107,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                   x2={endLeft}
                   y2={endTop}
                   stroke={themeStyles().leaderColor}
-                  stroke-opacity={hoveredLabelId() === null || hoveredLabelId() === label.id ? "0.72" : "0.15"}
-                  stroke-width="1"
+                  stroke-opacity={hoveredLabelId() === null || hoveredLabelId() === label.id ? "0.5" : "0.1"}
+                  stroke-width="0.75"
                   data-testid="model-label-leader"
                 />
               );
@@ -1070,33 +1118,28 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         <For each={labelPositions()}>
           {(label) => (
             <span
-              class="pointer-events-auto absolute z-1 cursor-help whitespace-nowrap rounded bg-base-100/90 px-1 text-left text-sm leading-[22px] shadow-sm"
-              title={label.label}
+              class="pointer-events-auto absolute z-1 cursor-help whitespace-nowrap rounded bg-base-100/90 px-1 text-left text-xs leading-5 shadow-sm"
               style={{
                 left: `${label.left}px`,
                 top: `${label.top}px`,
                 width: `${label.width}px`,
                 height: `${label.height}px`,
                 color: label.color,
-                opacity: hoveredLabelId() === null || hoveredLabelId() === label.id ? 1 : 0.2,
-                "font-size": "14px",
-                "line-height": "22px",
+                // Text labels remain readable while the plot data is
+                // de-emphasized; the outlined anchor identifies the focus.
+                opacity: 1,
+                "font-size": `${MODEL_LABEL_FONT_SIZE}px`,
+                "line-height": `${MODEL_LABEL_LINE_HEIGHT}px`,
               }}
               data-testid="model-label"
               data-model-id={label.id}
               tabIndex="0"
-              onMouseEnter={(event) => {
-                setLabelHover(label.id);
-                props.onHover?.(label.id, pointerPositionFromEvent(event));
-              }}
+              onMouseEnter={() => setModelLabelHover(label.id)}
               onMouseLeave={() => {
                 setLabelHover(null);
                 props.onHover?.(null);
               }}
-              onFocus={() => {
-                setLabelHover(label.id);
-                props.onHover?.(label.id, { left: label.anchorLeft, top: label.anchorTop });
-              }}
+              onFocus={() => setModelLabelHover(label.id)}
               onBlur={() => {
                 setLabelHover(null);
                 props.onHover?.(null);

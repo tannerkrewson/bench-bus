@@ -41,8 +41,10 @@ export interface PriceDiscountAnnotation {
 export interface PlottablePoint {
   /** Stable model identity (slug or table row id). */
   id: string;
-  /** Human-readable display name. */
+  /** Human-readable concise display name. */
   label: string;
+  /** Optional source spelling retained only for accessible selector identity. */
+  selectionLabel?: string;
   /** Provider family used to select a recognizable point color. */
   brand?: ModelBrand;
   /** Estimated benchmark workload cost, USD. Must be > 0 for log scale. */
@@ -51,7 +53,7 @@ export interface PlottablePoint {
   discount?: PriceDiscountAnnotation;
   /** Source-backed provider discount candidates; the chart displays the largest one. */
   discounts?: readonly PriceDiscountAnnotation[];
-  /** Stable key for an effort-group connection and its shared chart color. */
+  /** Stable model-family key shared by all effort variants and both charts. */
   effortGroup?: string;
   /** Benchmark score. */
   y: number;
@@ -129,6 +131,12 @@ export interface BenchmarkChartAdapter<TRecord> {
   computePoint(record: TRecord, controls: Readonly<PricingControlState>): PlottablePoint | null;
   /** Lowercased haystack used by the search/filter box. */
   searchText(record: TRecord): string;
+  /**
+   * Optional implicit visibility policy. It is used only when no URL/user
+   * selection exists, so newly ingested records can be surfaced by a source
+   * without overriding explicit selections.
+   */
+  defaultSelectionIds?(records: readonly TRecord[], points: readonly PlottablePoint[]): readonly string[];
   /** Optional benchmark-specific label for rows excluded by current pricing. */
   unplottableLabel?(controls: Readonly<PricingControlState>): string;
   /** Optional explanation shown above rows excluded by current pricing. */

@@ -61,7 +61,11 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
   });
 
   const buildAll = createMemo(() => buildChartPlot(props.records(), props.adapter, controls(), ""));
-  const defaultSelectionIds = createMemo(() => buildAll().entries.map((entry) => entry.point.id));
+  const defaultSelectionIds = createMemo(() => {
+    const entries = buildAll().entries;
+    const points = entries.map((entry) => entry.point);
+    return props.adapter.defaultSelectionIds?.(props.records(), points) ?? points.map((point) => point.id);
+  });
 
   const [hovered, setHovered] = createSignal<{
     id: string;

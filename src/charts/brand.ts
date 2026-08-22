@@ -29,19 +29,75 @@ export function inferModelBrand(...parts: readonly (string | undefined)[]): Mode
   return "other";
 }
 
-/** Stable colors for connected effort groups; provider identity is not encoded. */
-const EFFORT_GROUP_PALETTE = [
-  "#2563eb", "#c2410c", "#15803d", "#7c3aed", "#be123c", "#0f766e", "#a16207", "#4338ca",
+/**
+ * A curated, high-contrast palette for model families. Colors are deliberately
+ * never white: dots and their connecting lines must remain visible in both
+ * themes. The well-known families have explicit slots so a new chart subset
+ * cannot make Opus and Sonnet (or two other families) collide.
+ */
+const MODEL_GROUP_PALETTE = [
+  "#e11d48", // rose
+  "#ea580c", // orange
+  "#ca8a04", // amber
+  "#16a34a", // green
+  "#0891b2", // cyan
+  "#2563eb", // blue
+  "#7c3aed", // violet
+  "#db2777", // pink
+  "#0f766e", // teal
+  "#65a30d", // lime
+  "#c026d3", // fuchsia
+  "#0284c7", // sky
+  "#9333ea", // purple
+  "#dc2626", // red
+  "#4f46e5", // indigo
+  "#15803d", // forest
 ] as const;
 
-export function effortGroupColor(groupKey: string, dark: boolean): string {
-  let hash = 0;
-  for (let index = 0; index < groupKey.length; index += 1) hash = (hash * 31 + groupKey.charCodeAt(index)) | 0;
-  const color = EFFORT_GROUP_PALETTE[Math.abs(hash) % EFFORT_GROUP_PALETTE.length]!;
-  return dark && color === "#a16207" ? "#facc15" : color;
+const WELL_KNOWN_GROUP_SLOTS: Readonly<Record<string, number>> = {
+  "opus-5": 0,
+  "sonnet-5": 1,
+  "grok-4-6": 2,
+  luna: 3,
+  sol: 4,
+  terra: 5,
+  "fable-5": 6,
+  "composer-2-5": 7,
+  "opus-4-8": 8,
+  "deepseek-v4-flash-0731": 9,
+  "gemini-3-7-flash": 10,
+};
+
+function canonicalGroupKey(groupKey: string): string {
+  return groupKey.replace(/^effort:/, "").trim().toLocaleLowerCase();
 }
 
-/** Stable model-family colors shared by both benchmark charts and model lists. */
+function stableHash(value: string): number {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) | 0;
+  }
+  return Math.abs(hash);
+}
+
+/** Stable family color shared by dots, connectors, arrows, and both charts. */
+export function modelGroupColor(groupKey: string, dark: boolean): string {
+  const key = canonicalGroupKey(groupKey);
+  const explicitSlot = WELL_KNOWN_GROUP_SLOTS[key];
+  const slot = explicitSlot ?? stableHash(key) % MODEL_GROUP_PALETTE.length;
+  const color = MODEL_GROUP_PALETTE[slot % MODEL_GROUP_PALETTE.length]!;
+  // Amber needs a little more luminance on dark backgrounds; it remains the
+  // same family color in the two charts and is never replaced with white.
+  if (dark && color === "#ca8a04") return "#facc15";
+  return color;
+}
+
+/** Backwards-compatible name for effort-variant connection colors. */
+export function effortGroupColor(groupKey: string, dark: boolean): string {
+  return modelGroupColor(groupKey, dark);
+}
+
+/** Stable fallback colors for ungrouped/provider-only UI elements. */
 export function modelBrandColor(brand: ModelBrand, dark: boolean): string {
   switch (brand) {
     case "anthropic":
@@ -49,13 +105,13 @@ export function modelBrandColor(brand: ModelBrand, dark: boolean): string {
     case "openai":
       return dark ? "#f8fafc" : "#111111";
     case "google":
-      return "#4285f4";
+      return "#2563eb";
     case "cursor":
       return dark ? "#c4b5fd" : "#6d28d9";
     case "meta":
       return "#0866ff";
     case "mistral":
-      return "#f97316";
+      return "#ea580c";
     case "deepseek":
       return "#4f7cff";
     case "qwen":
