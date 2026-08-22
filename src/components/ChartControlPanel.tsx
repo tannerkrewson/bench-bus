@@ -120,6 +120,8 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
       <div
         class="dropdown-content absolute right-0 top-full z-20 mt-2 w-[min(42rem,calc(100vw-2rem))] max-w-full"
         data-testid="chart-settings-popup"
+        role="dialog"
+        aria-label="Chart settings"
       >
         <fieldset
           ref={panel}
