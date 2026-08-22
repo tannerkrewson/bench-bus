@@ -216,26 +216,33 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
                 </p>
               }
             >
-              <BenchmarkScatterChart
-                points={() => visibleEntries().map((e) => e.point)}
-                scale={scale}
-                showLabels={showLabels}
-                showFrontier={showFrontier}
-                showDiscounts={showDiscounts}
-                xAxisLabel={() => props.adapter.xAxisLabel}
-                yAxisLabel={() => props.adapter.yAxisLabel}
-                onHover={(id, pos) =>
-                  setHovered(id && pos ? { id, left: pos.left, top: pos.top } : null)
-                }
-              />
+              {/* Keep the plot readable on portrait screens. The scroll viewport
+                  is intentionally narrower than this minimum plot width; at
+                  sm and above the chart returns to its normal fluid width. */}
+              <div class="w-full overflow-x-auto overscroll-x-contain" data-testid="chart-scroll">
+                <div class="relative min-w-[720px] sm:min-w-0" data-testid="chart-scroll-content">
+                  <BenchmarkScatterChart
+                    points={() => visibleEntries().map((e) => e.point)}
+                    scale={scale}
+                    showLabels={showLabels}
+                    showFrontier={showFrontier}
+                    showDiscounts={showDiscounts}
+                    xAxisLabel={() => props.adapter.xAxisLabel}
+                    yAxisLabel={() => props.adapter.yAxisLabel}
+                    onHover={(id, pos) =>
+                      setHovered(id && pos ? { id, left: pos.left, top: pos.top } : null)
+                    }
+                  />
+                  <ChartTooltip
+                    left={() => hovered()?.left ?? 0}
+                    top={() => hovered()?.top ?? 0}
+                    title={() => hoveredInfo()?.title ?? null}
+                    lines={() => hoveredInfo()?.lines ?? []}
+                  />
+                </div>
+              </div>
               <ChartWatermark />
             </Show>
-            <ChartTooltip
-              left={() => hovered()?.left ?? 0}
-              top={() => hovered()?.top ?? 0}
-              title={() => hoveredInfo()?.title ?? null}
-              lines={() => hoveredInfo()?.lines ?? []}
-            />
             <Show when={showFrontier()}>
               <div class="mt-2 flex items-center justify-center gap-2 text-sm text-base-content/70" role="img" aria-label="Pareto frontier (dotted line)">
                 <span class="w-6 border-t-2 border-dashed border-primary" aria-hidden="true" />

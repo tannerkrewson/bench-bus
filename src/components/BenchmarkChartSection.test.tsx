@@ -68,6 +68,11 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     expect(details.open).toBe(false);
     expect(container.querySelector("[data-testid='chart-area'] > [role='img']")).not.toBeNull();
     expect(container.querySelector("[data-testid='chart-area']")?.className).toContain("min-h-");
+    const scroll = container.querySelector("[data-testid='chart-scroll']") as HTMLElement;
+    const scrollContent = container.querySelector("[data-testid='chart-scroll-content']") as HTMLElement;
+    expect(scroll.className).toContain("overflow-x-auto");
+    expect(scrollContent.className).toContain("min-w-[720px]");
+    expect(scrollContent.className).toContain("sm:min-w-0");
     dispose();
   });
 

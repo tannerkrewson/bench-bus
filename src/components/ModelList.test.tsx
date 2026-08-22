@@ -108,6 +108,8 @@ describe("ModelList effort selection", () => {
         searchId="model-test-search-3"
       />
     ));
+    const popup = container.querySelector("[data-testid='model-list'] .dropdown-content") as HTMLElement;
+    expect(popup.className).toContain("bg-base-200/95");
     const menu = container.querySelector("[data-testid='model-list'] [role='group']") as HTMLElement;
     expect(menu.className).toContain("flex-nowrap");
     expect(menu.className).toContain("overflow-y-auto");

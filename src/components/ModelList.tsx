@@ -257,7 +257,7 @@ export default function ModelList(props: ModelListProps) {
           {visibleSelectedCount()} of {combinedMode() ? items().length : sorted().length} visible
         </span>
       </summary>
-      <div class="dropdown-content z-20 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-x-hidden rounded-box border border-base-300 bg-base-100 p-3 shadow-xl">
+      <div class="dropdown-content z-20 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-x-hidden rounded-box border border-base-300 bg-base-200/95 p-3 shadow-xl">
         <div class="mb-2 flex items-center justify-between gap-3">
           <div>
             <div class="font-semibold">Choose visible models</div>
