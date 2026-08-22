@@ -102,20 +102,19 @@ const WELL_KNOWN_GROUP_SLOTS: Readonly<Record<string, number>> = {
   "grok-4-5": 2,
   luna: 3,
   "gpt-5-6-luna": 3,
-  // Keep Sol teal and Gemini violet: these were previously adjacent in the
-  // purple range and looked identical despite having different hex values.
-  sol: 5,
-  "gpt-5-6-sol": 5,
+  // Keep Sol gold and Gemini violet: both are deliberately far from the
+  // DeepSeek blue preset and from each other in perceptual color space.
+  sol: 6,
+  "gpt-5-6-sol": 6,
   terra: 4,
   "gpt-5-6-terra": 4,
-  "fable-5": 6,
+  "fable-5": 9,
   "composer-2-5": 7,
   "opus-4-8": 8,
   "deepseek-v4-flash-0731": 9,
   "gemini-3-7-flash": 10,
-  // Reserve independent slots for model families that previously fell into
-  // the same hash bucket as Sol or each other.
-  "gpt-5-5": 9,
+  // Keep GPT-5.5 on the teal slot now that Fable owns olive.
+  "gpt-5-5": 5,
 };
 
 function canonicalGroupKey(groupKey: string): string {
@@ -130,13 +129,38 @@ function stableHash(value: string): number {
   return Math.abs(hash);
 }
 
+type LabColor = readonly [number, number, number];
+
+/** Convert an sRGB palette entry to CIE Lab for perceptual spacing. */
+function hexToLab(hex: string): LabColor {
+  const channels = [1, 3, 5].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16) / 255);
+  const linear = channels.map((channel) => channel <= 0.04045
+    ? channel / 12.92
+    : ((channel + 0.055) / 1.055) ** 2.4);
+  const [red, green, blue] = linear;
+  const x = (red! * 0.4124 + green! * 0.3576 + blue! * 0.1805) / 0.95047;
+  const y = red! * 0.2126 + green! * 0.7152 + blue! * 0.0722;
+  const z = (red! * 0.0193 + green! * 0.1192 + blue! * 0.9505) / 1.08883;
+  const pivot = (value: number) => value > 0.008856
+    ? value ** (1 / 3)
+    : 7.787 * value + 16 / 116;
+  const fx = pivot(x);
+  const fy = pivot(y);
+  const fz = pivot(z);
+  return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+}
+
+function perceptualColorDistance(first: LabColor, second: LabColor): number {
+  return Math.hypot(first[0] - second[0], first[1] - second[1], first[2] - second[2]);
+}
+
 // Preferred family rules intentionally match normalized family keys rather
 // than today's model IDs. This keeps newly discovered DeepSeek and Opus
 // variants on their reserved, color-blind-compliant palette slots.
 const PREFERRED_MODEL_GROUP_SLOTS: readonly [RegExp, number][] = [
   [/^deepseek(?:-|$)/, 0], // blue / sky blue
   [/^opus(?:-|$)/, 1], // orange
-  [/(?:^|-)sol(?:-|$)/, 5], // teal; intentionally far from Gemini violet
+  [/(?:^|-)sol(?:-|$)/, 6], // gold; intentionally far from DeepSeek blue
   [/^gemini(?:-|$)/, 10], // violet; intentionally far from Sol teal
 ];
 
@@ -174,20 +198,46 @@ export function modelGroupColors(
   canonicalKeys.forEach((key) => {
     reserve(key, preferredModelGroupSlot(key) ?? WELL_KNOWN_GROUP_SLOTS[key]);
   });
+  const paletteLab = palette.map(hexToLab);
   canonicalKeys.forEach((key) => {
     if (slots.has(key)) return;
-    const start = stableHash(key) % palette.length;
-    for (let offset = 0; offset < palette.length; offset += 1) {
-      const candidate = (start + offset) % palette.length;
-      if (!usedSlots.has(candidate)) {
-        slots.set(key, candidate);
-        usedSlots.add(candidate);
-        return;
+    let bestSlot: number | undefined;
+    let bestDistance = -Infinity;
+    let bestTieBreak = -Infinity;
+    for (let candidate = 0; candidate < palette.length; candidate += 1) {
+      if (usedSlots.has(candidate)) continue;
+      const distance = usedSlots.size === 0
+        ? Infinity
+        : Math.min(...[...usedSlots].map((slot) => perceptualColorDistance(paletteLab[candidate]!, paletteLab[slot]!)));
+      // Maximize the distance from every already-assigned family. Stable hash
+      // tie-breaking keeps equal-distance choices deterministic without
+      // sacrificing the perceptual separation objective.
+      const tieBreak = stableHash(`${key}:${candidate}`);
+      if (distance > bestDistance || (distance === bestDistance && tieBreak > bestTieBreak)) {
+        bestSlot = candidate;
+        bestDistance = distance;
+        bestTieBreak = tieBreak;
       }
     }
-    // The palette currently has more slots than any supported chart. Keep a
-    // deterministic fallback if a future feed exceeds that capacity.
-    slots.set(key, start);
+    if (bestSlot !== undefined) {
+      slots.set(key, bestSlot);
+      usedSlots.add(bestSlot);
+      return;
+    }
+    // The palette currently has more slots than any supported chart. If a
+    // future feed exceeds that capacity, choose the most separated existing
+    // slot deterministically rather than introducing a non-palette color.
+    let fallbackSlot = 0;
+    let fallbackDistance = -Infinity;
+    for (let candidate = 0; candidate < palette.length; candidate += 1) {
+      const distance = Math.min(...[...usedSlots].map((slot) =>
+        perceptualColorDistance(paletteLab[candidate]!, paletteLab[slot]!)));
+      if (distance > fallbackDistance) {
+        fallbackSlot = candidate;
+        fallbackDistance = distance;
+      }
+    }
+    slots.set(key, fallbackSlot);
   });
 
   groupKeys.forEach((groupKey) => {

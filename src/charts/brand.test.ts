@@ -61,9 +61,9 @@ describe("model brand colors", () => {
       COLOR_BLIND_MODEL_GROUP_PALETTE.light[8],
       COLOR_BLIND_MODEL_GROUP_PALETTE.light[2],
       COLOR_BLIND_MODEL_GROUP_PALETTE.light[3],
-      COLOR_BLIND_MODEL_GROUP_PALETTE.light[5],
-      COLOR_BLIND_MODEL_GROUP_PALETTE.light[4],
       COLOR_BLIND_MODEL_GROUP_PALETTE.light[6],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.light[4],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.light[9],
       COLOR_BLIND_MODEL_GROUP_PALETTE.light[7],
       COLOR_BLIND_MODEL_GROUP_PALETTE.light[1],
       COLOR_BLIND_MODEL_GROUP_PALETTE.light[0],
@@ -74,9 +74,9 @@ describe("model brand colors", () => {
       COLOR_BLIND_MODEL_GROUP_PALETTE.dark[8],
       COLOR_BLIND_MODEL_GROUP_PALETTE.dark[2],
       COLOR_BLIND_MODEL_GROUP_PALETTE.dark[3],
-      COLOR_BLIND_MODEL_GROUP_PALETTE.dark[5],
-      COLOR_BLIND_MODEL_GROUP_PALETTE.dark[4],
       COLOR_BLIND_MODEL_GROUP_PALETTE.dark[6],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.dark[4],
+      COLOR_BLIND_MODEL_GROUP_PALETTE.dark[9],
       COLOR_BLIND_MODEL_GROUP_PALETTE.dark[7],
       COLOR_BLIND_MODEL_GROUP_PALETTE.dark[1],
       COLOR_BLIND_MODEL_GROUP_PALETTE.dark[0],
@@ -101,6 +101,18 @@ describe("model brand colors", () => {
     const visibleDark = modelGroupColors(visibleKeys, true);
     expect(rgbDistance(visibleLight.get(visibleKeys[0]!)!, visibleLight.get(visibleKeys[1]!)!)).toBeGreaterThan(75);
     expect(rgbDistance(visibleDark.get(visibleKeys[0]!)!, visibleDark.get(visibleKeys[1]!)!)).toBeGreaterThan(75);
+  });
+
+  it("chooses perceptually separated palette colors for unpreset families", () => {
+    const keys = ["deepseek-v5-new-variant", "unknown-family-alpha", "unknown-family-beta"];
+    const light = modelGroupColors(keys, false);
+    const dark = modelGroupColors(keys, true);
+    expect(light.get(keys[0]!)).toBe(COLOR_BLIND_MODEL_GROUP_PALETTE.light[0]);
+    expect(dark.get(keys[0]!)).toBe(COLOR_BLIND_MODEL_GROUP_PALETTE.dark[0]);
+    expect(new Set(light.values()).size).toBe(keys.length);
+    expect(new Set(dark.values()).size).toBe(keys.length);
+    expect([...light.values()].every((color) => new Set<string>(COLOR_BLIND_MODEL_GROUP_PALETTE.light).has(color))).toBe(true);
+    expect([...dark.values()].every((color) => new Set<string>(COLOR_BLIND_MODEL_GROUP_PALETTE.dark).has(color))).toBe(true);
   });
 
   it("allocates collision-free colors for all families visible in a chart", () => {
