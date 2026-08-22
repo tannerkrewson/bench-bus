@@ -83,6 +83,19 @@ describe("model brand colors", () => {
     ]);
   });
 
+  it("keeps Luna, Sol, and Opus source keys visibly distinct", () => {
+    expect(new Set([
+      modelGroupColor("gpt-5-6-luna", false),
+      modelGroupColor("gpt-5-6-sol", false),
+      modelGroupColor("opus-5", false),
+    ]).size).toBe(3);
+    expect(new Set([
+      modelGroupColor("gpt-5-6-luna", true),
+      modelGroupColor("gpt-5-6-sol", true),
+      modelGroupColor("opus-5", true),
+    ]).size).toBe(3);
+  });
+
   it("reserves compliant blue for all DeepSeek variants and orange for Opus variants", () => {
     expect(modelGroupColor("deepseek-v4-flash-0731", false)).toBe(COLOR_BLIND_MODEL_GROUP_PALETTE.light[0]);
     expect(modelGroupColor("deepseek-v5-new-variant", false)).toBe(COLOR_BLIND_MODEL_GROUP_PALETTE.light[0]);

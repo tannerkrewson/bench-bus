@@ -6,6 +6,7 @@ import BenchmarkScatterChart, {
   crosshairGuideGeometry,
   filterDollarAxisSplits,
   filterIntegerAxisSplits,
+  filterIntelligenceAxisSplits,
   logDollarAxisSplits,
   filterLogDollarAxisSplits,
   formatFilteredAxisValues,
@@ -28,6 +29,7 @@ describe("BenchmarkScatterChart pure interaction policies", () => {
     ]);
     expect(filterLogDollarAxisSplits([0.003, 0.01, 0.02, 0.3])).toEqual([0.003, 0.01, null, 0.3]);
     expect(filterIntegerAxisSplits([69, 69.5, 70])).toEqual([69, null, 70]);
+    expect(filterIntelligenceAxisSplits([60, 65, 67, 70, 72.5, 75])).toEqual([60, 65, null, 70, null, 75]);
     expect(filterTenPointGridSplits([60, 65, 70, 70.5])).toEqual([60, null, 70, null]);
   });
 
@@ -185,6 +187,26 @@ describe("BenchmarkScatterChart discount annotations", () => {
     dispose();
   });
 
+  it("shows a visible model-specific crown tooltip without a surrounding box", async () => {
+    const { container, dispose } = mountSizedChart(() => (
+      <BenchmarkScatterChart
+        points={() => [{ id: "cheap", label: "Cheap", x: 2, y: 60 }]}
+        scale={() => "linear"}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        height={320}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const crown = container.querySelector("[data-testid='pareto-crown']") as SVGGElement;
+    expect(crown.querySelector("rect")).toBeNull();
+    crown.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    expect(container.querySelector("[data-testid='pareto-crown-tooltip']")?.textContent).toContain("Cheap");
+    crown.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+    expect(container.querySelector("[data-testid='pareto-crown-tooltip']")).toBeNull();
+    dispose();
+  });
+
   it("renders one horizontal percentage arrow for each explicit source discount", async () => {
     const initialPoints: readonly PlottablePoint[] = [
       {
@@ -216,6 +238,8 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect(arrows[0]?.querySelector("line")).not.toBeNull();
     expect(arrows[0]?.querySelector("line")?.getAttribute("stroke-dasharray")).toBe("4 4");
     expect(container.querySelectorAll("[data-testid='focused-discount-dot']")).toHaveLength(0);
+    expect(container.querySelectorAll("[data-testid='discount-endpoint-dot'][data-discount-endpoint='pre']")).toHaveLength(1);
+    expect(container.querySelectorAll("[data-testid='discount-endpoint-dot'] circle")).toHaveLength(0);
     const line = arrows[0]?.querySelector("line");
     expect([line?.getAttribute("x1"), line?.getAttribute("x2"), line?.getAttribute("y1")].every((value) => Number.isFinite(Number(value)))).toBe(true);
     expect(arrows[0]?.querySelector("line")?.getAttribute("stroke-width")).toBe("1");
@@ -535,6 +559,10 @@ describe("BenchmarkScatterChart discount annotations", () => {
     const top = Number.parseFloat(dot.getAttribute("cy")!);
     root.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: left, clientY: top }));
     expect(container.querySelector("[data-testid='hovered-dot']")).not.toBeNull();
+    expect(container.querySelectorAll("[data-testid='hover-axis-readouts'] [data-axis='x']")).toHaveLength(2);
+    expect(container.querySelectorAll("[data-testid='hover-axis-readouts'] [data-axis='y']")).toHaveLength(2);
+    expect(container.querySelector("[data-testid='hover-axis-readouts']")?.textContent).toContain("$4");
+    expect(container.querySelector("[data-testid='hover-axis-readouts']")?.textContent).toContain("60%");
     const vertical = container.querySelector(".u-cursor-x") as HTMLElement;
     const horizontal = container.querySelector(".u-cursor-y") as HTMLElement;
     expect(vertical.style.transform).toBe(`translate(${left}px,0px)`);

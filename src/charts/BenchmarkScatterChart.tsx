@@ -47,6 +47,7 @@ const MODEL_DOT_RADIUS = (DOT_SIZE - POINT_STROKE_WIDTH) / 2;
 const MODEL_LABEL_FONT_SIZE = 13;
 const MODEL_LABEL_LINE_HEIGHT = 20;
 const DOT_HIT_RADIUS = 14;
+const HOVER_RING_RADIUS = MODEL_DOT_RADIUS + 3;
 // Keep leaders visually attached to the real dot edge; the layout collision
 // pass, not a large decorative gap, keeps them out of nearby dots.
 const LEADER_LINE_GAP = 1;
@@ -147,6 +148,11 @@ export function filterLogDollarAxisSplits(splits: readonly number[]): (number | 
 
 export function filterIntegerAxisSplits(splits: readonly number[]): (number | null)[] {
   return splits.map((value) => Number.isInteger(value) ? value : null);
+}
+
+/** Intelligence scores use only clean 5-point labels (…0 and …5). */
+export function filterIntelligenceAxisSplits(splits: readonly number[]): (number | null)[] {
+  return splits.map((value) => Number.isInteger(value) && value % 5 === 0 ? value : null);
 }
 
 export function filterTenPointGridSplits(splits: readonly number[]): (number | null)[] {
@@ -250,7 +256,26 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   };
   const [labelPositions, setLabelPositions] = createSignal<ReturnType<typeof layoutModelLabels>>([]);
   const [hoveredPosition, setHoveredPosition] = createSignal<{ left: number; top: number } | null>(null);
+  const [hoveredAxisReadout, setHoveredAxisReadout] = createSignal<{
+    left: number;
+    top: number;
+    cost: number;
+    score: number;
+    color: string;
+    axisLeft: number;
+    axisBottom: number;
+  } | null>(null);
+  const [hoveredCrownId, setHoveredCrownId] = createSignal<string | null>(null);
   const [hoveredLabelId, setHoveredLabelId] = createSignal<string | null>(null);
+  const clearHoveredPoint = () => {
+    setHoveredPosition(null);
+    setHoveredAxisReadout(null);
+  };
+  const publishHoveredPosition = (position: { left: number; top: number } | null) => {
+    setHoveredPosition(position);
+    const readout = hoveredAxisReadout();
+    if (readout && position) setHoveredAxisReadout({ ...readout, left: position.left, top: position.top });
+  };
   const [pointDecorations, setPointDecorations] = createSignal<{
     id: string;
     left: number;
@@ -384,11 +409,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     const discountPathSlots = currentSeries.discounts.flatMap((discount) => [discount.preX, discount.effectiveX]);
     const pathX = [...pathIds.map((id) => pointById.get(id)?.x ?? 0), ...discountPathSlots];
     const pathLength = pathX.length;
-    // Discount endpoints are part of pathX solely to draw the connector.
-    // Do not append a separate endpoint series: the old duplicate pre-price
-    // series created an unintended visible/hittable dot and tooltip target.
-    const discountOffset = pathLength;
-    const actualOffset = discountOffset;
+    // Discount endpoints are part of pathX solely to include their prices in
+    // the scale. The connector itself is rendered once by the SVG overlay;
+    // keeping a second uPlot discount series caused duplicate dashed lines.
+    const actualOffset = pathLength;
     const actualLength = currentSeries.ids.length;
     const dataX = [
       ...pathX,
@@ -409,12 +433,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       groupOffset += group.members.length;
       return row;
     });
-    const discountRows = currentSeries.discounts.map((discount, index) => {
-      const row = new Array<number | null>(dataX.length).fill(null);
-      row[currentSeries.frontierIds.length + currentSeries.variantGroups.reduce((n, group) => n + group.members.length, 0) + index * 2] = discount.y;
-      row[currentSeries.frontierIds.length + currentSeries.variantGroups.reduce((n, group) => n + group.members.length, 0) + index * 2 + 1] = discount.y;
-      return row;
-    });
     // Keep one uPlot series per model family. The same family key drives its
     // point, effort connector, discount arrow, and selector color.
     const pointGroups = [...new Set(currentSeries.groupKeys)];
@@ -429,7 +447,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     // cover TypedArrays, so the sparse rows are cast at this boundary.
     // Pareto is deliberately the final data row so uPlot paints it above all
     // model-family connectors and discount segments.
-    return [Float64Array.from(dataX), ...connectorRows, ...discountRows, ...pointRows, frontierY] as unknown as uPlot.AlignedData;
+    return [Float64Array.from(dataX), ...connectorRows, ...pointRows, frontierY] as unknown as uPlot.AlignedData;
   };
 
   type HoverTarget = {
@@ -634,7 +652,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     // Re-read the dot position after uPlot has laid out the plot. This keeps
     // the hover emphasis centered when a scale or container size changes.
     if (hoveredIndex !== null) {
-      setHoveredPosition(pointPosition(currentPlot, hoveredIndex) ?? null);
+      publishHoveredPosition(pointPosition(currentPlot, hoveredIndex) ?? null);
     }
   };
 
@@ -671,7 +689,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   const setConnectorHover = (id: string) => {
     hoveredConnectorId = id;
     hoveredIndex = null;
-    setHoveredPosition(null);
+    clearHoveredPoint();
     setModelLabelHover(id);
   };
 
@@ -687,7 +705,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     hoveredConnectorId = null;
     hoveredLabelBounds = null;
     setHoveredLabelId(null);
-    setHoveredPosition(null);
+    clearHoveredPoint();
     props.onHover?.(null);
     if (plot) applyCrosshairDirections(plot, { left: null, top: null });
   };
@@ -741,6 +759,31 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     const plotTop = u.valToPos(y, "y");
     if (!Number.isFinite(plotLeft) || !Number.isFinite(plotTop)) return undefined;
     return plotPosition(plotLeft, plotTop);
+  };
+
+  const publishHoveredReadout = (target: HoverTarget, dot: { left: number; top: number } | undefined) => {
+    const cost = currentSeries.x[target.pointIndex];
+    const score = currentSeries.y[target.pointIndex];
+    const over = container?.querySelector<HTMLElement>(".u-over");
+    const parent = container?.parentElement;
+    if (!dot || cost === undefined || score === undefined || !over || !parent) {
+      setHoveredAxisReadout(null);
+      return;
+    }
+    const overRect = over.getBoundingClientRect();
+    const parentRect = parent.getBoundingClientRect();
+    setHoveredAxisReadout({
+      left: dot.left,
+      top: dot.top,
+      cost,
+      score,
+      color: groupColor(
+        currentSeries.groupKeys[target.pointIndex] ?? modelGroupKey(target.id, target.id),
+        themeStyles().dark,
+      ),
+      axisLeft: overRect.left - parentRect.left,
+      axisBottom: overRect.bottom - parentRect.top,
+    });
   };
 
   const updateLabelHover = (pointer: { left: number; top: number } | undefined) => {
@@ -887,7 +930,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           ),
           labelSize: 44,
           labelGap: 16,
-          filter: (_u, splits) => filterIntegerAxisSplits(splits),
+          filter: (_u, splits) => /intelligence/i.test(props.yAxisLabel())
+            ? filterIntelligenceAxisSplits(splits)
+            : filterIntegerAxisSplits(splits),
           values: (_u, splits) => formatFilteredAxisValues(
             splits,
             (value) => /score/i.test(props.yAxisLabel()) ? formatPercentTick(value) : String(value),
@@ -915,15 +960,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           stroke: groupColor(group.key, styles.dark),
           width: 1.5,
           alpha: 0.62,
-          points: { show: false },
-        })),
-        ...currentSeries.discounts.map((discount) => ({
-          label: `${discount.percentage}% discount: ${discount.providerName ?? "provider"}`,
-          stroke: groupColor(discount.groupKey, styles.dark),
-          width: 1,
-          // Use one simple, conventional dash rhythm for every discount
-          // connector; keep it distinct from the Pareto frontier dash.
-          dash: [4, 4],
           points: { show: false },
         })),
         ...pointGroups.map((groupKey) => {
@@ -980,7 +1016,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 applyCrosshairDirections(u, rawPlotPointer);
               }
               hoveredIndex = null;
-              setHoveredPosition(null);
+              clearHoveredPoint();
               props.onHover?.(null);
               return;
             }
@@ -996,11 +1032,12 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 u.setCursor(rawPlotPointer, false);
                 applyCrosshairDirections(u, rawPlotPointer);
               }
-              setHoveredPosition(null);
+              clearHoveredPoint();
               props.onHover?.(null);
             } else {
               const dot = plotPosition(target.plotLeft, target.plotTop);
-              setHoveredPosition(dot ?? null);
+              publishHoveredPosition(dot ?? null);
+              publishHoveredReadout(target, dot);
               // Keep guides centered on whichever dot was hit, including the
               // pre-discount endpoint, while the tooltip stays at the pointer.
               if (Math.abs((u.cursor.left ?? target.plotLeft) - target.plotLeft) > 0.5 ||
@@ -1050,7 +1087,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         baseSeriesAlphas,
         focused,
         currentSeries.variantGroups.length,
-        currentSeries.discounts.length,
+        0,
         pointGroupKeys,
         focusedConnectorIndex !== null && focusedConnectorIndex >= 0 ? focusedConnectorIndex : null,
         focusedPointGroupKeys,
@@ -1077,7 +1114,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     hoveredIndex = hoveredId === undefined || hoveredId === null
       ? null
       : currentSeries.ids.indexOf(hoveredId);
-    setHoveredPosition(hoveredIndex === null || hoveredIndex < 0
+    publishHoveredPosition(hoveredIndex === null || hoveredIndex < 0
       ? null
       : pointPosition(plot, hoveredIndex) ?? null);
     if (typeof window !== "undefined" && window.scrollY !== scrollY) window.scrollTo(window.scrollX, scrollY);
@@ -1160,7 +1197,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       hoveredIndex = hoveredId === undefined || hoveredId === null
         ? null
         : currentSeries.ids.indexOf(hoveredId);
-      setHoveredPosition(hoveredIndex === null || hoveredIndex < 0
+      publishHoveredPosition(hoveredIndex === null || hoveredIndex < 0
         ? null
         : pointPosition(plot, hoveredIndex) ?? null);
     }
@@ -1354,7 +1391,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       plot.setCursor(rawPlotPointer, false);
       applyCrosshairDirections(plot, rawPlotPointer);
       hoveredIndex = null;
-      setHoveredPosition(null);
+      clearHoveredPoint();
       props.onHover?.(null);
       return;
     }
@@ -1362,14 +1399,15 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     if (!target || hoveredIndex === null) {
       plot.setCursor(rawPlotPointer, false);
       applyCrosshairDirections(plot, rawPlotPointer);
-      setHoveredPosition(null);
+      clearHoveredPoint();
       props.onHover?.(null);
       return;
     }
     const dot = plotPosition(target.plotLeft, target.plotTop);
     plot.setCursor({ left: target.plotLeft, top: target.plotTop }, false);
     applyCrosshairDirections(plot, { left: target.plotLeft, top: target.plotTop });
-    setHoveredPosition(dot ?? null);
+    publishHoveredPosition(dot ?? null);
+    publishHoveredReadout(target, dot);
     props.onHover?.(target.id, rawPointer ?? dot);
   };
 
@@ -1396,7 +1434,51 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         data-testid="chart-decorations"
       >
         <Show when={hoveredPosition()}>
-          {(position) => <circle cx={position().left} cy={position().top} r="8" fill="none" stroke="currentColor" stroke-width="2" data-testid="hovered-dot" />}
+          {(position) => (
+            <circle
+              cx={position().left}
+              cy={position().top}
+              r={HOVER_RING_RADIUS}
+              fill="none"
+              stroke="var(--color-base-100)"
+              stroke-width="2"
+              vector-effect="non-scaling-stroke"
+              data-testid="hovered-dot"
+              data-testid-hover-ring="true"
+            />
+          )}
+        </Show>
+        <Show when={hoveredAxisReadout()}>
+          {(readout) => {
+            const costText = `$${String(readout().cost)}`;
+            const scoreText = `${String(readout().score)}%`;
+            return (
+              <g
+                data-testid="hover-axis-readouts"
+                fill="var(--color-base-100)"
+                stroke="var(--color-base-300)"
+                stroke-width="0.75"
+                style={{ "pointer-events": "none" }}
+              >
+                <g data-axis="x" data-axis-end="dot" transform={`translate(${readout().left} ${readout().top + 22})`}>
+                  <rect x="-38" y="-12" width="76" height="18" rx="3" opacity="0.92" />
+                  <text x="0" y="1" fill={readout().color} stroke="none" text-anchor="middle" font-size="11">{costText}</text>
+                </g>
+                <g data-axis="x" data-axis-end="axis" transform={`translate(${readout().left} ${readout().axisBottom + 4})`}>
+                  <rect x="-38" y="-12" width="76" height="18" rx="3" opacity="0.92" />
+                  <text x="0" y="1" fill={readout().color} stroke="none" text-anchor="middle" font-size="11">{costText}</text>
+                </g>
+                <g data-axis="y" data-axis-end="dot" transform={`translate(${readout().left - 8} ${readout().top})`}>
+                  <rect x="-66" y="-12" width="64" height="18" rx="3" opacity="0.92" />
+                  <text x="-5" y="1" fill={readout().color} stroke="none" text-anchor="end" font-size="11">{scoreText}</text>
+                </g>
+                <g data-axis="y" data-axis-end="axis" transform={`translate(${readout().axisLeft - 8} ${readout().top})`}>
+                  <rect x="-66" y="-12" width="64" height="18" rx="3" opacity="0.92" />
+                  <text x="-5" y="1" fill={readout().color} stroke="none" text-anchor="end" font-size="11">{scoreText}</text>
+                </g>
+              </g>
+            );
+          }}
         </Show>
         <For each={connectorHitGeometry()}>
           {(segment) => (
@@ -1459,11 +1541,15 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
               role="img"
               aria-label={`${point.modelLabel} is on the Pareto frontier, meaning no plotted model is both cheaper and higher-scoring.`}
               style={{ "pointer-events": "auto" }}
+              tabIndex="0"
+              onMouseEnter={() => setHoveredCrownId(point.id)}
+              onMouseLeave={() => setHoveredCrownId(null)}
+              onFocus={() => setHoveredCrownId(point.id)}
+              onBlur={() => setHoveredCrownId(null)}
               data-testid="pareto-crown"
               data-model-id={point.id}
             >
               <title>{`${point.modelLabel} is on the Pareto frontier, meaning no plotted model is both cheaper and higher-scoring.`}</title>
-              <rect width="18" height="18" fill="transparent" pointer-events="all" aria-hidden="true" />
               <Crown width={18} height={18} aria-hidden="true" />
             </g>
           )}
@@ -1484,6 +1570,20 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 data-discount-provider-role={discount.providerRole ?? "plotted"}
                 opacity={hoveredLabelId() === null || hoveredLabelId() === discount.pointId ? 1 : 0.2}
               >
+                {/* The effective endpoint is the real plotted model dot. Draw
+                    only the source pre-discount endpoint here so the right
+                    endpoint is visible without creating another hit target. */}
+                <circle
+                  cx={discount.preLeft}
+                  cy={discount.top}
+                  r={MODEL_DOT_RADIUS}
+                  fill={discount.color}
+                  stroke={discount.color}
+                  stroke-width={POINT_STROKE_WIDTH}
+                  data-testid="discount-endpoint-dot"
+                  data-discount-endpoint="pre"
+                  style={{ "pointer-events": "none" }}
+                />
                 <line
                   x1={discount.preLeft}
                   y1={discount.top}
@@ -1497,6 +1597,22 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           }}
         </For>
       </svg>
+      <Show when={hoveredCrownId() !== null && pointDecorations().some((point) => point.id === hoveredCrownId())}>
+        {(() => {
+          const crown = pointDecorations().find((point) => point.id === hoveredCrownId());
+          if (!crown) return null;
+          return (
+            <div
+              class="pointer-events-none absolute z-20 max-w-xs rounded-box bg-base-100 px-2 py-1 text-xs shadow-lg"
+              style={{ left: `${crown.left + 10}px`, top: `${Math.max(0, crown.top - 42)}px`, color: crown.color }}
+              role="tooltip"
+              data-testid="pareto-crown-tooltip"
+            >
+              {`${crown.modelLabel} is on the Pareto frontier: no plotted model is both cheaper and higher-scoring.`}
+            </div>
+          );
+        })()}
+      </Show>
       <Show when={props.showLabels?.() ?? true}>
         <svg
           class="pointer-events-none absolute inset-0 z-0 overflow-visible"

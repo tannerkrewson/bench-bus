@@ -92,12 +92,20 @@ export const COLOR_BLIND_SURFACE_SWATCHES = {
 } as const;
 
 const WELL_KNOWN_GROUP_SLOTS: Readonly<Record<string, number>> = {
+  // Keep both the concise chart-family keys and source-derived GPT keys
+  // explicitly assigned. Hash fallbacks can collide, which made Luna and
+  // Sol visually indistinguishable in some feeds.
   "opus-5": 0,
+  "claude-opus-5": 0,
   "sonnet-5": 1,
   "grok-4-6": 2,
+  "grok-4-5": 2,
   luna: 3,
+  "gpt-5-6-luna": 3,
   sol: 4,
+  "gpt-5-6-sol": 4,
   terra: 5,
+  "gpt-5-6-terra": 5,
   "fable-5": 6,
   "composer-2-5": 7,
   "opus-4-8": 8,
