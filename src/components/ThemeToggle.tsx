@@ -1,5 +1,5 @@
 import { createSignal, onCleanup, onMount } from "solid-js";
-import { Dices, Moon, Palette, Sun } from "lucide-solid";
+import { Dices, Moon, Sun } from "lucide-solid";
 
 export type ThemeMode = "light" | "dark";
 export type Theme =
@@ -79,8 +79,6 @@ export const DARK_THEMES: readonly Theme[] = [
 ];
 
 export const THEME_STORAGE_KEY = "bench-bus-theme";
-export const COLOR_BLIND_STORAGE_KEY = "bench-bus-color-blind";
-export const COLOR_BLIND_CHANGE_EVENT = "bench-bus-color-blind-change";
 
 export function themeMode(theme: Theme): ThemeMode {
   return DARK_THEMES.includes(theme) ? "dark" : "light";
@@ -89,12 +87,6 @@ export function themeMode(theme: Theme): ThemeMode {
 /** Whether a DaisyUI theme uses the dark semantic color palette. */
 export function isDarkTheme(theme: string | null | undefined): boolean {
   return theme !== null && theme !== undefined && DARK_THEMES.includes(theme as Theme);
-}
-
-/** Read the global palette preference without coupling consumers to DOM details. */
-export function isColorBlindMode(value?: string | null): boolean {
-  if (value !== undefined) return value === "true";
-  return typeof document !== "undefined" && document.documentElement.dataset.colorBlind === "true";
 }
 
 /** Pick a theme only from the pool matching the current light/dark mode. */
@@ -132,25 +124,9 @@ function applyTheme(theme: Theme): void {
   window.dispatchEvent(new Event("bench-bus-theme-change"));
 }
 
-function storedColorBlindMode(): boolean {
-  try {
-    return window.localStorage.getItem(COLOR_BLIND_STORAGE_KEY) === "true";
-  } catch {
-    // Storage can be unavailable in private browsing.
-  }
-  return false;
-}
-
-function applyColorBlindMode(enabled: boolean): void {
-  if (enabled) document.documentElement.dataset.colorBlind = "true";
-  else delete document.documentElement.dataset.colorBlind;
-  window.dispatchEvent(new Event(COLOR_BLIND_CHANGE_EVENT));
-}
-
-/** Light/dark switch, color-blind palette toggle, and a mode-aware dice picker. */
+/** Light/dark switch and a mode-aware dice picker. */
 export default function ThemeToggle() {
   const [theme, setTheme] = createSignal<Theme>("caramellatte");
-  const [colorBlind, setColorBlind] = createSignal(false);
   let media: MediaQueryList | undefined;
   let onSystemThemeChange: ((event: MediaQueryListEvent) => void) | undefined;
 
@@ -160,10 +136,6 @@ export default function ThemeToggle() {
     const initial = saved ?? systemTheme();
     setTheme(initial);
     applyTheme(initial);
-    const initialColorBlind = storedColorBlindMode();
-    setColorBlind(initialColorBlind);
-    applyColorBlindMode(initialColorBlind);
-
     if (!saved && media) {
       onSystemThemeChange = () => {
         const next = systemTheme();
@@ -202,17 +174,6 @@ export default function ThemeToggle() {
 
   const randomize = () => persist(randomThemeForMode(themeMode(theme())));
   const modeLabel = () => themeMode(theme());
-  const toggleColorBlind = () => {
-    const next = !colorBlind();
-    setColorBlind(next);
-    applyColorBlindMode(next);
-    try {
-      window.localStorage.setItem(COLOR_BLIND_STORAGE_KEY, String(next));
-    } catch {
-      // Private browsing or disabled storage should not block theme controls.
-    }
-  };
-
   return (
     <div class="join" role="group" aria-label="Theme controls">
       <button
@@ -223,18 +184,6 @@ export default function ThemeToggle() {
         onClick={toggle}
       >
         {modeLabel() === "dark" ? <Sun aria-hidden="true" size={17} /> : <Moon aria-hidden="true" size={17} />}
-      </button>
-      <button
-        type="button"
-        role="switch"
-        class={`btn btn-sm btn-square join-item ${colorBlind() ? "btn-primary" : "btn-outline"}`}
-        aria-checked={colorBlind()}
-        aria-label={`${colorBlind() ? "Disable" : "Enable"} color-blind mode`}
-        title={`${colorBlind() ? "Disable" : "Enable"} color-blind mode`}
-        data-testid="color-blind-toggle"
-        onClick={toggleColorBlind}
-      >
-        <Palette aria-hidden="true" size={17} />
       </button>
       <button
         type="button"

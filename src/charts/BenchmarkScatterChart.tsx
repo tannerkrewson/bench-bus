@@ -1,7 +1,7 @@
 import { For, Show, createEffect, createMemo, createSignal, on, onCleanup, onMount } from "solid-js";
 import { Crown } from "lucide-solid";
 import uPlot, { type Options } from "uplot";
-import { COLOR_BLIND_CHANGE_EVENT, isColorBlindMode, isDarkTheme } from "../components/ThemeToggle";
+import { isDarkTheme } from "../components/ThemeToggle";
 import "uplot/dist/uPlot.min.css";
 import { inferModelBrand, modelGroupColor } from "./brand";
 import { modelGroupKey } from "./modelMetadata";
@@ -316,8 +316,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     return currentSeries;
   };
 
-  const groupColor = (groupKey: string, dark: boolean): string =>
-    modelGroupColor(groupKey, dark, isColorBlindMode());
+  const groupColor = (groupKey: string, dark: boolean): string => modelGroupColor(groupKey, dark);
 
   const themeStyles = () => {
     const styles = getComputedStyle(container ?? document.documentElement);
@@ -1061,10 +1060,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
     const onThemeChange = () => createPlot();
     window.addEventListener("bench-bus-theme-change", onThemeChange);
-    window.addEventListener(COLOR_BLIND_CHANGE_EVENT, onThemeChange);
     onCleanup(() => {
       window.removeEventListener("bench-bus-theme-change", onThemeChange);
-      window.removeEventListener(COLOR_BLIND_CHANGE_EVENT, onThemeChange);
     });
 
     onCleanup(() => {

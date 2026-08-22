@@ -3,9 +3,7 @@ import { render } from "solid-js/web";
 import ThemeToggle, {
   DARK_THEMES,
   LIGHT_THEMES,
-  COLOR_BLIND_STORAGE_KEY,
   THEME_STORAGE_KEY,
-  isColorBlindMode,
   isDarkTheme,
   randomThemeForMode,
   themeMode,
@@ -14,9 +12,7 @@ import type { Theme } from "./ThemeToggle";
 
 afterEach(() => {
   window.localStorage.removeItem(THEME_STORAGE_KEY);
-  window.localStorage.removeItem(COLOR_BLIND_STORAGE_KEY);
   document.documentElement.dataset.theme = "";
-  delete document.documentElement.dataset.colorBlind;
   vi.restoreAllMocks();
 });
 
@@ -27,30 +23,7 @@ describe("ThemeToggle", () => {
     const dispose = render(() => <ThemeToggle />, container);
     const group = container.querySelector("[role='group'][aria-label='Theme controls']");
     expect(group).not.toBeNull();
-    expect(group?.querySelectorAll("button")).toHaveLength(3);
-    const toggle = group?.querySelector("[data-testid='color-blind-toggle']");
-    expect(toggle?.getAttribute("role")).toBe("switch");
-    expect(toggle?.getAttribute("aria-checked")).toBe("false");
-    dispose();
-    container.remove();
-  });
-
-  it("toggles and persists color-blind mode while announcing the global change", async () => {
-    const events: Event[] = [];
-    const onChange = (event: Event) => events.push(event);
-    window.addEventListener("bench-bus-color-blind-change", onChange);
-    window.localStorage.setItem(COLOR_BLIND_STORAGE_KEY, "true");
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-    const dispose = render(() => <ThemeToggle />, container);
-    await vi.waitFor(() => expect(isColorBlindMode()).toBe(true));
-    const toggle = container.querySelector("[data-testid='color-blind-toggle']") as HTMLButtonElement;
-    expect(toggle.getAttribute("aria-checked")).toBe("true");
-    toggle.click();
-    expect(isColorBlindMode()).toBe(false);
-    expect(window.localStorage.getItem(COLOR_BLIND_STORAGE_KEY)).toBe("false");
-    expect(events).toHaveLength(2);
-    window.removeEventListener("bench-bus-color-blind-change", onChange);
+    expect(group?.querySelectorAll("button")).toHaveLength(2);
     dispose();
     container.remove();
   });

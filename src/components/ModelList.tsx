@@ -2,7 +2,7 @@ import { For, Show, createEffect, createMemo, createSignal, onCleanup, onMount }
 import { modelGroupColor } from "../charts/brand";
 import { modelGroupKey } from "../charts/modelMetadata";
 import { modelVariantParts } from "../charts/labelLayout";
-import { COLOR_BLIND_CHANGE_EVENT, isColorBlindMode, isDarkTheme } from "./ThemeToggle";
+import { isDarkTheme } from "./ThemeToggle";
 import type { PlottablePoint } from "../charts/types";
 
 export interface ModelListProps {
@@ -122,7 +122,6 @@ export default function ModelList(props: ModelListProps) {
   const [combinedMode, setCombinedMode] = createSignal(true);
   const [localQuery, setLocalQuery] = createSignal("");
   const [darkTheme, setDarkTheme] = createSignal(false);
-  const [colorBlind, setColorBlind] = createSignal(false);
   let modelMenu: HTMLDivElement | undefined;
   const query = () => props.query?.() ?? localQuery();
   const setQuery = (value: string) => {
@@ -177,9 +176,7 @@ export default function ModelList(props: ModelListProps) {
   };
   onMount(() => {
     setDarkTheme(isDarkTheme(document.documentElement.dataset.theme));
-    setColorBlind(isColorBlindMode());
     const onThemeChange = () => setDarkTheme(isDarkTheme(document.documentElement.dataset.theme));
-    const onColorBlindChange = () => setColorBlind(isColorBlindMode());
     const onDocumentClick = (event: MouseEvent) => {
       if (details && !details.contains(event.target as Node)) close();
     };
@@ -193,12 +190,10 @@ export default function ModelList(props: ModelListProps) {
     document.addEventListener("click", onDocumentClick);
     document.addEventListener("keydown", onDocumentKeyDown);
     window.addEventListener("bench-bus-theme-change", onThemeChange);
-    window.addEventListener(COLOR_BLIND_CHANGE_EVENT, onColorBlindChange);
     onCleanup(() => {
       document.removeEventListener("click", onDocumentClick);
       document.removeEventListener("keydown", onDocumentKeyDown);
       window.removeEventListener("bench-bus-theme-change", onThemeChange);
-      window.removeEventListener(COLOR_BLIND_CHANGE_EVENT, onColorBlindChange);
     });
   });
 
@@ -233,7 +228,6 @@ export default function ModelList(props: ModelListProps) {
     return modelGroupColor(
       item.colorKey ?? point.effortGroup ?? modelGroupKey(point.label, point.id),
       darkTheme(),
-      colorBlind(),
     );
   };
   const resetDefault = (event: MouseEvent) => {
@@ -359,7 +353,7 @@ export default function ModelList(props: ModelListProps) {
                 <span class="flex min-w-0 flex-1 items-start gap-2">
                   <span
                     class="mt-1 h-3 w-3 shrink-0 rounded-full border border-base-content/30"
-                    style={{ "background-color": modelGroupColor(modelGroupKey(item.label, item.id), darkTheme(), colorBlind()) }}
+                    style={{ "background-color": modelGroupColor(modelGroupKey(item.label, item.id), darkTheme()) }}
                     aria-hidden="true"
                   />
                   <span class="min-w-0 whitespace-normal break-words" title={item.label}>{item.label}</span>

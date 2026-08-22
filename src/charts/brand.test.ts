@@ -38,7 +38,7 @@ describe("model brand colors", () => {
     expect(effortGroupColor("opus", false)).not.toBe(effortGroupColor("sonnet", false));
   });
 
-  it("keeps every known family on a distinct color-blind slot", () => {
+  it("keeps every known family on a distinct color-blind slot by default", () => {
     const familyKeys = [
       "opus-5",
       "sonnet-5",
@@ -52,14 +52,13 @@ describe("model brand colors", () => {
       "deepseek-v4-flash-0731",
       "gemini-3-7-flash",
     ];
-    const lightColors = familyKeys.map((key) => modelGroupColor(key, false, true));
-    const darkColors = familyKeys.map((key) => modelGroupColor(key, true, true));
+    const lightColors = familyKeys.map((key) => modelGroupColor(key, false));
+    const darkColors = familyKeys.map((key) => modelGroupColor(key, true));
 
     expect(new Set(lightColors).size).toBe(familyKeys.length);
     expect(new Set(darkColors).size).toBe(familyKeys.length);
     expect(lightColors).toEqual([...COLOR_BLIND_MODEL_GROUP_PALETTE.light]);
     expect(darkColors).toEqual([...COLOR_BLIND_MODEL_GROUP_PALETTE.dark]);
-    expect(modelGroupColor("opus-5", false, true)).not.toBe(modelGroupColor("opus-5", false));
   });
 
   it("keeps every color-blind slot above the contrast target on supported surfaces", () => {
@@ -81,8 +80,8 @@ describe("model brand colors", () => {
     }
   });
 
-  it("keeps OpenAI readable in both themes", () => {
-    expect(modelBrandColor("openai", false)).toBe("#111111");
-    expect(modelBrandColor("openai", true)).toBe("#f8fafc");
+  it("uses the compliant family palette for provider fallback colors", () => {
+    expect(modelBrandColor("openai", false)).toBe(modelGroupColor("openai", false));
+    expect(modelBrandColor("openai", true)).toBe(modelGroupColor("openai", true));
   });
 });
