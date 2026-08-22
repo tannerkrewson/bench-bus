@@ -154,7 +154,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     const discounts: DiscountAnnotation[] = (props.showDiscounts?.() ?? true)
       ? orderedPoints.flatMap((point) => {
           const discount = largestExplicitDiscountForPoint(point);
-          if (!discount) return [];
+          // A valid 100% discount may have a source effective cost of zero.
+          // Keep it in labels/tooltips, but do not pass that endpoint to uPlot
+          // or a log-scale SVG decoration.
+          if (!discount || (props.scale() === "log" && discount.effectiveX !== undefined && discount.effectiveX <= 0)) return [];
           return [{
             id: point.id,
             pointId: point.id,

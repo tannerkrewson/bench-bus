@@ -30,7 +30,7 @@ export interface PriceDiscountAnnotation {
   percentage: number;
   /** Undiscounted workload cost in USD, from the same provider price. */
   preDiscountX: number;
-  /** Optional effective cost when the discounted provider is not the plotted winner. */
+  /** Optional effective cost; a zero is source-valid only for a 100% discount and is never plotted on a log scale. */
   effectiveX?: number;
   /** Provider that supplied both the pre-discount and effective prices. */
   providerName?: string;

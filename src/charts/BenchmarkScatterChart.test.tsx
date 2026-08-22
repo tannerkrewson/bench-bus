@@ -55,6 +55,34 @@ describe("BenchmarkScatterChart discount annotations", () => {
     dispose();
   });
 
+  it("keeps a valid 100% annotation while omitting its zero log-scale endpoint", async () => {
+    const [scale, setScale] = createSignal<"log" | "linear">("log");
+    const { container, dispose } = mount(() => (
+      <BenchmarkScatterChart
+        points={() => [{
+          id: "free-model",
+          label: "Free model",
+          x: 6,
+          y: 70,
+          discount: { percentage: 100, preDiscountX: 10, effectiveX: 0 },
+        }]}
+        scale={scale}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        height={320}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    // The source annotation remains available to plot-data labels/tooltips;
+    // this chart intentionally omits a zero endpoint rather than sending it
+    // through uPlot's logarithmic x scale.
+    expect(container.querySelectorAll("[data-testid='discount-line']")).toHaveLength(0);
+    setScale("linear");
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(container.querySelectorAll("[data-testid='discount-line']")).toHaveLength(1);
+    dispose();
+  });
+
   it("coalesces rapid point updates and renders the latest data", async () => {
     const [points, setPoints] = createSignal<readonly PlottablePoint[]>([
       { id: "first", label: "First", x: 6, y: 70, discount: { percentage: 10, preDiscountX: 8 } },

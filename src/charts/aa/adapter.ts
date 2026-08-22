@@ -54,17 +54,22 @@ function providerDiscountAnnotation(
   plottedCost?: number,
 ): PriceDiscountAnnotation | undefined {
   const percentage = provider.discountPercentage;
-  if (percentage === undefined || percentage <= 0 || percentage >= 100) return undefined;
+  if (percentage === undefined || percentage <= 0 || percentage > 100) return undefined;
   const effectiveX =
     (inputTokens / 1e6) * provider.effectiveInputPrice +
     (outputTokens / 1e6) * provider.effectiveOutputPrice;
-  if (!Number.isFinite(effectiveX) || effectiveX <= 0) return undefined;
+  // A source-backed 100% discount can legitimately have a zero effective
+  // workload cost. It may still be retained as metadata, but chart callers
+  // must keep that endpoint out of a log-scale data series.
+  if (!Number.isFinite(effectiveX) || effectiveX < 0 || (effectiveX === 0 && percentage !== 100)) return undefined;
   const listedInput = provider.listedInputPrice;
   const listedOutput = provider.listedOutputPrice;
   const preDiscountX =
     listedInput !== undefined && listedOutput !== undefined && listedInput > 0 && listedOutput > 0
       ? (inputTokens / 1e6) * listedInput + (outputTokens / 1e6) * listedOutput
-      : effectiveX / (1 - percentage / 100);
+      : percentage === 100
+        ? Number.NaN
+        : effectiveX / (1 - percentage / 100);
   // The percentage is explicit OpenRouter metadata. If provider-level listed
   // rates are present, they are used directly; otherwise the undiscounted
   // workload cost is recovered from that explicit percentage and the same

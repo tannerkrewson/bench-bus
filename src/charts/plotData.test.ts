@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { AA_FIXTURE_RECORDS, aaDemoAdapter } from "./fixtures";
-import { buildChartPlot, explicitDiscountForPoint, modelLabelWithDiscount, paretoFrontier, selectCrownPoints, toPlotSeries } from "./plotData";
+import {
+  buildChartPlot,
+  explicitDiscountForAnnotation,
+  explicitDiscountForPoint,
+  modelLabelWithDiscount,
+  paretoFrontier,
+  selectCrownPoints,
+  toPlotSeries,
+} from "./plotData";
 
 const controls = { pricingMode: "cheapest", cacheHitRate: 0.9 };
 
@@ -27,7 +35,17 @@ describe("buildChartPlot", () => {
 describe("modelLabelWithDiscount", () => {
   it("appends discount percentage without creating a standalone label", () => {
     expect(modelLabelWithDiscount("Model", { percentage: 40, preDiscountX: 10 })).toBe("Model (40% off)");
+    expect(modelLabelWithDiscount("Model", { percentage: 100, preDiscountX: 10, effectiveX: 0 })).toBe("Model (100% off)");
     expect(modelLabelWithDiscount("Model", null)).toBe("Model");
+  });
+});
+
+describe("explicitDiscountForAnnotation", () => {
+  it("retains a valid 100% source annotation with a zero effective cost", () => {
+    const discount = { percentage: 100, preDiscountX: 10, effectiveX: 0 };
+    expect(explicitDiscountForAnnotation(discount)).toEqual(discount);
+    expect(explicitDiscountForAnnotation({ ...discount, percentage: 101 })).toBeNull();
+    expect(explicitDiscountForAnnotation({ ...discount, percentage: 99 })).toBeNull();
   });
 });
 
@@ -38,6 +56,10 @@ describe("explicitDiscountForPoint", () => {
       discount: { percentage: 40, preDiscountX: 10, providerName: "Provider A" },
     };
     expect(explicitDiscountForPoint(point)).toEqual(point.discount);
+    expect(explicitDiscountForPoint({
+      ...point,
+      discount: { percentage: 100, preDiscountX: 10, effectiveX: 0 },
+    })).toEqual({ percentage: 100, preDiscountX: 10, effectiveX: 0 });
     expect(explicitDiscountForPoint({ ...point, discount: { percentage: 0, preDiscountX: 10 } })).toBeNull();
     expect(explicitDiscountForPoint({ ...point, discount: { percentage: 40, preDiscountX: -1 } })).toBeNull();
   });

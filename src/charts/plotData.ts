@@ -43,9 +43,10 @@ export function explicitDiscountForAnnotation(
 ): PriceDiscountAnnotation | null {
   if (
     !discount || !Number.isFinite(discount.preDiscountX) || discount.preDiscountX <= 0 ||
-    !Number.isFinite(discount.percentage) || discount.percentage <= 0 || discount.percentage >= 100 ||
+    !Number.isFinite(discount.percentage) || discount.percentage <= 0 || discount.percentage > 100 ||
     (discount.effectiveX !== undefined &&
-      (!Number.isFinite(discount.effectiveX) || discount.effectiveX <= 0))
+      (!Number.isFinite(discount.effectiveX) ||
+        (discount.effectiveX < 0 || (discount.effectiveX === 0 && discount.percentage !== 100))))
   ) return null;
   return discount;
 }

@@ -72,6 +72,29 @@ describe("aaAdapter.computePoint", () => {
     });
   });
 
+  it("retains a source-backed 100% discount when listed prices provide its pre-cost", () => {
+    const record = {
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      canonicalTokens: { input: 1_000_000, output: 1_000_000 },
+      providers: [{
+        providerName: "Free input provider",
+        providerSlug: "free-input",
+        effectiveInputPrice: 0,
+        effectiveOutputPrice: 12,
+        listedInputPrice: 10,
+        listedOutputPrice: 20,
+        discountPercentage: 100,
+      }],
+    };
+    const point = aaAdapter.computePoint(record, controls)!;
+    expect(point.x).toBe(12);
+    expect(point.discount).toEqual({
+      percentage: 100,
+      preDiscountX: 30,
+      providerName: "Free input provider",
+    });
+  });
+
   it("renders every explicit provider discount as a separate annotation", () => {
     const record = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
