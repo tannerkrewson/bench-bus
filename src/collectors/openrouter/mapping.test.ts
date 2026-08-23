@@ -27,6 +27,11 @@ describe("alias file validation", () => {
     const file = parseAliasFile(JSON.stringify(aliasSeed), "seed");
     expect(file.entries.length).toBeGreaterThanOrEqual(5);
     expect(file.entries.every((e) => e.aaModelSlug && e.openrouterId.includes("/"))).toBe(true);
+    expect(file.entries.find((e) => e.aaModelSlug === "muse-spark-1-2")).toMatchObject({
+      aaModelId: "04ee6719-0327-463b-a1a1-70a6a78254f9",
+      openrouterId: "meta/muse-spark-1.2-contributor",
+      undiscountedOpenrouterId: "meta/muse-spark-1.2",
+    });
   });
 
   it("rejects variant-suffixed or alias openrouter ids", () => {

@@ -23,6 +23,11 @@ export const aliasEntrySchema = z
       message:
         "openrouterId must be a bare vendor/model id without ':variant' suffixes or '~' alias prefixes",
     }),
+    /** Optional stable OpenRouter id whose listed prices are the undiscounted comparison. */
+    undiscountedOpenrouterId: nonEmptyString.regex(/^[^~][^:]*\/[^:]+$/, {
+      message:
+        "undiscountedOpenrouterId must be a bare vendor/model id without ':variant' suffixes or '~' alias prefixes",
+    }).optional(),
     /** confirmed = identity verified against both catalogs. */
     status: z.enum(["confirmed", "provisional"]),
     note: z.string().optional(),

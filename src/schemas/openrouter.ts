@@ -20,6 +20,8 @@ export const openRouterProviderSummarySchema = z
     discountPercentage: finiteNumber.refine((value) => value >= 0 && value <= 100, {
       message: "discountPercentage must be between 0 and 100",
     }).optional(),
+    /** Explicit cross-model relation for a discounted OpenRouter model tier. */
+    undiscountedModelId: nonEmptyString.optional(),
   })
   .strict();
 
@@ -44,7 +46,7 @@ export const openRouterModelPricingSchema = z
     /** Model-wide weighted effective prices from the endpoint top level. */
     weightedInputPrice: finiteNumber,
     weightedOutputPrice: finiteNumber,
-    /** Per-provider effective prices, preserved as returned. */
+    /** Per-provider effective prices, preserved as returned, plus explicit discount metadata. */
     providerSummaries: z.array(openRouterProviderSummarySchema).min(1),
     /** Listed model prices from the catalog, USD per 1M tokens, when published. */
     listedInputPrice: finiteNumber.optional(),

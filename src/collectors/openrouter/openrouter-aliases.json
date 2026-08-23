@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "description": "Explicit Artificial Analysis -> OpenRouter model identity mapping. Curated by humans: automatic matching must never silently extend this file. `status: confirmed` = identity verified against both live catalogs (2026-08-21: AA model objects extracted from the artificialanalysis.ai page payload; OpenRouter ids verified against /api/v1/models). `provisional` = plausible but unverified, surfaced in every run report. `aaModelId` is the Artificial Analysis model UUID from the AA page payload. `openrouterId` is the stable OpenRouter model id (no date suffix, no :variant, no ~ alias); the collector resolves the canonical date-suffixed slug at runtime via /api/v1/models. NOTE: AA model slugs use dashes where names use dots (e.g. AA slug gpt-5-6-sol for GPT-5.6 Sol).",
+  "description": "Explicit Artificial Analysis -> OpenRouter model identity mapping. Curated by humans: automatic matching must never silently extend this file. `status: confirmed` = identity verified against both live catalogs (2026-08-21: AA model objects extracted from the artificialanalysis.ai page payload; OpenRouter ids verified against /api/v1/models). `provisional` = plausible but unverified, surfaced in every run report. `aaModelId` is the Artificial Analysis model UUID from the AA page payload. `openrouterId` is the stable OpenRouter model id (no date suffix, no :variant, no ~ alias); the collector resolves the canonical date-suffixed slug at runtime via /api/v1/models. `undiscountedOpenrouterId`, when present, explicitly links a discounted tier to the OpenRouter model whose listed prices form the comparison line. NOTE: AA model slugs use dashes where names use dots (e.g. AA slug gpt-5-6-sol for GPT-5.6 Sol).",
   "entries": [
     {
       "aaModelSlug": "claude-opus-5",
@@ -145,6 +145,14 @@
       "openrouterId": "openai/gpt-5.6-luna",
       "status": "confirmed",
       "note": "AA exposes effort variants; OpenRouter exposes pricing on the shared GPT-5.6 Luna base model identity."
+    },
+    {
+      "aaModelSlug": "muse-spark-1-2",
+      "aaModelId": "04ee6719-0327-463b-a1a1-70a6a78254f9",
+      "openrouterId": "meta/muse-spark-1.2-contributor",
+      "undiscountedOpenrouterId": "meta/muse-spark-1.2",
+      "status": "confirmed",
+      "note": "Verified 2026-08-23: AA Muse Spark 1.2 (xhigh) maps to OpenRouter's contributor tier; compare its explicit discounted tier against meta/muse-spark-1.2 listed pricing."
     },
     {
       "aaModelSlug": "gpt-5-6-sol-high",
