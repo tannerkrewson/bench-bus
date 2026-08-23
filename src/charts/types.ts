@@ -34,6 +34,8 @@ export interface PriceDiscountAnnotation {
   effectiveX?: number;
   /** Provider that supplied both the pre-discount and effective prices. */
   providerName?: string;
+  /** Explicit model identity used as the undiscounted comparison. */
+  undiscountedModelId?: string;
   /** Whether this provider is the plotted winner or an alternative discounted provider. */
   providerRole?: "plotted" | "alternative";
 }

@@ -32,6 +32,7 @@ describe("model brand colors", () => {
     expect(inferModelBrand("GPT-5", "openai")).toBe("openai");
     expect(inferModelBrand("Gemini 3", "google")).toBe("google");
     expect(inferModelBrand("Composer", "cursor")).toBe("cursor");
+    expect(inferModelBrand("Muse Spark 1.2", "muse-spark-1-2")).toBe("meta");
   });
 
   it("assigns stable non-provider colors to effort groups", () => {

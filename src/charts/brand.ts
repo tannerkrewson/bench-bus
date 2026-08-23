@@ -21,7 +21,7 @@ export function inferModelBrand(...parts: readonly (string | undefined)[]): Mode
   if (/(gpt|openai|o[1-9](?:[-.]|$)|o[234]-)/.test(haystack)) return "openai";
   if (/(gemini|google|gemma)/.test(haystack)) return "google";
   if (/(cursor|composer)/.test(haystack)) return "cursor";
-  if (/(llama|meta)/.test(haystack)) return "meta";
+  if (/(llama|meta|muse)/.test(haystack)) return "meta";
   if (/mistral/.test(haystack)) return "mistral";
   if (/deepseek/.test(haystack)) return "deepseek";
   if (/(qwen|alibaba)/.test(haystack)) return "qwen";

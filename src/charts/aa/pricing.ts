@@ -21,6 +21,8 @@ export interface ProviderPrices {
   listedInputPrice?: number;
   listedOutputPrice?: number;
   discountPercentage?: number;
+  /** Explicit cross-model relation for a discounted model tier. */
+  undiscountedModelId?: string;
 }
 
 /** Winning provider of the cheapest-effective selection, with its combined cost. */

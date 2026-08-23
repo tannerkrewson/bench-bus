@@ -57,10 +57,10 @@ export const UnifiedLimitationsPanel: Component = () => (
         <strong>OpenRouter prices.</strong> Effective prices are 30-day realized
         averages from a snapshot. They can change, and the cheapest provider may
         not be available later. When OpenRouter publishes an explicit provider
-        discount, the chart shows the largest source-backed discount arrow and
-        tooltip details. The tooltip distinguishes a discounted plotted winner
-        from a discounted alternative provider; discounts are never inferred
-        from price ratios.
+        discount, or the mapping explicitly links a discounted model tier to an
+        undiscounted OpenRouter model, the chart shows the largest source-backed
+        discount arrow and tooltip details. The tooltip distinguishes a
+        discounted plotted winner from a discounted alternative provider.
       </p>
       <p>
         <strong>CursorBench.</strong> Scores, per-task costs, and aggregate token

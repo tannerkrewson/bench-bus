@@ -102,6 +102,9 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
           label: "Discount provider",
           value: `${discount.providerName ?? "Source provider"} (${role === "plotted" ? "plotted provider" : "alternative provider"})`,
         },
+        ...(discount.undiscountedModelId
+          ? [{ label: "Undiscounted model", value: discount.undiscountedModelId }]
+          : []),
         { label: "Pre-discount cost", value: `$${discount.preDiscountX.toFixed(2)}` },
         {
           label: "Discounted provider cost",

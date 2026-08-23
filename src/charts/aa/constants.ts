@@ -32,6 +32,7 @@ export const AA_DEFAULT_MODEL_SLUGS = [
   "gemini-3-7-flash-medium",
   "kimi-k3",
   "deepseek-v4-flash",
+  "muse-spark-1-2",
   // Keep the explicitly curated model visible in the best-value defaults even
   // when it is not on AA's automatically computed frontier.
   "claude-opus-5-medium",

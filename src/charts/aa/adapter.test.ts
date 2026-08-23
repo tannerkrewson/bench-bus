@@ -154,6 +154,29 @@ describe("aaAdapter.computePoint", () => {
     expect(point.discounts?.[1]?.effectiveX).toBe(7);
   });
 
+  it("draws a model-linked discount against its explicit undiscounted OpenRouter model", () => {
+    const record = {
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      canonicalTokens: { input: 1_000_000, output: 1_000_000 },
+      providers: [{
+        providerName: "Meta",
+        providerSlug: "meta",
+        effectiveInputPrice: 0.1,
+        effectiveOutputPrice: 0.2,
+        listedInputPrice: 1.25,
+        listedOutputPrice: 4.25,
+        undiscountedModelId: "meta/muse-spark-1.2",
+      }],
+    };
+    const point = aaAdapter.computePoint(record, controls)!;
+    expect(point.discounts?.[0]).toMatchObject({
+      preDiscountX: 5.5,
+      undiscountedModelId: "meta/muse-spark-1.2",
+    });
+    expect(point.discounts?.[0]?.effectiveX).toBeCloseTo(0.3, 10);
+    expect(point.discounts?.[0]?.percentage).toBeCloseTo(94.54545, 4);
+  });
+
   it("does not infer a discount when source metadata is absent", () => {
     const point = aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, controls)!;
     expect(point.discount).toBeUndefined();

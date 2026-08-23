@@ -35,7 +35,9 @@ import {
  * - AA record tuple (positional, mirrors DerivedAaChartRecord):
  *     `[slug, name, shortName, intelligenceIndex,
  *       [canonicalInputTokens, canonicalOutputTokens],
- *       [[providerName, providerSlug, effectiveInputPrice, effectiveOutputPrice], ...],
+ *       [[providerName, providerSlug, effectiveInputPrice, effectiveOutputPrice,
+ *         listedInputPrice|null, listedOutputPrice|null, discountPercentage|null,
+ *         undiscountedModelId|null], ...],
  *       [weightedInputPrice, weightedOutputPrice],
  *       [price1mInputTokens, price1mOutputTokens, cacheHitPrice]]`
  *
@@ -87,7 +89,10 @@ type CompactAaRecord = [
   string, // shortName
   number, // intelligenceIndex
   [number, number], // canonicalTokens [input, output]
-  Array<[string, string, number, number] | [string, string, number, number, number | null, number | null, number | null]>, // providers
+  Array<
+    | [string, string, number, number]
+    | [string, string, number, number, number | null, number | null, number | null, string | null]
+  >, // providers
   [number, number], // weighted
   [number, number, number], // listed
 ];
@@ -125,7 +130,8 @@ export function encodeAaDataset(
           const hasDiscountMetadata =
             p.listedInputPrice !== undefined ||
             p.listedOutputPrice !== undefined ||
-            p.discountPercentage !== undefined;
+            p.discountPercentage !== undefined ||
+            p.undiscountedModelId !== undefined;
           return hasDiscountMetadata
             ? [
                 p.providerName,
@@ -135,6 +141,7 @@ export function encodeAaDataset(
                 p.listedInputPrice ?? null,
                 p.listedOutputPrice ?? null,
                 p.discountPercentage ?? null,
+                p.undiscountedModelId ?? null,
               ]
             : [p.providerName, p.providerSlug, p.effectiveInputPrice, p.effectiveOutputPrice];
         }),
@@ -265,6 +272,7 @@ export function decodeBundle(raw: unknown): DecodedBundle {
           ...(p.length >= 7 && p[4] !== null ? { listedInputPrice: p[4] } : {}),
           ...(p.length >= 7 && p[5] !== null ? { listedOutputPrice: p[5] } : {}),
           ...(p.length >= 7 && p[6] !== null ? { discountPercentage: p[6] } : {}),
+          ...(p.length >= 8 && p[7] !== null ? { undiscountedModelId: p[7] } : {}),
         })),
         weighted: { weightedInputPrice: weighted[0], weightedOutputPrice: weighted[1] },
         listed: {

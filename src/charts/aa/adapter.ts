@@ -53,34 +53,41 @@ function providerDiscountAnnotation(
   outputTokens: number,
   plottedCost?: number,
 ): PriceDiscountAnnotation | undefined {
-  const percentage = provider.discountPercentage;
-  if (percentage === undefined || percentage <= 0 || percentage > 100) return undefined;
   const effectiveX =
     (inputTokens / 1e6) * provider.effectiveInputPrice +
     (outputTokens / 1e6) * provider.effectiveOutputPrice;
-  // A source-backed 100% discount can legitimately have a zero effective
-  // workload cost. It may still be retained as metadata, but chart callers
-  // must keep that endpoint out of a log-scale data series.
-  if (!Number.isFinite(effectiveX) || effectiveX < 0 || (effectiveX === 0 && percentage !== 100)) return undefined;
   const listedInput = provider.listedInputPrice;
   const listedOutput = provider.listedOutputPrice;
-  const preDiscountX =
+  const explicitPercentage = provider.discountPercentage;
+  const listedPreDiscountX =
     listedInput !== undefined && listedOutput !== undefined && listedInput > 0 && listedOutput > 0
       ? (inputTokens / 1e6) * listedInput + (outputTokens / 1e6) * listedOutput
-      : percentage === 100
-        ? Number.NaN
-        : effectiveX / (1 - percentage / 100);
-  // The percentage is explicit OpenRouter metadata. If provider-level listed
-  // rates are present, they are used directly; otherwise the undiscounted
-  // workload cost is recovered from that explicit percentage and the same
-  // provider's effective workload cost.
-  if (!Number.isFinite(preDiscountX) || preDiscountX <= effectiveX) return undefined;
+      : undefined;
+  const preDiscountX = listedPreDiscountX ?? (
+    explicitPercentage !== undefined && explicitPercentage > 0 && explicitPercentage < 100
+      ? effectiveX / (1 - explicitPercentage / 100)
+      : undefined
+  );
+  if (!Number.isFinite(effectiveX) || effectiveX < 0 || preDiscountX === undefined || preDiscountX <= effectiveX) {
+    return undefined;
+  }
+  // OpenRouter publishes provider-level discount percentages for some
+  // endpoints. A model-linked tier (such as Contributor) instead declares
+  // its undiscounted model identity in the mapping; its display percentage is
+  // derived from those two explicit source-backed workload endpoints.
+  const percentage = explicitPercentage ?? (
+    provider.undiscountedModelId !== undefined
+      ? (1 - effectiveX / preDiscountX) * 100
+      : undefined
+  );
+  if (percentage === undefined || !Number.isFinite(percentage) || percentage <= 0 || percentage > 100) return undefined;
   const tolerance = plottedCost === undefined ? 0 : Math.max(0.005, Math.abs(plottedCost) * 1e-6);
   return {
     percentage,
     preDiscountX,
     effectiveX,
     providerName: provider.providerName,
+    ...(provider.undiscountedModelId ? { undiscountedModelId: provider.undiscountedModelId } : {}),
     ...(plottedCost === undefined
       ? {}
       : { providerRole: Math.abs(effectiveX - plottedCost) <= tolerance ? "plotted" : "alternative" }),
@@ -102,6 +109,9 @@ function explicitProviderDiscount(
     percentage: annotation.percentage,
     preDiscountX: annotation.preDiscountX,
     ...(annotation.providerName ? { providerName: annotation.providerName } : {}),
+    ...(annotation.undiscountedModelId
+      ? { undiscountedModelId: annotation.undiscountedModelId }
+      : {}),
   };
 }
 
