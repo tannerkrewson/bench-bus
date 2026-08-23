@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collectAa, collectFromHtml } from "./collector";
+import { AA_CURATED_MODEL_SLUGS, collectAa, collectFromHtml } from "./collector";
 import { buildRscEndpoint, discoverRscParam, extractFlightText } from "./flight";
 import { buildAaCollection } from "./normalize";
 import { parseFlightRows } from "./flight";
@@ -151,6 +151,10 @@ describe("fail-closed behavior", () => {
 });
 
 describe("buildAaCollection", () => {
+  it("keeps Muse Spark in the curated null-cache-write allowlist", () => {
+    expect(AA_CURATED_MODEL_SLUGS).toContain("muse-spark-1-2");
+  });
+
   it("retains a curated model with a source-null cache-write price", () => {
     const model = {
       id: "deepseek-id",

@@ -234,6 +234,24 @@ export async function collectOpenRouterPricing(
       const discountsByProvider = new Map(
         pageDiscounts.map((discount) => [discount.providerSlug, discount]),
       );
+      const undiscounted = entry.undiscountedOpenrouterId
+        ? catalogById.get(entry.undiscountedOpenrouterId)
+        : undefined;
+      if (entry.undiscountedOpenrouterId && (
+        undiscounted === undefined ||
+        undiscounted.listedInputPrice === undefined ||
+        undiscounted.listedOutputPrice === undefined
+      )) {
+        failures.push({
+          aaModelSlug: entry.aaModelSlug,
+          openrouterId: entry.openrouterId,
+          category: "unresolved",
+          detail:
+            `Undiscounted OpenRouter model "${entry.undiscountedOpenrouterId}" ` +
+            "is missing from the catalog or has no listed input/output prices",
+        });
+        return;
+      }
       const providerSummaries = response.data.providerSummaries.map((p) => {
         const pageDiscount = discountsByProvider.get(p.providerSlug);
         return {
@@ -245,17 +263,24 @@ export async function collectOpenRouterPricing(
             ? { listedInputPrice: p.listedInputPrice }
             : pageDiscount
               ? { listedInputPrice: pageDiscount.listedInputPrice }
-              : {}),
+              : undiscounted?.listedInputPrice !== undefined
+                ? { listedInputPrice: undiscounted.listedInputPrice }
+                : {}),
           ...(p.listedOutputPrice !== undefined
             ? { listedOutputPrice: p.listedOutputPrice }
             : pageDiscount
               ? { listedOutputPrice: pageDiscount.listedOutputPrice }
-              : {}),
+              : undiscounted?.listedOutputPrice !== undefined
+                ? { listedOutputPrice: undiscounted.listedOutputPrice }
+                : {}),
           ...(p.discountPercentage !== undefined
             ? { discountPercentage: p.discountPercentage }
             : pageDiscount
               ? { discountPercentage: pageDiscount.discountPercentage }
               : {}),
+          ...(entry.undiscountedOpenrouterId
+            ? { undiscountedModelId: entry.undiscountedOpenrouterId }
+            : {}),
         };
       });
       const listed = catalogById.get(entry.openrouterId);

@@ -30,7 +30,10 @@ function routerFetch(routes: Record<string, unknown | (() => Response)>): typeof
         return Promise.resolve(typeof body === "function" ? (body as () => Response)() : jsonResponse(body));
       }
     }
-    if (url.includes("gpt-5.6-luna-20260709")) {
+    if (
+      url.includes("gpt-5.6-luna-20260709") ||
+      url.includes("muse-spark-1.2-contributor-20260805")
+    ) {
       return Promise.resolve(jsonResponse(fullPricing));
     }
     return Promise.resolve(jsonResponse({}, 404));
@@ -118,6 +121,19 @@ describe("collectOpenRouterPricing", () => {
       records: report.records,
     });
     expect(payload.records[0]?.providerSummaries.length).toBeGreaterThan(0);
+  });
+
+  it("preserves the explicit undiscounted model for contributor pricing", async () => {
+    const report = await collectOpenRouterPricing(baseOptions());
+    const muse = report.records.find((record) => record.aaModelSlug === "muse-spark-1-2");
+    expect(muse).toMatchObject({
+      permaslug: "meta/muse-spark-1.2-contributor",
+      providerSummaries: expect.arrayContaining([expect.objectContaining({
+        listedInputPrice: 1.25,
+        listedOutputPrice: 4.25,
+        undiscountedModelId: "meta/muse-spark-1.2",
+      })]),
+    });
   });
 
   it("does not report a frontier alias as unmatched when it shares a base-model id", async () => {
