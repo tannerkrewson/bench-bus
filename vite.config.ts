@@ -8,6 +8,9 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   base: "/",
   plugins: [solid(), tailwindcss()],
+  server: {
+    port: 2287,
+  },
   build: {
     target: "es2022",
   },
