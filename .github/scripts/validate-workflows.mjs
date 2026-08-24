@@ -19,7 +19,7 @@ const workflowsDir = join(ghDir, "workflows");
 const expectations = [
   {
     file: "collect-openrouter.yml",
-    crons: ["23 */2 * * *"],
+    crons: ["0 21 * * *"],
   },
   {
     file: "collect-aa.yml",

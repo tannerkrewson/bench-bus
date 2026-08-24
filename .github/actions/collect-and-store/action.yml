@@ -79,4 +79,11 @@ runs:
         DATA_BRANCH_PATH: ${{ inputs.data-branch-path }}
       run: |
         set -euo pipefail
+        # Another collector workflow may have advanced bench-bus-data between
+        # our checkout and our push (per-workflow concurrency groups cannot
+        # serialize across workflows). Snapshots and manifests are per-source,
+        # so a rebase cannot conflict; a genuine conflict fails closed here.
+        if git -C "${DATA_BRANCH_PATH}" fetch origin bench-bus-data; then
+          git -C "${DATA_BRANCH_PATH}" rebase FETCH_HEAD
+        fi
         git -C "${DATA_BRANCH_PATH}" push origin HEAD:bench-bus-data
