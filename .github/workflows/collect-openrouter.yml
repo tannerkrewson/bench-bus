@@ -10,9 +10,9 @@ name: Collect OpenRouter pricing
 
 on:
   schedule:
-    # Roughly every two hours at an off-round minute to reduce top-of-hour
-    # scheduler contention.
-    - cron: "23 */2 * * *"
+    # Daily at 5pm ET. GitHub cron is UTC-only, so this is 21:00 UTC during
+    # daylight time and 4pm ET during standard time.
+    - cron: "0 21 * * *"
   workflow_dispatch:
 
 # Overlapping runs queue instead of racing on the data branch.
