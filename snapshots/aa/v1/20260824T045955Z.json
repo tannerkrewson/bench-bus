@@ -1,0 +1,890 @@
+{
+  "schemaVersion": 1,
+  "source": "aa",
+  "recordSchemaVersion": 1,
+  "observedAt": "2026-08-24T04:59:55.019Z",
+  "records": [
+    {
+      "id": "a6340098-d7ae-462d-b372-0a0a67fc44b4",
+      "slug": "claude-4-5-haiku-reasoning",
+      "name": "Claude 4.5 Haiku (Reasoning)",
+      "shortName": "Claude 4.5 Haiku",
+      "releaseDate": "2025-10-15",
+      "price1mInputTokens": 1,
+      "price1mOutputTokens": 5,
+      "cacheHitPrice": 0.1,
+      "cacheWritePrice": 1.25,
+      "intelligenceIndex": 29.8919353345764,
+      "intelligenceIndexCost": {
+        "total": 471.2177544481077
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 294003443,
+        "output": 78820917,
+        "answer": 7759058,
+        "reasoning": 71061859
+      }
+    },
+    {
+      "id": "90e078f2-051b-4c63-8919-76618971cb3f",
+      "slug": "claude-4-5-sonnet-thinking",
+      "name": "Claude 4.5 Sonnet (Reasoning)",
+      "shortName": "Claude 4.5 Sonnet",
+      "releaseDate": "2025-09-29",
+      "price1mInputTokens": 3,
+      "price1mOutputTokens": 15,
+      "cacheHitPrice": 0.3,
+      "cacheWritePrice": 3.75,
+      "intelligenceIndex": 37.3917832127992,
+      "intelligenceIndexCost": {
+        "total": 1036.9457154797801
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 257714388,
+        "output": 56696205,
+        "answer": 7026289,
+        "reasoning": 49669916
+      }
+    },
+    {
+      "id": "cd55210d-358e-4df1-ba9c-9acb5f186cc9",
+      "slug": "claude-fable-5",
+      "name": "Claude Fable 5 (Adaptive Reasoning, Max Effort, Opus 4.8 Fallback)",
+      "shortName": "Claude Fable 5 (with fallback)",
+      "releaseDate": "2026-06-09",
+      "price1mInputTokens": 10,
+      "price1mOutputTokens": 50,
+      "cacheHitPrice": 1,
+      "cacheWritePrice": 12.5,
+      "intelligenceIndex": 62.0726622017462,
+      "intelligenceIndexCost": {
+        "total": 5455.2180576804685
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 819918794,
+        "output": 83214803,
+        "answer": 10392208,
+        "reasoning": 72822595
+      }
+    },
+    {
+      "id": "e9a09db3-8fd6-41dd-ba2f-20e0a2bff7f2",
+      "slug": "claude-opus-4-7",
+      "name": "Claude Opus 4.7 (Adaptive Reasoning, Max Effort)",
+      "shortName": "Claude Opus 4.7 (max)",
+      "releaseDate": "2026-04-16",
+      "price1mInputTokens": 5,
+      "price1mOutputTokens": 25,
+      "cacheHitPrice": 0.5,
+      "cacheWritePrice": 6.25,
+      "intelligenceIndex": 54.9641493964167,
+      "intelligenceIndexCost": {
+        "total": 3742.6520561577427
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 1254340877,
+        "output": 100070793,
+        "answer": 12670861,
+        "reasoning": 87399932
+      }
+    },
+    {
+      "id": "992b7b84-5069-4c6a-9295-834252553d50",
+      "slug": "claude-opus-4-8",
+      "name": "Claude Opus 4.8 (Adaptive Reasoning, Max Effort)",
+      "shortName": "Claude Opus 4.8 (max)",
+      "releaseDate": "2026-05-28",
+      "price1mInputTokens": 5,
+      "price1mOutputTokens": 25,
+      "cacheHitPrice": 0.5,
+      "cacheWritePrice": 6.25,
+      "intelligenceIndex": 57.3304158758428,
+      "intelligenceIndexCost": {
+        "total": 3752.315859026857
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 936047468,
+        "output": 116719379,
+        "answer": 11686043,
+        "reasoning": 105033336
+      }
+    },
+    {
+      "id": "b8fc61f7-5e9a-49e6-8547-6ac56db24627",
+      "slug": "claude-opus-5",
+      "name": "Claude Opus 5 (Adaptive Reasoning, Max Effort)",
+      "shortName": "Claude Opus 5 (max)",
+      "releaseDate": "2026-07-24",
+      "price1mInputTokens": 5,
+      "price1mOutputTokens": 25,
+      "cacheHitPrice": 0.5,
+      "cacheWritePrice": 6.25,
+      "intelligenceIndex": 63.0532452071291,
+      "intelligenceIndexCost": {
+        "total": 3836.05454152768
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 1775990851,
+        "output": 101179533,
+        "answer": 16969565,
+        "reasoning": 84209968
+      }
+    },
+    {
+      "id": "712be54a-77ae-41b2-9a58-21181479d6ee",
+      "slug": "claude-opus-5-high",
+      "name": "Claude Opus 5 (Adaptive Reasoning, High Effort)",
+      "shortName": "Claude Opus 5 (high)",
+      "releaseDate": "2026-07-24",
+      "price1mInputTokens": 5,
+      "price1mOutputTokens": 25,
+      "cacheHitPrice": 0.5,
+      "cacheWritePrice": 6.25,
+      "intelligenceIndex": 61.4751191473465,
+      "intelligenceIndexCost": {
+        "total": 1974.3543863277582
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 792021069,
+        "output": 52071537,
+        "answer": 10765091,
+        "reasoning": 41306446
+      }
+    },
+    {
+      "id": "20928ba9-3a3f-415f-9519-b84ff64ecf34",
+      "slug": "claude-opus-5-low",
+      "name": "Claude Opus 5 (Adaptive Reasoning, Low Effort)",
+      "shortName": "Claude Opus 5 (low)",
+      "releaseDate": "2026-07-24",
+      "price1mInputTokens": 5,
+      "price1mOutputTokens": 25,
+      "cacheHitPrice": 0.5,
+      "cacheWritePrice": 6.25,
+      "intelligenceIndex": 52.4569136808453,
+      "intelligenceIndexCost": {
+        "total": 555.252412245871
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 195277960,
+        "output": 12071741,
+        "answer": 4216658,
+        "reasoning": 7855083
+      }
+    },
+    {
+      "id": "ff51be8f-e362-4a7e-9043-687ba15de207",
+      "slug": "claude-opus-5-medium",
+      "name": "Claude Opus 5 (Adaptive Reasoning, Medium Effort)",
+      "shortName": "Claude Opus 5 (medium)",
+      "releaseDate": "2026-07-24",
+      "price1mInputTokens": 5,
+      "price1mOutputTokens": 25,
+      "cacheHitPrice": 0.5,
+      "cacheWritePrice": 6.25,
+      "intelligenceIndex": 58.6354597438038,
+      "intelligenceIndexCost": {
+        "total": 1116.2418238428252
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 382615383,
+        "output": 28827204,
+        "answer": 7012557,
+        "reasoning": 21814647
+      }
+    },
+    {
+      "id": "1305c921-7aaa-4d6d-99b5-99b3acf15e19",
+      "slug": "claude-opus-5-xhigh",
+      "name": "Claude Opus 5 (Adaptive Reasoning, Xhigh Effort)",
+      "shortName": "Claude Opus 5 (xhigh)",
+      "releaseDate": "2026-07-24",
+      "price1mInputTokens": 5,
+      "price1mOutputTokens": 25,
+      "cacheHitPrice": 0.5,
+      "cacheWritePrice": 6.25,
+      "intelligenceIndex": 62.52047429879,
+      "intelligenceIndexCost": {
+        "total": 2909.2957867966024
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 1290711433,
+        "output": 76395802,
+        "answer": 14126528,
+        "reasoning": 62269274
+      }
+    },
+    {
+      "id": "df8d14e0-3997-4e4d-b4ad-9c047acc9c69",
+      "slug": "claude-sonnet-4-6-adaptive",
+      "name": "Claude Sonnet 4.6 (Adaptive Reasoning, Max Effort)",
+      "shortName": "Claude Sonnet 4.6 (max)",
+      "releaseDate": "2026-02-17",
+      "price1mInputTokens": 3,
+      "price1mOutputTokens": 15,
+      "cacheHitPrice": 0.3,
+      "cacheWritePrice": 3.75,
+      "intelligenceIndex": 48.3663341204845,
+      "intelligenceIndexCost": {
+        "total": 3355.2700228232134
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 738390285,
+        "output": 196770270,
+        "answer": 9960563,
+        "reasoning": 186809707
+      }
+    },
+    {
+      "id": "23c86e4a-c769-43c0-a056-79e3cd15834f",
+      "slug": "claude-sonnet-5",
+      "name": "Claude Sonnet 5 (Adaptive Reasoning, Max Effort)",
+      "shortName": "Claude Sonnet 5 (max)",
+      "releaseDate": "2026-06-30",
+      "price1mInputTokens": 2,
+      "price1mOutputTokens": 10,
+      "cacheHitPrice": 0.2,
+      "cacheWritePrice": 2.5,
+      "intelligenceIndex": 55.261211717405,
+      "intelligenceIndexCost": {
+        "total": 4010.5097587296013
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 3524701850,
+        "output": 303597976,
+        "answer": 16952547,
+        "reasoning": 286645429
+      }
+    },
+    {
+      "id": "d58b9ada-fd9d-4fff-a086-242034657963",
+      "slug": "claude-sonnet-5-non-reasoning",
+      "name": "Claude Sonnet 5 (Non-reasoning, High Effort)",
+      "shortName": "Claude Sonnet 5 (Non-reasoning)",
+      "releaseDate": "2026-06-30",
+      "price1mInputTokens": 2,
+      "price1mOutputTokens": 10,
+      "cacheHitPrice": 0.2,
+      "cacheWritePrice": 2.5,
+      "intelligenceIndex": 42.5707970639646,
+      "intelligenceIndexCost": {
+        "total": 415.7461462036607
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 967377120,
+        "output": 13899996,
+        "answer": 13899996,
+        "reasoning": 0
+      }
+    },
+    {
+      "id": "fe4c0848-e284-4e52-a79d-cdc28392f1a9",
+      "slug": "deepseek-v4-flash",
+      "name": "DeepSeek V4 Flash 0731 (Reasoning, Max Effort)",
+      "shortName": "DeepSeek V4 Flash 0731 (max)",
+      "releaseDate": "2026-07-31",
+      "price1mInputTokens": 0.44,
+      "price1mOutputTokens": 1.32,
+      "cacheHitPrice": 0.014,
+      "cacheWritePrice": null,
+      "intelligenceIndex": 51.7665776089032,
+      "intelligenceIndexCost": {
+        "total": 323.25907280569834
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 1280997079,
+        "output": 205996513,
+        "answer": 10185879,
+        "reasoning": 195810634
+      }
+    },
+    {
+      "id": "b2331108-72ed-415a-82d1-188633875bbc",
+      "slug": "gemini-3-7-flash",
+      "name": "Gemini 3.7 Flash (high)",
+      "shortName": "Gemini 3.7 Flash (high)",
+      "releaseDate": "2026-08-13",
+      "price1mInputTokens": 0.75,
+      "price1mOutputTokens": 3.75,
+      "cacheHitPrice": 0.075,
+      "cacheWritePrice": 0.75,
+      "intelligenceIndex": 56.0301180773699,
+      "intelligenceIndexCost": {
+        "total": 484.72523725334753
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 1395784123,
+        "output": 64017805,
+        "answer": 24429505,
+        "reasoning": 39588300
+      }
+    },
+    {
+      "id": "ddfdaf64-3f8e-40a6-a492-608ee83a1351",
+      "slug": "gemini-3-7-flash-low",
+      "name": "Gemini 3.7 Flash (low)",
+      "shortName": "Gemini 3.7 Flash (low)",
+      "releaseDate": "2026-08-13",
+      "price1mInputTokens": 0.75,
+      "price1mOutputTokens": 3.75,
+      "cacheHitPrice": 0.075,
+      "cacheWritePrice": 0.75,
+      "intelligenceIndex": 50.9422571779375,
+      "intelligenceIndexCost": {
+        "total": 165.161994502372
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 493645357,
+        "output": 18456065,
+        "answer": 11577713,
+        "reasoning": 6878352
+      }
+    },
+    {
+      "id": "eb0d4272-7204-42b9-b875-8866fed58548",
+      "slug": "gemini-3-7-flash-medium",
+      "name": "Gemini 3.7 Flash (medium)",
+      "shortName": "Gemini 3.7 Flash (medium)",
+      "releaseDate": "2026-08-13",
+      "price1mInputTokens": 0.75,
+      "price1mOutputTokens": 3.75,
+      "cacheHitPrice": 0.075,
+      "cacheWritePrice": 0.75,
+      "intelligenceIndex": 53.416679420117,
+      "intelligenceIndexCost": {
+        "total": 277.49584598473893
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 854055634,
+        "output": 32069803,
+        "answer": 17494689,
+        "reasoning": 14575114
+      }
+    },
+    {
+      "id": "426d24c8-49ae-482a-b4a8-20f1c53f21c1",
+      "slug": "gpt-5-6-luna",
+      "name": "GPT-5.6 Luna (max)",
+      "shortName": "GPT-5.6 Luna (max)",
+      "releaseDate": "2026-07-09",
+      "price1mInputTokens": 0.2,
+      "price1mOutputTokens": 1.2,
+      "cacheHitPrice": 0.02,
+      "cacheWritePrice": 0.25,
+      "intelligenceIndex": 52.3180827840984,
+      "intelligenceIndexCost": {
+        "total": 172.16869708656338
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 723503591,
+        "output": 125034528,
+        "answer": 5869760,
+        "reasoning": 119164768
+      }
+    },
+    {
+      "id": "aa55297e-8fbf-4372-b4ab-9b068dc6396c",
+      "slug": "gpt-5-6-luna-high",
+      "name": "GPT-5.6 Luna (high)",
+      "shortName": "GPT-5.6 Luna (high)",
+      "releaseDate": "2026-07-09",
+      "price1mInputTokens": 0.2,
+      "price1mOutputTokens": 1.2,
+      "cacheHitPrice": 0.02,
+      "cacheWritePrice": 0.25,
+      "intelligenceIndex": 46.9604170473195,
+      "intelligenceIndexCost": {
+        "total": 55.02438404016263
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 276851489,
+        "output": 37035425,
+        "answer": 4165729,
+        "reasoning": 32869696
+      }
+    },
+    {
+      "id": "050c61cd-cddc-463a-a30a-a82aaa37be59",
+      "slug": "gpt-5-6-luna-low",
+      "name": "GPT-5.6 Luna (low)",
+      "shortName": "GPT-5.6 Luna (low)",
+      "releaseDate": "2026-07-09",
+      "price1mInputTokens": 0.2,
+      "price1mOutputTokens": 1.2,
+      "cacheHitPrice": 0.02,
+      "cacheWritePrice": 0.25,
+      "intelligenceIndex": 33.8545605251116,
+      "intelligenceIndexCost": {
+        "total": 13.73935755422428
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 108471271,
+        "output": 6971198,
+        "answer": 2139657,
+        "reasoning": 4831541
+      }
+    },
+    {
+      "id": "58b812bf-8498-46db-b834-f43ccc614b61",
+      "slug": "gpt-5-6-luna-medium",
+      "name": "GPT-5.6 Luna (medium)",
+      "shortName": "GPT-5.6 Luna (medium)",
+      "releaseDate": "2026-07-09",
+      "price1mInputTokens": 0.2,
+      "price1mOutputTokens": 1.2,
+      "cacheHitPrice": 0.02,
+      "cacheWritePrice": 0.25,
+      "intelligenceIndex": 38.9050733396755,
+      "intelligenceIndexCost": {
+        "total": 21.147427152184804
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 124742753,
+        "output": 12477577,
+        "answer": 2798055,
+        "reasoning": 9679522
+      }
+    },
+    {
+      "id": "dc64f856-3ded-497d-9527-d41d31267ed5",
+      "slug": "gpt-5-6-luna-non-reasoning",
+      "name": "GPT-5.6 Luna (Non-reasoning)",
+      "shortName": "GPT-5.6 Luna (Non-reasoning)",
+      "releaseDate": "2026-07-09",
+      "price1mInputTokens": 0.2,
+      "price1mOutputTokens": 1.2,
+      "cacheHitPrice": 0.02,
+      "cacheWritePrice": 0.25,
+      "intelligenceIndex": 26.8448952225882,
+      "intelligenceIndexCost": {
+        "total": 10.20561391716117
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 175902278,
+        "output": 2352067,
+        "answer": 2352067,
+        "reasoning": 0
+      }
+    },
+    {
+      "id": "87110ff0-1f79-41b4-9976-eda250597317",
+      "slug": "gpt-5-6-luna-xhigh",
+      "name": "GPT-5.6 Luna (xhigh)",
+      "shortName": "GPT-5.6 Luna (xhigh)",
+      "releaseDate": "2026-07-09",
+      "price1mInputTokens": 0.2,
+      "price1mOutputTokens": 1.2,
+      "cacheHitPrice": 0.02,
+      "cacheWritePrice": 0.25,
+      "intelligenceIndex": 50.0587027429536,
+      "intelligenceIndexCost": {
+        "total": 95.13028581718562
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 448420232,
+        "output": 66740450,
+        "answer": 4949136,
+        "reasoning": 61791314
+      }
+    },
+    {
+      "id": "d93edfe8-bf35-49ad-b56e-b18116142a1c",
+      "slug": "gpt-5-6-sol",
+      "name": "GPT-5.6 Sol (max)",
+      "shortName": "GPT-5.6 Sol (max)",
+      "releaseDate": "2026-07-09",
+      "price1mInputTokens": 5,
+      "price1mOutputTokens": 30,
+      "cacheHitPrice": 0.5,
+      "cacheWritePrice": 6.25,
+      "intelligenceIndex": 60.9298701329203,
+      "intelligenceIndexCost": {
+        "total": 2823.2538670927206
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 983960410,
+        "output": 70095978,
+        "answer": 6633297,
+        "reasoning": 63462681
+      }
+    },
+    {
+      "id": "8afc250d-b538-45a2-812a-4605f4ffd87e",
+      "slug": "gpt-5-6-sol-high",
+      "name": "GPT-5.6 Sol (high)",
+      "shortName": "GPT-5.6 Sol (high)",
+      "releaseDate": "2026-07-09",
+      "price1mInputTokens": 5,
+      "price1mOutputTokens": 30,
+      "cacheHitPrice": 0.5,
+      "cacheWritePrice": 6.25,
+      "intelligenceIndex": 57.3317210962224,
+      "intelligenceIndexCost": {
+        "total": 954.9460911120115
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 340806859,
+        "output": 21253842,
+        "answer": 4570101,
+        "reasoning": 16683741
+      }
+    },
+    {
+      "id": "0904b596-8932-43bd-9b21-324f128e1723",
+      "slug": "gpt-5-6-sol-low",
+      "name": "GPT-5.6 Sol (low)",
+      "shortName": "GPT-5.6 Sol (low)",
+      "releaseDate": "2026-07-09",
+      "price1mInputTokens": 5,
+      "price1mOutputTokens": 30,
+      "cacheHitPrice": 0.5,
+      "cacheWritePrice": 6.25,
+      "intelligenceIndex": 50.7315181713702,
+      "intelligenceIndexCost": {
+        "total": 343.86763828531195
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 94684786,
+        "output": 6591313,
+        "answer": 2567010,
+        "reasoning": 4024303
+      }
+    },
+    {
+      "id": "6f174934-5b7d-4333-86cb-f5ebf4a862e3",
+      "slug": "gpt-5-6-sol-medium",
+      "name": "GPT-5.6 Sol (medium)",
+      "shortName": "GPT-5.6 Sol (medium)",
+      "releaseDate": "2026-07-09",
+      "price1mInputTokens": 5,
+      "price1mOutputTokens": 30,
+      "cacheHitPrice": 0.5,
+      "cacheWritePrice": 6.25,
+      "intelligenceIndex": 55.5729051710609,
+      "intelligenceIndexCost": {
+        "total": 580.1729881470743
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 188163289,
+        "output": 11977373,
+        "answer": 3535536,
+        "reasoning": 8441837
+      }
+    },
+    {
+      "id": "7c4d1e30-6ecb-46cf-880c-41446d7b51f1",
+      "slug": "gpt-5-6-sol-non-reasoning",
+      "name": "GPT-5.6 Sol (Non-reasoning)",
+      "shortName": "GPT-5.6 Sol (Non-reasoning)",
+      "releaseDate": "2026-07-09",
+      "price1mInputTokens": 5,
+      "price1mOutputTokens": 30,
+      "cacheHitPrice": 0.5,
+      "cacheWritePrice": 6.25,
+      "intelligenceIndex": 41.8779730605066,
+      "intelligenceIndexCost": {
+        "total": 239.6633760235481
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 108217449,
+        "output": 2622854,
+        "answer": 2622854,
+        "reasoning": 0
+      }
+    },
+    {
+      "id": "d998db47-9b67-4727-a2bb-2e1261020ac0",
+      "slug": "gpt-5-6-sol-xhigh",
+      "name": "GPT-5.6 Sol (xhigh)",
+      "shortName": "GPT-5.6 Sol (xhigh)",
+      "releaseDate": "2026-07-09",
+      "price1mInputTokens": 5,
+      "price1mOutputTokens": 30,
+      "cacheHitPrice": 0.5,
+      "cacheWritePrice": 6.25,
+      "intelligenceIndex": 59.0090363705536,
+      "intelligenceIndexCost": {
+        "total": 1525.0027653162272
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 536660848,
+        "output": 35408533,
+        "answer": 5598173,
+        "reasoning": 29810360
+      }
+    },
+    {
+      "id": "bcf8db0a-3bb6-4d82-9516-0f57370c85a6",
+      "slug": "gpt-5-6-terra",
+      "name": "GPT-5.6 Terra (max)",
+      "shortName": "GPT-5.6 Terra (max)",
+      "releaseDate": "2026-07-09",
+      "price1mInputTokens": 2,
+      "price1mOutputTokens": 12,
+      "cacheHitPrice": 0.2,
+      "cacheWritePrice": 2.5,
+      "intelligenceIndex": 56.5755675890213,
+      "intelligenceIndexCost": {
+        "total": 1389.6617268165041
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 788226962,
+        "output": 95550429,
+        "answer": 6214940,
+        "reasoning": 89335489
+      }
+    },
+    {
+      "id": "81972fba-1219-477e-bbfb-18c656a63ff7",
+      "slug": "gpt-5-6-terra-high",
+      "name": "GPT-5.6 Terra (high)",
+      "shortName": "GPT-5.6 Terra (high)",
+      "releaseDate": "2026-07-09",
+      "price1mInputTokens": 2,
+      "price1mOutputTokens": 12,
+      "cacheHitPrice": 0.2,
+      "cacheWritePrice": 2.5,
+      "intelligenceIndex": 50.1131352273405,
+      "intelligenceIndexCost": {
+        "total": 395.3786189954867
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 290663428,
+        "output": 23611557,
+        "answer": 4398420,
+        "reasoning": 19213137
+      }
+    },
+    {
+      "id": "cc4a20cd-09fe-4962-a430-119c815e85fa",
+      "slug": "gpt-5-6-terra-low",
+      "name": "GPT-5.6 Terra (low)",
+      "shortName": "GPT-5.6 Terra (low)",
+      "releaseDate": "2026-07-09",
+      "price1mInputTokens": 2,
+      "price1mOutputTokens": 12,
+      "cacheHitPrice": 0.2,
+      "cacheWritePrice": 2.5,
+      "intelligenceIndex": 41.2961239729374,
+      "intelligenceIndexCost": {
+        "total": 130.4050258821386
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 118487240,
+        "output": 5963118,
+        "answer": 2186082,
+        "reasoning": 3777036
+      }
+    },
+    {
+      "id": "26e0f83a-ca98-4f34-94ac-7c5e251ee410",
+      "slug": "gpt-5-6-terra-medium",
+      "name": "GPT-5.6 Terra (medium)",
+      "shortName": "GPT-5.6 Terra (medium)",
+      "releaseDate": "2026-07-09",
+      "price1mInputTokens": 2,
+      "price1mOutputTokens": 12,
+      "cacheHitPrice": 0.2,
+      "cacheWritePrice": 2.5,
+      "intelligenceIndex": 46.7558953879266,
+      "intelligenceIndexCost": {
+        "total": 192.05655705435612
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 131956933,
+        "output": 10423480,
+        "answer": 2938821,
+        "reasoning": 7484659
+      }
+    },
+    {
+      "id": "9b97a35e-6ac7-44d9-91c6-422fa678963e",
+      "slug": "gpt-5-6-terra-non-reasoning",
+      "name": "GPT-5.6 Terra (Non-reasoning)",
+      "shortName": "GPT-5.6 Terra (Non-reasoning)",
+      "releaseDate": "2026-07-09",
+      "price1mInputTokens": 2,
+      "price1mOutputTokens": 12,
+      "cacheHitPrice": 0.2,
+      "cacheWritePrice": 2.5,
+      "intelligenceIndex": 34.6188674546024,
+      "intelligenceIndexCost": {
+        "total": 98.52488553732582
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 139278684,
+        "output": 2551471,
+        "answer": 2551471,
+        "reasoning": 0
+      }
+    },
+    {
+      "id": "9e30696f-16fa-4b4f-ba53-161895a85fed",
+      "slug": "gpt-5-6-terra-xhigh",
+      "name": "GPT-5.6 Terra (xhigh)",
+      "shortName": "GPT-5.6 Terra (xhigh)",
+      "releaseDate": "2026-07-09",
+      "price1mInputTokens": 2,
+      "price1mOutputTokens": 12,
+      "cacheHitPrice": 0.2,
+      "cacheWritePrice": 2.5,
+      "intelligenceIndex": 52.7732451128074,
+      "intelligenceIndexCost": {
+        "total": 589.6533166278462
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 446712045,
+        "output": 36341139,
+        "answer": 5249319,
+        "reasoning": 31091820
+      }
+    },
+    {
+      "id": "948892b5-db03-4118-a4a8-ccd51ed871ea",
+      "slug": "grok-4-3",
+      "name": "Grok 4.3 (high)",
+      "shortName": "Grok 4.3 (high)",
+      "releaseDate": "2026-04-30",
+      "price1mInputTokens": 1.25,
+      "price1mOutputTokens": 2.5,
+      "cacheHitPrice": 0.2,
+      "cacheWritePrice": 1.25,
+      "intelligenceIndex": 37.9469171465042,
+      "intelligenceIndexCost": {
+        "total": 287.635924457608
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 232340499,
+        "output": 83197000,
+        "answer": 5074860,
+        "reasoning": 78122140
+      }
+    },
+    {
+      "id": "90c2a9cf-ad7e-4332-9be2-2fd1309833e2",
+      "slug": "grok-4-3-non-reasoning",
+      "name": "Grok 4.3 (Non-reasoning)",
+      "shortName": "Grok 4.3 (Non-reasoning)",
+      "releaseDate": "2026-04-30",
+      "price1mInputTokens": 1.25,
+      "price1mOutputTokens": 2.5,
+      "cacheHitPrice": 0.2,
+      "cacheWritePrice": 1.25,
+      "intelligenceIndex": 25.0069780605367,
+      "intelligenceIndexCost": {
+        "total": 200.92621080529653
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 612059911,
+        "output": 9024334,
+        "answer": 9024334,
+        "reasoning": 0
+      }
+    },
+    {
+      "id": "4bbceacb-cf47-464b-b60f-e1d1fe016d67",
+      "slug": "minimax-m2-7",
+      "name": "MiniMax-M2.7",
+      "shortName": "MiniMax-M2.7",
+      "releaseDate": "2026-03-18",
+      "price1mInputTokens": 0.3,
+      "price1mOutputTokens": 1.2,
+      "cacheHitPrice": 0.06,
+      "cacheWritePrice": 0.375,
+      "intelligenceIndex": 38.8713536464198,
+      "intelligenceIndexCost": {
+        "total": 142.69899938497042
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 370819238,
+        "output": 84528093,
+        "answer": 13475839,
+        "reasoning": 71052254
+      }
+    },
+    {
+      "id": "277f939a-985b-4b37-859d-b3eabc7c0b26",
+      "slug": "minimax-m3",
+      "name": "MiniMax-M3",
+      "shortName": "MiniMax-M3",
+      "releaseDate": "2026-06-01",
+      "price1mInputTokens": 0.3,
+      "price1mOutputTokens": 1.2,
+      "cacheHitPrice": 0.06,
+      "cacheWritePrice": 0.375,
+      "intelligenceIndex": 45.3968506399702,
+      "intelligenceIndexCost": {
+        "total": 204.81833888433607
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 1234427740,
+        "output": 89184198,
+        "answer": 12103711,
+        "reasoning": 77080487
+      }
+    },
+    {
+      "id": "04ee6719-0327-463b-a1a1-70a6a78254f9",
+      "slug": "muse-spark-1-2",
+      "name": "Muse Spark 1.2 (xhigh)",
+      "shortName": "Muse Spark 1.2 (xhigh)",
+      "releaseDate": "2026-08-05",
+      "price1mInputTokens": 1.25,
+      "price1mOutputTokens": 4.25,
+      "cacheHitPrice": 0.15,
+      "cacheWritePrice": null,
+      "intelligenceIndex": 56.7615911905642,
+      "intelligenceIndexCost": {
+        "total": 639.27251922
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 991548011,
+        "output": 94924298,
+        "answer": 14966086,
+        "reasoning": 79958212
+      }
+    },
+    {
+      "id": "f371ad68-6947-4767-a78f-1f6c81f96b93",
+      "slug": "qwen3-6-plus",
+      "name": "Qwen3.6 Plus",
+      "shortName": "Qwen3.6 Plus",
+      "releaseDate": "2026-04-02",
+      "price1mInputTokens": 0.5,
+      "price1mOutputTokens": 3,
+      "cacheHitPrice": 0.05,
+      "cacheWritePrice": 0.625,
+      "intelligenceIndex": 40.4880703723726,
+      "intelligenceIndexCost": {
+        "total": 525.5492947275089
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 418919877,
+        "output": 101275772,
+        "answer": 11775947,
+        "reasoning": 89499825
+      }
+    },
+    {
+      "id": "a87fce42-eea3-4e45-a96d-fe057814f371",
+      "slug": "qwen3-7-plus",
+      "name": "Qwen3.7 Plus",
+      "shortName": "Qwen3.7 Plus",
+      "releaseDate": "2026-06-01",
+      "price1mInputTokens": 0.4,
+      "price1mOutputTokens": 1.6,
+      "cacheHitPrice": 0.04,
+      "cacheWritePrice": 0.5,
+      "intelligenceIndex": 39.3745992994168,
+      "intelligenceIndexCost": {
+        "total": 322.4002535129529
+      },
+      "canonicalIntelligenceIndexTokenCount": {
+        "input": 326128353,
+        "output": 113737665,
+        "answer": 4745984,
+        "reasoning": 108991681
+      }
+    }
+  ]
+}
