@@ -158,6 +158,7 @@ function explicitProviderDiscount(
 function explicitProviderDiscounts(
   record: DerivedAaChartRecord,
   plottedCost: number,
+  plottedProviderName?: string,
 ): PriceDiscountAnnotation[] {
   return record.providers.flatMap((provider) => {
     const annotation = providerDiscountAnnotation(
@@ -166,7 +167,13 @@ function explicitProviderDiscounts(
       record.canonicalTokens.output,
       plottedCost,
     );
-    return annotation ? [annotation] : [];
+    if (!annotation) return [];
+    return [{
+      ...annotation,
+      ...(plottedProviderName && annotation.providerName !== plottedProviderName && annotation.providerRole === "alternative"
+        ? { plottedProviderName }
+        : {}),
+    }];
   });
 }
 
@@ -197,10 +204,12 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
 
     let cost: number | null;
     let discount: PriceDiscountAnnotation | undefined;
+    let plottedProviderName: string | undefined;
     switch (mode) {
       case "cheapest": {
         const winner = selectCheapestProvider(record.providers, input, output);
         cost = winner?.totalCostUsd ?? null;
+        plottedProviderName = winner?.providerName;
         discount = explicitProviderDiscount(record, winner);
         break;
       }
@@ -227,9 +236,9 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
       x: cost,
       y: record.intelligenceIndex,
       ...(discount ? { discount } : {}),
-      ...(mode === "cheapest"
-        ? { discounts: explicitProviderDiscounts(record, cost) }
-        : {}),
+       ...(mode === "cheapest"
+         ? { discounts: explicitProviderDiscounts(record, cost, plottedProviderName) }
+         : {}),
     };
   },
 

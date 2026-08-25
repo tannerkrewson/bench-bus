@@ -70,6 +70,42 @@ describe("AaChartSection", () => {
     dispose();
   });
 
+  it("explains a discounted model when its pre-discount endpoint is hovered", async () => {
+    const discounted = {
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug: "gpt-5.6-sol-high",
+      name: "GPT-5.6 Sol high",
+      shortName: "GPT-5.6 Sol high",
+      canonicalTokens: { input: 1_000_000, output: 1_000_000 },
+      providers: [{
+        providerName: "Provider A",
+        providerSlug: "provider-a",
+        effectiveInputPrice: 40,
+        effectiveOutputPrice: 52.465,
+        listedInputPrice: 80,
+        listedOutputPrice: 104.93,
+        discountPercentage: 50,
+      }],
+    };
+    const { container, dispose } = mount(() => (
+      <AaChartSection
+        records={() => [discounted]}
+        initialState={{ selectedIds: [discounted.slug], selectionSpecified: true }}
+      />
+    ));
+
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const endpoint = container.querySelector<HTMLElement>("[data-testid='discount-endpoint-hit']");
+    expect(endpoint).not.toBeNull();
+    endpoint?.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    const tooltip = container.querySelector("[data-testid='chart-tooltip']");
+    expect(tooltip?.textContent).toContain("GPT-5.6 Sol high - 50% off");
+    expect(tooltip?.textContent).toContain("$184.93 - 50% = $92.47");
+    expect(tooltip?.textContent).toContain("Provider: Provider A");
+    expect(tooltip?.textContent).toContain("Source provider discount from Provider A");
+    dispose();
+  });
+
   it("opens the AA methodology from the chart header", () => {
     const { container, dispose } = mount(() => <AaChartSection records={() => AA_FIXTURE_RECORDS} />);
     const trigger = container.querySelector<HTMLButtonElement>("[data-testid='methodology-button-aa']")!;

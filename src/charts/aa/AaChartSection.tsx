@@ -7,6 +7,7 @@ import ChartWatermark from "../../components/ChartWatermark";
 import { buildChartPlot } from "../plotData";
 import type {
   ChartViewState,
+  PriceDiscountAnnotation,
   PricingControlState,
   TooltipLine,
 } from "../types";
@@ -17,6 +18,7 @@ import { aaAdapter, aaControlledTooltipLines } from "./adapter";
 import { AA_DEFAULT_CACHE_HIT_RATE, listedCostUsd } from "./pricing";
 import {
   discountDetailLines,
+  discountHoverTitle,
   discountSummaryLines,
   largestExplicitDiscountForPoint,
   paretoFrontier,
@@ -70,6 +72,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
     id: string;
     left: number;
     top: number;
+    discount?: PriceDiscountAnnotation;
   } | null>(null);
   const [selectedPointId, setSelectedPointId] = createSignal<string | null>(null);
   const visibleRecords = createMemo(() =>
@@ -130,10 +133,12 @@ export default function AaChartSection(props: AaChartSectionProps) {
   type ChartEntry = ReturnType<typeof build>["entries"][number];
   const discountFor = (entry: ChartEntry) =>
     showDiscounts() ? largestExplicitDiscountForPoint(entry.point) : null;
-  const summaryLinesFor = (entry: ChartEntry): readonly TooltipLine[] => {
+  const summaryLinesFor = (
+    entry: ChartEntry,
+    discount = discountFor(entry),
+  ): readonly TooltipLine[] => {
     const lines = aaControlledTooltipLines(entry.record, entry.point, controls()).slice(0, 2);
-    const discount = discountFor(entry);
-    return discount ? [...lines, ...discountSummaryLines(discount)] : lines;
+    return discount ? [...lines, ...discountSummaryLines(entry.point, discount)] : lines;
   };
   const detailLinesFor = (entry: ChartEntry): readonly TooltipLine[] => {
     const lines = [...aaControlledTooltipLines(entry.record, entry.point, controls())];
@@ -145,7 +150,12 @@ export default function AaChartSection(props: AaChartSectionProps) {
     const h = hovered();
     if (!h) return null;
     const entry = build().entries.find((e) => e.point.id === h.id);
-    return entry ? { title: entry.point.label, lines: summaryLinesFor(entry) } : null;
+    if (!entry) return null;
+    const discount = h.discount ?? discountFor(entry);
+    return {
+      title: discount ? discountHoverTitle(entry.point, discount) : entry.point.label,
+      lines: summaryLinesFor(entry, discount),
+    };
   });
   const selectedInfo = createMemo<{
     title: string;
@@ -301,9 +311,9 @@ export default function AaChartSection(props: AaChartSectionProps) {
                     showDiscounts={showDiscounts}
                     xAxisLabel={() => aaAdapter.xAxisLabel}
                     yAxisLabel={() => aaAdapter.yAxisLabel}
-                    onHover={(id, pos) =>
-                      setHovered(id && pos ? { id, left: pos.left, top: pos.top } : null)
-                    }
+                     onHover={(id, pos, details) =>
+                       setHovered(id && pos ? { id, left: pos.left, top: pos.top, discount: details?.discount } : null)
+                     }
                     onSelectPoint={setSelectedPointId}
                   />
                   <ChartTooltip

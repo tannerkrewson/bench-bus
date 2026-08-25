@@ -72,10 +72,40 @@ export function discountReason(discount: PriceDiscountAnnotation): string {
   return "Source-provided discount";
 }
 
+/** Summarize provider roles without repeating one provider name. */
+export function discountProviderSummary(discount: PriceDiscountAnnotation): string {
+  const provider = discount.providerName ?? "Source provider";
+  const plottedProvider = discount.providerRole === "alternative"
+    ? discount.plottedProviderName
+    : provider;
+  return plottedProvider && plottedProvider !== provider
+    ? `Discounted/pre-discount provider: ${provider}; plotted provider: ${plottedProvider}`
+    : `Provider: ${provider}`;
+}
+
+/** Format the source price transformation as one compact equation. */
+export function discountMath(
+  point: Pick<PlottablePoint, "x">,
+  discount: PriceDiscountAnnotation,
+): string {
+  return `$${discount.preDiscountX.toFixed(2)} - ${roundDiscountPercent(discount.percentage)}% = $${point.x.toFixed(2)}`;
+}
+
+export function discountHoverTitle(
+  point: Pick<PlottablePoint, "label" | "x">,
+  discount: PriceDiscountAnnotation,
+): string {
+  return `${point.label} - ${roundDiscountPercent(discount.percentage)}% off · ${discountProviderSummary(discount)}`;
+}
+
 /** Compact discount rows kept understandable at a glance. */
-export function discountSummaryLines(discount: PriceDiscountAnnotation): TooltipLine[] {
+export function discountSummaryLines(
+  point: Pick<PlottablePoint, "x">,
+  discount: PriceDiscountAnnotation,
+): TooltipLine[] {
   return [
-    { label: "Discount", value: `${roundDiscountPercent(discount.percentage)}% off` },
+    { label: "Discount math", value: discountMath(point, discount) },
+    { label: "Provider", value: discountProviderSummary(discount) },
     { label: "Why", value: discountReason(discount) },
   ];
 }

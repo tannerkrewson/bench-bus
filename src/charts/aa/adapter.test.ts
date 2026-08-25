@@ -164,6 +164,7 @@ describe("aaAdapter.computePoint", () => {
       "alternative",
     ]);
     expect(point.discounts?.[1]?.effectiveX).toBe(7);
+    expect(point.discounts?.[1]?.plottedProviderName).toBe("Discount A");
   });
 
   it("draws a model-linked discount against its explicit undiscounted OpenRouter model", () => {
