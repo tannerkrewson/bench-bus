@@ -24,6 +24,7 @@ import ChartControlPanel from "./ChartControlPanel";
 import ModelList from "./ModelList";
 import MethodologyModal from "../methodology/MethodologyModal";
 import RelativeLastUpdated from "./RelativeLastUpdated";
+import ChartSubtitleContent from "./ChartSubtitle";
 
 export interface ChartMethodology {
   title: string;
@@ -209,7 +210,9 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
               </a>
             </h2>
             <div class="mt-1 flex flex-wrap items-center gap-2">
-              <p class="text-sm text-base-content/70">{props.adapter.subtitle}</p>
+              <p class="text-sm text-base-content/70" data-testid="chart-subtitle">
+                <ChartSubtitleContent content={props.adapter.subtitle} />
+              </p>
               <RelativeLastUpdated timestamp={props.lastUpdated} />
             </div>
           </div>

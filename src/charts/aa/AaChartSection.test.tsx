@@ -8,6 +8,8 @@ import { chartStateFromParams, chartStateToParams } from "../urlState";
 import { aaAdapter } from "./adapter";
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
 
+const AA_SUBTITLE = "Artificial Analysis shows standard model pricing; models can have discounts and cheaper providers on OpenRouter. This chart uses the latest OpenRouter prices and discounts to find the real models on the Pareto frontier.";
+
 function mount(ui: () => JSX.Element) {
   const container = document.createElement("div");
   document.body.appendChild(container);
@@ -27,7 +29,18 @@ describe("AaChartSection", () => {
     expect(title?.textContent).toBe("Best value models on OpenRouter");
     expect(titleLink?.getAttribute("href")).toBe("#chart-title-aa");
     expect(titleLink?.textContent).toBe("Best value models on OpenRouter");
-    expect(container.textContent).toContain("Intelligence Index score versus estimated benchmark workload cost per task.");
+    const subtitle = container.querySelector("[data-testid='chart-subtitle']") as HTMLElement;
+    expect(subtitle.textContent).toBe(AA_SUBTITLE);
+    const links = [...subtitle.querySelectorAll<HTMLAnchorElement>("a")];
+    expect(links.map((link) => link.textContent)).toEqual(["Artificial Analysis", "OpenRouter", "OpenRouter"]);
+    links.forEach((link) => {
+      expect(link.target).toBe("_blank");
+      expect(link.rel).toBe("noopener noreferrer");
+    });
+    expect(links[0]?.href).toBe("https://artificialanalysis.ai/");
+    expect(links[1]?.href).toBe("https://openrouter.ai/");
+    expect(links[2]?.href).toBe("https://openrouter.ai/");
+    expect(container.textContent).not.toContain("Intelligence Index score versus estimated benchmark workload cost per task.");
     expect(container.querySelector("canvas")).not.toBeNull();
     expect(
       container.querySelector("input#chart-aa-control-pricingMode, #chart-aa-control-pricingMode"),

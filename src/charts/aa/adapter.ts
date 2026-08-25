@@ -184,7 +184,14 @@ function explicitProviderDiscounts(
 export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
   benchmarkId: AA_BENCHMARK_ID,
   title: "Best value models on OpenRouter",
-  subtitle: "Artificial Analysis Intelligence Index score versus estimated benchmark workload cost per task.",
+  subtitle: [
+    { label: "Artificial Analysis", href: "https://artificialanalysis.ai/" },
+    " shows standard model pricing; models can have discounts and cheaper providers on ",
+    { label: "OpenRouter", href: "https://openrouter.ai/" },
+    ". This chart uses the latest ",
+    { label: "OpenRouter", href: "https://openrouter.ai/" },
+    " prices and discounts to find the real models on the Pareto frontier.",
+  ],
   xAxisLabel: "Estimated Intelligence Index workload cost (USD)",
   yAxisLabel: "Intelligence Index",
   defaultXScale: "log",

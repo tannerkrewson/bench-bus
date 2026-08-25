@@ -107,6 +107,16 @@ export interface TooltipLine {
   label: string;
   value: string;
 }
+
+/** A safe external link used inside benchmark subtitle copy. */
+export interface ChartSubtitleLink {
+  readonly label: string;
+  readonly href: string;
+}
+
+/** Plain text or link parts for a subtitle, kept separate from Solid JSX. */
+export type ChartSubtitle = string | readonly (string | ChartSubtitleLink)[];
+
 /**
  * Benchmark-specific adapter. Everything the generic chart cannot know —
  * how to compute cost (including pricing-mode controls), how to filter and
@@ -121,7 +131,7 @@ export interface BenchmarkChartAdapter<TRecord> {
   /** Short plain-English heading shown above this graph. */
   readonly title: string;
   /** Concise explanation of the benchmark score and cost metrics. */
-  readonly subtitle: string;
+  readonly subtitle: ChartSubtitle;
   /** Stable id + display label for any record, plotted or not. */
   readonly identity: (record: TRecord) => { readonly id: string; readonly label: string };
   readonly xAxisLabel: string;

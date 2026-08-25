@@ -28,6 +28,7 @@ import { isNonReasoningModel } from "../modelMetadata";
 import MethodologyModal from "../../methodology/MethodologyModal";
 import { AaMethodologyContent } from "../../methodology/MethodologyPanel";
 import RelativeLastUpdated from "../../components/RelativeLastUpdated";
+import ChartSubtitleContent from "../../components/ChartSubtitle";
 
 export interface AaChartSectionProps {
   records: () => readonly DerivedAaChartRecord[];
@@ -223,7 +224,9 @@ export default function AaChartSection(props: AaChartSectionProps) {
               </a>
             </h2>
             <div class="mt-1 flex flex-wrap items-center gap-2">
-              <p class="text-sm text-base-content/70">{aaAdapter.subtitle}</p>
+              <p class="text-sm text-base-content/70" data-testid="chart-subtitle">
+                <ChartSubtitleContent content={aaAdapter.subtitle} />
+              </p>
               <RelativeLastUpdated timestamp={props.lastUpdated} />
             </div>
           </div>

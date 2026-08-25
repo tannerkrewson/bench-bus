@@ -29,6 +29,13 @@ describe("cursorBenchAdapter identity + axes", () => {
     expect(cursorBenchAdapter.defaultXScale).toBe("log");
   });
 
+  it("uses the concise linked subtitle contract", () => {
+    expect(cursorBenchAdapter.subtitle).toEqual([
+      { label: "Cursor Evals", href: "https://cursor.com/evals" },
+      " only shows linear cost, so cheap models are hard to compare. Cursor enterprise plans also charge a flat fee for third-party model use, and the graph does not include it.",
+    ]);
+  });
+
   it("hides the current Kimi, Gemini 3.6 Flash, and GLM families by default", () => {
     const records = [
       byId("composer-2"),
