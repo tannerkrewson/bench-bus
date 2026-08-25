@@ -11,7 +11,34 @@ import {
   cursorDemoAdapter,
 } from "../charts/fixtures";
 import { chartStateFromParams } from "../charts/urlState";
-import type { ChartViewState } from "../charts/types";
+import type { BenchmarkChartAdapter, ChartViewState, PlottablePoint } from "../charts/types";
+
+type DiscountHoverRecord = { id: string };
+const discountHoverAdapter: BenchmarkChartAdapter<DiscountHoverRecord> = {
+  benchmarkId: "discount-hover",
+  title: "Discount hover",
+  subtitle: "Discount hover fixture",
+  xAxisLabel: "Avg cost / task",
+  yAxisLabel: "Score",
+  defaultXScale: "linear",
+  controlSpecs: [],
+  identity: (record) => ({ id: record.id, label: "GPT-5.6 Sol high" }),
+  computePoint: (record): PlottablePoint => ({
+    id: record.id,
+    label: "GPT-5.6 Sol high",
+    x: 92.465,
+    y: 74.8,
+    discount: {
+      percentage: 50,
+      preDiscountX: 184.93,
+      providerName: "Provider A",
+    },
+  }),
+  searchText: (record) => record.id,
+  tooltipLines: (): readonly { label: string; value: string }[] => [
+    { label: "Score", value: "74.8" },
+  ],
+};
 
 function mount(ui: () => JSX.Element) {
   const container = document.createElement("div");
@@ -166,6 +193,42 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     const last = states[states.length - 1]!;
     expect(last.scale).toBe("linear");
     expect(last.query).toBe("gemini");
+    dispose();
+  });
+
+  it("updates the generic chart x-axis label when scale changes", async () => {
+    const { container, dispose } = mount(() => (
+      <BenchmarkChartSection adapter={aaDemoAdapter} records={() => AA_FIXTURE_RECORDS} />
+    ));
+
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const chart = container.querySelector("[data-testid='benchmark-scatter']")!;
+    expect(chart.getAttribute("aria-label")).toContain("Estimated benchmark cost (USD) (log scale)");
+
+    const linearBtn = [...container.querySelectorAll("button")].find((button) => button.textContent === "Linear")!;
+    linearBtn.click();
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(chart.getAttribute("aria-label")).toContain("Estimated benchmark cost (USD) (linear scale)");
+    dispose();
+  });
+
+  it("explains a discounted model when its pre-discount endpoint is hovered", async () => {
+    const { container, dispose } = mount(() => (
+      <BenchmarkChartSection
+        adapter={discountHoverAdapter}
+        records={() => [{ id: "gpt-5.6-sol-high" }]}
+      />
+    ));
+
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const endpoint = container.querySelector<HTMLElement>("[data-testid='discount-endpoint-hit']");
+    expect(endpoint).not.toBeNull();
+    endpoint?.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    const tooltip = container.querySelector("[data-testid='chart-tooltip']");
+    expect(tooltip?.textContent).toContain("GPT-5.6 Sol high - 50% off");
+    expect(tooltip?.textContent).toContain("$184.93 - 50% = $92.47");
+    expect(tooltip?.textContent).toContain("Provider: Provider A");
+    expect(tooltip?.textContent).toContain("Source provider discount from Provider A");
     dispose();
   });
 

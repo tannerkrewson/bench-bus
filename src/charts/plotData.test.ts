@@ -4,6 +4,9 @@ import { AA_FIXTURE_RECORDS, aaDemoAdapter } from "./fixtures";
 import {
   buildChartPlot,
   discountDetailLines,
+  discountHoverTitle,
+  discountMath,
+  discountProviderSummary,
   discountSummaryLines,
   explicitDiscountForAnnotation,
   explicitDiscountForPoint,
@@ -60,10 +63,13 @@ describe("discount presentation", () => {
       providerName: "OpenRouter",
       undiscountedModelId: "meta/muse-spark-1.2",
     };
-    expect(discountSummaryLines(discount)).toEqual([
-      { label: "Discount", value: "43% off" },
+    expect(discountSummaryLines({ x: point.x }, discount)).toEqual([
+      { label: "Discount math", value: "$7.00 - 43% = $4.00" },
+      { label: "Provider", value: "Provider: OpenRouter" },
       { label: "Why", value: "Contributor model collects your data" },
     ]);
+    expect(discountHoverTitle(point, discount)).toBe("Muse Spark 1.2 - 43% off · Provider: OpenRouter");
+    expect(discountMath(point, discount)).toBe("$7.00 - 43% = $4.00");
     expect(discountDetailLines(point, discount).map((line) => line.label)).toEqual([
       "Discount",
       "Why discounted",
@@ -72,6 +78,23 @@ describe("discount presentation", () => {
       "Pre-discount cost",
       "Discounted provider cost",
     ]);
+  });
+
+  it("names both providers when the discount provider is not plotted", () => {
+    const discount = {
+      percentage: 50,
+      preDiscountX: 10,
+      effectiveX: 5,
+      providerName: "Discounted Provider",
+      providerRole: "alternative" as const,
+      plottedProviderName: "Winning Provider",
+    };
+    expect(discountProviderSummary(discount)).toBe(
+      "Discounted/pre-discount provider: Discounted Provider; plotted provider: Winning Provider",
+    );
+    expect(discountHoverTitle({ label: "Model", x: 6 }, discount)).toContain(
+      "Model - 50% off · Discounted/pre-discount provider: Discounted Provider; plotted provider: Winning Provider",
+    );
   });
 });
 

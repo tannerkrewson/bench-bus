@@ -9,6 +9,7 @@ import ChartWatermark from "./ChartWatermark";
 import {
   buildChartPlot,
   discountDetailLines,
+  discountHoverTitle,
   discountSummaryLines,
   largestExplicitDiscountForPoint,
 } from "../charts/plotData";
@@ -17,6 +18,7 @@ import type {
   ChartViewState,
   PricingControlSpec,
   PricingControlState,
+  PriceDiscountAnnotation,
   TooltipLine,
 } from "../charts/types";
 import ChartControlPanel from "./ChartControlPanel";
@@ -96,6 +98,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
     id: string;
     left: number;
     top: number;
+    discount?: PriceDiscountAnnotation;
   } | null>(null);
   const [selectedPointId, setSelectedPointId] = createSignal<string | null>(null);
 
@@ -110,11 +113,13 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
   type ChartEntry = ReturnType<typeof build>["entries"][number];
   const discountFor = (entry: ChartEntry) =>
     showDiscountsControl && showDiscounts() ? largestExplicitDiscountForPoint(entry.point) : null;
-  const summaryLinesFor = (entry: ChartEntry): readonly TooltipLine[] => {
+  const summaryLinesFor = (
+    entry: ChartEntry,
+    discount = discountFor(entry),
+  ): readonly TooltipLine[] => {
     const lines = props.adapter.summaryTooltipLines?.(entry.record, entry.point, controls()) ??
       props.adapter.tooltipLines(entry.record, entry.point, controls()).slice(0, 2);
-    const discount = discountFor(entry);
-    return discount ? [...lines, ...discountSummaryLines(discount)] : lines;
+    return discount ? [...lines, ...discountSummaryLines(entry.point, discount)] : lines;
   };
   const detailLinesFor = (entry: ChartEntry): readonly TooltipLine[] => {
     const lines = [...props.adapter.tooltipLines(entry.record, entry.point, controls())];
@@ -126,7 +131,12 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
     const h = hovered();
     if (!h) return null;
     const entry = build().entries.find((e) => e.point.id === h.id);
-    return entry ? { title: entry.point.label, lines: summaryLinesFor(entry) } : null;
+    if (!entry) return null;
+    const discount = h.discount ?? discountFor(entry);
+    return {
+      title: discount ? discountHoverTitle(entry.point, discount) : entry.point.label,
+      lines: summaryLinesFor(entry, discount),
+    };
   });
   const selectedInfo = createMemo<{
     title: string;
@@ -293,9 +303,9 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
                     showDiscounts={showDiscountsControl ? showDiscounts : undefined}
                     xAxisLabel={() => props.adapter.xAxisLabel}
                     yAxisLabel={() => props.adapter.yAxisLabel}
-                    onHover={(id, pos) =>
-                      setHovered(id && pos ? { id, left: pos.left, top: pos.top } : null)
-                    }
+                     onHover={(id, pos, details) =>
+                       setHovered(id && pos ? { id, left: pos.left, top: pos.top, discount: details?.discount } : null)
+                     }
                     onSelectPoint={setSelectedPointId}
                   />
                   <ChartTooltip

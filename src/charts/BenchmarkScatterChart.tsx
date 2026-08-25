@@ -23,7 +23,7 @@ import {
   toPlotSeries,
 } from "./plotData";
 import { formatDollarTick, formatPercentTick } from "../utils/format";
-import type { ModelBrand, PlottablePoint, XScale } from "./types";
+import type { ModelBrand, PlottablePoint, PriceDiscountAnnotation, XScale } from "./types";
 
 export interface BenchmarkScatterChartProps {
   /** Points currently passing filters, in stable order. */
@@ -38,9 +38,18 @@ export interface BenchmarkScatterChartProps {
   showDiscounts?: () => boolean;
   height?: number;
   /** Hover changes only when the pointer is within the hit radius of a dot. */
-  onHover?: (id: string | null, pos?: { left: number; top: number }) => void;
+  onHover?: (
+    id: string | null,
+    pos?: { left: number; top: number },
+    details?: BenchmarkHoverDetails,
+  ) => void;
   /** Open the model detail view when a plotted or discount endpoint is clicked. */
   onSelectPoint?: (id: string) => void;
+}
+
+export interface BenchmarkHoverDetails {
+  kind: "point" | "discount-endpoint";
+  discount?: PriceDiscountAnnotation;
 }
 
 const DOT_SIZE = 9;
@@ -83,6 +92,10 @@ export function crosshairGuideGeometry(
     horizontal: { left: 0, width: left },
     vertical: { left, top, height: Math.max(0, overHeight - top) },
   };
+}
+
+export function xAxisLabelForScale(label: string, scale: XScale): string {
+  return `${label} (${scale} scale)`;
 }
 
 export interface ConnectorHitSegment {
@@ -312,6 +325,7 @@ type DiscountAnnotation = {
   groupKey: string;
   providerName?: string;
   providerRole?: "plotted" | "alternative";
+  annotation: PriceDiscountAnnotation;
 };
 
 type DiscountDecoration = {
@@ -327,6 +341,7 @@ type DiscountDecoration = {
   groupKey: string;
   color: string;
   providerRole?: "plotted" | "alternative";
+  annotation: PriceDiscountAnnotation;
 };
 
 type CurrentSeries = ReturnType<typeof toPlotSeries> & {
@@ -475,6 +490,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
             groupKey: groupKeyById.get(point.id) ?? modelGroupKey(point.label, point.id),
             providerName: discount.providerName,
             providerRole: discountProviderRole(point, discount),
+            annotation: discount,
           }];
         })
       : [];
@@ -605,6 +621,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     plotTop: number;
     dataIndex: number;
     cost?: number;
+    discount?: PriceDiscountAnnotation;
   };
 
   const pointerPlotPosition = (u: uPlot): { left: number; top: number } | undefined => {
@@ -641,6 +658,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         plotLeft,
         plotTop,
         dataIndex: actualOffset + index,
+        discount: currentSeries.discounts.find((discount) => discount.pointId === id)?.annotation,
         distance: Math.hypot(plotLeft - pointer.left, plotTop - pointer.top),
       });
     });
@@ -660,6 +678,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         plotTop,
         dataIndex: actualOffset + pointIndex,
         cost: discount.preX,
+        discount: discount.annotation,
         distance: Math.hypot(plotLeft - pointer.left, plotTop - pointer.top),
       });
     });
@@ -759,10 +778,11 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         effectiveLeft,
         top,
         percentage: discount.percentage,
-        groupKey: discount.groupKey,
-        color: groupColor(discount.groupKey, dark),
-        providerRole: discount.providerRole,
-      }];
+         groupKey: discount.groupKey,
+         color: groupColor(discount.groupKey, dark),
+         providerRole: discount.providerRole,
+         annotation: discount.annotation,
+       }];
     });
     setDiscountDecorations(discountGeometry);
     const discountLines = discountGeometry.map((discount) => ({
@@ -898,7 +918,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     applyCrosshairDirections(plot, { left: plotLeft, top: plotTop });
     publishHoveredPosition(dot ?? null);
     publishHoveredReadout(target, dot);
-    props.onHover?.(discount.pointId, dot);
+    props.onHover?.(discount.pointId, dot, { kind: "discount-endpoint", discount: discount.annotation });
   };
 
   const clearDiscountEndpointHover = (id: string) => {
@@ -1075,6 +1095,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   const buildOptions = (): Options => {
     const scale = props.scale();
+    const xAxisLabel = xAxisLabelForScale(props.xAxisLabel(), scale);
     const styles = themeStyles();
     const pointGroups = [...new Set(currentSeries.groupKeys)];
     plotStructureKey = `${currentSeries.discounts.length}|${currentSeries.variantGroups
@@ -1120,7 +1141,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       },
       axes: [
         {
-          label: props.xAxisLabel(),
+          label: xAxisLabel,
           stroke: styles.textColor,
           font: "14px Sora, sans-serif",
           labelFont: "600 15px Sora, sans-serif",
@@ -1274,7 +1295,11 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 u.setCursor({ left: target.plotLeft, top: target.plotTop }, false);
                 applyCrosshairDirections(u);
               }
-              props.onHover?.(target.id, rawPointer ?? dot);
+               props.onHover?.(
+                 target.id,
+                 rawPointer ?? dot,
+                 target.discount ? { kind: "point", discount: target.discount } : undefined,
+               );
             }
           },
         ],
@@ -1768,7 +1793,11 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     applyCrosshairDirections(plot, { left: target.plotLeft, top: target.plotTop });
     publishHoveredPosition(dot ?? null);
     publishHoveredReadout(target, dot);
-    props.onHover?.(target.id, rawPointer ?? dot);
+    props.onHover?.(
+      target.id,
+      rawPointer ?? dot,
+      target.discount ? { kind: "point", discount: target.discount } : undefined,
+    );
   };
 
   const handleChartClick = (event: MouseEvent) => {
@@ -1804,7 +1833,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       onMouseLeave={clearPointerInteraction}
       data-hovered-label-id={hoveredLabelId() ?? undefined}
       role="group"
-      aria-label={`Scatter chart of ${props.yAxisLabel()} versus ${props.xAxisLabel()}`}
+      aria-label={`Scatter chart of ${props.yAxisLabel()} versus ${xAxisLabelForScale(props.xAxisLabel(), props.scale())}`}
       data-testid="benchmark-scatter"
     >
       <div

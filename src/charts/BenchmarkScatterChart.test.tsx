@@ -20,6 +20,7 @@ import BenchmarkScatterChart, {
   trimDiscountSegment,
   discountLineSegments,
   trimConnectorHitSegment,
+  xAxisLabelForScale,
 } from "./BenchmarkScatterChart";
 import type { PlottablePoint } from "./types";
 
@@ -41,6 +42,11 @@ describe("BenchmarkScatterChart pure interaction policies", () => {
 
   it("formats filtered axis splits as blank labels instead of literal null", () => {
     expect(formatFilteredAxisValues([69, null, 70], String)).toEqual(["69", "", "70"]);
+  });
+
+  it("includes both supported scale modes in the x-axis label", () => {
+    expect(xAxisLabelForScale("Avg cost / task", "log")).toBe("Avg cost / task (log scale)");
+    expect(xAxisLabelForScale("Avg cost / task", "linear")).toBe("Avg cost / task (linear scale)");
   });
 
   it("measures the nearest point on a connector segment", () => {
@@ -191,6 +197,28 @@ function mountSizedChart(ui: () => JSX.Element) {
 }
 
 describe("BenchmarkScatterChart discount annotations", () => {
+  it("labels the x axis and accessible chart with the active scale", async () => {
+    const [scale, setScale] = createSignal<"log" | "linear">("log");
+    const { container, dispose } = mountSizedChart(() => (
+      <BenchmarkScatterChart
+        points={() => [{ id: "model", label: "Model", x: 2, y: 60 }]}
+        scale={scale}
+        xAxisLabel={() => "Avg cost / task"}
+        yAxisLabel={() => "Score"}
+        height={320}
+      />
+    ));
+
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const chart = container.querySelector("[data-testid='benchmark-scatter']")!;
+    expect(chart.getAttribute("aria-label")).toContain("Avg cost / task (log scale)");
+
+    setScale("linear");
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(chart.getAttribute("aria-label")).toContain("Avg cost / task (linear scale)");
+    dispose();
+  });
+
   it("keeps Pareto crowns visible independently of the frontier line toggle", async () => {
     const [showFrontier, setShowFrontier] = createSignal(false);
     const [showCrowns, setShowCrowns] = createSignal(true);
@@ -250,6 +278,48 @@ describe("BenchmarkScatterChart discount annotations", () => {
     dispose();
   });
 
+  it("passes discount metadata when the plotted dot is hovered", async () => {
+    const onHover = vi.fn();
+    const { container, dispose } = mountSizedChart(() => (
+      <BenchmarkScatterChart
+        points={() => [{
+          id: "plotted",
+          label: "Plotted model",
+          x: 2,
+          y: 60,
+          discount: { percentage: 20, preDiscountX: 4, providerName: "Provider A" },
+        }]}
+        scale={() => "linear"}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        onHover={onHover}
+        height={320}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const line = container.querySelector<SVGGElement>("[data-testid='discount-line']")!;
+    const xPositions = [...line.querySelectorAll<SVGLineElement>("line")].flatMap((segment) => [
+      Number(segment.getAttribute("x1")),
+      Number(segment.getAttribute("x2")),
+    ]).filter(Number.isFinite);
+    const top = Number(line.querySelector("[data-testid='discount-endpoint-dot']")?.getAttribute("cy"));
+    const root = container.querySelector<HTMLElement>("[data-testid='benchmark-scatter']")!;
+    root.dispatchEvent(new MouseEvent("pointermove", {
+      bubbles: true,
+      clientX: Math.min(...xPositions),
+      clientY: top,
+    }));
+    expect(onHover).toHaveBeenLastCalledWith(
+      "plotted",
+      expect.anything(),
+      {
+        kind: "point",
+        discount: { percentage: 20, preDiscountX: 4, providerName: "Provider A" },
+      },
+    );
+    dispose();
+  });
+
   it("clears a dot hover before showing the crown tooltip", async () => {
     const onHover = vi.fn();
     const { container, dispose } = mountSizedChart(() => (
@@ -271,7 +341,11 @@ describe("BenchmarkScatterChart discount annotations", () => {
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     const endpoint = container.querySelector<HTMLElement>("[data-testid='discount-endpoint-hit']")!;
     endpoint.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
-    expect(onHover).toHaveBeenLastCalledWith("cheap", expect.anything());
+    expect(onHover).toHaveBeenLastCalledWith(
+      "cheap",
+      expect.anything(),
+      { kind: "discount-endpoint", discount: { percentage: 20, preDiscountX: 4 } },
+    );
     expect(container.querySelector("[data-testid='hovered-dot']")).not.toBeNull();
 
     const crown = container.querySelector<HTMLElement>("[data-testid='pareto-crown']")!;
