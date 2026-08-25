@@ -7,6 +7,8 @@ import { inferModelBrand, modelGroupColor, modelGroupColors } from "./brand";
 import { modelGroupKey } from "./modelMetadata";
 import {
   groupModelVariants,
+  LABEL_DISCOUNT_FONT_SIZE,
+  LABEL_MAIN_FONT_SIZE,
   layoutModelLabels,
   modelVariantParts,
   type ModelVariantGroup,
@@ -47,7 +49,6 @@ const POINT_STROKE_WIDTH = 1.5;
 // overlay emphasis circles exactly the same size as the canvas points so
 // hover never creates a second, visibly larger dot.
 const MODEL_DOT_RADIUS = (DOT_SIZE - POINT_STROKE_WIDTH) / 2;
-const MODEL_LABEL_FONT_SIZE = 13;
 const MODEL_LABEL_LINE_HEIGHT = 20;
 const DOT_HIT_RADIUS = 14;
 const HOVER_RING_RADIUS = MODEL_DOT_RADIUS + 3;
@@ -2070,7 +2071,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 // Labels participate in family emphasis but never expose a
                 // tooltip cursor or an additional hover circle.
                 opacity: isFocusedFamilyId(label.id) ? 1 : 0.2,
-                "font-size": `${MODEL_LABEL_FONT_SIZE}px`,
+                "font-size": `${LABEL_MAIN_FONT_SIZE}px`,
                 "line-height": `${MODEL_LABEL_LINE_HEIGHT}px`,
                 transition: "opacity 140ms ease-out",
               }}
@@ -2092,7 +2093,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                   <span
                     data-testid="model-label-discount"
                     style={{
-                      "font-size": "10px",
+                      "font-size": `${LABEL_DISCOUNT_FONT_SIZE}px`,
                       "font-weight": "400",
                       "line-height": "1",
                     }}

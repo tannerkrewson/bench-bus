@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  fallbackLabelTextWidth,
   groupModelVariants,
+  LABEL_HORIZONTAL_PADDING,
+  LABEL_MAIN_FONT_SIZE,
   layoutModelLabels,
+  labelTextWidth,
   modelVariantParts,
 } from "./labelLayout";
 
@@ -27,6 +31,44 @@ describe("layoutModelLabels", () => {
       bounds,
     );
     expect(discounted!.width).toBeGreaterThan(base!.width);
+    expect(discounted!.width).toBe(
+      Math.ceil(labelTextWidth({
+        label: "Model (43.1% off)",
+        mainLabel: "Model",
+        discountLabel: "(43.1% off)",
+      }) + LABEL_HORIZONTAL_PADDING),
+    );
+  });
+
+  it("measures discount suffixes at their smaller rendered font size", () => {
+    const anchor = {
+      label: "Model (43.1% off)",
+      mainLabel: "Model",
+      discountLabel: "(43.1% off)",
+    };
+    const width = labelTextWidth(anchor, (text, fontSize) => text.length * fontSize);
+
+    expect(width).toBe(
+      "Model".length * 13 + " ".length * 13 + "(43.1% off)".length * 10,
+    );
+    expect(width).toBeLessThan(anchor.label.length * LABEL_MAIN_FONT_SIZE);
+  });
+
+  it("keeps ordinary labels safe with the conservative main-font fallback", () => {
+    const anchor = {
+      id: "terra",
+      label: "Cursor Terra",
+      anchorLeft: 305,
+      anchorTop: 100,
+      color: "red",
+    };
+    const [label] = layoutModelLabels([anchor], bounds);
+
+    expect(label).toBeDefined();
+    expect(label!.width).toBe(
+      Math.ceil(fallbackLabelTextWidth(anchor.label, LABEL_MAIN_FONT_SIZE) + LABEL_HORIZONTAL_PADDING),
+    );
+    expect(label!.left + label!.width).toBeLessThanOrEqual(bounds.right);
   });
 
   it("keeps labels inside the plot bounds", () => {
