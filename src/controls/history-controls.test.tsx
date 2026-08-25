@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import type { JSX } from "solid-js";
-import TimeTravelControl from "./TimeTravelControl";
+import TimeTravelControl, { TimeTravelNotice } from "./TimeTravelControl";
 import FreshnessChips from "./FreshnessChips";
 import { TimeTravelProvider } from "../history/TimeTravelContext";
 import type { SourceFreshness } from "../history/types";
@@ -46,6 +46,10 @@ describe("TimeTravelControl", () => {
     // Latest plus 3 compiled times, newest first.
     expect(items.map((item) => item.textContent?.trim())).toHaveLength(4);
     expect(items[0]?.textContent).toContain("Latest data");
+    expect(menu.querySelector("[role='menu']")?.className).toContain("max-h-96");
+    expect(menu.querySelector("[role='menu']")?.className).toContain("overflow-y-auto");
+    expect(items[1]?.textContent).toContain("UTC: Aug 21, 03:00 UTC");
+    expect(items[1]?.getAttribute("title")).toBe("UTC: Aug 21, 03:00 UTC");
 
     // Move to an earlier time via the history menu.
     items.at(-1)?.click();
@@ -57,11 +61,15 @@ describe("TimeTravelControl", () => {
   it("shows a pre-history notice when the selection predates collected history", () => {
     const { container, dispose } = mount(() => (
       <TimeTravelProvider index={INDEX} initialSelectedAsOf="2026-08-01T00:00:00.000Z">
-        <TimeTravelControl />
+        <>
+          <TimeTravelControl />
+          <TimeTravelNotice />
+        </>
       </TimeTravelProvider>
     ));
     const notice = container.querySelector("[role='status']");
     expect(notice?.textContent).toContain("predates");
+    expect(container.querySelector("[data-testid='time-travel-control'] [role='status']")).toBeNull();
     const trigger = container.querySelector("summary") as HTMLElement;
     trigger.click();
     expect(container.querySelector("[data-testid='time-travel-menu'] button.btn-ghost")?.textContent)

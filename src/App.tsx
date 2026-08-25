@@ -1,5 +1,5 @@
 import type { Component } from "solid-js";
-import { createResource } from "solid-js";
+import { createResource, Show } from "solid-js";
 import AaChartSection from "./charts/aa/AaChartSection";
 import CursorBenchChartSection from "./charts/cursor/CursorBenchChartSection";
 import { cursorBenchAdapter } from "./charts/cursor/adapter";
@@ -13,7 +13,7 @@ import type { ChartStateSerializationDefaults } from "./charts/urlState";
 import { latestIsoTimestamp } from "./utils/format";
 import { TimeTravelProvider, useTimeTravel } from "./history/TimeTravelContext";
 import { timeTravelStateFromParams, mergeTimeTravelStateIntoParams } from "./history/urlState";
-import TimeTravelControl from "./controls/TimeTravelControl";
+import TimeTravelControl, { TimeTravelNotice } from "./controls/TimeTravelControl";
 import ThemeToggle from "./components/ThemeToggle";
 import { UnifiedLimitationsPanel } from "./methodology/MethodologyPanel";
 import {
@@ -88,7 +88,6 @@ async function loadIndex() {
 }
 
 const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
-  const timeTravel = useTimeTravel();
   // "Last updated" reflects the freshest source snapshot actually backing
   // each chart: AA scores + OpenRouter pricing for the first, Cursor evals
   // for the second. Absent sources render no note rather than a fake date.
@@ -138,7 +137,7 @@ const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
         onStateChange={(state) => syncChartStateToUrl(state, "cursor", cursorUrlDefaults)}
       />
       <UnifiedLimitationsPanel />
-      {timeTravel.view().preHistory || (!props.bundle.aa && !props.bundle.cursor) ? (
+      {!props.bundle.aa && !props.bundle.cursor ? (
         <p role="status" class="text-warning">
           No collected data at this selected time.
         </p>
@@ -172,18 +171,19 @@ const App: Component = () => {
                 <p class="hidden text-xs text-base-content/70 sm:block">AI benchmark scores versus estimated benchmark workload cost.</p>
               </div>
             </div>
-            <div class="navbar-end">
+            <div class="navbar-end gap-2">
+              <TimeTravelControl />
               <ThemeToggle />
             </div>
           </header>
 
-          <div class="flex flex-wrap items-center justify-between gap-4">
-            <TimeTravelControl />
-            {indexResource()?.isDemo ? (
+          <TimeTravelNotice />
+          <div class="mb-4 flex justify-end">
+            <Show when={indexResource()?.isDemo}>
               <span class="badge badge-warning badge-outline">
                 Demo fixture data — no collected snapshots deployed yet
               </span>
-            ) : null}
+            </Show>
           </div>
 
           <Charts bundle={bundle()} />

@@ -29,6 +29,9 @@ describe("App", () => {
     expect(container.querySelector("button[aria-label^='Switch to']")).not.toBeNull();
     expect(container.querySelector("button[data-testid='random-theme']")).not.toBeNull();
     expect(container.querySelector("[data-testid='time-travel-control'] summary[data-tip*='snapshot']")).not.toBeNull();
+    const navbarEnd = container.querySelector(".navbar-end")!;
+    expect(navbarEnd.children[0]?.getAttribute("data-testid")).toBe("time-travel-control");
+    expect(navbarEnd.children[1]?.querySelector("button[aria-label^='Switch to']")).not.toBeNull();
     expect(container.querySelector("[data-testid='time-travel-control'] label")).toBeNull();
     expect(container.textContent).not.toContain("View data as of");
     expect(container.querySelector("[data-testid='freshness-chips']")).toBeNull();
