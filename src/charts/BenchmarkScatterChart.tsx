@@ -154,35 +154,75 @@ export function trimDiscountSegment(
   };
 }
 
-/** Fraction of the trimmed discount span kept empty at its middle. */
-const DISCOUNT_CENTER_GAP_RATIO = 0.4;
-/** Below this trimmed length a middle split would be invisible noise. */
-const DISCOUNT_MIN_SPLIT_SPAN = 12;
+/** Keep the connector's endpoint runs stable as the chart scale changes. */
+export const DISCOUNT_SEGMENT_LENGTH = 28;
+const DISCOUNT_ARROWHEAD_SIZE = 4;
+const DISCOUNT_TICK_HALF_HEIGHT = 4;
+
+export interface DiscountConnectorGeometry {
+  segments: { x1: number; y1: number; x2: number; y2: number }[];
+  arrowhead: { tipX: number; wingX: number } | null;
+  tick: { x: number; halfHeight: number } | null;
+}
 
 /**
- * Split the trimmed discount connector into two short outer segments so the
- * middle of the line stays open. This keeps the annotation light next to the
- * model's solid line while both endpoints remain clearly attached. Spans too
- * short to show an opening fall back to one continuous segment.
+ * Build fixed-length endpoint runs and their center markers. The segment
+ * array follows the input direction for compatibility; marker positions are
+ * always expressed in screen-left-to-screen-right coordinates.
  */
+export function discountConnectorGeometry(
+  preLeft: number,
+  effectiveLeft: number,
+  gap = 0,
+): DiscountConnectorGeometry {
+  const trimmed = trimDiscountSegment(preLeft, effectiveLeft, gap);
+  if (!trimmed) return { segments: [], arrowhead: null, tick: null };
+  const { x1, x2 } = trimmed;
+  const span = Math.abs(x2 - x1);
+  const direction = x2 > x1 ? 1 : -1;
+  const left = Math.min(x1, x2);
+  const right = Math.max(x1, x2);
+  if (span <= DISCOUNT_SEGMENT_LENGTH * 2) {
+    return {
+      segments: [{ x1, y1: 0, x2, y2: 0 }],
+      arrowhead: null,
+      tick: null,
+    };
+  }
+  const leftSegment = { x1: left, y1: 0, x2: left + DISCOUNT_SEGMENT_LENGTH, y2: 0 };
+  const rightSegment = { x1: right - DISCOUNT_SEGMENT_LENGTH, y1: 0, x2: right, y2: 0 };
+  const reverse = (segment: typeof leftSegment) => ({
+    x1: segment.x2,
+    y1: segment.y2,
+    x2: segment.x1,
+    y2: segment.y1,
+  });
+  return {
+    segments: direction === 1
+      ? [leftSegment, rightSegment]
+      : [reverse(rightSegment), reverse(leftSegment)],
+    arrowhead: {
+      tipX: leftSegment.x2,
+      wingX: leftSegment.x2 + DISCOUNT_ARROWHEAD_SIZE,
+    },
+    tick: {
+      x: rightSegment.x1,
+      halfHeight: DISCOUNT_TICK_HALF_HEIGHT,
+    },
+  };
+}
+
 export function discountLineSegments(
   preLeft: number,
   effectiveLeft: number,
   gap = 0,
-): { x1: number; y1: number; x2: number; y2: number }[] {
-  const trimmed = trimDiscountSegment(preLeft, effectiveLeft, gap);
-  if (!trimmed) return [];
-  const { x1, x2 } = trimmed;
-  const span = Math.abs(x2 - x1);
-  const direction = x2 > x1 ? 1 : -1;
-  if (span < DISCOUNT_MIN_SPLIT_SPAN) {
-    return [{ x1, y1: 0, x2, y2: 0 }];
-  }
-  const half = Math.max(0, span * (1 - DISCOUNT_CENTER_GAP_RATIO) / 2);
-  return [
-    { x1, y1: 0, x2: x1 + direction * half, y2: 0 },
-    { x1: x2 - direction * half, y1: 0, x2, y2: 0 },
-  ];
+): DiscountConnectorGeometry["segments"] {
+  return discountConnectorGeometry(preLeft, effectiveLeft, gap).segments;
+}
+
+/** Build the literal left-pointing angle bracket used at the left run's end. */
+export function discountArrowheadPath(tipX: number, top: number, wingX: number): string {
+  return `M ${wingX} ${top - (wingX - tipX)} L ${tipX} ${top} L ${wingX} ${top + (wingX - tipX)}`;
 }
 
 /** uPlot split filters kept pure so axis and grid policies stay regression-testable. */
@@ -1870,8 +1910,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         <For each={discountDecorations()}>
           {(discount) => {
             // Paint the dotted connector underneath the solid endpoint dot;
-            // a zero gap keeps the outer halves attached to the dot edges.
-            const segments = discountLineSegments(discount.preLeft, discount.effectiveLeft, 0);
+            // a zero gap keeps the fixed outer runs attached to the dot edges.
+            const connector = discountConnectorGeometry(discount.preLeft, discount.effectiveLeft, 0);
             return (
               <g
                 fill="none"
@@ -1887,9 +1927,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 opacity={isFocusedFamilyId(discount.pointId) ? 0.75 : 0.2}
                 style={{ transition: "opacity 140ms ease-out" }}
               >
-                {/* Two short dotted halves leave the middle of the annotation
-                    open so it reads lighter than the model's solid line. */}
-                <For each={segments}>
+                {/* Fixed endpoint runs leave a scale-independent open middle. */}
+                <For each={connector.segments}>
                   {(segment) => (
                     <line
                       x1={segment.x1}
@@ -1897,9 +1936,34 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                       x2={segment.x2}
                       y2={discount.top}
                       style={{ transition: "x1 180ms ease-out, x2 180ms ease-out, y1 180ms ease-out, y2 180ms ease-out" }}
+                      data-testid="discount-line-segment"
+                      data-discount-part="segment"
                     />
                   )}
                 </For>
+                {connector.arrowhead && (
+                  <path
+                    d={discountArrowheadPath(
+                      connector.arrowhead.tipX,
+                      discount.top,
+                      connector.arrowhead.wingX,
+                    )}
+                    stroke-dasharray="none"
+                    data-testid="discount-line-arrowhead"
+                    data-discount-part="arrowhead"
+                  />
+                )}
+                {connector.tick && (
+                  <line
+                    x1={connector.tick.x}
+                    y1={discount.top - connector.tick.halfHeight}
+                    x2={connector.tick.x}
+                    y2={discount.top + connector.tick.halfHeight}
+                    stroke-dasharray="none"
+                    data-testid="discount-line-tick"
+                    data-discount-part="tick"
+                  />
+                )}
                 {/* The pre-discount endpoint is hollow (background-filled,
                     color-outlined) to contrast with the solid discounted dot
                     while keeping the family color identity. Explicitly reset
