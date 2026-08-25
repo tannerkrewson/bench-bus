@@ -20,6 +20,7 @@ import BenchmarkScatterChart, {
   trimDiscountSegment,
   discountLineSegments,
   trimConnectorHitSegment,
+  xAxisLabelForScale,
 } from "./BenchmarkScatterChart";
 import type { PlottablePoint } from "./types";
 
@@ -41,6 +42,11 @@ describe("BenchmarkScatterChart pure interaction policies", () => {
 
   it("formats filtered axis splits as blank labels instead of literal null", () => {
     expect(formatFilteredAxisValues([69, null, 70], String)).toEqual(["69", "", "70"]);
+  });
+
+  it("includes both supported scale modes in the x-axis label", () => {
+    expect(xAxisLabelForScale("Avg cost / task", "log")).toBe("Avg cost / task (log scale)");
+    expect(xAxisLabelForScale("Avg cost / task", "linear")).toBe("Avg cost / task (linear scale)");
   });
 
   it("measures the nearest point on a connector segment", () => {
@@ -191,6 +197,28 @@ function mountSizedChart(ui: () => JSX.Element) {
 }
 
 describe("BenchmarkScatterChart discount annotations", () => {
+  it("labels the x axis and accessible chart with the active scale", async () => {
+    const [scale, setScale] = createSignal<"log" | "linear">("log");
+    const { container, dispose } = mountSizedChart(() => (
+      <BenchmarkScatterChart
+        points={() => [{ id: "model", label: "Model", x: 2, y: 60 }]}
+        scale={scale}
+        xAxisLabel={() => "Avg cost / task"}
+        yAxisLabel={() => "Score"}
+        height={320}
+      />
+    ));
+
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const chart = container.querySelector("[data-testid='benchmark-scatter']")!;
+    expect(chart.getAttribute("aria-label")).toContain("Avg cost / task (log scale)");
+
+    setScale("linear");
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(chart.getAttribute("aria-label")).toContain("Avg cost / task (linear scale)");
+    dispose();
+  });
+
   it("keeps Pareto crowns visible independently of the frontier line toggle", async () => {
     const [showFrontier, setShowFrontier] = createSignal(false);
     const [showCrowns, setShowCrowns] = createSignal(true);

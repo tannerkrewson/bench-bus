@@ -169,6 +169,22 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     dispose();
   });
 
+  it("updates the generic chart x-axis label when scale changes", async () => {
+    const { container, dispose } = mount(() => (
+      <BenchmarkChartSection adapter={aaDemoAdapter} records={() => AA_FIXTURE_RECORDS} />
+    ));
+
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const chart = container.querySelector("[data-testid='benchmark-scatter']")!;
+    expect(chart.getAttribute("aria-label")).toContain("Estimated benchmark cost (USD) (log scale)");
+
+    const linearBtn = [...container.querySelectorAll("button")].find((button) => button.textContent === "Linear")!;
+    linearBtn.click();
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(chart.getAttribute("aria-label")).toContain("Estimated benchmark cost (USD) (linear scale)");
+    dispose();
+  });
+
   it("keeps all plotted models visible while filtering selector options", () => {
     const { container, dispose } = mount(() => (
       <BenchmarkChartSection adapter={aaDemoAdapter} records={() => AA_FIXTURE_RECORDS} />

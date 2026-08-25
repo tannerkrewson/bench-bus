@@ -85,6 +85,10 @@ export function crosshairGuideGeometry(
   };
 }
 
+export function xAxisLabelForScale(label: string, scale: XScale): string {
+  return `${label} (${scale} scale)`;
+}
+
 export interface ConnectorHitSegment {
   x1: number;
   y1: number;
@@ -1075,6 +1079,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   const buildOptions = (): Options => {
     const scale = props.scale();
+    const xAxisLabel = xAxisLabelForScale(props.xAxisLabel(), scale);
     const styles = themeStyles();
     const pointGroups = [...new Set(currentSeries.groupKeys)];
     plotStructureKey = `${currentSeries.discounts.length}|${currentSeries.variantGroups
@@ -1120,7 +1125,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       },
       axes: [
         {
-          label: props.xAxisLabel(),
+          label: xAxisLabel,
           stroke: styles.textColor,
           font: "14px Sora, sans-serif",
           labelFont: "600 15px Sora, sans-serif",
@@ -1804,7 +1809,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       onMouseLeave={clearPointerInteraction}
       data-hovered-label-id={hoveredLabelId() ?? undefined}
       role="group"
-      aria-label={`Scatter chart of ${props.yAxisLabel()} versus ${props.xAxisLabel()}`}
+      aria-label={`Scatter chart of ${props.yAxisLabel()} versus ${xAxisLabelForScale(props.xAxisLabel(), props.scale())}`}
       data-testid="benchmark-scatter"
     >
       <div

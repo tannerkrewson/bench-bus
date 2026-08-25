@@ -56,6 +56,20 @@ describe("AaChartSection", () => {
     dispose();
   });
 
+  it("labels the AA chart with its active x-axis scale", async () => {
+    const { container, dispose } = mount(() => <AaChartSection records={() => AA_FIXTURE_RECORDS} />);
+
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const chart = container.querySelector("[data-testid='benchmark-scatter']")!;
+    expect(chart.getAttribute("aria-label")).toContain("(log scale)");
+
+    const linearBtn = [...container.querySelectorAll("button")].find((button) => button.textContent === "Linear")!;
+    linearBtn.click();
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(chart.getAttribute("aria-label")).toContain("(linear scale)");
+    dispose();
+  });
+
   it("opens the AA methodology from the chart header", () => {
     const { container, dispose } = mount(() => <AaChartSection records={() => AA_FIXTURE_RECORDS} />);
     const trigger = container.querySelector<HTMLButtonElement>("[data-testid='methodology-button-aa']")!;
