@@ -79,7 +79,7 @@ describe("AaChartSection", () => {
     ));
 
     const badge = container.querySelector("[data-testid='relative-last-updated']") as HTMLElement;
-    expect(badge.textContent).toContain("Updated");
+    expect(badge.textContent).toContain("Last updated");
     expect(badge.getAttribute("aria-label")).toContain("Last updated");
     expect(container.textContent).not.toContain(" · Last updated");
     dispose();

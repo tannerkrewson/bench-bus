@@ -23,12 +23,12 @@ describe("RelativeLastUpdated", () => {
     ));
 
     const badge = () => container.querySelector("[data-testid='relative-last-updated']") as HTMLElement;
-    expect(badge().textContent).toBe("Updated just now");
+    expect(badge().textContent).toBe("Last updated just now");
     expect(badge().getAttribute("title")).toBe("Last updated Aug 24, 2026, 11:59 AM UTC");
     expect(badge().getAttribute("aria-label")).toBe("Last updated Aug 24, 2026, 11:59 AM UTC");
 
     vi.advanceTimersByTime(60_000);
-    expect(badge().textContent).toBe("Updated 1 minute ago");
+    expect(badge().textContent).toBe("Last updated 1 minute ago");
 
     dispose();
     expect(vi.getTimerCount()).toBe(0);
