@@ -6,6 +6,8 @@ import { CACHE_HIT_RATE_CONTROL_ID, CURSOR_BENCH_ID, SURCHARGE_CONTROL_ID } from
 import { CURSOR_FIXTURE_RECORDS } from "../fixtures";
 import type { ChartViewState } from "../types";
 
+const CURSOR_SUBTITLE = "Cursor Evals only shows linear cost, so cheap models are hard to compare. Cursor enterprise plans also charge a flat fee for third-party model use, and the graph does not include it.";
+
 function mount(ui: () => JSX.Element) {
   const container = document.createElement("div");
   document.body.appendChild(container);
@@ -18,6 +20,14 @@ describe("CursorBenchChartSection", () => {
     const { container, dispose } = mount(() => <CursorBenchChartSection records={() => CURSOR_FIXTURE_RECORDS} />);
     expect(container.querySelector("section[data-benchmark='cursor']")).not.toBeNull();
     expect(container.querySelector("h2")?.textContent).toBe("Best value models on Cursor");
+    const subtitle = container.querySelector("[data-testid='chart-subtitle']") as HTMLElement;
+    expect(subtitle.textContent).toBe(CURSOR_SUBTITLE);
+    const link = subtitle.querySelector("a") as HTMLAnchorElement;
+    expect(link.textContent).toBe("Cursor Evals");
+    expect(link.href).toBe("https://cursor.com/evals");
+    expect(link.target).toBe("_blank");
+    expect(link.rel).toBe("noopener noreferrer");
+    expect(container.textContent).not.toContain("CursorBench score versus average benchmark workload cost per task from cursor.com/evals.");
     expect(container.querySelector("canvas")).not.toBeNull();
     expect([...container.querySelectorAll("button")].find((b) => b.textContent === "Log")?.getAttribute("aria-pressed")).toBe("true");
     expect((container.querySelector("[data-testid='chart-controls'] input[aria-label^='Include Cursor Token Rate']") as HTMLInputElement).checked).toBe(false);

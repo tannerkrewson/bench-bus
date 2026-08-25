@@ -108,7 +108,10 @@ export function formatCursorCostUsd(cost: number): string {
 export const cursorBenchAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord> = {
   benchmarkId: CURSOR_BENCH_ID,
   title: "Best value models on Cursor",
-  subtitle: "CursorBench score versus average benchmark workload cost per task from cursor.com/evals.",
+  subtitle: [
+    { label: "Cursor Evals", href: "https://cursor.com/evals" },
+    " only shows linear cost, so cheap models are hard to compare. Cursor enterprise plans also charge a flat fee for third-party model use, and the graph does not include it.",
+  ],
   xAxisLabel: "Avg cost per task (USD, cursor.com/evals)",
   yAxisLabel: "CursorBench score",
   defaultXScale: "log",

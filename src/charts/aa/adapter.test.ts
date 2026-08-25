@@ -299,6 +299,19 @@ describe("aa tooltips and metadata", () => {
   });
 });
 
+describe("aaAdapter subtitle", () => {
+  it("uses the concise linked subtitle contract", () => {
+    expect(aaAdapter.subtitle).toEqual([
+      { label: "Artificial Analysis", href: "https://artificialanalysis.ai/" },
+      " shows standard model pricing; models can have discounts and cheaper providers on ",
+      { label: "OpenRouter", href: "https://openrouter.ai/" },
+      ". This chart uses the latest ",
+      { label: "OpenRouter", href: "https://openrouter.ai/" },
+      " prices and discounts to find the real models on the Pareto frontier.",
+    ]);
+  });
+});
+
 describe("aaAdapter cross-provider workload sensitivity", () => {
   it("cheapest winner flips with the workload shape (no provider mixing)", () => {
     const { providers } = AA_RECORD_CROSS_PROVIDER;

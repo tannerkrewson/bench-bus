@@ -48,6 +48,41 @@ export function formatLastUpdated(isoTimestamp: string | null | undefined): stri
   return `${formatted} UTC`;
 }
 
+/**
+ * Format an ISO timestamp relative to now for a freshness badge. Values older
+ * than a day use the precise UTC formatter so the badge stays useful over time.
+ */
+export function formatRelativeLastUpdated(
+  isoTimestamp: string | null | undefined,
+  nowTimestamp: number = Date.now(),
+): string | null {
+  if (!isoTimestamp || !Number.isFinite(nowTimestamp)) return null;
+  const updatedAt = new Date(isoTimestamp).getTime();
+  if (!Number.isFinite(updatedAt)) return null;
+
+  const difference = nowTimestamp - updatedAt;
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+
+  if (difference < 0) {
+    const untilUpdate = -difference;
+    if (untilUpdate < minute) return "Updated in under a minute";
+    if (untilUpdate < hour) return `Updated in ${Math.floor(untilUpdate / minute)} ${pluralize("minute", untilUpdate / minute)}`;
+    if (untilUpdate < day) return `Updated in ${Math.floor(untilUpdate / hour)} ${pluralize("hour", untilUpdate / hour)}`;
+    return formatLastUpdated(isoTimestamp);
+  }
+
+  if (difference < minute) return "Updated just now";
+  if (difference < hour) return `Updated ${Math.floor(difference / minute)} ${pluralize("minute", difference / minute)} ago`;
+  if (difference < day) return `Updated ${Math.floor(difference / hour)} ${pluralize("hour", difference / hour)} ago`;
+  return formatLastUpdated(isoTimestamp);
+}
+
+function pluralize(unit: string, value: number): string {
+  return Math.floor(value) === 1 ? unit : `${unit}s`;
+}
+
 /** Latest of the given ISO timestamps (null when none is valid). */
 export function latestIsoTimestamp(
   timestamps: readonly (string | null | undefined)[],

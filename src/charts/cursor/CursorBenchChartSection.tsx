@@ -23,7 +23,8 @@ export interface CursorBenchChartSectionProps {
   onStateChange?: (state: Readonly<ChartViewState>) => void;
   /**
    * Optional observation timestamp (ISO UTC) of the freshest source dataset
-   * backing this chart, rendered as a "Last updated" note in the subtitle.
+   * backing this chart, rendered as a relative freshness badge by the shared
+   * generic section.
    */
   lastUpdated?: () => string | null;
 }
