@@ -151,6 +151,8 @@ export interface BenchmarkChartAdapter<TRecord> {
     point: PlottablePoint,
     controls: Readonly<PricingControlState>,
   ): readonly TooltipLine[];
+  /** Optional source-backed OpenRouter model page for the detail modal. */
+  openRouterUrl?(record: TRecord): string | undefined;
   /** Optional concise rows for the hover tooltip; detail rows remain modal-only. */
   summaryTooltipLines?(
     record: TRecord,

@@ -145,11 +145,21 @@ export default function AaChartSection(props: AaChartSectionProps) {
     const entry = build().entries.find((e) => e.point.id === h.id);
     return entry ? { title: entry.point.label, lines: summaryLinesFor(entry) } : null;
   });
-  const selectedInfo = createMemo<{ title: string; lines: readonly TooltipLine[] } | null>(() => {
+  const selectedInfo = createMemo<{
+    title: string;
+    lines: readonly TooltipLine[];
+    openRouterUrl: string | undefined;
+  } | null>(() => {
     const id = selectedPointId();
     if (!id) return null;
     const entry = build().entries.find((e) => e.point.id === id);
-    return entry ? { title: entry.point.label, lines: detailLinesFor(entry) } : null;
+    return entry
+      ? {
+          title: entry.point.label,
+          lines: detailLinesFor(entry),
+          openRouterUrl: aaAdapter.openRouterUrl?.(entry.record),
+        }
+      : null;
   });
 
   const emitState = () => {
@@ -322,6 +332,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
           open={() => selectedInfo() !== null}
           title={() => selectedInfo()?.title ?? null}
           lines={() => selectedInfo()?.lines ?? []}
+          openRouterUrl={() => selectedInfo()?.openRouterUrl}
           onClose={() => setSelectedPointId(null)}
         />
         <Show when={visibleRecords().length > 0 && build().unplottable.length > 0}>

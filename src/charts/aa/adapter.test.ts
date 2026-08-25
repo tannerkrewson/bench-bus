@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { derivedAaDatasetSchema } from "../../schemas";
 import { decodeBundle } from "../../derived/encode";
-import { aaAdapter, aaControlledTooltipLines, AA_BENCHMARK_ID } from "./adapter";
+import {
+  aaAdapter,
+  aaControlledTooltipLines,
+  AA_BENCHMARK_ID,
+  openRouterUrlForAaModel,
+} from "./adapter";
 import {
   AA_FIXTURE_RECORDS,
   AA_RECORD_CROSS_PROVIDER,
@@ -36,6 +41,13 @@ describe("aa fixtures and decode path", () => {
 
 describe("aaAdapter.computePoint", () => {
   const controls = { pricingMode: "cheapest", cacheHitRate: 0.9 };
+
+  it("links confirmed model identities and omits unknown identities", () => {
+    expect(openRouterUrlForAaModel(AA_RECORD_PLOTTABLE_CHEAPEST)).toBe(
+      "https://openrouter.ai/anthropic/claude-opus-5",
+    );
+    expect(openRouterUrlForAaModel({ ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "unmapped-model" })).toBeUndefined();
+  });
 
   it("plots Intelligence Index against cheapest-provider workload cost", () => {
     const point = aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, controls);

@@ -119,11 +119,21 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
     const entry = build().entries.find((e) => e.point.id === h.id);
     return entry ? { title: entry.point.label, lines: summaryLinesFor(entry) } : null;
   });
-  const selectedInfo = createMemo<{ title: string; lines: readonly TooltipLine[] } | null>(() => {
+  const selectedInfo = createMemo<{
+    title: string;
+    lines: readonly TooltipLine[];
+    openRouterUrl: string | undefined;
+  } | null>(() => {
     const id = selectedPointId();
     if (!id) return null;
     const entry = build().entries.find((e) => e.point.id === id);
-    return entry ? { title: entry.point.label, lines: detailLinesFor(entry) } : null;
+    return entry
+      ? {
+          title: entry.point.label,
+          lines: detailLinesFor(entry),
+          openRouterUrl: props.adapter.openRouterUrl?.(entry.record),
+        }
+      : null;
   });
 
   const emitState = () => {
@@ -307,6 +317,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
           open={() => selectedInfo() !== null}
           title={() => selectedInfo()?.title ?? null}
           lines={() => selectedInfo()?.lines ?? []}
+          openRouterUrl={() => selectedInfo()?.openRouterUrl}
           onClose={() => setSelectedPointId(null)}
         />
 

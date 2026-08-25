@@ -18,6 +18,46 @@ import {
 /** URL/namespace id of the Artificial Analysis chart. */
 export const AA_BENCHMARK_ID = "aa";
 
+/**
+ * Confirmed AA -> OpenRouter identities from the committed alias mapping,
+ * plus the explicitly curated DeepSeek identity. Effort variants share the
+ * OpenRouter base page; unknown identities deliberately have no link.
+ */
+const CONFIRMED_OPENROUTER_MODEL_IDS: Readonly<Record<string, string>> = {
+  "claude-opus-5": "anthropic/claude-opus-5",
+  "claude-opus-5-high": "anthropic/claude-opus-5",
+  "claude-opus-5-medium": "anthropic/claude-opus-5",
+  "claude-opus-5-xhigh": "anthropic/claude-opus-5",
+  "claude-sonnet-5": "anthropic/claude-sonnet-5",
+  "deepseek-v4-flash-0731": "deepseek/deepseek-v4-flash-0731",
+  "deepseek-v4-pro": "deepseek/deepseek-v4-pro-0813",
+  "gemini-3-7-flash": "google/gemini-3.7-flash",
+  "gemini-3-7-flash-low": "google/gemini-3.7-flash",
+  "gemini-3-7-flash-medium": "google/gemini-3.7-flash",
+  "glm-5-3": "z-ai/glm-5.3",
+  "gpt-5-6-luna": "openai/gpt-5.6-luna",
+  "gpt-5-6-luna-high": "openai/gpt-5.6-luna",
+  "gpt-5-6-luna-low": "openai/gpt-5.6-luna",
+  "gpt-5-6-luna-medium": "openai/gpt-5.6-luna",
+  "gpt-5-6-luna-non-reasoning": "openai/gpt-5.6-luna",
+  "gpt-5-6-luna-xhigh": "openai/gpt-5.6-luna",
+  "gpt-5-6-sol": "openai/gpt-5.6-sol",
+  "gpt-5-6-sol-high": "openai/gpt-5.6-sol",
+  "gpt-5-6-sol-xhigh": "openai/gpt-5.6-sol",
+  "grok-4-6": "x-ai/grok-4.6",
+  "kimi-k3": "moonshotai/kimi-k3",
+  "muse-spark-1-2": "meta/muse-spark-1.2-contributor",
+  "nvidia-nemotron-3-super-120b-a12b": "nvidia/nemotron-3-super-120b-a12b",
+  "qwen3-8-max": "qwen/qwen3.8-max",
+};
+
+export function openRouterUrlForAaModel(
+  record: Pick<DerivedAaChartRecord, "slug">,
+): string | undefined {
+  const modelId = CONFIRMED_OPENROUTER_MODEL_IDS[record.slug];
+  return modelId === undefined ? undefined : `https://openrouter.ai/${modelId}`;
+}
+
 const PRICING_MODE_CONTROL = {
   kind: "select",
   id: "pricingMode",
@@ -144,6 +184,7 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
   controlSpecs: AA_CONTROL_SPECS,
 
   identity: (record) => ({ id: record.slug, label: modelDisplayMetadata(record.name, record.slug).label }),
+  openRouterUrl: openRouterUrlForAaModel,
 
   computePoint: (record, controls: Readonly<PricingControlState>): PlottablePoint | null => {
     // AA publishes non-reasoning base rows beside reasoning variants. The

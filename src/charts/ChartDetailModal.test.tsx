@@ -12,15 +12,16 @@ function mount(ui: () => JSX.Element) {
 }
 
 describe("ChartDetailModal", () => {
-  it("opens with detailed rows and closes through its controls", () => {
+  it("opens with detailed rows and has exactly one visible Close button", () => {
     const [open, setOpen] = createSignal(false);
     const { container, dispose } = mount(() => (
       <ChartDetailModal
         benchmarkId="test"
-        open={open}
-        title={() => open() ? "Muse Spark 1.2" : null}
-        lines={() => [{ label: "Why discounted", value: "Contributor model collects your data" }]}
-        onClose={() => setOpen(false)}
+         open={open}
+         title={() => open() ? "Muse Spark 1.2" : null}
+         lines={() => [{ label: "Why discounted", value: "Contributor model collects your data" }]}
+         openRouterUrl={() => "https://openrouter.ai/meta/muse-spark-1.2-contributor"}
+         onClose={() => setOpen(false)}
       />
     ));
 
@@ -30,7 +31,47 @@ describe("ChartDetailModal", () => {
     expect(dialog.hasAttribute("open") || dialog.open).toBe(true);
     expect(dialog.textContent).toContain("Muse Spark 1.2");
     expect(dialog.textContent).toContain("Contributor model collects your data");
-    (dialog.querySelector("button") as HTMLButtonElement).click();
+    const openRouterLink = dialog.querySelector<HTMLAnchorElement>("[data-testid='openrouter-link']");
+    expect(openRouterLink?.textContent).toBe("View on OpenRouter");
+    expect(openRouterLink?.href).toBe("https://openrouter.ai/meta/muse-spark-1.2-contributor");
+    expect(openRouterLink?.target).toBe("_blank");
+    expect(openRouterLink?.rel).toBe("noopener noreferrer");
+    const visibleCloseButtons = [...dialog.querySelectorAll<HTMLButtonElement>("button")]
+      .filter((button) => !button.closest(".modal-backdrop"))
+      .filter((button) => button.textContent?.trim() === "Close");
+    expect(visibleCloseButtons).toHaveLength(1);
+    expect(dialog.querySelector(".modal-backdrop button")).not.toBe(visibleCloseButtons[0]);
+    visibleCloseButtons[0]!.click();
+    expect(open()).toBe(false);
+    dispose();
+  });
+
+  it("closes on Escape, native dialog close, and backdrop click", () => {
+    const [open, setOpen] = createSignal(true);
+    const { container, dispose } = mount(() => (
+      <ChartDetailModal
+        benchmarkId="test"
+        open={open}
+        title={() => "Muse Spark 1.2"}
+        lines={() => []}
+        onClose={() => setOpen(false)}
+      />
+    ));
+    const dialog = container.querySelector<HTMLDialogElement>("[data-testid='chart-detail-modal']")!;
+    expect(dialog.querySelector("[data-testid='openrouter-link']")).toBeNull();
+
+    dialog.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    expect(open()).toBe(false);
+
+    setOpen(true);
+    if (typeof dialog.close === "function") dialog.close();
+    else dialog.dispatchEvent(new Event("close"));
+    expect(open()).toBe(false);
+
+    setOpen(true);
+    dialog.querySelector<HTMLButtonElement>(".modal-backdrop button")!.dispatchEvent(
+      new MouseEvent("click", { bubbles: true }),
+    );
     expect(open()).toBe(false);
     dispose();
   });
