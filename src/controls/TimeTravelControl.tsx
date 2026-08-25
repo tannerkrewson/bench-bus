@@ -71,7 +71,7 @@ export default function TimeTravelControl(): JSX.Element {
               {(asOf) => (
                 <button
                   type="button"
-                  class="btn btn-sm justify-start"
+                  class="btn btn-sm justify-start gap-2"
                   classList={{ "btn-active": view().entry?.asOf === asOf }}
                   title={`UTC: ${formatObservedUtc(asOf)}`}
                   role="menuitem"
