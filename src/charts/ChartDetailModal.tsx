@@ -38,13 +38,13 @@ export default function ChartDetailModal(props: ChartDetailModalProps) {
       aria-labelledby={titleId}
       data-testid="chart-detail-modal"
       onClose={props.onClose}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") close();
+      }}
     >
       <div class="modal-box max-w-xl">
-        <div class="flex items-start justify-between gap-4">
+        <div>
           <h3 id={titleId} class="text-lg font-bold">{props.title()}</h3>
-          <button type="button" class="btn btn-sm btn-ghost" onClick={close}>
-            Close
-          </button>
         </div>
         <Show when={props.title() !== null}>
           <dl class="mt-4 space-y-2 text-sm">
@@ -62,7 +62,7 @@ export default function ChartDetailModal(props: ChartDetailModalProps) {
           <button type="button" class="btn" onClick={close}>Close</button>
         </div>
       </div>
-      <form method="dialog" class="modal-backdrop">
+      <form method="dialog" class="modal-backdrop" onClick={close}>
         <button aria-label="Close model details">close</button>
       </form>
     </dialog>
