@@ -1,5 +1,6 @@
 import { Crown } from "lucide-solid";
 import { createEffect, createMemo, createSignal, Show } from "solid-js";
+import type { JSX } from "solid-js";
 import { formatLastUpdated } from "../utils/format";
 import BenchmarkScatterChart from "../charts/BenchmarkScatterChart";
 import ChartDetailModal from "../charts/ChartDetailModal";
@@ -20,6 +21,12 @@ import type {
 } from "../charts/types";
 import ChartControlPanel from "./ChartControlPanel";
 import ModelList from "./ModelList";
+import MethodologyModal from "../methodology/MethodologyModal";
+
+export interface ChartMethodology {
+  title: string;
+  content: JSX.Element;
+}
 
 export interface BenchmarkChartSectionProps<TRecord> {
   adapter: BenchmarkChartAdapter<TRecord>;
@@ -41,6 +48,8 @@ export interface BenchmarkChartSectionProps<TRecord> {
   ) => boolean;
   /** Whether this benchmark supports source-backed provider discounts. */
   showDiscountsControl?: boolean;
+  /** Optional graph-specific methodology content for concrete sections. */
+  methodology?: ChartMethodology;
   /**
    * Optional observation timestamp (ISO UTC) of the freshest source dataset
    * backing this chart, rendered as a "Last updated" note in the subtitle.
@@ -234,6 +243,13 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
                   build().unplottable.map((u) => props.adapter.identity(u.record))
                 }
               />
+            </Show>
+            <Show when={props.methodology}>
+              {(methodology) => (
+                <MethodologyModal benchmarkId={props.adapter.benchmarkId} title={methodology().title}>
+                  {methodology().content}
+                </MethodologyModal>
+              )}
             </Show>
           </div>
         </header>

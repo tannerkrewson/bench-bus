@@ -15,7 +15,6 @@ import { TimeTravelProvider, useTimeTravel } from "./history/TimeTravelContext";
 import { timeTravelStateFromParams, mergeTimeTravelStateIntoParams } from "./history/urlState";
 import TimeTravelControl, { TimeTravelNotice } from "./controls/TimeTravelControl";
 import ThemeToggle from "./components/ThemeToggle";
-import { UnifiedLimitationsPanel } from "./methodology/MethodologyPanel";
 import {
   fetchDerivedBundle,
   fetchDerivedIndex,
@@ -155,7 +154,6 @@ const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
         )}
         onStateChange={(state) => syncChartStateToUrl(state, "cursor", cursorUrlDefaults)}
       />
-      <UnifiedLimitationsPanel />
       {!props.bundle.aa && !props.bundle.cursor ? (
         <p role="status" class="text-warning">
           No collected data at this selected time.

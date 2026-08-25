@@ -38,6 +38,8 @@ describe("AaChartSection", () => {
     expect(container.textContent).toContain("Mystery Model");
     expect(container.textContent).toContain("no OpenRouter price");
     expect(container.textContent).toContain("Choose AA listed to use the source-listed rate");
+    expect(container.querySelector("[data-testid='methodology-button-aa']")).not.toBeNull();
+    expect(container.querySelector("[data-testid='chart-methodology-modal']")).not.toBeNull();
     expect(container.querySelector("[data-testid='aa-unplottable-count']")?.textContent).toContain(
       "1 model",
     );
@@ -51,6 +53,17 @@ describe("AaChartSection", () => {
     expect(
       (container.querySelector("#chart-aa-control-cacheHitRate") as HTMLInputElement).value,
     ).toBe("0.9");
+    dispose();
+  });
+
+  it("opens the AA methodology from the chart header", () => {
+    const { container, dispose } = mount(() => <AaChartSection records={() => AA_FIXTURE_RECORDS} />);
+    const trigger = container.querySelector<HTMLButtonElement>("[data-testid='methodology-button-aa']")!;
+    const dialog = container.querySelector<HTMLDialogElement>("[data-testid='chart-methodology-modal']")!;
+    trigger.click();
+    expect(dialog.open).toBe(true);
+    expect(dialog.textContent).toContain("OpenRouter pricing");
+    expect(dialog.textContent).not.toContain("CursorBench source");
     dispose();
   });
 

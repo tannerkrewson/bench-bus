@@ -44,7 +44,10 @@ describe("App", () => {
     expect(footer?.querySelector("div")?.className).toContain("flex-col");
     expect(footer?.querySelectorAll("a")).toHaveLength(2);
     footer?.querySelectorAll("a").forEach((link) => expect(link.className).toContain("underline"));
-    expect(container.querySelectorAll("details[data-methodology-panel]")).toHaveLength(1);
+    expect(container.querySelectorAll("[data-testid='methodology-button-aa'], [data-testid='methodology-button-cursor']")).toHaveLength(2);
+    expect(container.querySelectorAll("dialog[data-testid='chart-methodology-modal']")).toHaveLength(2);
+    expect(container.querySelector("[data-testid='aa-methodology-content']")).not.toBeNull();
+    expect(container.querySelector("[data-testid='cursor-methodology-content']")).not.toBeNull();
     expect(container.querySelector("footer a[href='https://tannerkrewson.com']")?.getAttribute("rel")).toBe(
       "noopener noreferrer",
     );

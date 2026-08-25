@@ -24,6 +24,8 @@ import {
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
 import { isNonReasoningModel } from "../modelMetadata";
 import { formatLastUpdated } from "../../utils/format";
+import MethodologyModal from "../../methodology/MethodologyModal";
+import { AaMethodologyContent } from "../../methodology/MethodologyPanel";
 
 export interface AaChartSectionProps {
   records: () => readonly DerivedAaChartRecord[];
@@ -255,6 +257,12 @@ export default function AaChartSection(props: AaChartSectionProps) {
                 unplottable={() => allBuild().unplottable.map((u) => aaAdapter.identity(u.record))}
               />
             </Show>
+            <MethodologyModal
+              benchmarkId={aaAdapter.benchmarkId}
+              title="Artificial Analysis and OpenRouter methodology"
+            >
+              <AaMethodologyContent />
+            </MethodologyModal>
           </div>
         </header>
         <div class="relative min-h-[560px] sm:min-h-[740px]" data-testid="chart-area">
