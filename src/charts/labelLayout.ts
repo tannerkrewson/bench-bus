@@ -77,10 +77,63 @@ export interface LabelLayoutOptions {
 const LABEL_HEIGHT = 20;
 const LABEL_GAP = 6;
 const LABEL_DOT_RADIUS = 8;
-// Keep a conservative width estimate while the rendered 13px label remains
-// smaller; this avoids collisions caused by font-metric differences.
+export const LABEL_MAIN_FONT_SIZE = 13;
+export const LABEL_DISCOUNT_FONT_SIZE = 10;
+export const LABEL_HORIZONTAL_PADDING = 8;
+const LABEL_FONT_FAMILY = '"Sora Variable", Sora, ui-sans-serif, system-ui, sans-serif';
+const LABEL_FONT_WEIGHT = 400;
+// Conservative SSR/jsdom fallback for the rendered 13px label. Browser
+// layout uses the actual canvas metric when the real font is available.
 const LABEL_FONT_WIDTH = 7.6;
 const EFFORT_SUFFIX = /^(.*?)\s+(xhigh|extra\s+high|low|medium|high|max)$/i;
+
+export type LabelTextMeasurer = (text: string, fontSize: number) => number;
+
+/** Deterministic text metric fallback used when canvas measurement is unavailable. */
+export function fallbackLabelTextWidth(text: string, fontSize: number): number {
+  return text.length * LABEL_FONT_WIDTH * fontSize / LABEL_MAIN_FONT_SIZE;
+}
+
+let labelCanvasContext: CanvasRenderingContext2D | null | undefined;
+
+function browserLabelTextWidth(text: string, fontSize: number): number {
+  const fallback = fallbackLabelTextWidth(text, fontSize);
+  if (
+    typeof window === "undefined" ||
+    typeof document === "undefined" ||
+    /jsdom/i.test(window.navigator.userAgent)
+  ) return fallback;
+
+  if (labelCanvasContext === undefined) {
+    try {
+      labelCanvasContext = document.createElement("canvas").getContext("2d");
+    } catch {
+      labelCanvasContext = null;
+    }
+  }
+  if (!labelCanvasContext) return fallback;
+
+  try {
+    labelCanvasContext.font = `${LABEL_FONT_WEIGHT} ${fontSize}px ${LABEL_FONT_FAMILY}`;
+    const measured = labelCanvasContext.measureText(text).width;
+    return Number.isFinite(measured) && measured >= 0 ? measured : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+/** Measure the visual text, keeping the smaller discount suffix typography separate. */
+export function labelTextWidth(
+  anchor: Pick<LabelLayoutAnchor, "label" | "mainLabel" | "discountLabel">,
+  measureText: LabelTextMeasurer = browserLabelTextWidth,
+): number {
+  const mainLabel = anchor.mainLabel ?? anchor.label;
+  const mainWidth = measureText(mainLabel, LABEL_MAIN_FONT_SIZE);
+  if (!anchor.discountLabel) return mainWidth;
+  return mainWidth +
+    measureText(" ", LABEL_MAIN_FONT_SIZE) +
+    measureText(anchor.discountLabel, LABEL_DISCOUNT_FONT_SIZE);
+}
 
 /** Return the model family and effort suffix used by Cursor's variants. */
 export function modelVariantParts(label: string): { baseLabel: string; effort: string } | null {
@@ -150,11 +203,11 @@ export function groupModelVariants(
     });
 }
 
-function labelWidth(label: string, bounds: LabelLayoutBounds): number | null {
+function labelWidth(anchor: LabelLayoutAnchor, bounds: LabelLayoutBounds): number | null {
   const available = Math.max(1, bounds.right - bounds.left);
   // Keep enough room for the larger label font and padding. A label wider than
   // the plot can never be shown in full, so omit it instead of clipping it.
-  const intrinsic = Math.ceil(label.length * LABEL_FONT_WIDTH + 8);
+  const intrinsic = Math.ceil(labelTextWidth(anchor) + LABEL_HORIZONTAL_PADDING);
   return intrinsic <= available ? intrinsic : null;
 }
 
@@ -248,7 +301,7 @@ export function layoutModelLabels(
   const sideOffset = LABEL_DOT_RADIUS + LABEL_GAP;
 
   for (const anchor of sorted) {
-    const width = labelWidth(anchor.label, bounds);
+    const width = labelWidth(anchor, bounds);
     if (width === null) continue;
     const height = LABEL_HEIGHT;
     const minLeft = bounds.left;
