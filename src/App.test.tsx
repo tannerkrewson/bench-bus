@@ -29,6 +29,9 @@ describe("App", () => {
     expect(container.querySelector("button[aria-label^='Switch to']")).not.toBeNull();
     expect(container.querySelector("button[data-testid='random-theme']")).not.toBeNull();
     expect(container.querySelector("[data-testid='time-travel-control'] summary[data-tip*='snapshot']")).not.toBeNull();
+    const navbarEnd = container.querySelector(".navbar-end")!;
+    expect(navbarEnd.children[0]?.getAttribute("data-testid")).toBe("time-travel-control");
+    expect(navbarEnd.children[1]?.querySelector("button[aria-label^='Switch to']")).not.toBeNull();
     expect(container.querySelector("[data-testid='time-travel-control'] label")).toBeNull();
     expect(container.textContent).not.toContain("View data as of");
     expect(container.querySelector("[data-testid='freshness-chips']")).toBeNull();
@@ -45,6 +48,54 @@ describe("App", () => {
     expect(container.querySelector("footer a[href='https://tannerkrewson.com']")?.getAttribute("rel")).toBe(
       "noopener noreferrer",
     );
+
+    dispose();
+    container.remove();
+  });
+
+  it("makes the header and chart logos retriggerable reduced-motion-aware controls", async () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const dispose = render(() => <App />, container);
+
+    await vi.waitFor(() => {
+      expect(container.querySelectorAll("button[aria-label*='Bench Bus']")).toHaveLength(3);
+    });
+    const logos = [...container.querySelectorAll<HTMLButtonElement>("button[aria-label*='Bench Bus']")];
+    expect(logos.map((logo) => logo.getAttribute("aria-label"))).toEqual([
+      "Bench Bus logo",
+      "Bench Bus watermark, benchb.us",
+      "Bench Bus watermark, benchb.us",
+    ]);
+
+    logos.forEach((logo) => {
+      logo.click();
+      expect(logo.classList.contains("bench-bus-logo-drive")).toBe(true);
+      logo.click();
+      expect(logo.classList.contains("bench-bus-logo-drive")).toBe(true);
+      const animationEnd = new Event("animationend");
+      Object.defineProperty(animationEnd, "animationName", { value: "bench-bus-logo-drive" });
+      logo.dispatchEvent(animationEnd);
+      expect(logo.classList.contains("bench-bus-logo-drive")).toBe(false);
+    });
+
+    const media = vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+      matches: query === "(prefers-reduced-motion: reduce)",
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList);
+    try {
+      logos[0]!.click();
+      expect(logos[0]!.classList.contains("bench-bus-logo-drive")).toBe(false);
+      expect(logos[0]!.style.transform).toBe("");
+    } finally {
+      media.mockRestore();
+    }
 
     dispose();
     container.remove();

@@ -76,6 +76,20 @@ export function freshnessFromBundle(bundle: {
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
 
+/** Localized display for an ISO timestamp in the user's local timezone. */
+export function formatObservedLocal(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  }).format(d);
+}
+
 /** Deterministic short UTC display for an ISO timestamp, e.g. "Aug 21, 02:14 UTC". */
 export function formatObservedUtc(iso: string): string {
   const d = new Date(iso);

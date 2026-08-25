@@ -279,7 +279,9 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
                   />
                 </div>
               </div>
-              <ChartWatermark />
+              <div class="absolute bottom-20 left-32 z-10 rounded-box bg-base-100/90 px-2 py-1 shadow-sm ring-1 ring-base-300">
+                <ChartWatermark />
+              </div>
             </Show>
             <div class="mt-2 flex flex-wrap items-center justify-center gap-4 text-sm text-base-content/70">
               <Show when={showFrontier()}>

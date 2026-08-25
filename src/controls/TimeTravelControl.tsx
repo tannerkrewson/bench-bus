@@ -1,7 +1,7 @@
 import { For, Show, createSignal } from "solid-js";
 import type { JSX } from "solid-js";
 import { History } from "lucide-solid";
-import { formatObservedUtc } from "../history/resolve";
+import { formatObservedLocal, formatObservedUtc } from "../history/resolve";
 import { useTimeTravel } from "../history/TimeTravelContext";
 
 /**
@@ -53,7 +53,11 @@ export default function TimeTravelControl(): JSX.Element {
           data-testid="time-travel-menu"
         >
           <h2 class="mb-2 text-sm font-semibold">Benchmark history</h2>
-          <div class="flex flex-col gap-1" role="menu" aria-label="Available benchmark snapshots">
+          <div
+            class="flex max-h-96 flex-col gap-1 overflow-y-auto"
+            role="menu"
+            aria-label="Available benchmark snapshots"
+          >
             <button
               type="button"
               class="btn btn-sm justify-start"
@@ -69,10 +73,14 @@ export default function TimeTravelControl(): JSX.Element {
                   type="button"
                   class="btn btn-sm justify-start"
                   classList={{ "btn-active": view().entry?.asOf === asOf }}
+                  title={`UTC: ${formatObservedUtc(asOf)}`}
                   role="menuitem"
                   onClick={() => choose(asOf)}
                 >
-                  {formatObservedUtc(asOf)}
+                  <span>{formatObservedLocal(asOf)}</span>
+                  <span class="text-xs font-normal text-base-content/60">
+                    UTC: {formatObservedUtc(asOf)}
+                  </span>
                 </button>
               )}
             </For>
@@ -88,12 +96,19 @@ export default function TimeTravelControl(): JSX.Element {
           </Show>
         </div>
       </details>
-      <Show when={view().preHistory}>
-        <p class="text-sm text-warning" role="status">
-          The selected time predates Bench Bus's first collected snapshot — no older data exists.
-          Pick a listed time or return to latest.
-        </p>
-      </Show>
     </div>
+  );
+}
+
+/** Pre-history status kept outside compact chrome such as the header navbar. */
+export function TimeTravelNotice(): JSX.Element {
+  const travel = useTimeTravel();
+  return (
+    <Show when={travel.view().preHistory}>
+      <p class="mb-4 text-sm text-warning" role="status">
+        The selected time predates Bench Bus's first collected snapshot — no older data exists.
+        Pick a listed time or return to latest.
+      </p>
+    </Show>
   );
 }

@@ -19,6 +19,35 @@
   outline-offset: 3px;
 }
 
+@keyframes bench-bus-logo-drive {
+  0%, 8% {
+    transform: translateX(0);
+  }
+
+  44% {
+    transform: translateX(calc(100vw + 100%));
+  }
+
+  50% {
+    transform: translateX(calc(-100vw - 100%));
+  }
+
+  92%, 100% {
+    transform: translateX(0);
+  }
+}
+
+.bench-bus-logo-drive {
+  animation: bench-bus-logo-drive 900ms ease-in-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bench-bus-logo-drive {
+    animation: none;
+    transform: translateX(0);
+  }
+}
+
 /* Portrait phones need the chart card's usable width more than another
    desktop-sized gutter. Keep the spacious widescreen treatment unchanged. */
 @media (max-width: 639px) {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   availableTimes,
+  formatObservedLocal,
   formatObservedUtc,
   freshnessFromBundle,
   relativeAge,
@@ -118,5 +119,19 @@ describe("staleness wording", () => {
 
   it("formats observation times deterministically in UTC", () => {
     expect(formatObservedUtc("2026-08-21T01:23:00.000Z")).toBe("Aug 21, 01:23 UTC");
+  });
+
+  it("formats observation times in the user's local timezone", () => {
+    const iso = "2026-08-21T01:23:00.000Z";
+    expect(formatObservedLocal(iso)).toBe(
+      new Intl.DateTimeFormat(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        timeZoneName: "short",
+      }).format(new Date(iso)),
+    );
   });
 });
