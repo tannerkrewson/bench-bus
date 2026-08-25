@@ -71,7 +71,13 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     settings.click();
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     expect(details.open).toBe(false);
-    expect(container.querySelector("[data-testid='chart-area'] > [role='img']")).not.toBeNull();
+    const watermark = container.querySelector("[data-testid='chart-watermark']") as HTMLElement;
+    expect(watermark).not.toBeNull();
+    expect(watermark.parentElement?.className).toContain("absolute");
+    expect(watermark.parentElement?.className).toContain("bottom-20");
+    expect(watermark.parentElement?.className).toContain("left-32");
+    expect(watermark.parentElement?.className).toContain("bg-base-100/90");
+    expect(watermark.getAttribute("aria-label")).toBe("Bench Bus watermark, benchb.us");
     expect(container.querySelector("[data-testid='chart-area']")?.className).toContain("min-h-");
     const scroll = container.querySelector("[data-testid='chart-scroll']") as HTMLElement;
     const scrollContent = container.querySelector("[data-testid='chart-scroll-content']") as HTMLElement;
