@@ -6,6 +6,7 @@ export interface ChartDetailModalProps {
   open: () => boolean;
   title: () => string | null;
   lines: () => readonly TooltipLine[];
+  openRouterUrl?: () => string | undefined;
   onClose: () => void;
 }
 
@@ -45,6 +46,19 @@ export default function ChartDetailModal(props: ChartDetailModalProps) {
       <div class="modal-box max-w-xl">
         <div>
           <h3 id={titleId} class="text-lg font-bold">{props.title()}</h3>
+          <Show when={props.openRouterUrl?.()}>
+            {(url) => (
+              <a
+                href={url()}
+                class="link link-primary mt-1 inline-block text-sm"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid="openrouter-link"
+              >
+                View on OpenRouter
+              </a>
+            )}
+          </Show>
         </div>
         <Show when={props.title() !== null}>
           <dl class="mt-4 space-y-2 text-sm">

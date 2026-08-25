@@ -17,10 +17,11 @@ describe("ChartDetailModal", () => {
     const { container, dispose } = mount(() => (
       <ChartDetailModal
         benchmarkId="test"
-        open={open}
-        title={() => open() ? "Muse Spark 1.2" : null}
-        lines={() => [{ label: "Why discounted", value: "Contributor model collects your data" }]}
-        onClose={() => setOpen(false)}
+         open={open}
+         title={() => open() ? "Muse Spark 1.2" : null}
+         lines={() => [{ label: "Why discounted", value: "Contributor model collects your data" }]}
+         openRouterUrl={() => "https://openrouter.ai/meta/muse-spark-1.2-contributor"}
+         onClose={() => setOpen(false)}
       />
     ));
 
@@ -30,6 +31,11 @@ describe("ChartDetailModal", () => {
     expect(dialog.hasAttribute("open") || dialog.open).toBe(true);
     expect(dialog.textContent).toContain("Muse Spark 1.2");
     expect(dialog.textContent).toContain("Contributor model collects your data");
+    const openRouterLink = dialog.querySelector<HTMLAnchorElement>("[data-testid='openrouter-link']");
+    expect(openRouterLink?.textContent).toBe("View on OpenRouter");
+    expect(openRouterLink?.href).toBe("https://openrouter.ai/meta/muse-spark-1.2-contributor");
+    expect(openRouterLink?.target).toBe("_blank");
+    expect(openRouterLink?.rel).toBe("noopener noreferrer");
     const visibleCloseButtons = [...dialog.querySelectorAll<HTMLButtonElement>("button")]
       .filter((button) => !button.closest(".modal-backdrop"))
       .filter((button) => button.textContent?.trim() === "Close");
@@ -52,6 +58,7 @@ describe("ChartDetailModal", () => {
       />
     ));
     const dialog = container.querySelector<HTMLDialogElement>("[data-testid='chart-detail-modal']")!;
+    expect(dialog.querySelector("[data-testid='openrouter-link']")).toBeNull();
 
     dialog.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     expect(open()).toBe(false);
