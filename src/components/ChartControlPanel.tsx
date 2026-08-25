@@ -91,7 +91,7 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
   return (
     <details
       ref={details}
-      class="dropdown dropdown-end relative mb-3 flex justify-end"
+      class="dropdown dropdown-end relative"
       open={open()}
       onToggle={(event) => {
         const nextOpen = (event.currentTarget as HTMLDetailsElement).open;

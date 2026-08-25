@@ -32,6 +32,9 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     expect(title?.textContent).toBe("Artificial Analysis model value");
     expect(titleLink?.getAttribute("href")).toBe("#chart-title-aa-demo");
     expect(titleLink?.textContent).toBe("Artificial Analysis model value");
+    expect(title?.parentElement?.parentElement?.querySelector("[data-testid='chart-settings']")).not.toBeNull();
+    expect(title?.parentElement?.parentElement?.querySelector("[data-testid='model-list']")).not.toBeNull();
+    expect(title?.parentElement?.parentElement?.className).toContain("flex-wrap");
     expect(container.querySelector("canvas")).not.toBeNull();
 
     // Pricing controls from the adapter.

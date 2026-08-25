@@ -1,4 +1,5 @@
 import { For, Show, createEffect, createMemo, createSignal, onCleanup, onMount } from "solid-js";
+import { ListFilter } from "lucide-solid";
 import { modelGroupColor } from "../charts/brand";
 import { modelGroupKey } from "../charts/modelMetadata";
 import { modelVariantParts } from "../charts/labelLayout";
@@ -239,20 +240,18 @@ export default function ModelList(props: ModelListProps) {
   return (
     <details
       ref={details}
-      class="dropdown dropdown-end w-72 max-w-full"
+      class="dropdown dropdown-end relative"
       open={open()}
       onToggle={(event) => setOpen((event.currentTarget as HTMLDetailsElement).open)}
       data-testid="model-list"
     >
       <summary
         ref={summary}
-        class="btn btn-outline btn-sm w-full justify-between gap-3"
+        class="btn btn-outline btn-sm gap-2 whitespace-nowrap"
         aria-expanded={open()}
       >
-        <span class="flex items-center gap-2">
-          <span>Models</span>
-          <span class="badge badge-sm">{displayItems().length}</span>
-        </span>
+        <ListFilter size={16} stroke-width={2.5} aria-hidden="true" />
+        <span>Models</span>
         <span class="text-xs text-base-content/60">
           {visibleSelectedCount()} of {combinedMode() ? items().length : sorted().length} visible
         </span>
