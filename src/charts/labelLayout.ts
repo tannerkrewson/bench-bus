@@ -255,7 +255,9 @@ export function layoutModelLabels(
     const maxLeft = Math.max(minLeft, bounds.right - width);
     const minTop = bounds.top;
     const maxTop = Math.max(minTop, bounds.bottom - height);
-    const preferredSide = options.preferredSides?.get(anchor.id) ?? "right";
+    // Keep labels on the open left side of the solid model line by default;
+    // callers can still override this for a specific crowded label.
+    const preferredSide = options.preferredSides?.get(anchor.id) ?? "left";
     const sides: ("left" | "right" | "center")[] = preferredSide === "left"
       ? ["left", "right", "center"]
       : ["right", "left", "center"];

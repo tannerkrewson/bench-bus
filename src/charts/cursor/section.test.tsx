@@ -17,7 +17,7 @@ describe("CursorBenchChartSection", () => {
   it("renders the cursor section with surcharge toggle", () => {
     const { container, dispose } = mount(() => <CursorBenchChartSection records={() => CURSOR_FIXTURE_RECORDS} />);
     expect(container.querySelector("section[data-benchmark='cursor']")).not.toBeNull();
-    expect(container.querySelector("h2")?.textContent).toBe("Cursor coding model value");
+    expect(container.querySelector("h2")?.textContent).toBe("Best value models on Cursor");
     expect(container.querySelector("canvas")).not.toBeNull();
     expect([...container.querySelectorAll("button")].find((b) => b.textContent === "Log")?.getAttribute("aria-pressed")).toBe("true");
     expect((container.querySelector("[data-testid='chart-controls'] input[aria-label^='Include Cursor Token Rate']") as HTMLInputElement).checked).toBe(false);

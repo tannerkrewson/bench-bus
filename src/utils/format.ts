@@ -30,3 +30,37 @@ export function formatCompact(value: number): string {
 function trim(n: number): string {
   return String(Math.round(n * 10) / 10);
 }
+
+/**
+ * Format an ISO UTC timestamp for "last updated" UI, e.g.
+ * "Aug 23, 2026, 10:30 PM UTC". Invalid input yields null so callers can
+ * omit the line entirely instead of printing a broken date.
+ */
+export function formatLastUpdated(isoTimestamp: string | null | undefined): string | null {
+  if (!isoTimestamp) return null;
+  const date = new Date(isoTimestamp);
+  if (Number.isNaN(date.getTime())) return null;
+  const formatted = new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "UTC",
+  }).format(date);
+  return `${formatted} UTC`;
+}
+
+/** Latest of the given ISO timestamps (null when none is valid). */
+export function latestIsoTimestamp(
+  timestamps: readonly (string | null | undefined)[],
+): string | null {
+  let latest: string | null = null;
+  let latestTime = -Infinity;
+  for (const timestamp of timestamps) {
+    if (!timestamp) continue;
+    const time = new Date(timestamp).getTime();
+    if (!Number.isNaN(time) && time > latestTime) {
+      latestTime = time;
+      latest = timestamp;
+    }
+  }
+  return latest;
+}

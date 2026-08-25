@@ -49,6 +49,14 @@ describe("layoutModelLabels", () => {
     expect(label!.left).toBeLessThan(305 - 7);
   });
 
+  it("prefers the left side of a model dot by default", () => {
+    const [label] = layoutModelLabels(
+      [{ id: "model", label: "Model", anchorLeft: 150, anchorTop: 100, color: "red" }],
+      bounds,
+    );
+    expect(label!.left + label!.width).toBeLessThan(150);
+  });
+
   it("spreads labels with the same anchor when space is available", () => {
     const labels = layoutModelLabels(
       [
@@ -129,8 +137,8 @@ describe("layoutModelLabels", () => {
       },
     );
     expect(label).toBeDefined();
-    // The default right-side candidate would terminate immediately beside the
-    // unrelated dot; the collision pass must choose the opposite side/offset.
+    // The default left-side candidate would terminate immediately beside the
+    // unrelated dot; the collision pass must choose another safe position.
     expect(label!.left + label!.width < 107 || label!.top !== 90).toBe(true);
   });
 

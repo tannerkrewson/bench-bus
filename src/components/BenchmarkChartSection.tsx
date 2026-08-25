@@ -1,11 +1,14 @@
 import { Crown } from "lucide-solid";
 import { createEffect, createMemo, createSignal, Show } from "solid-js";
+import { formatLastUpdated } from "../utils/format";
 import BenchmarkScatterChart from "../charts/BenchmarkScatterChart";
+import ChartDetailModal from "../charts/ChartDetailModal";
 import ChartTooltip from "../charts/ChartTooltip";
 import ChartWatermark from "./ChartWatermark";
 import {
   buildChartPlot,
-  discountProviderRole,
+  discountDetailLines,
+  discountSummaryLines,
   largestExplicitDiscountForPoint,
 } from "../charts/plotData";
 import type {
@@ -38,6 +41,11 @@ export interface BenchmarkChartSectionProps<TRecord> {
   ) => boolean;
   /** Whether this benchmark supports source-backed provider discounts. */
   showDiscountsControl?: boolean;
+  /**
+   * Optional observation timestamp (ISO UTC) of the freshest source dataset
+   * backing this chart, rendered as a "Last updated" note in the subtitle.
+   */
+  lastUpdated?: () => string | null;
 }
 
 /**
@@ -68,6 +76,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
   });
 
   const build = createMemo(() => buildChartPlot(props.records(), props.adapter, controls(), ""));
+  const lastUpdatedText = () => formatLastUpdated(props.lastUpdated?.() ?? null);
   const defaultSelectionIds = createMemo(() => {
     const entries = build().entries;
     const points = entries.map((entry) => entry.point);
@@ -79,6 +88,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
     left: number;
     top: number;
   } | null>(null);
+  const [selectedPointId, setSelectedPointId] = createSignal<string | null>(null);
 
   const effectiveSelectedIds = createMemo(() =>
     selectionSpecified() ? selectedIds() : defaultSelectionIds(),
@@ -88,32 +98,32 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
     return build().entries.filter((entry) => ids.has(entry.point.id));
   });
 
+  type ChartEntry = ReturnType<typeof build>["entries"][number];
+  const discountFor = (entry: ChartEntry) =>
+    showDiscountsControl && showDiscounts() ? largestExplicitDiscountForPoint(entry.point) : null;
+  const summaryLinesFor = (entry: ChartEntry): readonly TooltipLine[] => {
+    const lines = props.adapter.summaryTooltipLines?.(entry.record, entry.point, controls()) ??
+      props.adapter.tooltipLines(entry.record, entry.point, controls()).slice(0, 2);
+    const discount = discountFor(entry);
+    return discount ? [...lines, ...discountSummaryLines(discount)] : lines;
+  };
+  const detailLinesFor = (entry: ChartEntry): readonly TooltipLine[] => {
+    const lines = [...props.adapter.tooltipLines(entry.record, entry.point, controls())];
+    const discount = discountFor(entry);
+    return discount ? [...lines, ...discountDetailLines(entry.point, discount)] : lines;
+  };
+
   const hoveredInfo = createMemo<{ title: string; lines: readonly TooltipLine[] } | null>(() => {
     const h = hovered();
     if (!h) return null;
     const entry = build().entries.find((e) => e.point.id === h.id);
-    if (!entry) return null;
-    const lines = [...props.adapter.tooltipLines(entry.record, entry.point, controls())];
-    const discount = showDiscountsControl && showDiscounts() ? largestExplicitDiscountForPoint(entry.point) : null;
-    if (discount) {
-      const role = discountProviderRole(entry.point, discount);
-      lines.push(
-        {
-          label: "Discount provider",
-          value: `${discount.providerName ?? "Source provider"} (${role === "plotted" ? "plotted provider" : "alternative provider"})`,
-        },
-        ...(discount.undiscountedModelId
-          ? [{ label: "Undiscounted model", value: discount.undiscountedModelId }]
-          : []),
-        { label: "Pre-discount cost", value: `$${discount.preDiscountX.toFixed(2)}` },
-        {
-          label: "Discounted provider cost",
-          value: `$${(discount.effectiveX ?? entry.point.x).toFixed(2)}`,
-        },
-        { label: "Discount", value: `${discount.percentage}% off` },
-      );
-    }
-    return { title: entry.point.label, lines };
+    return entry ? { title: entry.point.label, lines: summaryLinesFor(entry) } : null;
+  });
+  const selectedInfo = createMemo<{ title: string; lines: readonly TooltipLine[] } | null>(() => {
+    const id = selectedPointId();
+    if (!id) return null;
+    const entry = build().entries.find((e) => e.point.id === id);
+    return entry ? { title: entry.point.label, lines: detailLinesFor(entry) } : null;
   });
 
   const emitState = () => {
@@ -169,7 +179,12 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
               {props.adapter.title}
             </a>
           </h2>
-          <p class="mt-1 text-sm text-base-content/70">{props.adapter.subtitle}</p>
+          <p class="mt-1 text-sm text-base-content/70">
+            {props.adapter.subtitle}
+            <Show when={lastUpdatedText()}>
+              {(text) => <span class="whitespace-nowrap"> · Last updated {text()}</span>}
+            </Show>
+          </p>
         </header>
         <ChartControlPanel
           scale={scale}
@@ -254,6 +269,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
                     onHover={(id, pos) =>
                       setHovered(id && pos ? { id, left: pos.left, top: pos.top } : null)
                     }
+                    onSelectPoint={setSelectedPointId}
                   />
                   <ChartTooltip
                     left={() => hovered()?.left ?? 0}
@@ -283,6 +299,14 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
             </div>
           </Show>
         </div>
+
+        <ChartDetailModal
+          benchmarkId={props.adapter.benchmarkId}
+          open={() => selectedInfo() !== null}
+          title={() => selectedInfo()?.title ?? null}
+          lines={() => selectedInfo()?.lines ?? []}
+          onClose={() => setSelectedPointId(null)}
+        />
 
       </div>
     </section>

@@ -10,6 +10,7 @@ import { AA_CONTROL_SPECS as aaControlSpecs } from "./charts/aa/adapter";
 import { chartStateFromParams, chartStateToParams } from "./charts/urlState";
 import type { ChartViewState, PricingControlSpec, PricingControlState } from "./charts/types";
 import type { ChartStateSerializationDefaults } from "./charts/urlState";
+import { latestIsoTimestamp } from "./utils/format";
 import { TimeTravelProvider, useTimeTravel } from "./history/TimeTravelContext";
 import { timeTravelStateFromParams, mergeTimeTravelStateIntoParams } from "./history/urlState";
 import TimeTravelControl from "./controls/TimeTravelControl";
@@ -88,6 +89,18 @@ async function loadIndex() {
 
 const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
   const timeTravel = useTimeTravel();
+  // "Last updated" reflects the freshest source snapshot actually backing
+  // each chart: AA scores + OpenRouter pricing for the first, Cursor evals
+  // for the second. Absent sources render no note rather than a fake date.
+  const aaLastUpdated = () =>
+    props.bundle.aa
+      ? latestIsoTimestamp([
+          props.bundle.sources.aa.observedAt,
+          props.bundle.sources.openrouter.observedAt,
+        ])
+      : null;
+  const cursorLastUpdated = () =>
+    props.bundle.cursor ? props.bundle.sources.cursor.observedAt ?? null : null;
   const aaUrlDefaults: ChartStateSerializationDefaults = {
     scale: "log",
     controls: { pricingMode: "cheapest", cacheHitRate: 0.9 },
@@ -106,6 +119,7 @@ const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
     <div class="mt-4 space-y-8">
       <AaChartSection
         records={() => props.bundle.aa?.records ?? []}
+        lastUpdated={aaLastUpdated}
         initialState={initialChartStateFor(
           "aa",
           aaControlSpecs,
@@ -115,6 +129,7 @@ const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
       />
       <CursorBenchChartSection
         records={() => props.bundle.cursor?.records ?? []}
+        lastUpdated={cursorLastUpdated}
         initialState={initialChartStateFor(
           "cursor",
           cursorBenchAdapter.controlSpecs,

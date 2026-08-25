@@ -1,6 +1,7 @@
 import { Crown } from "lucide-solid";
 import { createEffect, createMemo, createSignal, Show } from "solid-js";
 import BenchmarkScatterChart from "../BenchmarkScatterChart";
+import ChartDetailModal from "../ChartDetailModal";
 import ChartTooltip from "../ChartTooltip";
 import ChartWatermark from "../../components/ChartWatermark";
 import { buildChartPlot } from "../plotData";
@@ -15,12 +16,14 @@ import type { DerivedAaChartRecord } from "../../schemas";
 import { aaAdapter, aaControlledTooltipLines } from "./adapter";
 import { AA_DEFAULT_CACHE_HIT_RATE, listedCostUsd } from "./pricing";
 import {
-  discountProviderRole,
+  discountDetailLines,
+  discountSummaryLines,
   largestExplicitDiscountForPoint,
   paretoFrontier,
 } from "../plotData";
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
 import { isNonReasoningModel } from "../modelMetadata";
+import { formatLastUpdated } from "../../utils/format";
 
 export interface AaChartSectionProps {
   records: () => readonly DerivedAaChartRecord[];
@@ -28,6 +31,11 @@ export interface AaChartSectionProps {
   initialState?: Partial<ChartViewState>;
   /** Called on every interaction-state change for URL persistence. */
   onStateChange?: (state: Readonly<ChartViewState>) => void;
+  /**
+   * Optional observation timestamp (ISO UTC) of the freshest source dataset
+   * backing this chart, rendered as a "Last updated" note in the subtitle.
+   */
+  lastUpdated?: () => string | null;
 }
 
 /**
@@ -61,6 +69,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
     left: number;
     top: number;
   } | null>(null);
+  const [selectedPointId, setSelectedPointId] = createSignal<string | null>(null);
   const visibleRecords = createMemo(() =>
     props.records().filter((record) => !isNonReasoningModel(record.name, record.slug)),
   );
@@ -116,32 +125,31 @@ export default function AaChartSection(props: AaChartSectionProps) {
   // Visibility filtering is handled by `build`; unselected models are omitted
   // from the chart rather than painted as a second selection layer.
 
+  type ChartEntry = ReturnType<typeof build>["entries"][number];
+  const discountFor = (entry: ChartEntry) =>
+    showDiscounts() ? largestExplicitDiscountForPoint(entry.point) : null;
+  const summaryLinesFor = (entry: ChartEntry): readonly TooltipLine[] => {
+    const lines = aaControlledTooltipLines(entry.record, entry.point, controls()).slice(0, 2);
+    const discount = discountFor(entry);
+    return discount ? [...lines, ...discountSummaryLines(discount)] : lines;
+  };
+  const detailLinesFor = (entry: ChartEntry): readonly TooltipLine[] => {
+    const lines = [...aaControlledTooltipLines(entry.record, entry.point, controls())];
+    const discount = discountFor(entry);
+    return discount ? [...lines, ...discountDetailLines(entry.point, discount)] : lines;
+  };
+
   const hoveredInfo = createMemo<{ title: string; lines: readonly TooltipLine[] } | null>(() => {
     const h = hovered();
     if (!h) return null;
     const entry = build().entries.find((e) => e.point.id === h.id);
-    if (!entry) return null;
-    const lines = [...aaControlledTooltipLines(entry.record, entry.point, controls())];
-    const discount = showDiscounts() ? largestExplicitDiscountForPoint(entry.point) : null;
-    if (discount) {
-      const role = discountProviderRole(entry.point, discount);
-      lines.push(
-        {
-          label: "Discount provider",
-          value: `${discount.providerName ?? "Source provider"} (${role === "plotted" ? "plotted provider" : "alternative provider"})`,
-        },
-        ...(discount.undiscountedModelId
-          ? [{ label: "Undiscounted model", value: discount.undiscountedModelId }]
-          : []),
-        { label: "Pre-discount cost", value: `$${discount.preDiscountX.toFixed(2)}` },
-        {
-          label: "Discounted provider cost",
-          value: `$${(discount.effectiveX ?? entry.point.x).toFixed(2)}`,
-        },
-        { label: "Discount", value: `${discount.percentage}% off` },
-      );
-    }
-    return { title: entry.point.label, lines };
+    return entry ? { title: entry.point.label, lines: summaryLinesFor(entry) } : null;
+  });
+  const selectedInfo = createMemo<{ title: string; lines: readonly TooltipLine[] } | null>(() => {
+    const id = selectedPointId();
+    if (!id) return null;
+    const entry = build().entries.find((e) => e.point.id === id);
+    return entry ? { title: entry.point.label, lines: detailLinesFor(entry) } : null;
   });
 
   const emitState = () => {
@@ -191,7 +199,12 @@ export default function AaChartSection(props: AaChartSectionProps) {
               {aaAdapter.title}
             </a>
           </h2>
-          <p class="mt-1 text-sm text-base-content/70">{aaAdapter.subtitle}</p>
+          <p class="mt-1 text-sm text-base-content/70">
+            {aaAdapter.subtitle}
+            <Show when={formatLastUpdated(props.lastUpdated?.() ?? null)}>
+              {(text) => <span class="whitespace-nowrap"> · Last updated {text()}</span>}
+            </Show>
+          </p>
         </header>
         <ChartControlPanel
           benchmarkId={aaAdapter.benchmarkId}
@@ -272,6 +285,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
                     onHover={(id, pos) =>
                       setHovered(id && pos ? { id, left: pos.left, top: pos.top } : null)
                     }
+                    onSelectPoint={setSelectedPointId}
                   />
                   <ChartTooltip
                     left={() => hovered()?.left ?? 0}
@@ -301,6 +315,13 @@ export default function AaChartSection(props: AaChartSectionProps) {
             </div>
           </Show>
         </div>
+        <ChartDetailModal
+          benchmarkId={aaAdapter.benchmarkId}
+          open={() => selectedInfo() !== null}
+          title={() => selectedInfo()?.title ?? null}
+          lines={() => selectedInfo()?.lines ?? []}
+          onClose={() => setSelectedPointId(null)}
+        />
         <Show when={visibleRecords().length > 0 && build().unplottable.length > 0}>
           <p class="text-xs text-base-content/60" role="status" data-testid="aa-unplottable-count">
             {build().unplottable.length} model(s) shown in the list but not plotted: no usable

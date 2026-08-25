@@ -151,6 +151,12 @@ export interface BenchmarkChartAdapter<TRecord> {
     point: PlottablePoint,
     controls: Readonly<PricingControlState>,
   ): readonly TooltipLine[];
+  /** Optional concise rows for the hover tooltip; detail rows remain modal-only. */
+  summaryTooltipLines?(
+    record: TRecord,
+    point: PlottablePoint,
+    controls: Readonly<PricingControlState>,
+  ): readonly TooltipLine[];
 }
 
 /** Full serializable interaction state of one benchmark chart. */

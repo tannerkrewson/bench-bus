@@ -15,6 +15,7 @@ import BenchmarkScatterChart, {
   snapToDotPosition,
   pointToSegmentDistance,
   trimDiscountSegment,
+  discountLineSegments,
   trimConnectorHitSegment,
 } from "./BenchmarkScatterChart";
 import type { PlottablePoint } from "./types";
@@ -48,6 +49,18 @@ describe("BenchmarkScatterChart pure interaction policies", () => {
     expect(trimDiscountSegment(100, 20, 5)).toEqual({ x1: 95, x2: 25 });
     expect(trimDiscountSegment(20, 100, 5)).toEqual({ x1: 25, x2: 95 });
     expect(trimDiscountSegment(20, 28, 5)).toBeNull();
+  });
+
+  it("splits the discount connector into two outer halves with an open middle", () => {
+    const [left, right] = discountLineSegments(0, 100);
+    expect(left).toEqual({ x1: 0, y1: 0, x2: 30, y2: 0 });
+    expect(right).toEqual({ x1: 70, y1: 0, x2: 100, y2: 0 });
+    // Direction-independent: mirrored spans keep the same open middle.
+    const [mirroredLeft, mirroredRight] = discountLineSegments(100, 0);
+    expect(mirroredLeft).toEqual({ x1: 100, y1: 0, x2: 70, y2: 0 });
+    expect(mirroredRight).toEqual({ x1: 30, y1: 0, x2: 0, y2: 0 });
+    // Spans too short to split stay one continuous segment.
+    expect(discountLineSegments(50, 51)).toEqual([{ x1: 50, y1: 0, x2: 51, y2: 0 }]);
   });
 
   it("draws crosshair guides left and down from the snapped cursor", () => {
@@ -220,6 +233,63 @@ describe("BenchmarkScatterChart discount annotations", () => {
     dispose();
   });
 
+  it("clears a dot hover before showing the crown tooltip", async () => {
+    const onHover = vi.fn();
+    const { container, dispose } = mountSizedChart(() => (
+      <BenchmarkScatterChart
+        points={() => [{
+          id: "cheap",
+          label: "Cheap",
+          x: 2,
+          y: 60,
+          discount: { percentage: 20, preDiscountX: 4 },
+        }]}
+        scale={() => "linear"}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        onHover={onHover}
+        height={320}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const endpoint = container.querySelector<HTMLElement>("[data-testid='discount-endpoint-hit']")!;
+    endpoint.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    expect(onHover).toHaveBeenLastCalledWith("cheap", expect.anything());
+    expect(container.querySelector("[data-testid='hovered-dot']")).not.toBeNull();
+
+    const crown = container.querySelector<HTMLElement>("[data-testid='pareto-crown']")!;
+    crown.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    expect(onHover).toHaveBeenLastCalledWith(null);
+    expect(container.querySelector("[data-testid='hovered-dot']")).toBeNull();
+    expect(container.querySelector("[data-testid='pareto-crown-tooltip']")).not.toBeNull();
+    dispose();
+  });
+
+  it("selects a model when its plotted or discount endpoint is clicked", async () => {
+    const onSelectPoint = vi.fn();
+    const { container, dispose } = mountSizedChart(() => (
+      <BenchmarkScatterChart
+        points={() => [{
+          id: "clickable",
+          label: "Clickable",
+          x: 2,
+          y: 60,
+          discount: { percentage: 20, preDiscountX: 4 },
+        }]}
+        scale={() => "linear"}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        onSelectPoint={onSelectPoint}
+        height={320}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const endpoint = container.querySelector<HTMLElement>("[data-testid='discount-endpoint-hit']")!;
+    endpoint.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: 0, clientY: 0 }));
+    expect(onSelectPoint).toHaveBeenCalledWith("clickable");
+    dispose();
+  });
+
   it("renders one horizontal percentage arrow for each explicit source discount", async () => {
     const initialPoints: readonly PlottablePoint[] = [
       {
@@ -248,15 +318,14 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect(arrows).toHaveLength(1);
     expect(arrows[0]?.getAttribute("data-discount-id")).toBe("discounted-model");
     expect(arrows[0]?.getAttribute("data-discount-percentage")).toBe("40");
-    expect(arrows[0]?.querySelector("line")).not.toBeNull();
-    expect(arrows[0]?.querySelector("line")?.getAttribute("stroke-dasharray")).toBe("4 4");
+    expect(arrows[0]?.querySelectorAll("line").length).toBeGreaterThan(0);
+    expect(arrows[0]?.getAttribute("stroke-dasharray")).toBe("0.1 5");
     expect(container.querySelectorAll("[data-testid='focused-discount-dot']")).toHaveLength(0);
     expect(container.querySelectorAll("[data-testid='discount-endpoint-dot'][data-discount-endpoint='pre']")).toHaveLength(1);
     expect(container.querySelectorAll("[data-testid='discount-endpoint-dot'] circle")).toHaveLength(0);
     const line = arrows[0]?.querySelector("line");
     expect([line?.getAttribute("x1"), line?.getAttribute("x2"), line?.getAttribute("y1")].every((value) => Number.isFinite(Number(value)))).toBe(true);
-    expect(arrows[0]?.querySelector("line")?.getAttribute("stroke-width")).toBe("1");
-    expect(arrows[0]?.getAttribute("stroke-dasharray")).toBe("4 4");
+    expect(arrows[0]?.getAttribute("stroke-dasharray")).toBe("0.1 5");
     expect(container.querySelectorAll("[data-testid='discount-line-hit']")).toHaveLength(1);
     expect(container.querySelectorAll("[data-testid='discount-endpoint-hit'][data-discount-endpoint='pre']")).toHaveLength(1);
     const discountHit = container.querySelector("[data-testid='discount-line-hit']") as HTMLElement;
@@ -269,7 +338,6 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect(container.querySelector("[data-testid='hover-axis-readouts']")?.textContent).toContain("$10");
     endpointHit.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
     expect(container.querySelector("[data-testid='hovered-dot']")).toBeNull();
-    expect(arrows[0]?.getAttribute("stroke-width")).toBe("1");
     expect(arrows[0]?.querySelector("path")).toBeNull();
 
     setScale("linear");
@@ -283,7 +351,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
     dispose();
   });
 
-  it("renders the DeepSeek discount endpoint as a solid dot without a connector gap", async () => {
+  it("renders the discount connector as two dotted halves with an open middle and a hollow endpoint", async () => {
     const { container, dispose } = mount(() => (
       <BenchmarkScatterChart
         points={() => [{
@@ -300,11 +368,22 @@ describe("BenchmarkScatterChart discount annotations", () => {
       />
     ));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    const line = container.querySelector("[data-testid='discount-line'] line")!;
+    const group = container.querySelector("[data-testid='discount-line']")!;
+    const lines = [...group.querySelectorAll("line")];
+    expect(lines).toHaveLength(2);
+    expect(group.getAttribute("stroke-linecap")).toBe("round");
+    expect(Number(group.getAttribute("stroke-width"))).toBeLessThan(2);
+    // The two halves leave the middle of the span empty.
+    const [left, right] = lines.map((line) => ({
+      x1: Number(line.getAttribute("x1")),
+      x2: Number(line.getAttribute("x2")),
+    })) as [{ x1: number; x2: number }, { x1: number; x2: number }];
+    expect(right.x1 - left.x2).toBeGreaterThan(1);
+    // The pre-discount endpoint dot is hollow: background fill, colored outline.
     const endpoint = container.querySelector("[data-testid='discount-endpoint-dot']")!;
-    expect(line.getAttribute("stroke-dasharray")).toBe("4 4");
+    expect(endpoint.getAttribute("fill")).toBe("var(--color-base-100)");
     expect(endpoint.getAttribute("stroke-dasharray")).toBe("none");
-    expect(Number(line.getAttribute("x1"))).toBeCloseTo(Number(endpoint.getAttribute("cx")), 5);
+    expect(Number(left.x1)).toBeCloseTo(Number(endpoint.getAttribute("cx")), 5);
     dispose();
   });
 
@@ -332,6 +411,46 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect(container.querySelectorAll("[data-testid='discount-endpoint-hit'][data-discount-endpoint='effective']")).toHaveLength(0);
     const line = discount.querySelector("line")!;
     expect(Math.abs(Number(line.getAttribute("x2")) - Number(line.getAttribute("x1")))).toBeGreaterThan(1);
+    dispose();
+  });
+
+  it("keeps sibling effort discounts emphasized when one family discount is hovered", async () => {
+    const { container, dispose } = mountSizedChart(() => (
+      <BenchmarkScatterChart
+        points={() => [
+          {
+            id: "model-low",
+            label: "Model low",
+            effortGroup: "model",
+            effort: "low",
+            x: 4,
+            y: 60,
+            discount: { percentage: 20, preDiscountX: 6 },
+          },
+          {
+            id: "model-high",
+            label: "Model high",
+            effortGroup: "model",
+            effort: "high",
+            x: 5,
+            y: 70,
+            discount: { percentage: 30, preDiscountX: 8 },
+          },
+        ]}
+        scale={() => "linear"}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        height={320}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const lines = [...container.querySelectorAll<SVGGElement>("[data-testid='discount-line']")];
+    expect(lines).toHaveLength(2);
+    expect(lines.map((line) => line.getAttribute("opacity"))).toEqual(["0.75", "0.75"]);
+    const firstHit = container.querySelector<HTMLElement>("[data-testid='discount-line-hit']");
+    firstHit?.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    expect(lines.map((line) => line.getAttribute("opacity"))).toEqual(["0.75", "0.75"]);
+    firstHit?.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
     dispose();
   });
 
@@ -471,8 +590,8 @@ describe("BenchmarkScatterChart discount annotations", () => {
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     const label = container.querySelector("[data-testid='model-label']") as HTMLElement;
     const discount = container.querySelector("[data-testid='model-label-discount']") as HTMLElement;
-    expect(label?.textContent).toBe("Model (43.1% off)");
-    expect(label?.getAttribute("aria-label")).toBe("Model (43.1% off)");
+    expect(label?.textContent).toBe("Model (43% off)");
+    expect(label?.getAttribute("aria-label")).toBe("Model (43% off)");
     expect(label?.getAttribute("role")).toBe("img");
     expect(discount).not.toBeNull();
     expect(Number.parseFloat(getComputedStyle(discount).fontSize)).toBeLessThan(13);

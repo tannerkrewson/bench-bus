@@ -24,9 +24,9 @@ describe("AaChartSection", () => {
     expect(container.querySelector("section[data-benchmark='aa']")).not.toBeNull();
     const title = container.querySelector("h2#chart-title-aa") as HTMLHeadingElement;
     const titleLink = title?.querySelector("a[data-testid='chart-title-link']") as HTMLAnchorElement;
-    expect(title?.textContent).toBe("Best value AI models");
+    expect(title?.textContent).toBe("Best value models on OpenRouter");
     expect(titleLink?.getAttribute("href")).toBe("#chart-title-aa");
-    expect(titleLink?.textContent).toBe("Best value AI models");
+    expect(titleLink?.textContent).toBe("Best value models on OpenRouter");
     expect(container.textContent).toContain("Intelligence Index score versus estimated benchmark workload cost per task.");
     expect(container.querySelector("canvas")).not.toBeNull();
     expect(

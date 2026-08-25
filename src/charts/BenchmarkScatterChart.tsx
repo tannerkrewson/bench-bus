@@ -37,6 +37,8 @@ export interface BenchmarkScatterChartProps {
   height?: number;
   /** Hover changes only when the pointer is within the hit radius of a dot. */
   onHover?: (id: string | null, pos?: { left: number; top: number }) => void;
+  /** Open the model detail view when a plotted or discount endpoint is clicked. */
+  onSelectPoint?: (id: string) => void;
 }
 
 const DOT_SIZE = 9;
@@ -52,6 +54,7 @@ const HOVER_RING_RADIUS = MODEL_DOT_RADIUS + 3;
 const DISCOUNT_HIT_RADIUS = 8;
 const DISCOUNT_ENDPOINT_GAP = MODEL_DOT_RADIUS + 2;
 const PLOT_ANIMATION_DURATION = 180;
+const EMPHASIS_TRANSITION_DURATION = 140;
 // Keep leaders visually attached to the real dot edge; the layout collision
 // pass, not a large decorative gap, keeps them out of nearby dots.
 const LEADER_LINE_GAP = 1;
@@ -148,6 +151,37 @@ export function trimDiscountSegment(
     x1: preLeft + direction * gap,
     x2: effectiveLeft - direction * gap,
   };
+}
+
+/** Fraction of the trimmed discount span kept empty at its middle. */
+const DISCOUNT_CENTER_GAP_RATIO = 0.4;
+/** Below this trimmed length a middle split would be invisible noise. */
+const DISCOUNT_MIN_SPLIT_SPAN = 12;
+
+/**
+ * Split the trimmed discount connector into two short outer segments so the
+ * middle of the line stays open. This keeps the annotation light next to the
+ * model's solid line while both endpoints remain clearly attached. Spans too
+ * short to show an opening fall back to one continuous segment.
+ */
+export function discountLineSegments(
+  preLeft: number,
+  effectiveLeft: number,
+  gap = 0,
+): { x1: number; y1: number; x2: number; y2: number }[] {
+  const trimmed = trimDiscountSegment(preLeft, effectiveLeft, gap);
+  if (!trimmed) return [];
+  const { x1, x2 } = trimmed;
+  const span = Math.abs(x2 - x1);
+  const direction = x2 > x1 ? 1 : -1;
+  if (span < DISCOUNT_MIN_SPLIT_SPAN) {
+    return [{ x1, y1: 0, x2, y2: 0 }];
+  }
+  const half = Math.max(0, span * (1 - DISCOUNT_CENTER_GAP_RATIO) / 2);
+  return [
+    { x1, y1: 0, x2: x1 + direction * half, y2: 0 },
+    { x1: x2 - direction * half, y1: 0, x2, y2: 0 },
+  ];
 }
 
 /** uPlot split filters kept pure so axis and grid policies stay regression-testable. */
@@ -278,6 +312,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   let hoveredIndex: number | null = null;
   let plotUpdateFrame: number | null = null;
   let plotAnimationFrame: number | null = null;
+  let emphasisAnimationFrame: number | null = null;
   let labelUpdateFrame: number | null = null;
   type PlotDataShape = {
     pathIds: string[];
@@ -1245,8 +1280,39 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         focusedConnectorIndex !== null && focusedConnectorIndex >= 0 ? focusedConnectorIndex : null,
         focusedPointGroupKeys,
       );
-      plot.series.forEach((series, index) => { series.alpha = alphas[index] ?? 1; });
-      plot.redraw(false, false);
+      if (emphasisAnimationFrame !== null && typeof window !== "undefined") {
+        window.cancelAnimationFrame(emphasisAnimationFrame);
+        emphasisAnimationFrame = null;
+      }
+      const current = plot;
+      const from = current.series.map((series) => series.alpha ?? 1);
+      const needsAnimation = current.series.some((series, index) =>
+        Math.abs((series.alpha ?? 1) - (alphas[index] ?? 1)) > 0.001,
+      );
+      if (!needsAnimation) return;
+      if (typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
+        current.series.forEach((series, index) => { series.alpha = alphas[index] ?? 1; });
+        current.redraw(false, false);
+      } else {
+        const startedAt = performance.now();
+        const animate = (timestamp: number) => {
+          if (plot !== current) return;
+          const progress = Math.min(1, Math.max(0, (timestamp - startedAt) / EMPHASIS_TRANSITION_DURATION));
+          const eased = 1 - (1 - progress) ** 3;
+          current.series.forEach((series, index) => {
+            const start = from[index] ?? 1;
+            const end = alphas[index] ?? 1;
+            series.alpha = start + (end - start) * eased;
+          });
+          current.redraw(false, false);
+          if (progress < 1) {
+            emphasisAnimationFrame = window.requestAnimationFrame(animate);
+          } else {
+            emphasisAnimationFrame = null;
+          }
+        };
+        emphasisAnimationFrame = window.requestAnimationFrame(animate);
+      }
     }
     root?.querySelectorAll<HTMLElement>(".u-axis, .u-title, .u-value, .u-label").forEach((axis) => {
       axis.style.opacity = "1";
@@ -1478,9 +1544,11 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     if (typeof window !== "undefined") {
       if (plotUpdateFrame !== null) window.cancelAnimationFrame(plotUpdateFrame);
       if (plotAnimationFrame !== null) window.cancelAnimationFrame(plotAnimationFrame);
+      if (emphasisAnimationFrame !== null) window.cancelAnimationFrame(emphasisAnimationFrame);
       if (labelUpdateFrame !== null) window.cancelAnimationFrame(labelUpdateFrame);
     }
     plotUpdateFrame = null;
+    emphasisAnimationFrame = null;
     labelUpdateFrame = null;
   });
 
@@ -1662,10 +1730,35 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     props.onHover?.(target.id, rawPointer ?? dot);
   };
 
+  const handleChartClick = (event: MouseEvent) => {
+    if (!plot) return;
+    const targetElement = event.target instanceof Element ? event.target : null;
+    const discountEndpoint = targetElement?.closest("[data-testid='discount-endpoint-hit']");
+    const discountEndpointId = discountEndpoint?.getAttribute("data-discount-id");
+    if (discountEndpointId) {
+      props.onSelectPoint?.(discountEndpointId);
+      return;
+    }
+    // Labels, family connectors, discount lines, and crowns own their own
+    // interaction. A discount endpoint remains a valid model-dot target.
+    if (targetElement?.closest(
+      "[data-testid='pareto-crown'], [data-testid='discount-line-hit'], [data-testid='family-connector-hit'], [data-testid='model-label']",
+    )) return;
+    const over = container?.querySelector<HTMLElement>(".u-over");
+    if (!over || !Number.isFinite(event.clientX) || !Number.isFinite(event.clientY)) return;
+    const overRect = over.getBoundingClientRect();
+    const target = hoveredTarget(plot, {
+      left: event.clientX - overRect.left,
+      top: event.clientY - overRect.top,
+    });
+    if (target) props.onSelectPoint?.(target.id);
+  };
+
   return (
     <div
       class="relative w-full"
       onPointerMove={handleOverlayPointerMove}
+      onClick={handleChartClick}
       onPointerLeave={clearPointerInteraction}
       onMouseLeave={clearPointerInteraction}
       data-hovered-label-id={hoveredLabelId() ?? undefined}
@@ -1775,43 +1868,46 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         </Show>
         <For each={discountDecorations()}>
           {(discount) => {
-            // Paint the dashed connector underneath the solid endpoint dot;
-            // trimming here leaves the exact gap users see on DeepSeek.
-            const segment = trimDiscountSegment(discount.preLeft, discount.effectiveLeft, 0);
+            // Paint the dotted connector underneath the solid endpoint dot;
+            // a zero gap keeps the outer halves attached to the dot edges.
+            const segments = discountLineSegments(discount.preLeft, discount.effectiveLeft, 0);
             return (
               <g
                 fill="none"
                 stroke={discount.color}
-                stroke-width="1"
-                stroke-dasharray="4 4"
+                stroke-width="1.75"
+                stroke-dasharray="0.1 5"
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 data-testid="discount-line"
                 data-discount-id={discount.id}
                 data-discount-percentage={discount.percentage}
                 data-discount-provider-role={discount.providerRole ?? "plotted"}
-                opacity={hoveredLabelId() === null || hoveredLabelId() === discount.pointId ? 1 : 0.2}
+                opacity={isFocusedFamilyId(discount.pointId) ? 0.75 : 0.2}
+                style={{ transition: "opacity 140ms ease-out" }}
               >
-                {/* The model's plotted dot is the effective endpoint for every
-                    discount line, including alternative-provider metadata.
-                    Paint dashes first and explicitly reset circle dashing so
-                    the source endpoint cannot be cut into chunks. */}
-                {segment && (
-                  <line
-                    x1={segment.x1}
-                    y1={discount.top}
-                    x2={segment.x2}
-                    y2={discount.top}
-                    stroke-width="1"
-                    stroke-dasharray="4 4"
-                    style={{ transition: "x1 180ms ease-out, x2 180ms ease-out, y1 180ms ease-out, y2 180ms ease-out" }}
-                  />
-                )}
+                {/* Two short dotted halves leave the middle of the annotation
+                    open so it reads lighter than the model's solid line. */}
+                <For each={segments}>
+                  {(segment) => (
+                    <line
+                      x1={segment.x1}
+                      y1={discount.top}
+                      x2={segment.x2}
+                      y2={discount.top}
+                      style={{ transition: "x1 180ms ease-out, x2 180ms ease-out, y1 180ms ease-out, y2 180ms ease-out" }}
+                    />
+                  )}
+                </For>
+                {/* The pre-discount endpoint is hollow (background-filled,
+                    color-outlined) to contrast with the solid discounted dot
+                    while keeping the family color identity. Explicitly reset
+                    circle dashing so the outline cannot be cut into chunks. */}
                 <circle
                   cx={discount.preLeft}
                   cy={discount.top}
                   r={MODEL_DOT_RADIUS}
-                  fill={discount.color}
+                  fill="var(--color-base-100)"
                   stroke={discount.color}
                   stroke-width={POINT_STROKE_WIDTH}
                   stroke-dasharray="none"
@@ -1882,15 +1978,24 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 top: `${point.top - 27}px`,
                 color: themeStyles().textColor,
                 opacity: isFocusedFamilyId(point.id) ? 1 : 0.2,
-                transition: "left 180ms ease-out, top 180ms ease-out",
+                transition: "left 180ms ease-out, top 180ms ease-out, opacity 140ms ease-out",
               }}
               role="img"
               aria-label={description}
               title={description}
               tabIndex="0"
-              onMouseEnter={() => setHoveredCrownId(point.id)}
+              onMouseEnter={() => {
+                // Crown hit targets sit above the plot, so the underlying
+                // uPlot surface cannot clear a dot hover when the pointer
+                // moves upward into the crown.
+                clearPointerInteraction();
+                setHoveredCrownId(point.id);
+              }}
               onMouseLeave={() => setHoveredCrownId(null)}
-              onFocus={() => setHoveredCrownId(point.id)}
+              onFocus={() => {
+                clearPointerInteraction();
+                setHoveredCrownId(point.id);
+              }}
               onBlur={() => setHoveredCrownId(null)}
               data-testid="pareto-crown"
               data-model-id={point.id}
@@ -1943,8 +2048,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                   x2={endLeft}
                   y2={endTop}
                   stroke={themeStyles().leaderColor}
-                  stroke-opacity={hoveredLabelId() === null || hoveredLabelId() === label.id ? "0.5" : "0.1"}
+                  stroke-opacity={isFocusedFamilyId(label.id) ? "0.5" : "0.1"}
                   stroke-width="0.75"
+                  style={{ transition: "stroke-opacity 140ms ease-out" }}
                   data-testid="model-label-leader"
                 />
               );
@@ -1963,9 +2069,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 color: label.color,
                 // Labels participate in family emphasis but never expose a
                 // tooltip cursor or an additional hover circle.
-                opacity: hoveredLabelId() === null || hoveredLabelId() === label.id ? 1 : 0.2,
+                opacity: isFocusedFamilyId(label.id) ? 1 : 0.2,
                 "font-size": `${MODEL_LABEL_FONT_SIZE}px`,
                 "line-height": `${MODEL_LABEL_LINE_HEIGHT}px`,
+                transition: "opacity 140ms ease-out",
               }}
               data-testid="model-label"
               data-model-id={label.id}

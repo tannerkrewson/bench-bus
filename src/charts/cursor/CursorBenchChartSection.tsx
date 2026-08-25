@@ -20,6 +20,11 @@ export interface CursorBenchChartSectionProps {
   initialState?: Partial<ChartViewState>;
   /** Called on every interaction-state change so the parent can persist it. */
   onStateChange?: (state: Readonly<ChartViewState>) => void;
+  /**
+   * Optional observation timestamp (ISO UTC) of the freshest source dataset
+   * backing this chart, rendered as a "Last updated" note in the subtitle.
+   */
+  lastUpdated?: () => string | null;
 }
 
 /**
@@ -44,6 +49,7 @@ export default function CursorBenchChartSection(props: CursorBenchChartSectionPr
       <BenchmarkChartSection
         adapter={cursorBenchAdapter}
         records={props.records}
+        lastUpdated={props.lastUpdated}
         initialState={props.initialState}
         onStateChange={(state) => {
           setControls(state.controls);

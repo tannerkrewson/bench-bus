@@ -4,6 +4,7 @@ import type {
   PlottablePoint,
   PriceDiscountAnnotation,
   PricingControlState,
+  TooltipLine,
 } from "./types";
 
 /**
@@ -59,12 +60,56 @@ export interface ModelLabelParts {
   accessibleLabel: string;
 }
 
+/** Round a source discount to the nearest whole percent for display. */
+export function roundDiscountPercent(percentage: number): number {
+  return Math.round(percentage);
+}
+
+/** Plain-English explanation suitable for the compact hover tooltip. */
+export function discountReason(discount: PriceDiscountAnnotation): string {
+  if (discount.undiscountedModelId) return "Contributor model collects your data";
+  if (discount.providerName) return `Source provider discount from ${discount.providerName}`;
+  return "Source-provided discount";
+}
+
+/** Compact discount rows kept understandable at a glance. */
+export function discountSummaryLines(discount: PriceDiscountAnnotation): TooltipLine[] {
+  return [
+    { label: "Discount", value: `${roundDiscountPercent(discount.percentage)}% off` },
+    { label: "Why", value: discountReason(discount) },
+  ];
+}
+
+/** Full discount rows moved out of hover and into the click-open modal. */
+export function discountDetailLines(
+  point: PlottablePoint,
+  discount: PriceDiscountAnnotation,
+): TooltipLine[] {
+  const role = discountProviderRole(point, discount);
+  return [
+    { label: "Discount", value: `${roundDiscountPercent(discount.percentage)}% off` },
+    { label: "Why discounted", value: discountReason(discount) },
+    {
+      label: "Discount provider",
+      value: `${discount.providerName ?? "Source provider"} (${role === "plotted" ? "plotted provider" : "alternative provider"})`,
+    },
+    ...(discount.undiscountedModelId
+      ? [{ label: "Undiscounted model", value: discount.undiscountedModelId }]
+      : []),
+    { label: "Pre-discount cost", value: `$${discount.preDiscountX.toFixed(2)}` },
+    {
+      label: "Discounted provider cost",
+      value: `$${(discount.effectiveX ?? point.x).toFixed(2)}`,
+    },
+  ];
+}
+
 export function modelLabelParts(
   label: string,
   discount: PriceDiscountAnnotation | null,
 ): ModelLabelParts {
   if (!discount) return { mainLabel: label, accessibleLabel: label };
-  const discountLabel = `(${discount.percentage}% off)`;
+  const discountLabel = `(${roundDiscountPercent(discount.percentage)}% off)`;
   return {
     mainLabel: label,
     discountLabel,

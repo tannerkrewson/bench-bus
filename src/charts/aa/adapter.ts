@@ -136,7 +136,7 @@ function explicitProviderDiscounts(
  */
 export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
   benchmarkId: AA_BENCHMARK_ID,
-  title: "Best value AI models",
+  title: "Best value models on OpenRouter",
   subtitle: "Artificial Analysis Intelligence Index score versus estimated benchmark workload cost per task.",
   xAxisLabel: "Estimated Intelligence Index workload cost (USD)",
   yAxisLabel: "Intelligence Index",

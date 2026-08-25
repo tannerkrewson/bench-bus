@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
+import type { PlottablePoint } from "./types";
 import { AA_FIXTURE_RECORDS, aaDemoAdapter } from "./fixtures";
 import {
   buildChartPlot,
+  discountDetailLines,
+  discountSummaryLines,
   explicitDiscountForAnnotation,
   explicitDiscountForPoint,
   modelLabelParts,
@@ -34,15 +37,41 @@ describe("buildChartPlot", () => {
 });
 
 describe("modelLabelWithDiscount", () => {
-  it("formats a parenthesized discount while retaining the complete accessible label", () => {
-    expect(modelLabelWithDiscount("Model", { percentage: 43.1, preDiscountX: 10 })).toBe("Model (43.1% off)");
+  it("formats a parenthesized discount rounded to whole percent with an accessible label", () => {
+    expect(modelLabelWithDiscount("Model", { percentage: 43.1, preDiscountX: 10 })).toBe("Model (43% off)");
+    expect(modelLabelWithDiscount("Model", { percentage: 43.5, preDiscountX: 10 })).toBe("Model (44% off)");
     expect(modelLabelWithDiscount("Model", { percentage: 100, preDiscountX: 10, effectiveX: 0 })).toBe("Model (100% off)");
     expect(modelLabelWithDiscount("Model", null)).toBe("Model");
     expect(modelLabelParts("Model", { percentage: 43.1, preDiscountX: 10 })).toEqual({
       mainLabel: "Model",
-      discountLabel: "(43.1% off)",
-      accessibleLabel: "Model (43.1% off)",
+      discountLabel: "(43% off)",
+      accessibleLabel: "Model (43% off)",
     });
+  });
+});
+
+describe("discount presentation", () => {
+  it("keeps hover discount copy simple and explains contributor pricing", () => {
+    const point: PlottablePoint = { id: "muse", label: "Muse Spark 1.2", x: 4, y: 70 };
+    const discount = {
+      percentage: 43.4,
+      preDiscountX: 7,
+      effectiveX: 4,
+      providerName: "OpenRouter",
+      undiscountedModelId: "meta/muse-spark-1.2",
+    };
+    expect(discountSummaryLines(discount)).toEqual([
+      { label: "Discount", value: "43% off" },
+      { label: "Why", value: "Contributor model collects your data" },
+    ]);
+    expect(discountDetailLines(point, discount).map((line) => line.label)).toEqual([
+      "Discount",
+      "Why discounted",
+      "Discount provider",
+      "Undiscounted model",
+      "Pre-discount cost",
+      "Discounted provider cost",
+    ]);
   });
 });
 
