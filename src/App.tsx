@@ -87,6 +87,25 @@ async function loadIndex() {
   }
 }
 
+function driveLogo(event: MouseEvent): void {
+  const logo = event.currentTarget as HTMLButtonElement;
+  // Remove and reflow before re-adding so rapid clicks safely restart the run.
+  logo.classList.remove("bench-bus-logo-drive");
+  if (typeof window === "undefined" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+    logo.style.removeProperty("transform");
+    return;
+  }
+  void logo.offsetWidth;
+  logo.classList.add("bench-bus-logo-drive");
+}
+
+function resetLogo(event: AnimationEvent): void {
+  if (event.animationName !== "bench-bus-logo-drive") return;
+  const logo = event.currentTarget as HTMLButtonElement;
+  logo.classList.remove("bench-bus-logo-drive");
+  logo.style.removeProperty("transform");
+}
+
 const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
   // "Last updated" reflects the freshest source snapshot actually backing
   // each chart: AA scores + OpenRouter pricing for the first, Cursor evals
@@ -165,7 +184,16 @@ const App: Component = () => {
         <div class="bench-bus-page-shell container mx-auto flex min-h-screen max-w-7xl flex-col px-2 py-4 sm:px-6 sm:py-8">
           <header class="navbar mb-6 rounded-box bg-base-200 px-4 shadow-sm sm:px-6">
             <div class="navbar-start gap-3">
-              <img class="h-12 w-16 object-contain sm:h-14 sm:w-20" src="/logo.svg" alt="Bench Bus logo" />
+              <button
+                type="button"
+                class="flex h-12 w-16 shrink-0 cursor-pointer appearance-none items-center justify-center border-0 bg-transparent p-0 sm:h-14 sm:w-20"
+                aria-label="Bench Bus logo"
+                title="Bench Bus logo"
+                onClick={driveLogo}
+                onAnimationEnd={resetLogo}
+              >
+                <img class="h-12 w-16 object-contain sm:h-14 sm:w-20" src="/logo.svg" alt="" aria-hidden="true" />
+              </button>
               <div>
                 <h1 class="text-xl font-bold tracking-tight sm:text-2xl">Bench Bus</h1>
                 <p class="hidden text-xs text-base-content/70 sm:block">AI benchmark scores versus estimated benchmark workload cost.</p>
