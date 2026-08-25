@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import type { JSX } from "solid-js";
-import { UnifiedLimitationsPanel } from "./MethodologyPanel";
+import MethodologyModal from "./MethodologyModal";
+import { AaMethodologyContent, CursorMethodologyContent } from "./MethodologyPanel";
 
 function mount(ui: () => JSX.Element) {
   const container = document.createElement("div");
@@ -10,39 +11,71 @@ function mount(ui: () => JSX.Element) {
   return { container, dispose: () => { dispose(); container.remove(); } };
 }
 
-describe("UnifiedLimitationsPanel", () => {
-  it("renders one collapsed, keyboard-accessible explanation area", () => {
-    const { container, dispose } = mount(() => <UnifiedLimitationsPanel />);
-    const details = container.querySelector("details[data-methodology-panel]") as HTMLDetailsElement;
-    expect(details).not.toBeNull();
-    expect(details.open).toBe(false);
-    expect(details.querySelector("summary")?.textContent).toContain(
-      "Methodology, sources, and limitations",
-    );
-    expect(container.querySelectorAll("[data-testid='unified-limitations']")).toHaveLength(1);
+describe("MethodologyModal", () => {
+  it("opens an accessible graph-specific dialog with exactly one visible close button", () => {
+    const { container, dispose } = mount(() => (
+      <MethodologyModal benchmarkId="aa" title="Artificial Analysis methodology">
+        <AaMethodologyContent />
+      </MethodologyModal>
+    ));
+    const trigger = container.querySelector<HTMLButtonElement>("[data-testid='methodology-button-aa']")!;
+    const dialog = container.querySelector<HTMLDialogElement>("[data-testid='chart-methodology-modal']")!;
+
+    expect(dialog.open).toBe(false);
+    expect(trigger.getAttribute("aria-haspopup")).toBe("dialog");
+    trigger.click();
+    expect(dialog.open).toBe(true);
+    expect(dialog.getAttribute("aria-labelledby")).toBe("chart-methodology-aa-title");
+    expect(dialog.textContent).toContain("Artificial Analysis methodology");
+    expect(dialog.querySelectorAll<HTMLButtonElement>("button")).toHaveLength(1);
+    expect(dialog.querySelector<HTMLButtonElement>("button")?.textContent).toBe("Close");
+    expect(trigger.getAttribute("aria-expanded")).toBe("true");
+
+    dialog.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    expect(dialog.open).toBe(false);
+    trigger.click();
+    (dialog.querySelector(".modal-backdrop") as HTMLElement).click();
+    expect(dialog.open).toBe(false);
     dispose();
   });
+});
 
-  it("keeps source, estimate, and data limitations in one concise area", () => {
-    const { container, dispose } = mount(() => <UnifiedLimitationsPanel />);
+describe("graph methodology content", () => {
+  it("keeps Artificial Analysis and OpenRouter facts in their graph only", () => {
+    const { container, dispose } = mount(() => <AaMethodologyContent />);
     const text = container.textContent ?? "";
     expect(text).toContain("actual canonical benchmark token counts");
     expect(text).toContain("30-day realized averages");
-    expect(text).toContain("Cache-write volume is not published");
-    expect(text).toContain("cursor.com/evals");
-    expect(text).toContain("third-party fee is an estimate suitable for multi-step agent workloads");
-    expect(text).toContain("Estimated cache hit rate");
-    expect(text).toContain("percentage of non-output prompt tokens assumed to be served from cache");
-    expect(text).toContain("Do not interpret 90% as a universal measured Cursor cache-hit rate");
-    expect(text).toContain("Historical views include only snapshots");
+    expect(text).toContain("cache-write volume");
+    expect(text).toContain("OpenRouter pricing");
+    expect(text).not.toContain("CursorBench");
     dispose();
   });
 
-  it("uses source links that remain safe when opened in a new tab", () => {
-    const { container, dispose } = mount(() => <UnifiedLimitationsPanel />);
-    const source = container.querySelector("a[href='https://cursor.com/evals']");
-    expect(source?.getAttribute("target")).toBe("_blank");
-    expect(source?.getAttribute("rel")).toBe("noopener noreferrer");
+  it("keeps CursorBench facts in their graph only", () => {
+    const { container, dispose } = mount(() => <CursorMethodologyContent />);
+    const text = container.textContent ?? "";
+    expect(text).toContain("cursor.com/evals");
+    expect(text).toContain("third-party multi-step agent workloads");
+    expect(text).toContain("percentage");
+    expect(text).toContain("Grok 4.6, Grok 4.5, and Composer 2.5");
+    expect(text).not.toContain("OpenRouter pricing");
+    dispose();
+  });
+
+  it("uses safe new-tab source links", () => {
+    const { container, dispose } = mount(() => (
+      <>
+        <AaMethodologyContent />
+        <CursorMethodologyContent />
+      </>
+    ));
+    const links = container.querySelectorAll<HTMLAnchorElement>("a");
+    expect(links).toHaveLength(3);
+    links.forEach((link) => {
+      expect(link.target).toBe("_blank");
+      expect(link.rel).toBe("noopener noreferrer");
+    });
     dispose();
   });
 });

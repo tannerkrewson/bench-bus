@@ -1,5 +1,6 @@
 import { Crown } from "lucide-solid";
 import { createEffect, createMemo, createSignal, Show } from "solid-js";
+import type { JSX } from "solid-js";
 import { formatLastUpdated } from "../utils/format";
 import BenchmarkScatterChart from "../charts/BenchmarkScatterChart";
 import ChartDetailModal from "../charts/ChartDetailModal";
@@ -20,6 +21,12 @@ import type {
 } from "../charts/types";
 import ChartControlPanel from "./ChartControlPanel";
 import ModelList from "./ModelList";
+import MethodologyModal from "../methodology/MethodologyModal";
+
+export interface ChartMethodology {
+  title: string;
+  content: JSX.Element;
+}
 
 export interface BenchmarkChartSectionProps<TRecord> {
   adapter: BenchmarkChartAdapter<TRecord>;
@@ -41,6 +48,8 @@ export interface BenchmarkChartSectionProps<TRecord> {
   ) => boolean;
   /** Whether this benchmark supports source-backed provider discounts. */
   showDiscountsControl?: boolean;
+  /** Optional graph-specific methodology content for concrete sections. */
+  methodology?: ChartMethodology;
   /**
    * Optional observation timestamp (ISO UTC) of the freshest source dataset
    * backing this chart, rendered as a "Last updated" note in the subtitle.
@@ -179,63 +188,71 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
       data-benchmark={props.adapter.benchmarkId}
     >
       <div class="card-body">
-        <header class="mb-1">
-          <h2 id={`chart-title-${props.adapter.benchmarkId}`} class="card-title text-2xl">
-            <a
-              href={`#chart-title-${props.adapter.benchmarkId}`}
-              class="link link-hover"
-              data-testid="chart-title-link"
-            >
-              {props.adapter.title}
-            </a>
-          </h2>
-          <p class="mt-1 text-sm text-base-content/70">
-            {props.adapter.subtitle}
-            <Show when={lastUpdatedText()}>
-              {(text) => <span class="whitespace-nowrap"> · Last updated {text()}</span>}
-            </Show>
-          </p>
-        </header>
-        <ChartControlPanel
-          scale={scale}
-          onScaleChange={setScale}
-          benchmarkId={props.adapter.benchmarkId}
-          specs={props.adapter.controlSpecs}
-          controls={controls}
-          onControlChange={setControl}
-          isControlVisible={(spec) => props.isControlVisible?.(spec, controls()) ?? true}
-          showLabels={showLabels}
-          onShowLabelsChange={setShowLabels}
-          showFrontier={showFrontier}
-          onShowFrontierChange={setShowFrontier}
-          showCrowns={showCrowns}
-          onShowCrownsChange={setShowCrowns}
-          showDiscounts={showDiscountsControl ? showDiscounts : undefined}
-          onShowDiscountsChange={showDiscountsControl ? setShowDiscounts : undefined}
-        />
-
-        <Show when={props.records().length > 0}>
-          <div class="mb-3 flex justify-end">
-            <ModelList
-              points={() => build().entries.map((e) => e.point)}
-              selectedIds={effectiveSelectedIds}
-              defaultSelectedIds={defaultSelectionIds}
-              searchId={`chart-${props.adapter.benchmarkId}-model-search`}
-              onResetDefault={resetDefault}
-              query={query}
-              onQueryChange={setQuery}
-              onToggleSelect={toggleSelect}
-              unplottableLabel={() => props.adapter.unplottableLabel?.(controls()) ?? "no pricing"}
-              unplottableDescription={() =>
-                props.adapter.unplottableDescription?.(controls()) ??
-                "Unavailable with the current pricing settings."
-              }
-              unplottable={() =>
-                build().unplottable.map((u) => props.adapter.identity(u.record))
-              }
-            />
+        <header class="mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+          <div class="min-w-0 flex-1">
+            <h2 id={`chart-title-${props.adapter.benchmarkId}`} class="card-title text-2xl">
+              <a
+                href={`#chart-title-${props.adapter.benchmarkId}`}
+                class="link link-hover"
+                data-testid="chart-title-link"
+              >
+                {props.adapter.title}
+              </a>
+            </h2>
+            <p class="mt-1 text-sm text-base-content/70">
+              {props.adapter.subtitle}
+              <Show when={lastUpdatedText()}>
+                {(text) => <span class="whitespace-nowrap"> · Last updated {text()}</span>}
+              </Show>
+            </p>
           </div>
-        </Show>
+          <div class="flex flex-wrap items-center justify-end gap-2">
+            <ChartControlPanel
+              scale={scale}
+              onScaleChange={setScale}
+              benchmarkId={props.adapter.benchmarkId}
+              specs={props.adapter.controlSpecs}
+              controls={controls}
+              onControlChange={setControl}
+              isControlVisible={(spec) => props.isControlVisible?.(spec, controls()) ?? true}
+              showLabels={showLabels}
+              onShowLabelsChange={setShowLabels}
+              showFrontier={showFrontier}
+              onShowFrontierChange={setShowFrontier}
+              showCrowns={showCrowns}
+              onShowCrownsChange={setShowCrowns}
+              showDiscounts={showDiscountsControl ? showDiscounts : undefined}
+              onShowDiscountsChange={showDiscountsControl ? setShowDiscounts : undefined}
+            />
+            <Show when={props.records().length > 0}>
+              <ModelList
+                points={() => build().entries.map((e) => e.point)}
+                selectedIds={effectiveSelectedIds}
+                defaultSelectedIds={defaultSelectionIds}
+                searchId={`chart-${props.adapter.benchmarkId}-model-search`}
+                onResetDefault={resetDefault}
+                query={query}
+                onQueryChange={setQuery}
+                onToggleSelect={toggleSelect}
+                unplottableLabel={() => props.adapter.unplottableLabel?.(controls()) ?? "no pricing"}
+                unplottableDescription={() =>
+                  props.adapter.unplottableDescription?.(controls()) ??
+                  "Unavailable with the current pricing settings."
+                }
+                unplottable={() =>
+                  build().unplottable.map((u) => props.adapter.identity(u.record))
+                }
+              />
+            </Show>
+            <Show when={props.methodology}>
+              {(methodology) => (
+                <MethodologyModal benchmarkId={props.adapter.benchmarkId} title={methodology().title}>
+                  {methodology().content}
+                </MethodologyModal>
+              )}
+            </Show>
+          </div>
+        </header>
         <div class="relative min-h-[560px] sm:min-h-[740px]" data-testid="chart-area">
           <Show
             when={props.records().length > 0}

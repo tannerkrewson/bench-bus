@@ -80,9 +80,12 @@ describe("ModelList effort selection", () => {
     const familyCheckbox = container.querySelector("[aria-label='Show Opus 5']") as HTMLInputElement;
     expect(familyCheckbox.indeterminate).toBe(true);
     expect(familyCheckbox.getAttribute("aria-checked")).toBe("mixed");
-    expect((container.querySelector("[data-testid='model-list'] .badge") as HTMLElement).textContent).toBe("2");
+    const summary = container.querySelector("[data-testid='model-list'] summary") as HTMLElement;
+    expect(container.querySelector("[data-testid='model-list'] .badge")).toBeNull();
+    expect(summary.querySelector("svg")).not.toBeNull();
+    expect(summary.textContent).toContain("0 of 2 visible");
     mode.click();
-    expect((container.querySelector("[data-testid='model-list'] .badge") as HTMLElement).textContent).toBe("4");
+    expect(summary.textContent).toContain("1 of 4 visible");
     expect(container.querySelector("[aria-label='Show Opus 5']")).toBeNull();
     expect(container.querySelector("[aria-label='Show Opus 5 Medium']")).not.toBeNull();
     expect((container.querySelector("[aria-label='Show Opus 5 Medium']") as HTMLInputElement).checked).toBe(true);

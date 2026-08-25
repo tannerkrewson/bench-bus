@@ -13,6 +13,7 @@ import {
   cursorBenchAdapter,
 } from "./adapter";
 import type { DerivedCursorChartRecord } from "../../schemas";
+import { CursorMethodologyContent } from "../../methodology/MethodologyPanel";
 
 export interface CursorBenchChartSectionProps {
   records: () => readonly DerivedCursorChartRecord[];
@@ -59,13 +60,17 @@ export default function CursorBenchChartSection(props: CursorBenchChartSectionPr
           spec.id !== CACHE_HIT_RATE_CONTROL_ID || Boolean(state[SURCHARGE_CONTROL_ID])
         }
         showDiscountsControl={false}
+        methodology={{
+          title: "CursorBench methodology",
+          content: <CursorMethodologyContent />,
+        }}
       />
       <Show when={Boolean(controls()[SURCHARGE_CONTROL_ID])}>
         <div class="alert mt-3" role="status" data-testid="cursor-token-rate-assumptions">
           <p class="flex flex-wrap items-center gap-2">
             <span class="font-medium">Cursor Token Rate estimate enabled.</span>
             <span class="badge badge-warning" data-testid="cursor-surcharge-included">Surcharge included</span>
-            <span class="text-sm text-base-content/70">Applies to third-party models; see the methodology below.</span>
+            <span class="text-sm text-base-content/70">Use the Methodology button above for details.</span>
           </p>
         </div>
       </Show>

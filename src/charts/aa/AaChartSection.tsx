@@ -24,6 +24,8 @@ import {
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
 import { isNonReasoningModel } from "../modelMetadata";
 import { formatLastUpdated } from "../../utils/format";
+import MethodologyModal from "../../methodology/MethodologyModal";
+import { AaMethodologyContent } from "../../methodology/MethodologyPanel";
 
 export interface AaChartSectionProps {
   records: () => readonly DerivedAaChartRecord[];
@@ -199,63 +201,70 @@ export default function AaChartSection(props: AaChartSectionProps) {
       aria-label={`Artificial Analysis ${AA_DEFAULT_COST_MODE}`}
     >
       <div class="card-body">
-        <header class="mb-1">
-          <h2 id={`chart-title-${aaAdapter.benchmarkId}`} class="card-title text-2xl">
-            <a
-              href={`#chart-title-${aaAdapter.benchmarkId}`}
-              class="link link-hover"
-              data-testid="chart-title-link"
-            >
-              {aaAdapter.title}
-            </a>
-          </h2>
-          <p class="mt-1 text-sm text-base-content/70">
-            {aaAdapter.subtitle}
-            <Show when={formatLastUpdated(props.lastUpdated?.() ?? null)}>
-              {(text) => <span class="whitespace-nowrap"> · Last updated {text()}</span>}
-            </Show>
-          </p>
-        </header>
-        <ChartControlPanel
-          benchmarkId={aaAdapter.benchmarkId}
-          scale={scale}
-          onScaleChange={setScale}
-          specs={aaAdapter.controlSpecs}
-          controls={controls}
-          onControlChange={setControl}
-          showLabels={showLabels}
-          onShowLabelsChange={setShowLabels}
-          showFrontier={showFrontier}
-          onShowFrontierChange={setShowFrontier}
-          showCrowns={showCrowns}
-          onShowCrownsChange={setShowCrowns}
-          showDiscounts={showDiscounts}
-          onShowDiscountsChange={setShowDiscounts}
-          isControlVisible={(spec) =>
-            spec.id !== "cacheHitRate" || controls().pricingMode === "listed"
-          }
-        />
-
-        <Show when={visibleRecords().length > 0}>
-          <div class="mb-3 flex justify-end">
-            <ModelList
-              points={() => allBuild().entries.map((e) => e.point)}
-              selectedIds={selectedIds}
-              defaultSelectedIds={dynamicDefaultIds}
-              searchId={`chart-${aaAdapter.benchmarkId}-model-search`}
-              onResetDefault={resetDefault}
-              query={query}
-              onQueryChange={setQuery}
-              onToggleSelect={toggleSelect}
-              unplottableLabel={() => aaAdapter.unplottableLabel?.(controls()) ?? "no pricing"}
-              unplottableDescription={() =>
-                aaAdapter.unplottableDescription?.(controls()) ??
-                "Unavailable with the current pricing settings."
-              }
-              unplottable={() => allBuild().unplottable.map((u) => aaAdapter.identity(u.record))}
-            />
+        <header class="mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+          <div class="min-w-0 flex-1">
+            <h2 id={`chart-title-${aaAdapter.benchmarkId}`} class="card-title text-2xl">
+              <a
+                href={`#chart-title-${aaAdapter.benchmarkId}`}
+                class="link link-hover"
+                data-testid="chart-title-link"
+              >
+                {aaAdapter.title}
+              </a>
+            </h2>
+            <p class="mt-1 text-sm text-base-content/70">
+              {aaAdapter.subtitle}
+              <Show when={formatLastUpdated(props.lastUpdated?.() ?? null)}>
+                {(text) => <span class="whitespace-nowrap"> · Last updated {text()}</span>}
+              </Show>
+            </p>
           </div>
-        </Show>
+          <div class="flex flex-wrap items-center justify-end gap-2">
+            <ChartControlPanel
+              benchmarkId={aaAdapter.benchmarkId}
+              scale={scale}
+              onScaleChange={setScale}
+              specs={aaAdapter.controlSpecs}
+              controls={controls}
+              onControlChange={setControl}
+              showLabels={showLabels}
+              onShowLabelsChange={setShowLabels}
+              showFrontier={showFrontier}
+              onShowFrontierChange={setShowFrontier}
+              showCrowns={showCrowns}
+              onShowCrownsChange={setShowCrowns}
+              showDiscounts={showDiscounts}
+              onShowDiscountsChange={setShowDiscounts}
+              isControlVisible={(spec) =>
+                spec.id !== "cacheHitRate" || controls().pricingMode === "listed"
+              }
+            />
+            <Show when={visibleRecords().length > 0}>
+              <ModelList
+                points={() => allBuild().entries.map((e) => e.point)}
+                selectedIds={selectedIds}
+                defaultSelectedIds={dynamicDefaultIds}
+                searchId={`chart-${aaAdapter.benchmarkId}-model-search`}
+                onResetDefault={resetDefault}
+                query={query}
+                onQueryChange={setQuery}
+                onToggleSelect={toggleSelect}
+                unplottableLabel={() => aaAdapter.unplottableLabel?.(controls()) ?? "no pricing"}
+                unplottableDescription={() =>
+                  aaAdapter.unplottableDescription?.(controls()) ??
+                  "Unavailable with the current pricing settings."
+                }
+                unplottable={() => allBuild().unplottable.map((u) => aaAdapter.identity(u.record))}
+              />
+            </Show>
+            <MethodologyModal
+              benchmarkId={aaAdapter.benchmarkId}
+              title="Artificial Analysis and OpenRouter methodology"
+            >
+              <AaMethodologyContent />
+            </MethodologyModal>
+          </div>
+        </header>
         <div class="relative min-h-[560px] sm:min-h-[740px]" data-testid="chart-area">
           <Show
             when={visibleRecords().length > 0}

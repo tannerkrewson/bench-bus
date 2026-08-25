@@ -22,6 +22,8 @@ describe("CursorBenchChartSection", () => {
     expect([...container.querySelectorAll("button")].find((b) => b.textContent === "Log")?.getAttribute("aria-pressed")).toBe("true");
     expect((container.querySelector("[data-testid='chart-controls'] input[aria-label^='Include Cursor Token Rate']") as HTMLInputElement).checked).toBe(false);
     expect(container.querySelector("input[aria-label='Show provider discounts']")).toBeNull();
+    expect(container.querySelector("[data-testid='methodology-button-cursor']")).not.toBeNull();
+    expect(container.textContent).not.toContain("see the methodology below");
     dispose();
   });
 
