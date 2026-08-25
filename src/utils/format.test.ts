@@ -67,19 +67,20 @@ describe("formatRelativeLastUpdated", () => {
   const now = Date.parse("2026-08-24T12:00:00Z");
 
   it("formats recent timestamps as just now, minutes, or hours", () => {
-    expect(formatRelativeLastUpdated("2026-08-24T11:59:31Z", now)).toBe("Updated just now");
-    expect(formatRelativeLastUpdated("2026-08-24T11:57:00Z", now)).toBe("Updated 3 minutes ago");
-    expect(formatRelativeLastUpdated("2026-08-24T10:00:00Z", now)).toBe("Updated 2 hours ago");
+    expect(formatRelativeLastUpdated("2026-08-24T11:59:31Z", now)).toBe("Last updated just now");
+    expect(formatRelativeLastUpdated("2026-08-24T11:57:00Z", now)).toBe("Last updated 3 minutes ago");
+    expect(formatRelativeLastUpdated("2026-08-24T10:00:00Z", now)).toBe("Last updated 2 hours ago");
   });
 
-  it("uses the absolute date for old timestamps", () => {
-    expect(formatRelativeLastUpdated("2026-08-23T12:00:00Z", now)).toBe("Aug 23, 2026, 12:00 PM UTC");
+  it("keeps old timestamps relative", () => {
+    expect(formatRelativeLastUpdated("2026-08-23T12:00:00Z", now)).toBe("Last updated 1 day ago");
+    expect(formatRelativeLastUpdated("2026-08-01T12:00:00Z", now)).toBe("Last updated 3 weeks ago");
   });
 
   it("describes future timestamps without claiming they are in the past", () => {
-    expect(formatRelativeLastUpdated("2026-08-24T12:00:30Z", now)).toBe("Updated in under a minute");
-    expect(formatRelativeLastUpdated("2026-08-24T12:03:00Z", now)).toBe("Updated in 3 minutes");
-    expect(formatRelativeLastUpdated("2026-08-25T12:00:00Z", now)).toBe("Aug 25, 2026, 12:00 PM UTC");
+    expect(formatRelativeLastUpdated("2026-08-24T12:00:30Z", now)).toBe("Last updated in under a minute");
+    expect(formatRelativeLastUpdated("2026-08-24T12:03:00Z", now)).toBe("Last updated in 3 minutes");
+    expect(formatRelativeLastUpdated("2026-08-25T12:00:00Z", now)).toBe("Last updated in 1 day");
   });
 
   it("returns null for missing, invalid, or invalid-now input", () => {

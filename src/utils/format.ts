@@ -49,8 +49,8 @@ export function formatLastUpdated(isoTimestamp: string | null | undefined): stri
 }
 
 /**
- * Format an ISO timestamp relative to now for a freshness badge. Values older
- * than a day use the precise UTC formatter so the badge stays useful over time.
+ * Format an ISO timestamp relative to now for a freshness badge. The precise
+ * UTC value remains available separately for the badge title.
  */
 export function formatRelativeLastUpdated(
   isoTimestamp: string | null | undefined,
@@ -67,20 +67,32 @@ export function formatRelativeLastUpdated(
 
   if (difference < 0) {
     const untilUpdate = -difference;
-    if (untilUpdate < minute) return "Updated in under a minute";
-    if (untilUpdate < hour) return `Updated in ${Math.floor(untilUpdate / minute)} ${pluralize("minute", untilUpdate / minute)}`;
-    if (untilUpdate < day) return `Updated in ${Math.floor(untilUpdate / hour)} ${pluralize("hour", untilUpdate / hour)}`;
-    return formatLastUpdated(isoTimestamp);
+    if (untilUpdate < minute) return "Last updated in under a minute";
+    if (untilUpdate < hour) return `Last updated in ${Math.floor(untilUpdate / minute)} ${pluralize("minute", untilUpdate / minute)}`;
+    if (untilUpdate < day) return `Last updated in ${Math.floor(untilUpdate / hour)} ${pluralize("hour", untilUpdate / hour)}`;
+    return `Last updated in ${relativeLongUnit(untilUpdate)}`;
   }
 
-  if (difference < minute) return "Updated just now";
-  if (difference < hour) return `Updated ${Math.floor(difference / minute)} ${pluralize("minute", difference / minute)} ago`;
-  if (difference < day) return `Updated ${Math.floor(difference / hour)} ${pluralize("hour", difference / hour)} ago`;
-  return formatLastUpdated(isoTimestamp);
+  if (difference < minute) return "Last updated just now";
+  if (difference < hour) return `Last updated ${Math.floor(difference / minute)} ${pluralize("minute", difference / minute)} ago`;
+  if (difference < day) return `Last updated ${Math.floor(difference / hour)} ${pluralize("hour", difference / hour)} ago`;
+  return `Last updated ${relativeLongUnit(difference)} ago`;
 }
 
 function pluralize(unit: string, value: number): string {
   return Math.floor(value) === 1 ? unit : `${unit}s`;
+}
+
+function relativeLongUnit(milliseconds: number): string {
+  const day = 24 * 60 * 60 * 1000;
+  const days = Math.floor(milliseconds / day);
+  if (days < 7) return `${days} ${pluralize("day", days)}`;
+  const weeks = Math.floor(days / 7);
+  if (days < 30) return `${weeks} ${pluralize("week", weeks)}`;
+  const months = Math.floor(days / 30);
+  if (days < 365) return `${months} ${pluralize("month", months)}`;
+  const years = Math.floor(days / 365);
+  return `${years} ${pluralize("year", years)}`;
 }
 
 /** Latest of the given ISO timestamps (null when none is valid). */
