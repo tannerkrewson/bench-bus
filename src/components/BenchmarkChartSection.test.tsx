@@ -82,6 +82,24 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     dispose();
   });
 
+  it("renders freshness as a badge with an accessible absolute timestamp", () => {
+    const timestamp = new Date(Date.now() - 3 * 60 * 1000).toISOString();
+    const { container, dispose } = mount(() => (
+      <BenchmarkChartSection
+        adapter={aaDemoAdapter}
+        records={() => AA_FIXTURE_RECORDS}
+        lastUpdated={() => timestamp}
+      />
+    ));
+
+    const badge = container.querySelector("[data-testid='relative-last-updated']") as HTMLElement;
+    expect(badge).not.toBeNull();
+    expect(badge.textContent).toContain("Updated");
+    expect(badge.getAttribute("title")).toContain("Last updated");
+    expect(container.textContent).not.toContain(" · Last updated");
+    dispose();
+  });
+
   it("opens chart settings as an accessible popover and keeps the legend below the graph", () => {
     const { container, dispose } = mount(() => (
       <BenchmarkChartSection adapter={aaDemoAdapter} records={() => AA_FIXTURE_RECORDS} />

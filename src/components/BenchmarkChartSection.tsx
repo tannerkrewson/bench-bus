@@ -1,7 +1,6 @@
 import { Crown } from "lucide-solid";
 import { createEffect, createMemo, createSignal, Show } from "solid-js";
 import type { JSX } from "solid-js";
-import { formatLastUpdated } from "../utils/format";
 import BenchmarkScatterChart from "../charts/BenchmarkScatterChart";
 import ChartDetailModal from "../charts/ChartDetailModal";
 import ChartTooltip from "../charts/ChartTooltip";
@@ -24,6 +23,7 @@ import type {
 import ChartControlPanel from "./ChartControlPanel";
 import ModelList from "./ModelList";
 import MethodologyModal from "../methodology/MethodologyModal";
+import RelativeLastUpdated from "./RelativeLastUpdated";
 
 export interface ChartMethodology {
   title: string;
@@ -54,7 +54,7 @@ export interface BenchmarkChartSectionProps<TRecord> {
   methodology?: ChartMethodology;
   /**
    * Optional observation timestamp (ISO UTC) of the freshest source dataset
-   * backing this chart, rendered as a "Last updated" note in the subtitle.
+   * backing this chart, rendered as a relative freshness badge.
    */
   lastUpdated?: () => string | null;
 }
@@ -87,7 +87,6 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
   });
 
   const build = createMemo(() => buildChartPlot(props.records(), props.adapter, controls(), ""));
-  const lastUpdatedText = () => formatLastUpdated(props.lastUpdated?.() ?? null);
   const defaultSelectionIds = createMemo(() => {
     const entries = build().entries;
     const points = entries.map((entry) => entry.point);
@@ -209,12 +208,10 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
                 {props.adapter.title}
               </a>
             </h2>
-            <p class="mt-1 text-sm text-base-content/70">
-              {props.adapter.subtitle}
-              <Show when={lastUpdatedText()}>
-                {(text) => <span class="whitespace-nowrap"> · Last updated {text()}</span>}
-              </Show>
-            </p>
+            <div class="mt-1 flex flex-wrap items-center gap-2">
+              <p class="text-sm text-base-content/70">{props.adapter.subtitle}</p>
+              <RelativeLastUpdated timestamp={props.lastUpdated} />
+            </div>
           </div>
           <div class="flex flex-wrap items-center justify-end gap-2">
             <ChartControlPanel

@@ -56,6 +56,22 @@ describe("AaChartSection", () => {
     dispose();
   });
 
+  it("renders freshness as the shared accessible badge", () => {
+    const timestamp = new Date(Date.now() - 3 * 60 * 1000).toISOString();
+    const { container, dispose } = mount(() => (
+      <AaChartSection
+        records={() => AA_FIXTURE_RECORDS}
+        lastUpdated={() => timestamp}
+      />
+    ));
+
+    const badge = container.querySelector("[data-testid='relative-last-updated']") as HTMLElement;
+    expect(badge.textContent).toContain("Updated");
+    expect(badge.getAttribute("aria-label")).toContain("Last updated");
+    expect(container.textContent).not.toContain(" · Last updated");
+    dispose();
+  });
+
   it("labels the AA chart with its active x-axis scale", async () => {
     const { container, dispose } = mount(() => <AaChartSection records={() => AA_FIXTURE_RECORDS} />);
 

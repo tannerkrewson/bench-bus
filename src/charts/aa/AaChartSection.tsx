@@ -25,9 +25,9 @@ import {
 } from "../plotData";
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
 import { isNonReasoningModel } from "../modelMetadata";
-import { formatLastUpdated } from "../../utils/format";
 import MethodologyModal from "../../methodology/MethodologyModal";
 import { AaMethodologyContent } from "../../methodology/MethodologyPanel";
+import RelativeLastUpdated from "../../components/RelativeLastUpdated";
 
 export interface AaChartSectionProps {
   records: () => readonly DerivedAaChartRecord[];
@@ -37,7 +37,7 @@ export interface AaChartSectionProps {
   onStateChange?: (state: Readonly<ChartViewState>) => void;
   /**
    * Optional observation timestamp (ISO UTC) of the freshest source dataset
-   * backing this chart, rendered as a "Last updated" note in the subtitle.
+   * backing this chart, rendered as a relative freshness badge.
    */
   lastUpdated?: () => string | null;
 }
@@ -222,12 +222,10 @@ export default function AaChartSection(props: AaChartSectionProps) {
                 {aaAdapter.title}
               </a>
             </h2>
-            <p class="mt-1 text-sm text-base-content/70">
-              {aaAdapter.subtitle}
-              <Show when={formatLastUpdated(props.lastUpdated?.() ?? null)}>
-                {(text) => <span class="whitespace-nowrap"> · Last updated {text()}</span>}
-              </Show>
-            </p>
+            <div class="mt-1 flex flex-wrap items-center gap-2">
+              <p class="text-sm text-base-content/70">{aaAdapter.subtitle}</p>
+              <RelativeLastUpdated timestamp={props.lastUpdated} />
+            </div>
           </div>
           <div class="flex flex-wrap items-center justify-end gap-2">
             <ChartControlPanel
