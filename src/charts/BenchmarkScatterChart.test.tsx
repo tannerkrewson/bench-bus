@@ -6,6 +6,7 @@ import BenchmarkScatterChart, {
   crosshairGuideGeometry,
   DISCOUNT_SEGMENT_LENGTH,
   discountArrowheadPath,
+  discountBridgeGeometry,
   discountConnectorGeometry,
   filterDollarAxisSplits,
   filterIntegerAxisSplits,
@@ -84,6 +85,18 @@ describe("BenchmarkScatterChart pure interaction policies", () => {
     expect(geometry.tick).toEqual({ x: 100 - DISCOUNT_SEGMENT_LENGTH, halfHeight: 4 });
     expect(discountArrowheadPath(28, 40, 32)).toBe("M 32 36 L 28 40 L 32 44");
     expect(discountConnectorGeometry(50, 51).arrowhead).toBeNull();
+  });
+
+  it("spans the discount bridge across the open middle from tick to arrowhead", () => {
+    const bridge = discountBridgeGeometry(100, 0)!;
+    expect(bridge.x1).toBe(100 - DISCOUNT_SEGMENT_LENGTH);
+    expect(bridge.x2).toBe(DISCOUNT_SEGMENT_LENGTH);
+    expect(bridge.length).toBeCloseTo(100 - DISCOUNT_SEGMENT_LENGTH * 2, 5);
+    // Mirrored spans expose the same screen-space open middle.
+    expect(discountBridgeGeometry(0, 100)).toEqual(bridge);
+    // Very short spans render as one contiguous run with no bridge.
+    expect(discountBridgeGeometry(50, 51)).toBeNull();
+    expect(discountBridgeGeometry(Number.NaN, 0)).toBeNull();
   });
 
   it("draws dot guides left and down only for an active dot hit", () => {
@@ -479,6 +492,13 @@ describe("BenchmarkScatterChart discount annotations", () => {
     const tick = group.querySelector("[data-testid='discount-line-tick']")!;
     expect(tick.getAttribute("x1")).toBe(tick.getAttribute("x2"));
     expect(Number(tick.getAttribute("y2")) - Number(tick.getAttribute("y1"))).toBe(8);
+    // The bridge spans exactly the open middle and stays hidden while
+    // no model group is emphasized.
+    const bridge = group.querySelector<SVGLineElement>("[data-testid='discount-line-bridge']")!;
+    expect(Number(bridge.getAttribute("x1"))).toBeCloseTo(right.x1, 5);
+    expect(Number(bridge.getAttribute("x2"))).toBeCloseTo(left.x2, 5);
+    const [bridgeDash] = bridge.style.strokeDasharray.split(/[\s,]+/).map(Number);
+    expect(bridgeDash).toBe(0);
     // The pre-discount endpoint dot is hollow: background fill, colored outline.
     const endpoint = container.querySelector("[data-testid='discount-endpoint-dot']")!;
     expect(endpoint.getAttribute("fill")).toBe("var(--color-base-100)");
@@ -553,6 +573,76 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect(lines.map((line) => line.getAttribute("opacity"))).toEqual(["0.75", "0.75"]);
     firstHit?.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
     dispose();
+  });
+
+  it("connects family discounts across the middle only while the group is emphasized", async () => {
+    const { container, dispose } = mountSizedChart(() => (
+      <BenchmarkScatterChart
+        points={() => [
+          {
+            id: "model-low",
+            label: "Model low",
+            effortGroup: "model",
+            effort: "low",
+            x: 4,
+            y: 60,
+            discount: { percentage: 20, preDiscountX: 6 },
+          },
+          {
+            id: "model-high",
+            label: "Model high",
+            effortGroup: "model",
+            effort: "high",
+            x: 5,
+            y: 70,
+            discount: { percentage: 30, preDiscountX: 8 },
+          },
+          {
+            id: "lone",
+            label: "Lone",
+            x: 9,
+            y: 55,
+            discount: { percentage: 25, preDiscountX: 12 },
+          },
+        ]}
+        scale={() => "linear"}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        height={320}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const bridgeFor = (discountId: string) =>
+      container.querySelector<SVGLineElement>(
+        `[data-discount-id='${discountId}'] [data-testid='discount-line-bridge']`,
+      )!;
+    const leadingDashLength = (discountId: string) =>
+      Number(bridgeFor(discountId).style.strokeDasharray.split(/[\s,]+/)[0]);
+    // Disconnected by default: every bridge dash starts hidden at zero length.
+    expect(container.querySelectorAll("[data-testid='discount-line-bridge']")).toHaveLength(3);
+    for (const id of ["model-low", "model-high", "lone"]) {
+      expect(bridgeFor(id)).not.toBeNull();
+      expect(leadingDashLength(id)).toBe(0);
+    }
+    try {
+      const connectorHit = container.querySelector<HTMLElement>("[data-testid='family-connector-hit']");
+      expect(connectorHit).not.toBeNull();
+      connectorHit?.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+      // The hovered family's discounts sweep closed; other families stay stubbed.
+      const focusedId = container.querySelector("[data-hovered-label-id]")?.getAttribute("data-hovered-label-id") ?? null;
+      expect(focusedId).toBe("model-high");
+      expect(leadingDashLength(focusedId!)).toBeGreaterThan(0);
+      expect(leadingDashLength("lone")).toBe(0);
+      const bridge = bridgeFor(focusedId!);
+      const fullBridgeLength = Math.abs(Number(bridge.getAttribute("x2")) - Number(bridge.getAttribute("x1")));
+      expect(leadingDashLength(focusedId!)).toBeCloseTo(fullBridgeLength, 5);
+      connectorHit?.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+      // Unhover retracts the bridge back to disconnected stubs.
+      expect(leadingDashLength(focusedId!)).toBe(0);
+      expect(leadingDashLength("lone")).toBe(0);
+    } finally {
+      dispose();
+    }
   });
 
   it("keeps a valid 100% annotation while omitting its zero log-scale endpoint", async () => {
