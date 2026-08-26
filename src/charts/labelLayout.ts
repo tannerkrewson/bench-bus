@@ -237,6 +237,63 @@ function labelLeaderEndpoint(label: PositionedLabel): { left: number; top: numbe
   };
 }
 
+/** Return the leader segment using the same endpoint as the SVG renderer. */
+export function labelLeaderSegment(label: PositionedLabel): LabelLayoutLine {
+  const endpoint = labelLeaderEndpoint(label);
+  return {
+    left1: label.anchorLeft,
+    top1: label.anchorTop,
+    left2: endpoint.left,
+    top2: endpoint.top,
+  };
+}
+
+/** Test a finite segment against a padded rectangle using Liang-Barsky clipping. */
+function segmentIntersectsLabel(segment: LabelLayoutLine, label: PositionedLabel): boolean {
+  if (![
+    segment.left1,
+    segment.top1,
+    segment.left2,
+    segment.top2,
+    label.left,
+    label.top,
+    label.width,
+    label.height,
+  ].every(Number.isFinite)) return false;
+  const padding = LABEL_GAP;
+  const left = label.left - padding;
+  const right = label.left + label.width + padding;
+  const top = label.top - padding;
+  const bottom = label.top + label.height + padding;
+  const dx = segment.left2 - segment.left1;
+  const dy = segment.top2 - segment.top1;
+  let near = 0;
+  let far = 1;
+  const constraints: readonly [number, number][] = [
+    [-dx, segment.left1 - left],
+    [dx, right - segment.left1],
+    [-dy, segment.top1 - top],
+    [dy, bottom - segment.top1],
+  ];
+
+  for (const [coefficient, distance] of constraints) {
+    if (coefficient === 0) {
+      if (distance < 0) return false;
+      continue;
+    }
+    const progress = distance / coefficient;
+    if (coefficient < 0) near = Math.max(near, progress);
+    else far = Math.min(far, progress);
+    if (near > far) return false;
+  }
+  return true;
+}
+
+/** Whether a label's leader would cross another label's text box. */
+export function labelLeaderCrossesLabel(label: PositionedLabel, other: PositionedLabel): boolean {
+  return label.id !== other.id && segmentIntersectsLabel(labelLeaderSegment(label), other);
+}
+
 function distanceToSegment(
   point: LabelLayoutPoint,
   start: { left: number; top: number },
@@ -259,11 +316,11 @@ function distanceToSegment(
 
 function leaderCrossesPoint(label: PositionedLabel, point: LabelLayoutPoint): boolean {
   if (point.id === label.id) return false;
-  const endpoint = labelLeaderEndpoint(label);
+  const segment = labelLeaderSegment(label);
   return distanceToSegment(
     point,
-    { left: label.anchorLeft, top: label.anchorTop },
-    endpoint,
+    { left: segment.left1, top: segment.top1 },
+    { left: segment.left2, top: segment.top2 },
   ) < (point.radius ?? LABEL_DOT_RADIUS);
 }
 
@@ -294,7 +351,11 @@ export function layoutModelLabels(
     top: anchor.anchorTop,
   }));
   const sorted = [...anchors].sort(
-    (a, b) => (b.priority ?? 0) - (a.priority ?? 0) || a.anchorTop - b.anchorTop,
+    (a, b) =>
+      (b.priority ?? 0) - (a.priority ?? 0) ||
+      a.anchorTop - b.anchorTop ||
+      a.anchorLeft - b.anchorLeft ||
+      a.id.localeCompare(b.id),
   );
   const placed: PositionedLabel[] = [];
   const result = new Map<string, PositionedLabel>();
@@ -368,6 +429,9 @@ export function layoutModelLabels(
       if (coversPoint(positioned, { id: anchor.id, left: anchor.anchorLeft, top: anchor.anchorTop })) continue;
       if (options.lines?.some((line) => coversLine(positioned, line))) continue;
       if (options.leaderObstacles?.some((point) => leaderCrossesPoint(positioned, point))) continue;
+      if (placed.some((existing) =>
+        labelLeaderCrossesLabel(positioned, existing) || labelLeaderCrossesLabel(existing, positioned),
+      )) continue;
       const targetLeft = preferredSide === "left"
         ? anchor.anchorLeft - width - sideOffset
         : anchor.anchorLeft + sideOffset;

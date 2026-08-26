@@ -26,7 +26,7 @@ import {
   paretoFrontier,
 } from "../plotData";
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
-import { isNonReasoningModel } from "../modelMetadata";
+import { isNonReasoningModel, modelGroupKey } from "../modelMetadata";
 import MethodologyModal from "../../methodology/MethodologyModal";
 import { AaMethodologyContent } from "../../methodology/MethodologyPanel";
 import RelativeLastUpdated from "../../components/RelativeLastUpdated";
@@ -318,6 +318,9 @@ export default function AaChartSection(props: AaChartSectionProps) {
                 <div class="relative min-w-[720px] sm:min-w-0" data-testid="chart-scroll-content">
                   <BenchmarkScatterChart
                     points={() => build().entries.map((e) => e.point)}
+                    colorGroupKeys={() => allBuild().entries.map(({ point }) =>
+                      point.effortGroup ?? modelGroupKey(point.label, point.id),
+                    )}
                     scale={scale}
                     showLabels={showLabels}
                     showFrontier={showFrontier}
@@ -325,9 +328,9 @@ export default function AaChartSection(props: AaChartSectionProps) {
                     showDiscounts={showDiscounts}
                     xAxisLabel={() => aaAdapter.xAxisLabel}
                     yAxisLabel={() => aaAdapter.yAxisLabel}
-                     onHover={(id, pos, details) =>
-                       setHovered(id && pos ? { id, left: pos.left, top: pos.top, discount: details?.discount } : null)
-                     }
+                    onHover={(id, pos, details) =>
+                      setHovered(id && pos ? { id, left: pos.left, top: pos.top, discount: details?.discount } : null)
+                    }
                     onSelectPoint={setSelectedPointId}
                   />
                   <ChartTooltip

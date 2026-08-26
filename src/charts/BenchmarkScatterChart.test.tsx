@@ -495,13 +495,12 @@ describe("BenchmarkScatterChart discount annotations", () => {
       discountArrowheadPath(Number(right.x1), Number(lines[0]?.getAttribute("y1")), Number(right.x1) + 4),
     );
     expect(tick.getAttribute("stroke-dasharray")).toBe("none");
-    // The bridge spans exactly the open middle and stays hidden while
-    // no model group is emphasized.
+    // The bridge spans exactly the open middle and is transparent while no
+    // model group is emphasized; zero-length round caps would still paint.
     const bridge = group.querySelector<SVGLineElement>("[data-testid='discount-line-bridge']")!;
     expect(Number(bridge.getAttribute("x1"))).toBeCloseTo(right.x1, 5);
     expect(Number(bridge.getAttribute("x2"))).toBeCloseTo(left.x2, 5);
-    const [bridgeDash] = bridge.style.strokeDasharray.split(/[\s,]+/).map(Number);
-    expect(bridgeDash).toBe(0);
+    expect(bridge.getAttribute("stroke-opacity")).toBe("0");
     // The pre-discount endpoint dot is hollow: background fill, colored outline.
     const endpoint = container.querySelector("[data-testid='discount-endpoint-dot']")!;
     expect(endpoint.getAttribute("fill")).toBe("var(--color-base-100)");
@@ -619,13 +618,12 @@ describe("BenchmarkScatterChart discount annotations", () => {
       container.querySelector<SVGLineElement>(
         `[data-discount-id='${discountId}'] [data-testid='discount-line-bridge']`,
       )!;
-    const leadingDashLength = (discountId: string) =>
-      Number(bridgeFor(discountId).style.strokeDasharray.split(/[\s,]+/)[0]);
-    // Disconnected by default: every bridge dash starts hidden at zero length.
+    const bridgeOpacity = (discountId: string) => bridgeFor(discountId).getAttribute("stroke-opacity");
+    // Disconnected by default: every bridge is transparent in the idle state.
     expect(container.querySelectorAll("[data-testid='discount-line-bridge']")).toHaveLength(3);
     for (const id of ["model-low", "model-high", "lone"]) {
       expect(bridgeFor(id)).not.toBeNull();
-      expect(leadingDashLength(id)).toBe(0);
+      expect(bridgeOpacity(id)).toBe("0");
     }
     try {
       const connectorHit = container.querySelector<HTMLElement>("[data-testid='family-connector-hit']");
@@ -634,13 +632,14 @@ describe("BenchmarkScatterChart discount annotations", () => {
       // The hovered family's discounts become dotted; other families stay stubbed.
       const focusedId = container.querySelector("[data-hovered-label-id]")?.getAttribute("data-hovered-label-id") ?? null;
       expect(focusedId).toBe("model-high");
-      expect(bridgeFor(focusedId!).style.strokeDasharray).toBe("0.1 5");
-      expect(leadingDashLength(focusedId!)).toBeCloseTo(0.1, 5);
-      expect(leadingDashLength("lone")).toBe(0);
+      expect(bridgeFor(focusedId!).getAttribute("data-discount-part")).toBe("bridge");
+      expect(bridgeFor(focusedId!).parentElement?.getAttribute("stroke-dasharray")).toBe("0.1 5");
+      expect(bridgeOpacity(focusedId!)).toBe("1");
+      expect(bridgeOpacity("lone")).toBe("0");
       connectorHit?.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
       // Unhover retracts the bridge back to disconnected stubs.
-      expect(leadingDashLength(focusedId!)).toBe(0);
-      expect(leadingDashLength("lone")).toBe(0);
+      expect(bridgeOpacity(focusedId!)).toBe("0");
+      expect(bridgeOpacity("lone")).toBe("0");
     } finally {
       dispose();
     }

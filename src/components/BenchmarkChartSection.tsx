@@ -28,6 +28,7 @@ import ModelList from "./ModelList";
 import MethodologyModal from "../methodology/MethodologyModal";
 import RelativeLastUpdated from "./RelativeLastUpdated";
 import ChartSubtitleContent from "./ChartSubtitle";
+import { modelGroupKey } from "../charts/modelMetadata";
 
 export interface ChartMethodology {
   title: string;
@@ -315,6 +316,9 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
                 <div class="relative min-w-[720px] sm:min-w-0" data-testid="chart-scroll-content">
                   <BenchmarkScatterChart
                     points={() => visibleEntries().map((e) => e.point)}
+                    colorGroupKeys={() => build().entries.map(({ point }) =>
+                      point.effortGroup ?? modelGroupKey(point.label, point.id),
+                    )}
                     scale={scale}
                     showLabels={showLabels}
                     showFrontier={showFrontier}

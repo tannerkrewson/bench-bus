@@ -143,6 +143,59 @@ describe("model brand colors", () => {
     expect(modelGroupColor("grok-4-6", false)).toBe(COLOR_BLIND_MODEL_GROUP_PALETTE.light[2]);
   });
 
+  it("keeps DeepSeek and GLM perceptually separated in the crowded AA set", () => {
+    const keys = [
+      "opus-5",
+      "deepseek-v4-flash-0731",
+      "deepseek-v4-pro-0813",
+      "gemini-3-7-flash",
+      "glm-5-3",
+      "glm-5-3-flash",
+      "gpt-5-6-luna",
+      "gpt-5-6-sol",
+      "grok-4-6",
+      "kimi-k3",
+      "muse-spark-1-2",
+      "qwen3-8-max",
+    ];
+    const rgbDistance = (first: string, second: string) => {
+      const channels = (color: string) => [1, 3, 5].map((offset) => Number.parseInt(color.slice(offset, offset + 2), 16));
+      const a = channels(first);
+      const b = channels(second);
+      return Math.hypot(a[0]! - b[0]!, a[1]! - b[1]!, a[2]! - b[2]!);
+    };
+
+    for (const dark of [false, true]) {
+      const colors = modelGroupColors(keys, dark);
+      expect(rgbDistance(
+        colors.get("deepseek-v4-flash-0731")!,
+        colors.get("glm-5-3-flash")!,
+      )).toBeGreaterThan(75);
+    }
+  });
+
+  it("keeps every currently supported model family on a distinct palette slot", () => {
+    const keys = [
+      "opus-5",
+      "sonnet-5",
+      "deepseek-v4-flash-0731",
+      "deepseek-v4-flash",
+      "deepseek-v4-pro-0813",
+      "gemini-3-7-flash",
+      "glm-5-3",
+      "glm-5-3-flash",
+      "gpt-5-6-luna",
+      "gpt-5-6-sol",
+      "grok-4-6",
+      "kimi-k3",
+      "muse-spark-1-2",
+      "qwen3-8-max",
+    ];
+
+    expect(new Set(modelGroupColors(keys, false).values()).size).toBe(keys.length);
+    expect(new Set(modelGroupColors(keys, true).values()).size).toBe(keys.length);
+  });
+
   it("keeps every color-blind slot above the contrast target on supported surfaces", () => {
     for (const color of COLOR_BLIND_MODEL_GROUP_PALETTE.light) {
       for (const surface of COLOR_BLIND_SURFACE_SWATCHES.light) {

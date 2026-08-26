@@ -29,9 +29,9 @@ export function inferModelBrand(...parts: readonly (string | undefined)[]): Mode
   return "other";
 }
 
-// This is the sole model-family palette. Every slot is based on the
-// color-blind-safe Okabe-Ito hues and must remain compliant: do not add a
-// non-compliant fallback or theme-specific color outside these arrays.
+// This is the sole model-family palette. Every slot is an audited,
+// color-blind-safe hue and must remain compliant: do not add a non-compliant
+// fallback or theme-specific color outside these arrays.
 /**
  * Color-blind family slots are exported so the contrast contract can be tested
  * without depending on a rendered browser canvas. Keep both arrays the same
@@ -51,9 +51,14 @@ export const COLOR_BLIND_MODEL_GROUP_PALETTE = {
     "#007c91", // teal
     "#8a6500", // gold
     "#a23b72", // magenta
-    "#245a9a", // indigo
+    "#6c584c", // brown
     "#4f6d2f", // olive
     "#5b3f8c", // violet
+    "#006d77", // deep teal
+    "#8c2d04", // rust
+    "#3d405b", // slate
+    "#283618", // forest
+    "#5a3d5c", // plum
   ],
   dark: [
     "#56b4e9", // sky blue
@@ -64,9 +69,14 @@ export const COLOR_BLIND_MODEL_GROUP_PALETTE = {
     "#7cc7e8", // teal
     "#f0e442", // yellow
     "#ed9bc3", // magenta
-    "#86bdf2", // indigo
+    "#d0b49f", // brown
     "#a6d854", // olive
     "#c2a0f5", // violet
+    "#a8dadc", // aqua
+    "#f4a261", // peach
+    "#b8c0ff", // periwinkle
+    "#d0e17d", // lime
+    "#d5b2c4", // mauve
   ],
 } as const;
 
@@ -162,6 +172,8 @@ const PREFERRED_MODEL_GROUP_SLOTS: readonly [RegExp, number][] = [
   [/^opus(?:-|$)/, 1], // orange
   [/(?:^|-)sol(?:-|$)/, 6], // gold; intentionally far from DeepSeek blue
   [/^gemini(?:-|$)/, 10], // violet; intentionally far from Sol teal
+  [/^glm-5-3-flash(?:-|$)/, 4], // purple; intentionally far from DeepSeek blue
+  [/^glm(?:-|$)/, 8], // brown for other GLM families
 ];
 
 function preferredModelGroupSlot(key: string): number | undefined {

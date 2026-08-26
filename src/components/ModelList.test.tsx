@@ -4,6 +4,8 @@ import { createSignal } from "solid-js";
 import type { JSX } from "solid-js";
 import ModelList from "./ModelList";
 import type { PlottablePoint } from "../charts/types";
+import { modelGroupColors } from "../charts/brand";
+import { modelGroupKey } from "../charts/modelMetadata";
 
 const VARIANT_POINTS: readonly PlottablePoint[] = [
   { id: "opus-low", label: "Opus 5 Low", brand: "anthropic", x: 1, y: 70 },
@@ -122,6 +124,33 @@ describe("ModelList effort selection", () => {
     expect(familyLabel.previousElementSibling?.getAttribute("aria-hidden")).toBe("true");
     const missingLabel = container.querySelector("[title='Missing Model']") as HTMLElement;
     expect(missingLabel.previousElementSibling?.getAttribute("aria-hidden")).toBe("true");
+    dispose();
+  });
+
+  it("uses one batch color allocation for the DeepSeek and GLM selector dots", () => {
+    const points: readonly PlottablePoint[] = [
+      { id: "deepseek-v4-flash", label: "DeepSeek v4 Flash", x: 1, y: 60 },
+      { id: "glm-5-3-flash", label: "GLM-5.3-Flash", x: 2, y: 61 },
+    ];
+    const keys = points.map((point) => modelGroupKey(point.label, point.id));
+    const expected = modelGroupColors(keys, false);
+    const { container, dispose } = mount(() => (
+      <ModelList
+        points={() => points}
+        selectedIds={() => []}
+        onToggleSelect={() => undefined}
+        unplottable={() => []}
+        searchId="model-test-search-colors"
+      />
+    ));
+
+    for (const point of points) {
+      const label = container.querySelector(`[title='${point.label}']`) as HTMLElement;
+      const dot = label.previousElementSibling as HTMLElement;
+      const color = expected.get(keys[points.indexOf(point)]!)!;
+      const channels = [1, 3, 5].map((offset) => Number.parseInt(color.slice(offset, offset + 2), 16));
+      expect(dot.style.backgroundColor).toBe(`rgb(${channels.join(", ")})`);
+    }
     dispose();
   });
 });

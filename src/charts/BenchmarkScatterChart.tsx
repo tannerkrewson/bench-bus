@@ -28,6 +28,8 @@ import type { ModelBrand, PlottablePoint, PriceDiscountAnnotation, XScale } from
 export interface BenchmarkScatterChartProps {
   /** Points currently passing filters, in stable order. */
   points: () => readonly PlottablePoint[];
+  /** Complete priced family universe used to keep colors stable as selection changes. */
+  colorGroupKeys?: () => readonly string[];
   scale: () => XScale;
   xAxisLabel: () => string;
   yAxisLabel: () => string;
@@ -65,7 +67,7 @@ const DISCOUNT_HIT_RADIUS = 8;
 const DISCOUNT_ENDPOINT_GAP = MODEL_DOT_RADIUS + 2;
 const PLOT_ANIMATION_DURATION = 180;
 const EMPHASIS_TRANSITION_DURATION = 140;
-// Dash-state swaps honor reduced motion with an instant, unanimated change.
+// Bridge emphasis honors reduced motion with an instant, unanimated change.
 const DISCOUNT_BRIDGE_TRANSITION = `${(
   typeof window !== "undefined" && typeof window.matchMedia === "function" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -558,6 +560,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   const groupColor = (groupKey: string, dark: boolean): string => {
     const visibleGroups = [
+      ...(props.colorGroupKeys?.() ?? []),
       ...currentSeries.groupKeys,
       ...currentSeries.variantGroups.map((group) => group.key),
       ...currentSeries.discounts.map((discount) => discount.groupKey),
@@ -825,6 +828,20 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       left2: discount.effectiveLeft,
       top2: discount.top,
     }));
+    const familyLines = currentSeries.variantGroups.flatMap((group) => {
+      const positions = group.members
+        .map((member) => {
+          const index = currentSeries.ids.indexOf(member.id);
+          return index < 0 ? null : pointPosition(currentPlot, index);
+        })
+        .filter((position): position is { left: number; top: number } => position !== undefined && position !== null);
+      return positions.slice(1).map((position, index) => ({
+        left1: positions[index]!.left,
+        top1: positions[index]!.top,
+        left2: position.left,
+        top2: position.top,
+      }));
+    });
     const anchors = currentSeries.ids.flatMap((id, index) => {
       const representativeId = representativeById.get(id);
       if (representativeId !== undefined && representativeId !== id) return [];
@@ -871,7 +888,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     });
     const baseLabels = layoutModelLabels(anchors, bounds, {
       obstacles: [...obstacles, ...crownObstacles],
-      lines: discountLines,
+      lines: [...discountLines, ...familyLines],
       leaderObstacles: [...obstacles, ...crownObstacles],
     });
     const labels = baseLabels;
@@ -2009,18 +2026,15 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 </For>
                 <Show when={bridge}>
                   {(geometry) => (
-                    // Keep the bridge dotted while its zero-length dash is
-                    // revealed on family hover; the endpoint markers stay
-                    // fixed throughout the transition.
+                    // Hide the bridge rather than using zero-length round caps:
+                    // SVG paints those caps as visible dots in the idle gap.
                     <line
                       x1={geometry().x1}
                       y1={discount.top}
                       x2={geometry().x2}
                       y2={discount.top}
-                      style={{
-                        "stroke-dasharray": linked() ? DISCOUNT_DOT_PATTERN : "0 5",
-                        transition: `stroke-dasharray ${DISCOUNT_BRIDGE_TRANSITION}`,
-                      }}
+                      stroke-opacity={linked() ? "1" : "0"}
+                      style={{ transition: `stroke-opacity ${DISCOUNT_BRIDGE_TRANSITION}` }}
                       data-testid="discount-line-bridge"
                       data-discount-part="bridge"
                     />

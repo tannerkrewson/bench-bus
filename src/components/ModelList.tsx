@@ -1,6 +1,6 @@
 import { For, Show, createEffect, createMemo, createSignal, onCleanup, onMount } from "solid-js";
 import { ListFilter } from "lucide-solid";
-import { modelGroupColor } from "../charts/brand";
+import { modelGroupColor, modelGroupColors } from "../charts/brand";
 import { modelGroupKey } from "../charts/modelMetadata";
 import { modelVariantParts } from "../charts/labelLayout";
 import { isDarkTheme } from "./ThemeToggle";
@@ -131,6 +131,10 @@ export default function ModelList(props: ModelListProps) {
   };
   const sorted = createMemo(() => [...props.points()].sort((a, b) => a.label.localeCompare(b.label)));
   const items = createMemo(() => modelItems(sorted()));
+  const groupColors = createMemo(() => modelGroupColors(
+    sorted().map((point) => point.effortGroup ?? modelGroupKey(point.label, point.id)),
+    darkTheme(),
+  ));
   const familyColorById = createMemo(() =>
     new Map(
       items()
@@ -226,10 +230,8 @@ export default function ModelList(props: ModelListProps) {
   };
   const itemColor = (item: ModelListItem) => {
     const point = item.members[0]!;
-    return modelGroupColor(
-      item.colorKey ?? point.effortGroup ?? modelGroupKey(point.label, point.id),
-      darkTheme(),
-    );
+    const key = item.colorKey ?? point.effortGroup ?? modelGroupKey(point.label, point.id);
+    return groupColors().get(key) ?? modelGroupColor(key, darkTheme());
   };
   const resetDefault = (event: MouseEvent) => {
     event.preventDefault();

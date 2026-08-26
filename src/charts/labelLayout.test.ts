@@ -4,6 +4,8 @@ import {
   groupModelVariants,
   LABEL_HORIZONTAL_PADDING,
   LABEL_MAIN_FONT_SIZE,
+  labelLeaderCrossesLabel,
+  labelLeaderSegment,
   layoutModelLabels,
   labelTextWidth,
   modelVariantParts,
@@ -182,6 +184,24 @@ describe("layoutModelLabels", () => {
     // The default left-side candidate would terminate immediately beside the
     // unrelated dot; the collision pass must choose another safe position.
     expect(label!.left + label!.width < 107 || label!.top !== 90).toBe(true);
+  });
+
+  it("keeps leaders from crossing other model labels", () => {
+    const labels = layoutModelLabels(
+      [
+        { id: "a", label: "A very long model", anchorLeft: 135, anchorTop: 379, priority: 1, color: "red" },
+        { id: "b", label: "B very long model", anchorLeft: 202, anchorTop: 339, color: "blue" },
+      ],
+      { left: 0, top: 0, right: 500, bottom: 400 },
+    );
+    const first = labels.find((label) => label.id === "a");
+    const second = labels.find((label) => label.id === "b");
+
+    expect(first).toBeDefined();
+    expect(second).toBeDefined();
+    expect(labelLeaderSegment(first!)).toEqual(expect.objectContaining({ left1: 135, top1: 379 }));
+    expect(labelLeaderCrossesLabel(first!, second!)).toBe(false);
+    expect(labelLeaderCrossesLabel(second!, first!)).toBe(false);
   });
 
   it("honors an opposite-side preference for a hovered label", () => {
