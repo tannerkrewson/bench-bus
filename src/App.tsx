@@ -15,6 +15,7 @@ import { TimeTravelProvider, useTimeTravel } from "./history/TimeTravelContext";
 import { timeTravelStateFromParams, mergeTimeTravelStateIntoParams } from "./history/urlState";
 import TimeTravelControl, { TimeTravelNotice } from "./controls/TimeTravelControl";
 import ThemeToggle from "./components/ThemeToggle";
+import { driveLogo, resetLogo } from "./components/busLogo";
 import {
   fetchDerivedBundle,
   fetchDerivedIndex,
@@ -84,25 +85,6 @@ async function loadIndex() {
   } catch {
     return { index: makeDemoIndex(), isDemo: true };
   }
-}
-
-function driveLogo(event: MouseEvent): void {
-  const logo = event.currentTarget as HTMLButtonElement;
-  // Remove and reflow before re-adding so rapid clicks safely restart the run.
-  logo.classList.remove("bench-bus-logo-drive");
-  if (typeof window === "undefined" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
-    logo.style.removeProperty("transform");
-    return;
-  }
-  void logo.offsetWidth;
-  logo.classList.add("bench-bus-logo-drive");
-}
-
-function resetLogo(event: AnimationEvent): void {
-  if (event.animationName !== "bench-bus-logo-drive") return;
-  const logo = event.currentTarget as HTMLButtonElement;
-  logo.classList.remove("bench-bus-logo-drive");
-  logo.style.removeProperty("transform");
 }
 
 const Charts: Component<{ bundle: DecodedBundle }> = (props) => {

@@ -20,25 +20,27 @@
 }
 
 @keyframes bench-bus-logo-drive {
-  0%, 8% {
+  0% {
     transform: translateX(0);
   }
 
-  44% {
+  /* Exit right, cross over entirely off-screen, then re-enter from the left:
+     one continuous lap (~46% out, ~8% hidden, ~46% home) at a stately pace. */
+  46% {
     transform: translateX(calc(100vw + 100%));
   }
 
-  50% {
+  54% {
     transform: translateX(calc(-100vw - 100%));
   }
 
-  92%, 100% {
+  100% {
     transform: translateX(0);
   }
 }
 
 .bench-bus-logo-drive {
-  animation: bench-bus-logo-drive 900ms ease-in-out both;
+  animation: bench-bus-logo-drive 2800ms ease-in-out both;
 }
 
 @media (prefers-reduced-motion: reduce) {

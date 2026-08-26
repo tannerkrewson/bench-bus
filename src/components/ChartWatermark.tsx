@@ -1,20 +1,9 @@
-function driveLogo(event: MouseEvent): void {
-  const logo = event.currentTarget as HTMLButtonElement;
-  // Remove and reflow before re-adding so rapid clicks safely restart the run.
-  logo.classList.remove("bench-bus-logo-drive");
-  if (typeof window === "undefined" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
-    logo.style.removeProperty("transform");
-    return;
-  }
-  void logo.offsetWidth;
-  logo.classList.add("bench-bus-logo-drive");
-}
+import { driveElement, resetLogo } from "./busLogo";
 
-function resetLogo(event: AnimationEvent): void {
-  if (event.animationName !== "bench-bus-logo-drive") return;
-  const logo = event.currentTarget as HTMLButtonElement;
-  logo.classList.remove("bench-bus-logo-drive");
-  logo.style.removeProperty("transform");
+/** Drive only the bus image; the benchb.us caption stays pinned in place. */
+function driveWatermarkBus(event: MouseEvent): void {
+  const bus = (event.currentTarget as HTMLButtonElement).querySelector("img");
+  if (bus instanceof HTMLElement) driveElement(bus);
 }
 
 /** A compact, keyboard-accessible attribution control that remains in chart screenshots. */
@@ -26,10 +15,15 @@ export default function ChartWatermark() {
       data-testid="chart-watermark"
       aria-label="Bench Bus watermark, benchb.us"
       title="Bench Bus watermark, benchb.us"
-      onClick={driveLogo}
-      onAnimationEnd={resetLogo}
+      onClick={driveWatermarkBus}
     >
-      <img class="h-7 w-9 object-contain" src="/logo.svg" alt="" aria-hidden="true" />
+      <img
+        class="h-7 w-9 object-contain"
+        src="/logo.svg"
+        alt=""
+        aria-hidden="true"
+        onAnimationEnd={resetLogo}
+      />
       <span>benchb.us</span>
     </button>
   );

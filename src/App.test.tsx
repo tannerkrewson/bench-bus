@@ -71,15 +71,33 @@ describe("App", () => {
       "Bench Bus watermark, benchb.us",
     ]);
 
-    logos.forEach((logo) => {
-      logo.click();
-      expect(logo.classList.contains("bench-bus-logo-drive")).toBe(true);
-      logo.click();
-      expect(logo.classList.contains("bench-bus-logo-drive")).toBe(true);
-      const animationEnd = new Event("animationend");
-      Object.defineProperty(animationEnd, "animationName", { value: "bench-bus-logo-drive" });
-      logo.dispatchEvent(animationEnd);
-      expect(logo.classList.contains("bench-bus-logo-drive")).toBe(false);
+    const headerLogo = logos[0]!;
+    const watermarks = logos.slice(1);
+
+    // The whole header logo button drives; it has no caption.
+    headerLogo.click();
+    expect(headerLogo.classList.contains("bench-bus-logo-drive")).toBe(true);
+    headerLogo.click();
+    expect(headerLogo.classList.contains("bench-bus-logo-drive")).toBe(true);
+    const animationEnd = new Event("animationend");
+    Object.defineProperty(animationEnd, "animationName", { value: "bench-bus-logo-drive" });
+    headerLogo.dispatchEvent(animationEnd);
+    expect(headerLogo.classList.contains("bench-bus-logo-drive")).toBe(false);
+
+    // Watermarks drive only the bus image; the caption span stays pinned.
+    watermarks.forEach((watermark) => {
+      const bus = watermark.querySelector("img")!;
+      const caption = watermark.querySelector("span")!;
+      watermark.click();
+      expect(watermark.classList.contains("bench-bus-logo-drive")).toBe(false);
+      expect(caption.classList.contains("bench-bus-logo-drive")).toBe(false);
+      expect(bus.classList.contains("bench-bus-logo-drive")).toBe(true);
+      watermark.click();
+      expect(bus.classList.contains("bench-bus-logo-drive")).toBe(true);
+      const busAnimationEnd = new Event("animationend");
+      Object.defineProperty(busAnimationEnd, "animationName", { value: "bench-bus-logo-drive" });
+      bus.dispatchEvent(busAnimationEnd);
+      expect(bus.classList.contains("bench-bus-logo-drive")).toBe(false);
     });
 
     const media = vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
@@ -96,6 +114,10 @@ describe("App", () => {
       logos[0]!.click();
       expect(logos[0]!.classList.contains("bench-bus-logo-drive")).toBe(false);
       expect(logos[0]!.style.transform).toBe("");
+      const watermarkBus = logos[1]!.querySelector("img")!;
+      logos[1]!.click();
+      expect(watermarkBus.classList.contains("bench-bus-logo-drive")).toBe(false);
+      expect(watermarkBus.style.transform).toBe("");
     } finally {
       media.mockRestore();
     }
