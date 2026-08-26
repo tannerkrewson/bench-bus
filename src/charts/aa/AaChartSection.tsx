@@ -17,7 +17,7 @@ import ChartControlPanel from "../../components/ChartControlPanel";
 import ModelList from "../../components/ModelList";
 import type { DerivedAaChartRecord } from "../../schemas";
 import { aaAdapter, aaControlledTooltipLines, type AaChartRecord } from "./adapter";
-import { AA_DEFAULT_CACHE_HIT_RATE, listedCostUsd } from "./pricing";
+import { AA_DEFAULT_CACHE_HIT_RATE } from "./pricing";
 import {
   discountDetailLines,
   discountHoverTitle,
@@ -385,29 +385,6 @@ export default function AaChartSection(props: AaChartSectionProps) {
           discountNote={() => selectedInfo()?.discountNote ?? null}
           onClose={() => setSelectedPointId(null)}
         />
-        <Show when={visibleRecords().length > 0 && build().unplottable.length > 0}>
-          <p class="text-xs text-base-content/60" role="status" data-testid="aa-unplottable-count">
-            {build().unplottable.length} model(s) shown in the list but not plotted: no usable
-            pricing for the current mode — never estimated as $0.
-            <Show
-              when={
-                controls().pricingMode !== "listed" &&
-                build().unplottable.filter((entry) =>
-                  "listed" in entry.record && listedCostUsd(
-                    entry.record.listed,
-                    entry.record.canonicalTokens.input,
-                    entry.record.canonicalTokens.output,
-                    AA_DEFAULT_CACHE_HIT_RATE,
-                  ) !== null,
-                ).length > 0
-              }
-            >
-              <span data-testid="aa-listed-availability">
-                Some have AA listed pricing; switch Pricing mode to “AA listed” to plot them.
-              </span>
-            </Show>
-          </p>
-        </Show>
       </div>
     </section>
   );

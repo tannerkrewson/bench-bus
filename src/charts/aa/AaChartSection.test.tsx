@@ -18,7 +18,7 @@ function mount(ui: () => JSX.Element) {
 }
 
 describe("AaChartSection", () => {
-  it("renders the AA chart with pricing controls, plotted models, and unplottable models", () => {
+  it("renders the AA chart with pricing controls and disabled unplottable models", () => {
     const { container, dispose } = mount(() => (
       <AaChartSection records={() => AA_FIXTURE_RECORDS} />
     ));
@@ -51,11 +51,10 @@ describe("AaChartSection", () => {
     expect(container.textContent).toContain("Mystery Model");
     expect(container.textContent).toContain("no OpenRouter price");
     expect(container.textContent).toContain("Choose AA listed to use the source-listed rate");
+    expect(container.querySelector("[data-testid='model-list'] .cursor-not-allowed")).not.toBeNull();
     expect(container.querySelector("[data-testid='methodology-button-aa']")).not.toBeNull();
     expect(container.querySelector("[data-testid='chart-methodology-modal']")).not.toBeNull();
-    expect(container.querySelector("[data-testid='aa-unplottable-count']")?.textContent).toContain(
-      "1 model",
-    );
+    expect(container.querySelector("[data-testid='aa-unplottable-count']")).toBeNull();
 
     // The cache-hit control is relevant only to AA listed pricing.
     expect(container.querySelector("#chart-aa-control-cacheHitRate")).toBeNull();
@@ -244,7 +243,7 @@ describe("AaChartSection", () => {
     dispose();
   });
 
-  it("explains listed pricing for records unavailable in the default OpenRouter mode", () => {
+  it("plots listed pricing after switching from the default OpenRouter mode", () => {
     const listedOnly = {
       ...AA_RECORD_UNPLOTTABLE,
       slug: "listed-only",
@@ -252,13 +251,11 @@ describe("AaChartSection", () => {
       listed: { price1mInputTokens: 2, price1mOutputTokens: 8, cacheHitPrice: 0.2 },
     };
     const { container, dispose } = mount(() => <AaChartSection records={() => [listedOnly]} />);
-    expect(container.querySelector("[data-testid='aa-listed-availability']")?.textContent).toContain(
-      "AA listed",
-    );
+    expect(container.querySelector("[data-testid='aa-unplottable-count']")).toBeNull();
     const pricingMode = container.querySelector("#chart-aa-control-pricingMode") as HTMLSelectElement;
     pricingMode.value = "listed";
     pricingMode.dispatchEvent(new Event("change", { bubbles: true }));
-    expect(container.querySelector("[data-testid='aa-listed-availability']")).toBeNull();
+    expect(container.querySelector("[data-testid='aa-unplottable-count']")).toBeNull();
     expect(container.querySelector("canvas")).not.toBeNull();
     dispose();
   });
