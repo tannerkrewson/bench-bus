@@ -31,8 +31,9 @@ describe("cursorBenchAdapter identity + axes", () => {
 
   it("uses the concise linked subtitle contract", () => {
     expect(cursorBenchAdapter.subtitle).toEqual([
-      { label: "Cursor Evals", href: "https://cursor.com/evals" },
-      " only shows linear cost, so cheap models are hard to compare. Cursor enterprise plans also charge a flat fee for third-party model use, and the graph does not include it.",
+      "This is an improved version of the ",
+      { label: "CursorBench", href: "https://cursor.com/evals" },
+      " graph. On Cursor Teams and Enterprise plans, third-party model requests have a $0.25 per million tokens fee, which is not reflected on the official CursorBench, but is included by default on Bench Bus. First-party Cursor models, including Grok and Composer, are exempt from the Cursor Token Rate.",
     ]);
   });
 

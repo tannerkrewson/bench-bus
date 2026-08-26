@@ -303,11 +303,11 @@ describe("aaAdapter subtitle", () => {
   it("uses the concise linked subtitle contract", () => {
     expect(aaAdapter.subtitle).toEqual([
       { label: "Artificial Analysis", href: "https://artificialanalysis.ai/" },
-      " shows standard model pricing; models can have discounts and cheaper providers on ",
+      " shows standard model pricing, but models can have discounts and cheaper providers on ",
       { label: "OpenRouter", href: "https://openrouter.ai/" },
-      ". This chart uses the latest ",
+      ". This chart uses the latest prices and discounts from ",
       { label: "OpenRouter", href: "https://openrouter.ai/" },
-      " prices and discounts to find the real models on the Pareto frontier.",
+      " to find the real models on the Pareto frontier. Note, some open models, mainly DeepSeek, can swing wildly in price by the hour around Chinese business hours and weekends, but Bench Bus automatically updates multiple times per day.",
     ]);
   });
 });

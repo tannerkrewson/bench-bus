@@ -8,7 +8,7 @@ import { chartStateFromParams, chartStateToParams } from "../urlState";
 import { aaAdapter } from "./adapter";
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
 
-const AA_SUBTITLE = "Artificial Analysis shows standard model pricing; models can have discounts and cheaper providers on OpenRouter. This chart uses the latest OpenRouter prices and discounts to find the real models on the Pareto frontier.";
+const AA_SUBTITLE = "Artificial Analysis shows standard model pricing, but models can have discounts and cheaper providers on OpenRouter. This chart uses the latest prices and discounts from OpenRouter to find the real models on the Pareto frontier. Note, some open models, mainly DeepSeek, can swing wildly in price by the hour around Chinese business hours and weekends, but Bench Bus automatically updates multiple times per day.";
 
 function mount(ui: () => JSX.Element) {
   const container = document.createElement("div");

@@ -6,7 +6,7 @@ import { CACHE_HIT_RATE_CONTROL_ID, CURSOR_BENCH_ID, SURCHARGE_CONTROL_ID } from
 import { CURSOR_FIXTURE_RECORDS } from "../fixtures";
 import type { ChartViewState } from "../types";
 
-const CURSOR_SUBTITLE = "Cursor Evals only shows linear cost, so cheap models are hard to compare. Cursor enterprise plans also charge a flat fee for third-party model use, and the graph does not include it.";
+const CURSOR_SUBTITLE = "This is an improved version of the CursorBench graph. On Cursor Teams and Enterprise plans, third-party model requests have a $0.25 per million tokens fee, which is not reflected on the official CursorBench, but is included by default on Bench Bus. First-party Cursor models, including Grok and Composer, are exempt from the Cursor Token Rate.";
 
 function mount(ui: () => JSX.Element) {
   const container = document.createElement("div");
@@ -23,7 +23,7 @@ describe("CursorBenchChartSection", () => {
     const subtitle = container.querySelector("[data-testid='chart-subtitle']") as HTMLElement;
     expect(subtitle.textContent).toBe(CURSOR_SUBTITLE);
     const link = subtitle.querySelector("a") as HTMLAnchorElement;
-    expect(link.textContent).toBe("Cursor Evals");
+    expect(link.textContent).toBe("CursorBench");
     expect(link.href).toBe("https://cursor.com/evals");
     expect(link.target).toBe("_blank");
     expect(link.rel).toBe("noopener noreferrer");
