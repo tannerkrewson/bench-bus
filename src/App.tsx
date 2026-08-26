@@ -14,6 +14,7 @@ import { latestIsoTimestamp } from "./utils/format";
 import { TimeTravelProvider, useTimeTravel } from "./history/TimeTravelContext";
 import { timeTravelStateFromParams, mergeTimeTravelStateIntoParams } from "./history/urlState";
 import TimeTravelControl, { TimeTravelNotice } from "./controls/TimeTravelControl";
+import FeedbackCard from "./components/FeedbackCard";
 import ThemeToggle from "./components/ThemeToggle";
 import {
   fetchDerivedBundle,
@@ -213,6 +214,8 @@ const App: Component = () => {
           </div>
 
           <Charts bundle={bundle()} />
+
+          <FeedbackCard />
 
           <footer class="mt-6 px-4 py-4 text-center text-sm text-base-content/80">
             <div class="flex flex-col items-center justify-center gap-y-1">
