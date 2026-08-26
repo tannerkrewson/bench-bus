@@ -86,7 +86,7 @@ describe("BenchmarkScatterChart pure interaction policies", () => {
     expect(discountConnectorGeometry(50, 51).arrowhead).toBeNull();
   });
 
-  it("draws crosshair guides left and down from the snapped cursor", () => {
+  it("draws dot guides left and down only for an active dot hit", () => {
     expect(crosshairGuideGeometry(30, 20, 100)).toEqual({
       horizontal: { left: 0, width: 30 },
       vertical: { left: 30, top: 20, height: 80 },
@@ -807,7 +807,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
     dispose();
   });
 
-  it("keeps raw overlay pointer coordinates in uPlot transform space", async () => {
+  it("keeps guides hidden for raw pointer and label movement until a dot is hit", async () => {
     const { container, dispose } = mountSizedChart(() => (
       <BenchmarkScatterChart
         points={() => [
@@ -825,10 +825,8 @@ describe("BenchmarkScatterChart discount annotations", () => {
     const vertical = container.querySelector(".u-cursor-x") as HTMLElement;
     const horizontal = container.querySelector(".u-cursor-y") as HTMLElement;
     root.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: 123, clientY: 87 }));
-    expect(vertical.style.left).toBe("0px");
-    expect(vertical.style.transform).toBe("translate(123px,0px)");
-    expect(horizontal.style.transform).toBe("translate(0px,87px)");
-    expect(vertical.style.height).toBe("233px");
+    expect(vertical.style.height).toBe("0px");
+    expect(horizontal.style.width).toBe("0px");
     const label = container.querySelector("[data-testid='model-label']") as HTMLElement;
     expect(label).not.toBeNull();
     const labelLeft = Number.parseFloat(label.style.left) + 2;
@@ -839,15 +837,24 @@ describe("BenchmarkScatterChart discount annotations", () => {
       clientY: labelTop,
     }));
     expect(container.querySelector("[data-testid='hovered-dot']")).toBeNull();
-    expect(vertical.style.left).toBe("0px");
-    expect(vertical.style.transform).toBe(`translate(${labelLeft}px,0px)`);
-    expect(horizontal.style.transform).toBe(`translate(0px,${labelTop}px)`);
-    root.dispatchEvent(new MouseEvent("pointerleave", { bubbles: true, clientX: labelLeft, clientY: labelTop }));
+    expect(vertical.style.height).toBe("0px");
+    expect(horizontal.style.width).toBe("0px");
+    const dot = container.querySelector("[data-testid='focused-model-dot']") as SVGCircleElement;
+    expect(dot).not.toBeNull();
+    const left = Number.parseFloat(dot.getAttribute("cx")!);
+    const top = Number.parseFloat(dot.getAttribute("cy")!);
+    root.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: left, clientY: top }));
+    expect(container.querySelector("[data-testid='hovered-dot']")).not.toBeNull();
+    expect(vertical.style.transform).toBe(`translate(${left}px,0px)`);
+    expect(horizontal.style.transform).toBe(`translate(0px,${top}px)`);
+    expect(horizontal.style.width).toBe(`${left}px`);
+    root.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: left + 40, clientY: top + 40 }));
     expect(container.querySelector("[data-testid='hovered-dot']")).toBeNull();
     expect(vertical.style.height).toBe("0px");
     expect(horizontal.style.width).toBe("0px");
-    root.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: 240, clientY: 120 }));
-    expect(horizontal.style.width).toBe("240px");
+    root.dispatchEvent(new MouseEvent("pointerleave", { bubbles: true, clientX: left + 40, clientY: top + 40 }));
+    expect(vertical.style.height).toBe("0px");
+    expect(horizontal.style.width).toBe("0px");
     document.dispatchEvent(new MouseEvent("mousemove", { bubbles: true, clientX: 801, clientY: 120 }));
     expect(container.querySelector("[data-testid='hovered-dot']")).toBeNull();
     expect(vertical.style.height).toBe("0px");
@@ -896,8 +903,8 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect(horizontal.style.transform).toBe(`translate(0px,${top}px)`);
     root.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: left + 40, clientY: top + 40 }));
     expect(container.querySelector("[data-testid='hovered-dot']")).toBeNull();
-    expect(vertical.style.transform).toBe(`translate(${left + 40}px,0px)`);
-    expect(horizontal.style.transform).toBe(`translate(0px,${top + 40}px)`);
+    expect(vertical.style.height).toBe("0px");
+    expect(horizontal.style.width).toBe("0px");
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     dispose();
   });

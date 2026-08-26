@@ -69,7 +69,8 @@ const EMPHASIS_TRANSITION_DURATION = 140;
 // pass, not a large decorative gap, keeps them out of nearby dots.
 const LEADER_LINE_GAP = 1;
 
-/** Geometry for the leftward horizontal and downward vertical cursor guides. */
+/** Geometry for the leftward horizontal and downward vertical dot guides.
+ *  Rendered only while a dot hit (hover or discount-endpoint) is active. */
 export interface CrosshairGuideGeometry {
   horizontal: { left: number; width: number };
   vertical: { left: number; top: number; height: number };
@@ -1263,8 +1264,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
             if ((hoveredLabelId() !== null && !target) || hoveredConnectorId !== null) {
               if (rawPlotPointer) {
                 u.setCursor(rawPlotPointer, false);
-                applyCrosshairDirections(u, rawPlotPointer);
               }
+              applyCrosshairDirections(u, { left: null, top: null });
               hoveredIndex = null;
               clearHoveredPoint();
               props.onHover?.(null);
@@ -1272,16 +1273,16 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
             }
             hoveredIndex = target && target.pointIndex >= 0 ? target.pointIndex : null;
             if (!target || hoveredIndex === null) {
-              // A prior hit snaps the crosshair to the dot. Restore the raw
-              // .u-over position when it leaves the hit radius so guides do
-              // not remain frozen at the last hovered point.
+              // Guides belong to dot hits only. Restore the raw .u-over
+              // cursor when it leaves the hit radius and keep the guides
+              // hidden instead of following the pointer.
               if (rawPlotPointer && (
                 Math.abs((u.cursor.left ?? rawPlotPointer.left) - rawPlotPointer.left) > 0.5 ||
                 Math.abs((u.cursor.top ?? rawPlotPointer.top) - rawPlotPointer.top) > 0.5
               )) {
                 u.setCursor(rawPlotPointer, false);
-                applyCrosshairDirections(u, rawPlotPointer);
               }
+              applyCrosshairDirections(u, { left: null, top: null });
               clearHoveredPoint();
               props.onHover?.(null);
             } else {
@@ -1754,9 +1755,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     if (targetElement?.closest("[data-testid='pareto-crown'], [data-testid='discount-endpoint-hit']")) return;
     // The chart root is larger than uPlot's actual plot surface because it
     // also contains labels, watermark, and axis space. Pointer movement in
-    // that empty right/bottom gutter must clear the guides rather than feed
-    // an out-of-bounds position back into uPlot. Labels/connectors remain
-    // valid overlay targets even when they sit just outside .u-over.
+    // that empty right/bottom gutter must clear the interaction (guides
+    // included) rather than feed an out-of-bounds position back into uPlot.
+    // Labels/connectors remain valid overlay targets even when they sit just
+    // outside .u-over.
     if (!isChartOverlayTarget && (
       rawPlotPointer.left < 0 || rawPlotPointer.left > overRect.width ||
       rawPlotPointer.top < 0 || rawPlotPointer.top > overRect.height
@@ -1771,10 +1773,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     if (target && hoveredConnectorId === null) updateLabelHover(undefined);
     else updateLabelHover(rawPointer);
     // Keep label/connector hover passive with respect to dot ownership while
-    // still moving the raw guides with the pointer.
+    // guides stay hidden (they render for dot hits only).
     if ((hoveredLabelId() !== null && !target) || hoveredConnectorId !== null) {
       plot.setCursor(rawPlotPointer, false);
-      applyCrosshairDirections(plot, rawPlotPointer);
+      applyCrosshairDirections(plot, { left: null, top: null });
       hoveredIndex = null;
       clearHoveredPoint();
       props.onHover?.(null);
@@ -1783,7 +1785,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     hoveredIndex = target && target.pointIndex >= 0 ? target.pointIndex : null;
     if (!target || hoveredIndex === null) {
       plot.setCursor(rawPlotPointer, false);
-      applyCrosshairDirections(plot, rawPlotPointer);
+      applyCrosshairDirections(plot, { left: null, top: null });
       clearHoveredPoint();
       props.onHover?.(null);
       return;
