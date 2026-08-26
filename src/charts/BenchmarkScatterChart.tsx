@@ -2076,7 +2076,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
               }}
               role="img"
               aria-label={description}
-              title={description}
               tabIndex="0"
               onMouseEnter={() => {
                 // Crown hit targets sit above the plot, so the underlying

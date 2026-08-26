@@ -241,7 +241,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
     const crowns = container.querySelectorAll("[data-testid='pareto-crown']");
     expect(crowns).toHaveLength(2);
     expect(crowns[0]?.getAttribute("aria-label")).toContain("Cheap");
-    expect(crowns[0]?.getAttribute("title")).toContain("Pareto frontier");
+    expect(crowns[0]?.getAttribute("title")).toBeNull();
     setShowFrontier(true);
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
