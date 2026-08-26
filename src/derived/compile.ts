@@ -119,6 +119,7 @@ export function joinAaWithPricing(
   );
 
   const pricingBySlug = new Map<string, OpenRouterModelPricing>();
+  const pricingByOpenRouterId = new Map<string, OpenRouterModelPricing>();
   for (const record of pricing) {
     if (
       !aliasSlugs.has(record.aaModelSlug) &&
@@ -130,9 +131,11 @@ export function joinAaWithPricing(
       );
     }
     pricingBySlug.set(record.aaModelSlug, record);
+    pricingByOpenRouterId.set(record.permaslug, record);
   }
 
   let provisionalUsed = 0;
+  const usedPricing = new Set<OpenRouterModelPricing>();
   const records: DerivedAaChartRecord[] = [];
   let unmatchedAa = 0;
   for (const model of aaModels) {
@@ -142,13 +145,20 @@ export function joinAaWithPricing(
       unmatchedAa += 1;
       continue;
     }
-    const match = pricingBySlug.get(model.slug);
+    const aliasOpenRouterId = aliases.entries.find((entry) => entry.aaModelSlug === model.slug)?.openrouterId;
+    // Effort rows in AA share the base OpenRouter model page. Prefer a direct
+    // row, then use the mapped base identity when a snapshot only contains
+    // that one shared pricing record.
+    const match = pricingBySlug.get(model.slug) ?? (
+      aliasOpenRouterId === undefined ? undefined : pricingByOpenRouterId.get(aliasOpenRouterId)
+    );
     const isValidListedFrontier = frontierSet.has(model.slug) && aaListedWorkloadCost(model) !== null;
     if (!match && !isValidListedFrontier) {
       unmatchedAa += 1;
       continue;
     }
     if (match && provisionalSlugs.has(model.slug)) provisionalUsed += 1;
+    if (match) usedPricing.add(match);
     records.push({
       slug: model.slug,
       name: model.name,
@@ -171,8 +181,7 @@ export function joinAaWithPricing(
     });
   }
 
-  const matchedSlugs = new Set(records.map((r) => r.slug));
-  const unmatchedOr = pricing.filter((p) => !matchedSlugs.has(p.aaModelSlug)).length;
+  const unmatchedOr = pricing.filter((p) => !usedPricing.has(p)).length;
   return { records, unmatchedAa, unmatchedOr, provisionalUsed };
 }
 

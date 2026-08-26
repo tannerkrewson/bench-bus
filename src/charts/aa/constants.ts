@@ -26,16 +26,21 @@ export const AA_DEFAULT_MODEL_SLUGS = [
   "hy3",
   "claude-opus-5",
   "grok-4-6",
+  "glm-5-2",
   "gpt-5-6-sol",
   "gpt-5-6-sol-xhigh",
   "gemini-3-7-flash-low",
   "gemini-3-7-flash-medium",
   "kimi-k3",
+  "mimo-v2-5",
   "deepseek-v4-flash",
   "muse-spark-1-2",
   // Keep the explicitly curated model visible in the best-value defaults even
   // when it is not on AA's automatically computed frontier.
   "claude-opus-5-medium",
   "glm-5-3",
+  // This is an OpenRouter id, not an AA slug: the browser-only temporary
+  // fallback uses it until AA publishes a matching model row.
+  "z-ai/glm-5.3-flash",
   "qwen3-8-27b",
 ] as const;

@@ -9,6 +9,10 @@ import type {
 import { inferModelBrand } from "../brand";
 import { isNonReasoningModel, modelDisplayMetadata } from "../modelMetadata";
 import {
+  isTemporaryAaChartRecord,
+  type TemporaryAaChartRecord,
+} from "./temporaryOverrides";
+import {
   AA_DEFAULT_CACHE_HIT_RATE,
   listedCostUsd,
   selectCheapestProvider,
@@ -17,6 +21,8 @@ import {
 
 /** URL/namespace id of the Artificial Analysis chart. */
 export const AA_BENCHMARK_ID = "aa";
+
+export type AaChartRecord = DerivedAaChartRecord | TemporaryAaChartRecord;
 
 /**
  * Confirmed AA -> OpenRouter identities from the committed alias mapping,
@@ -42,19 +48,25 @@ const CONFIRMED_OPENROUTER_MODEL_IDS: Readonly<Record<string, string>> = {
   "gpt-5-6-luna-non-reasoning": "openai/gpt-5.6-luna",
   "gpt-5-6-luna-xhigh": "openai/gpt-5.6-luna",
   "gpt-5-6-sol": "openai/gpt-5.6-sol",
+  "gpt-5-6-sol-low": "openai/gpt-5.6-sol",
+  "gpt-5-6-sol-medium": "openai/gpt-5.6-sol",
   "gpt-5-6-sol-high": "openai/gpt-5.6-sol",
   "gpt-5-6-sol-xhigh": "openai/gpt-5.6-sol",
+  "glm-5-2": "z-ai/glm-5.2",
   "grok-4-6": "x-ai/grok-4.6",
   "kimi-k3": "moonshotai/kimi-k3",
+  "mimo-v2-5": "xiaomi/mimo-v2.5",
   "muse-spark-1-2": "meta/muse-spark-1.2-contributor",
   "nvidia-nemotron-3-super-120b-a12b": "nvidia/nemotron-3-super-120b-a12b",
   "qwen3-8-max": "qwen/qwen3.8-max",
 };
 
 export function openRouterUrlForAaModel(
-  record: Pick<DerivedAaChartRecord, "slug">,
+  record: Pick<DerivedAaChartRecord, "slug"> | TemporaryAaChartRecord,
 ): string | undefined {
-  const modelId = CONFIRMED_OPENROUTER_MODEL_IDS[record.slug];
+  const modelId = isTemporaryAaChartRecord(record)
+    ? record.openrouterId
+    : CONFIRMED_OPENROUTER_MODEL_IDS[record.slug];
   return modelId === undefined ? undefined : `https://openrouter.ai/${modelId}`;
 }
 
@@ -181,7 +193,7 @@ function explicitProviderDiscounts(
  * Real Artificial Analysis adapter: Intelligence Index (Y) versus the
  * estimated cost of the actual canonical benchmark workload (X).
  */
-export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
+export const aaAdapter: BenchmarkChartAdapter<AaChartRecord> = {
   benchmarkId: AA_BENCHMARK_ID,
   title: "Best value models on OpenRouter",
   subtitle: [
@@ -197,10 +209,30 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
   defaultXScale: "log",
   controlSpecs: AA_CONTROL_SPECS,
 
-  identity: (record) => ({ id: record.slug, label: modelDisplayMetadata(record.name, record.slug).label }),
+  identity: (record) => {
+    if (isTemporaryAaChartRecord(record)) {
+      return { id: record.openrouterId, label: record.name };
+    }
+    return { id: record.slug, label: modelDisplayMetadata(record.name, record.slug).label };
+  },
   openRouterUrl: openRouterUrlForAaModel,
 
   computePoint: (record, controls: Readonly<PricingControlState>): PlottablePoint | null => {
+    if (isTemporaryAaChartRecord(record)) {
+      // The approved task-cost fallback is an OpenRouter-mode point only; it
+      // is not an AA listed or weighted price and must not be reused there.
+      if (String(controls["pricingMode"] ?? PRICING_MODE_CONTROL.default) !== "cheapest") return null;
+      return {
+        id: record.openrouterId,
+        label: record.name,
+        selectionLabel: `${record.name} (temporary score fallback)`,
+        brand: inferModelBrand(record.name, record.openrouterId),
+        effortGroup: modelDisplayMetadata(record.name, record.openrouterId).groupKey,
+        x: record.discountedTaskCostUsd,
+        y: record.intelligenceIndex,
+        dataSource: "temporary-openrouter-fallback",
+      };
+    }
     // AA publishes non-reasoning base rows beside reasoning variants. The
     // chart intentionally excludes every explicitly marked non-reasoning row
     // so it cannot leak into selection, overlays, or frontier calculations.
@@ -249,7 +281,9 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
     };
   },
 
-  searchText: (record) => `${record.name} ${record.shortName} ${record.slug}`,
+  searchText: (record) => `${record.name} ${record.shortName} ${
+    isTemporaryAaChartRecord(record) ? record.openrouterId : record.slug
+  }`,
 
   unplottableLabel: (controls) =>
     String(controls["pricingMode"] ?? PRICING_MODE_CONTROL.default) === "listed"
@@ -272,10 +306,17 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
  * helper because it owns the selected-model visibility shell.
  */
 export function aaControlledTooltipLines(
-  record: DerivedAaChartRecord,
+  record: AaChartRecord,
   point: PlottablePoint,
   controls: Readonly<PricingControlState>,
 ): readonly TooltipLine[] {
+  if (isTemporaryAaChartRecord(record)) {
+    return [
+      { label: "Intelligence Index", value: `${record.intelligenceIndex.toFixed(1)} (temporary fallback)` },
+      { label: "Est. workload cost", value: `$${record.discountedTaskCostUsd.toFixed(3)} (temporary discounted task cost)` },
+      { label: "Data source", value: "Temporary OpenRouter override; waiting for Artificial Analysis" },
+    ];
+  }
   const mode = String(controls["pricingMode"] ?? PRICING_MODE_CONTROL.default);
   const lines: TooltipLine[] = [
     { label: "Intelligence Index", value: record.intelligenceIndex.toFixed(1) },

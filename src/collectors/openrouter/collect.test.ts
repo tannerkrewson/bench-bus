@@ -144,6 +144,15 @@ describe("collectOpenRouterPricing", () => {
     expect(report.unmatchedFrontierModels).not.toContain("claude-opus-5-high");
   });
 
+  it("collects Sol effort variants against the shared base OpenRouter identity", async () => {
+    const report = await collectOpenRouterPricing(baseOptions());
+    for (const slug of ["gpt-5-6-sol-low", "gpt-5-6-sol-medium"]) {
+      expect(report.records.find((record) => record.aaModelSlug === slug)).toMatchObject({
+        permaslug: "openai/gpt-5.6-sol",
+      });
+    }
+  });
+
   it("looks up frontier and forced curated identities before unmatched models are discarded", async () => {
     const catalogWithExtras = {
       ...catalogFixture,

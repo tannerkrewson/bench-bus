@@ -252,6 +252,38 @@ describe("compileBundle", () => {
     expect(joined.unmatchedAa).toBe(1);
   });
 
+  it("reuses one shared base OpenRouter pricing row for an effort variant", () => {
+    const aliases = parseAliasFile(JSON.stringify({
+      version: 1,
+      entries: [
+        {
+          aaModelSlug: "gpt-5-6-sol",
+          aaModelId: "sol-base",
+          openrouterId: "openai/gpt-5.6-sol",
+          status: "confirmed",
+        },
+        {
+          aaModelSlug: "gpt-5-6-sol-medium",
+          aaModelId: "sol-medium",
+          openrouterId: "openai/gpt-5.6-sol",
+          status: "confirmed",
+        },
+      ],
+    }), "shared Sol aliases");
+    const pricing: OpenRouterModelPricing = {
+      ...validOpenRouterPricing,
+      permaslug: "openai/gpt-5.6-sol",
+      aaModelSlug: "gpt-5-6-sol",
+    };
+    const model = withSlug(validAaModel, "gpt-5-6-sol-medium", "sol-medium");
+    const joined = joinAaWithPricing([model], [pricing], aliases, [model.slug]);
+    expect(joined.records).toHaveLength(1);
+    expect(joined.records[0]?.slug).toBe("gpt-5-6-sol-medium");
+    expect(joined.records[0]?.providers).toEqual(pricing.providerSummaries);
+    expect(joined.unmatchedAa).toBe(0);
+    expect(joined.unmatchedOr).toBe(0);
+  });
+
   it("retains an unmatched listed-frontier model with explicit no-data OpenRouter fields", () => {
     const joined = joinAaWithPricing(
       [validAaModel, validAaModel2],

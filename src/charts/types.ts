@@ -63,6 +63,8 @@ export interface PlottablePoint {
   effort?: string;
   /** Benchmark score. */
   y: number;
+  /** Distinguishes browser-only temporary fallback points from collected data. */
+  dataSource?: "artificial-analysis" | "temporary-openrouter-fallback";
 }
 
 /** Value a pricing control can hold. */

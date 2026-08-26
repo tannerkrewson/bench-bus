@@ -16,7 +16,7 @@ import { timeVaryingDiscountNote } from "../../content/discountNotes";
 import ChartControlPanel from "../../components/ChartControlPanel";
 import ModelList from "../../components/ModelList";
 import type { DerivedAaChartRecord } from "../../schemas";
-import { aaAdapter, aaControlledTooltipLines } from "./adapter";
+import { aaAdapter, aaControlledTooltipLines, type AaChartRecord } from "./adapter";
 import { AA_DEFAULT_CACHE_HIT_RATE, listedCostUsd } from "./pricing";
 import {
   discountDetailLines,
@@ -27,6 +27,7 @@ import {
 } from "../plotData";
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
 import { isNonReasoningModel } from "../modelMetadata";
+import { temporaryOpenRouterFallbackRecords } from "./temporaryOverrides";
 import MethodologyModal from "../../methodology/MethodologyModal";
 import { AaMethodologyContent } from "../../methodology/MethodologyPanel";
 import RelativeLastUpdated from "../../components/RelativeLastUpdated";
@@ -43,6 +44,8 @@ export interface AaChartSectionProps {
    * backing this chart, rendered as a relative freshness badge.
    */
   lastUpdated?: () => string | null;
+  /** Whether an OpenRouter snapshot is available for the fallback gate. */
+  openrouterAvailable?: () => boolean;
 }
 
 /**
@@ -78,8 +81,21 @@ export default function AaChartSection(props: AaChartSectionProps) {
     discount?: PriceDiscountAnnotation;
   } | null>(null);
   const [selectedPointId, setSelectedPointId] = createSignal<string | null>(null);
+  const chartRecords = createMemo<AaChartRecord[]>(() => {
+    const records = props.records();
+    return [
+      ...records,
+      ...temporaryOpenRouterFallbackRecords(
+        records,
+        props.openrouterAvailable?.() ?? false,
+      ),
+    ];
+  });
   const visibleRecords = createMemo(() =>
-    props.records().filter((record) => !isNonReasoningModel(record.name, record.slug)),
+    chartRecords().filter((record) => !isNonReasoningModel(
+      record.name,
+      "slug" in record ? record.slug : record.openrouterId,
+    )),
   );
 
   const allBuild = createMemo(() =>
@@ -377,7 +393,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
               when={
                 controls().pricingMode !== "listed" &&
                 build().unplottable.filter((entry) =>
-                  listedCostUsd(
+                  "listed" in entry.record && listedCostUsd(
                     entry.record.listed,
                     entry.record.canonicalTokens.input,
                     entry.record.canonicalTokens.output,
