@@ -7,10 +7,12 @@ import ChartWatermark from "../../components/ChartWatermark";
 import { buildChartPlot } from "../plotData";
 import type {
   ChartViewState,
+  PlottablePoint,
   PriceDiscountAnnotation,
   PricingControlState,
   TooltipLine,
 } from "../types";
+import { timeVaryingDiscountNote } from "../../content/discountNotes";
 import ChartControlPanel from "../../components/ChartControlPanel";
 import ModelList from "../../components/ModelList";
 import type { DerivedAaChartRecord } from "../../schemas";
@@ -146,6 +148,15 @@ export default function AaChartSection(props: AaChartSectionProps) {
     const discount = discountFor(entry);
     return discount ? [...lines, ...discountDetailLines(entry.point, discount)] : lines;
   };
+  /** Caveat for providers whose off-peak discount windows move around. */
+  const discountNoteFor = (point: PlottablePoint, discount: PriceDiscountAnnotation | null) =>
+    discount
+      ? timeVaryingDiscountNote({
+          id: point.id,
+          label: point.label,
+          providers: [point.brand, discount.providerName],
+        })
+      : null;
 
   const hoveredInfo = createMemo<{ title: string; lines: readonly TooltipLine[] } | null>(() => {
     const h = hovered();
@@ -162,6 +173,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
     title: string;
     lines: readonly TooltipLine[];
     openRouterUrl: string | undefined;
+    discountNote: string | null;
   } | null>(() => {
     const id = selectedPointId();
     if (!id) return null;
@@ -171,6 +183,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
           title: entry.point.label,
           lines: detailLinesFor(entry),
           openRouterUrl: aaAdapter.openRouterUrl?.(entry.record),
+          discountNote: discountNoteFor(entry.point, discountFor(entry)),
         }
       : null;
   });
@@ -353,6 +366,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
           title={() => selectedInfo()?.title ?? null}
           lines={() => selectedInfo()?.lines ?? []}
           openRouterUrl={() => selectedInfo()?.openRouterUrl}
+          discountNote={() => selectedInfo()?.discountNote ?? null}
           onClose={() => setSelectedPointId(null)}
         />
         <Show when={visibleRecords().length > 0 && build().unplottable.length > 0}>

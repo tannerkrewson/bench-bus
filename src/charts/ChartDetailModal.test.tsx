@@ -46,6 +46,42 @@ describe("ChartDetailModal", () => {
     dispose();
   });
 
+  it("shows a muted time-varying-discount note only when one is provided", () => {
+    const note =
+      "Off-peak discounts change by the hour. They often end during working hours in China and on weekends.";
+    const [open, setOpen] = createSignal(true);
+    const { container, dispose } = mount(() => (
+      <ChartDetailModal
+        benchmarkId="test"
+        open={open}
+        title={() => "DeepSeek R1"}
+        lines={() => [{ label: "Discount", value: "50% off" }]}
+        discountNote={() => (open() ? note : null)}
+        onClose={() => setOpen(false)}
+      />
+    ));
+    const dialog = container.querySelector<HTMLDialogElement>("[data-testid='chart-detail-modal']")!;
+    expect(dialog.open).toBe(true);
+    const noteEl = dialog.querySelector("[data-testid='chart-detail-discount-note']");
+    expect(noteEl?.textContent).toBe(note);
+    dispose();
+
+    // Without the prop, no note element renders at all.
+    const plain = mount(() => (
+      <ChartDetailModal
+        benchmarkId="test"
+        open={() => true}
+        title={() => "GPT-5.6 Sol"}
+        lines={() => [{ label: "Discount", value: "50% off" }]}
+        onClose={() => {}}
+      />
+    ));
+    expect(
+      plain.container.querySelector("[data-testid='chart-detail-discount-note']"),
+    ).toBeNull();
+    plain.dispose();
+  });
+
   it("closes on Escape, native dialog close, and backdrop click", () => {
     const [open, setOpen] = createSignal(true);
     const { container, dispose } = mount(() => (

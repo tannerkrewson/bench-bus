@@ -7,6 +7,11 @@ export interface ChartDetailModalProps {
   title: () => string | null;
   lines: () => readonly TooltipLine[];
   openRouterUrl?: () => string | undefined;
+  /**
+   * Optional muted caveat shown under the detail rows, e.g. a note that a
+   * provider's off-peak discount varies by hour (see content/discountNotes).
+   */
+  discountNote?: () => string | null;
   onClose: () => void;
 }
 
@@ -71,6 +76,13 @@ export default function ChartDetailModal(props: ChartDetailModalProps) {
               )}
             </For>
           </dl>
+          <Show when={props.discountNote?.()}>
+            {(note) => (
+              <p class="mt-3 text-xs text-base-content/70" data-testid="chart-detail-discount-note">
+                {note()}
+              </p>
+            )}
+          </Show>
         </Show>
         <div class="modal-action">
           <button type="button" class="btn" onClick={close}>Close</button>
