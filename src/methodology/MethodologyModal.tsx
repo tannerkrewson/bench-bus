@@ -67,7 +67,7 @@ export default function MethodologyModal(props: MethodologyModalProps) {
       >
         <div class="modal-box max-w-2xl">
           <h3 id={titleId} class="text-lg font-bold">{props.title}</h3>
-          <div class="mt-4 space-y-3 text-sm leading-relaxed text-base-content/80">
+          <div data-testid="methodology-body" class="mt-4 space-y-6 text-sm leading-relaxed text-base-content/80">
             {props.children}
           </div>
           <div class="modal-action">
