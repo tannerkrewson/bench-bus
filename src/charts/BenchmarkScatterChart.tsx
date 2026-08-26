@@ -65,11 +65,17 @@ const DISCOUNT_HIT_RADIUS = 8;
 const DISCOUNT_ENDPOINT_GAP = MODEL_DOT_RADIUS + 2;
 const PLOT_ANIMATION_DURATION = 180;
 const EMPHASIS_TRANSITION_DURATION = 140;
+// Dash-state swaps honor reduced motion with an instant, unanimated change.
+const DISCOUNT_BRIDGE_TRANSITION = `${(
+  typeof window !== "undefined" && typeof window.matchMedia === "function" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches
+) ? 0 : PLOT_ANIMATION_DURATION}ms ease-out`;
 // Keep leaders visually attached to the real dot edge; the layout collision
 // pass, not a large decorative gap, keeps them out of nearby dots.
 const LEADER_LINE_GAP = 1;
 
-/** Geometry for the leftward horizontal and downward vertical cursor guides. */
+/** Geometry for the leftward horizontal and downward vertical dot guides.
+ *  Rendered only while a dot hit (hover or discount-endpoint) is active. */
 export interface CrosshairGuideGeometry {
   horizontal: { left: number; width: number };
   vertical: { left: number; top: number; height: number };
@@ -231,6 +237,33 @@ export function discountLineSegments(
   gap = 0,
 ): DiscountConnectorGeometry["segments"] {
   return discountConnectorGeometry(preLeft, effectiveLeft, gap).segments;
+}
+
+export interface DiscountBridgeGeometry {
+  /** Sweep origin sits at the tick so the bridge grows out of the source run. */
+  x1: number;
+  x2: number;
+  length: number;
+}
+
+/**
+ * The open middle between the two fixed endpoint runs. Revealed through a
+ * stroke-dasharray transition while the discount's model group is emphasized;
+ * null for short spans that already render as one contiguous run.
+ */
+export function discountBridgeGeometry(
+  preLeft: number,
+  effectiveLeft: number,
+): DiscountBridgeGeometry | null {
+  const connector = discountConnectorGeometry(preLeft, effectiveLeft, 0);
+  if (!connector.arrowhead || !connector.tick) return null;
+  const length = Math.abs(connector.tick.x - connector.arrowhead.tipX);
+  if (!(length > 0)) return null;
+  return {
+    x1: connector.tick.x,
+    x2: connector.arrowhead.tipX,
+    length,
+  };
 }
 
 /** Build the literal left-pointing angle bracket used at the left run's end. */
@@ -1263,8 +1296,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
             if ((hoveredLabelId() !== null && !target) || hoveredConnectorId !== null) {
               if (rawPlotPointer) {
                 u.setCursor(rawPlotPointer, false);
-                applyCrosshairDirections(u, rawPlotPointer);
               }
+              applyCrosshairDirections(u, { left: null, top: null });
               hoveredIndex = null;
               clearHoveredPoint();
               props.onHover?.(null);
@@ -1272,16 +1305,16 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
             }
             hoveredIndex = target && target.pointIndex >= 0 ? target.pointIndex : null;
             if (!target || hoveredIndex === null) {
-              // A prior hit snaps the crosshair to the dot. Restore the raw
-              // .u-over position when it leaves the hit radius so guides do
-              // not remain frozen at the last hovered point.
+              // Guides belong to dot hits only. Restore the raw .u-over
+              // cursor when it leaves the hit radius and keep the guides
+              // hidden instead of following the pointer.
               if (rawPlotPointer && (
                 Math.abs((u.cursor.left ?? rawPlotPointer.left) - rawPlotPointer.left) > 0.5 ||
                 Math.abs((u.cursor.top ?? rawPlotPointer.top) - rawPlotPointer.top) > 0.5
               )) {
                 u.setCursor(rawPlotPointer, false);
-                applyCrosshairDirections(u, rawPlotPointer);
               }
+              applyCrosshairDirections(u, { left: null, top: null });
               clearHoveredPoint();
               props.onHover?.(null);
             } else {
@@ -1754,9 +1787,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     if (targetElement?.closest("[data-testid='pareto-crown'], [data-testid='discount-endpoint-hit']")) return;
     // The chart root is larger than uPlot's actual plot surface because it
     // also contains labels, watermark, and axis space. Pointer movement in
-    // that empty right/bottom gutter must clear the guides rather than feed
-    // an out-of-bounds position back into uPlot. Labels/connectors remain
-    // valid overlay targets even when they sit just outside .u-over.
+    // that empty right/bottom gutter must clear the interaction (guides
+    // included) rather than feed an out-of-bounds position back into uPlot.
+    // Labels/connectors remain valid overlay targets even when they sit just
+    // outside .u-over.
     if (!isChartOverlayTarget && (
       rawPlotPointer.left < 0 || rawPlotPointer.left > overRect.width ||
       rawPlotPointer.top < 0 || rawPlotPointer.top > overRect.height
@@ -1771,10 +1805,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     if (target && hoveredConnectorId === null) updateLabelHover(undefined);
     else updateLabelHover(rawPointer);
     // Keep label/connector hover passive with respect to dot ownership while
-    // still moving the raw guides with the pointer.
+    // guides stay hidden (they render for dot hits only).
     if ((hoveredLabelId() !== null && !target) || hoveredConnectorId !== null) {
       plot.setCursor(rawPlotPointer, false);
-      applyCrosshairDirections(plot, rawPlotPointer);
+      applyCrosshairDirections(plot, { left: null, top: null });
       hoveredIndex = null;
       clearHoveredPoint();
       props.onHover?.(null);
@@ -1783,7 +1817,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     hoveredIndex = target && target.pointIndex >= 0 ? target.pointIndex : null;
     if (!target || hoveredIndex === null) {
       plot.setCursor(rawPlotPointer, false);
-      applyCrosshairDirections(plot, rawPlotPointer);
+      applyCrosshairDirections(plot, { left: null, top: null });
       clearHoveredPoint();
       props.onHover?.(null);
       return;
@@ -1941,6 +1975,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
             // Paint the dotted connector underneath the solid endpoint dot;
             // a zero gap keeps the fixed outer runs attached to the dot edges.
             const connector = discountConnectorGeometry(discount.preLeft, discount.effectiveLeft, 0);
+            const bridge = discountBridgeGeometry(discount.preLeft, discount.effectiveLeft);
+            // The same focus state that de-emphasizes every other family.
+            const linked = () => hoveredLabelId() !== null && isFocusedFamilyId(discount.pointId);
             return (
               <g
                 fill="none"
@@ -1964,12 +2001,33 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                       y1={discount.top}
                       x2={segment.x2}
                       y2={discount.top}
-                      style={{ transition: "x1 180ms ease-out, x2 180ms ease-out, y1 180ms ease-out, y2 180ms ease-out" }}
                       data-testid="discount-line-segment"
                       data-discount-part="segment"
                     />
                   )}
                 </For>
+                <Show when={bridge}>
+                  {(geometry) => (
+                    // Dash reveal via inline style: a zero-length dash hides
+                    // the bridge; growing it to the full middle sweeps the
+                    // line closed from the tick toward the arrowhead without
+                    // moving either marker.
+                    <line
+                      x1={geometry().x1}
+                      y1={discount.top}
+                      x2={geometry().x2}
+                      y2={discount.top}
+                      style={{
+                        "stroke-dasharray": linked()
+                          ? `${geometry().length} ${geometry().length}`
+                          : `0 ${geometry().length}`,
+                        transition: `stroke-dasharray ${DISCOUNT_BRIDGE_TRANSITION}`,
+                      }}
+                      data-testid="discount-line-bridge"
+                      data-discount-part="bridge"
+                    />
+                  )}
+                </Show>
                 {connector.arrowhead && (
                   <path
                     d={discountArrowheadPath(
@@ -2076,7 +2134,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
               }}
               role="img"
               aria-label={description}
-              title={description}
               tabIndex="0"
               onMouseEnter={() => {
                 // Crown hit targets sit above the plot, so the underlying
