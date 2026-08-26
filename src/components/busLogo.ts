@@ -6,6 +6,7 @@ export function driveElement(target: HTMLElement): void {
   // Remove and reflow before re-adding so rapid clicks safely restart the run.
   target.classList.remove(DRIVE_CLASS);
   if (typeof window === "undefined" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+    target.style.removeProperty("transform");
     return;
   }
   void target.offsetWidth;
