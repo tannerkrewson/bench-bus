@@ -6,22 +6,22 @@ export function driveElement(target: HTMLElement): void {
   // Remove and reflow before re-adding so rapid clicks safely restart the run.
   target.classList.remove(DRIVE_CLASS);
   if (typeof window === "undefined" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
-    target.style.removeProperty("transform");
     return;
   }
   void target.offsetWidth;
   target.classList.add(DRIVE_CLASS);
 }
 
-/** Drive the whole logo button that received the click (no caption to pin). */
+/** Drive the logo image inside the clicked button's clipped viewport. */
 export function driveLogo(event: MouseEvent): void {
-  driveElement(event.currentTarget as HTMLElement);
+  const button = event.currentTarget as HTMLElement;
+  const logo = button.querySelector("img");
+  driveElement(logo instanceof HTMLElement ? logo : button);
 }
 
 /** Clear drive state when the lap ends; ignores unrelated animations. */
 export function resetLogo(event: AnimationEvent): void {
-  if (event.animationName !== DRIVE_ANIMATION) return;
+  if (event.animationName !== DRIVE_ANIMATION || event.target !== event.currentTarget) return;
   const target = event.currentTarget as HTMLElement;
   target.classList.remove(DRIVE_CLASS);
-  target.style.removeProperty("transform");
 }

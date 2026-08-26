@@ -11,7 +11,7 @@ export default function ChartWatermark() {
   return (
     <button
       type="button"
-      class="mt-2 flex min-h-8 cursor-pointer appearance-none items-center justify-start gap-2 border-0 bg-transparent p-0 text-xs font-semibold tracking-wide text-base-content/70"
+      class="bench-bus-logo-viewport mt-2 flex min-h-8 cursor-pointer appearance-none items-center justify-start gap-2 border-0 bg-transparent p-0 text-xs font-semibold tracking-wide text-base-content/70"
       data-testid="chart-watermark"
       aria-label="Bench Bus watermark, benchb.us"
       title="Bench Bus watermark, benchb.us"

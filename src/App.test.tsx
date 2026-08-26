@@ -72,22 +72,26 @@ describe("App", () => {
     ]);
 
     const headerLogo = logos[0]!;
+    const headerBus = headerLogo.querySelector("img")!;
     const watermarks = logos.slice(1);
 
-    // The whole header logo button drives; it has no caption.
+    // The clipped header viewport drives only the bus image.
+    expect(headerLogo.classList.contains("bench-bus-logo-viewport")).toBe(true);
     headerLogo.click();
-    expect(headerLogo.classList.contains("bench-bus-logo-drive")).toBe(true);
+    expect(headerLogo.classList.contains("bench-bus-logo-drive")).toBe(false);
+    expect(headerBus.classList.contains("bench-bus-logo-drive")).toBe(true);
     headerLogo.click();
-    expect(headerLogo.classList.contains("bench-bus-logo-drive")).toBe(true);
+    expect(headerBus.classList.contains("bench-bus-logo-drive")).toBe(true);
     const animationEnd = new Event("animationend");
     Object.defineProperty(animationEnd, "animationName", { value: "bench-bus-logo-drive" });
-    headerLogo.dispatchEvent(animationEnd);
-    expect(headerLogo.classList.contains("bench-bus-logo-drive")).toBe(false);
+    headerBus.dispatchEvent(animationEnd);
+    expect(headerBus.classList.contains("bench-bus-logo-drive")).toBe(false);
 
     // Watermarks drive only the bus image; the caption span stays pinned.
     watermarks.forEach((watermark) => {
       const bus = watermark.querySelector("img")!;
       const caption = watermark.querySelector("span")!;
+      expect(watermark.classList.contains("bench-bus-logo-viewport")).toBe(true);
       watermark.click();
       expect(watermark.classList.contains("bench-bus-logo-drive")).toBe(false);
       expect(caption.classList.contains("bench-bus-logo-drive")).toBe(false);
@@ -112,8 +116,9 @@ describe("App", () => {
     }) as unknown as MediaQueryList);
     try {
       logos[0]!.click();
+      expect(headerBus.classList.contains("bench-bus-logo-drive")).toBe(false);
       expect(logos[0]!.classList.contains("bench-bus-logo-drive")).toBe(false);
-      expect(logos[0]!.style.transform).toBe("");
+      expect(headerBus.style.transform).toBe("");
       const watermarkBus = logos[1]!.querySelector("img")!;
       logos[1]!.click();
       expect(watermarkBus.classList.contains("bench-bus-logo-drive")).toBe(false);

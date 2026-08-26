@@ -168,13 +168,18 @@ const App: Component = () => {
             <div class="navbar-start gap-3">
               <button
                 type="button"
-                class="flex h-12 w-16 shrink-0 cursor-pointer appearance-none items-center justify-center border-0 bg-transparent p-0 sm:h-14 sm:w-20"
+                class="bench-bus-logo-viewport flex h-12 w-16 shrink-0 cursor-pointer appearance-none items-center justify-center border-0 bg-transparent p-0 sm:h-14 sm:w-20"
                 aria-label="Bench Bus logo"
                 title="Bench Bus logo"
                 onClick={driveLogo}
-                onAnimationEnd={resetLogo}
               >
-                <img class="h-12 w-16 object-contain sm:h-14 sm:w-20" src="/logo.svg" alt="" aria-hidden="true" />
+                <img
+                  class="h-12 w-16 object-contain sm:h-14 sm:w-20"
+                  src="/logo.svg"
+                  alt=""
+                  aria-hidden="true"
+                  onAnimationEnd={resetLogo}
+                />
               </button>
               <div>
                 <h1 class="text-xl font-bold tracking-tight sm:text-2xl">Bench Bus</h1>

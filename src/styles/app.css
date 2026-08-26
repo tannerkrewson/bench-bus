@@ -20,23 +20,28 @@
 }
 
 @keyframes bench-bus-logo-drive {
-  0% {
+  0%,
+  8% {
     transform: translateX(0);
   }
 
-  /* Exit right, cross over entirely off-screen, then re-enter from the left:
-     one continuous lap (~46% out, ~8% hidden, ~46% home) at a stately pace. */
-  46% {
+  /* Keep the crossover quick while the logo is fully outside its clipped viewport. */
+  44% {
     transform: translateX(calc(100vw + 100%));
   }
 
-  54% {
+  50% {
     transform: translateX(calc(-100vw - 100%));
   }
 
+  92%,
   100% {
     transform: translateX(0);
   }
+}
+
+.bench-bus-logo-viewport {
+  overflow: hidden;
 }
 
 .bench-bus-logo-drive {
