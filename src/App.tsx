@@ -119,7 +119,6 @@ const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
     <div class="mt-4 space-y-8">
       <AaChartSection
         records={() => props.bundle.aa?.records ?? []}
-        openrouterAvailable={() => props.bundle.sources.openrouter.available}
         lastUpdated={aaLastUpdated}
         initialState={initialChartStateFor(
           "aa",

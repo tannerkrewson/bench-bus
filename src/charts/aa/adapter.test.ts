@@ -16,7 +16,6 @@ import {
   BUNDLE_AS_OF,
   makeAaBundleFixture,
 } from "./fixtures";
-import { temporaryOpenRouterFallbackRecords } from "./temporaryOverrides";
 
 describe("aa fixtures and decode path", () => {
   it("fixture records are schema-valid derived AA records", () => {
@@ -248,24 +247,6 @@ describe("aaAdapter.computePoint", () => {
   it("falls back to control defaults when controls are missing", () => {
     const point = aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, {});
     expect(point).not.toBeNull(); // defaults: cheapest mode
-  });
-
-  it("plots the approved flash fallback only in OpenRouter mode", () => {
-    const fallback = temporaryOpenRouterFallbackRecords([], true)[0]!;
-    const point = aaAdapter.computePoint(fallback, { pricingMode: "cheapest" });
-    expect(point).toMatchObject({
-      id: "z-ai/glm-5.3-flash",
-      x: 0.045,
-      y: 57,
-      dataSource: "temporary-openrouter-fallback",
-    });
-    expect(point?.selectionLabel).toContain("temporary score fallback");
-    expect(aaAdapter.computePoint(fallback, { pricingMode: "weighted" })).toBeNull();
-    expect(aaControlledTooltipLines(fallback, point!, { pricingMode: "cheapest" })).toEqual([
-      { label: "Intelligence Index", value: "57.0 (temporary fallback)" },
-      { label: "Est. workload cost", value: "$0.045 (temporary discounted task cost)" },
-      { label: "Data source", value: "Temporary OpenRouter override; waiting for Artificial Analysis" },
-    ]);
   });
 
   it("explains provider-mode rows that can use AA listed pricing", () => {

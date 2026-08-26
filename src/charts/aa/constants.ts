@@ -39,8 +39,5 @@ export const AA_DEFAULT_MODEL_SLUGS = [
   // when it is not on AA's automatically computed frontier.
   "claude-opus-5-medium",
   "glm-5-3",
-  // This is an OpenRouter id, not an AA slug: the browser-only temporary
-  // fallback uses it until AA publishes a matching model row.
-  "z-ai/glm-5.3-flash",
   "qwen3-8-27b",
 ] as const;
