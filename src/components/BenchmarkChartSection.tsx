@@ -20,6 +20,7 @@ import type {
   PricingControlState,
   PriceDiscountAnnotation,
   TooltipLine,
+  ChartBeforeContent,
 } from "../charts/types";
 import { timeVaryingDiscountNote } from "../content/discountNotes";
 import ChartControlPanel from "./ChartControlPanel";
@@ -55,6 +56,8 @@ export interface BenchmarkChartSectionProps<TRecord> {
   showDiscountsControl?: boolean;
   /** Optional graph-specific methodology content for concrete sections. */
   methodology?: ChartMethodology;
+  /** Optional benchmark-specific content rendered immediately above the graph. */
+  beforeChart?: ChartBeforeContent;
   /**
    * Optional observation timestamp (ISO UTC) of the freshest source dataset
    * backing this chart, rendered as a relative freshness badge.
@@ -276,6 +279,9 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
             </Show>
           </div>
         </header>
+        <Show when={props.beforeChart}>
+          {props.beforeChart?.(controls, setControl)}
+        </Show>
         <div class="relative min-h-[560px] sm:min-h-[740px]" data-testid="chart-area">
           <Show
             when={props.records().length > 0}

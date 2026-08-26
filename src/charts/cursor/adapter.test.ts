@@ -29,6 +29,12 @@ describe("cursorBenchAdapter identity + axes", () => {
     expect(cursorBenchAdapter.defaultXScale).toBe("log");
   });
 
+  it("enables the third-party fee by default", () => {
+    expect(cursorBenchAdapter.controlSpecs.find((spec) => spec.id === SURCHARGE_CONTROL_ID)).toMatchObject({
+      default: true,
+    });
+  });
+
   it("uses the concise linked subtitle contract", () => {
     expect(cursorBenchAdapter.subtitle).toEqual([
       "This is an improved version of the ",

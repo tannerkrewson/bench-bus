@@ -1,11 +1,10 @@
-import { createSignal, Show } from "solid-js";
 import type { JSX } from "solid-js";
 import BenchmarkChartSection from "../../components/BenchmarkChartSection";
 import {
   chartStateFromParams,
   chartStateToParams,
 } from "../urlState";
-import type { ChartViewState, PricingControlState } from "../types";
+import type { ChartViewState } from "../types";
 import {
   CURSOR_BENCH_ID,
   SURCHARGE_CONTROL_ID,
@@ -38,14 +37,6 @@ export interface CursorBenchChartSectionProps {
  * part of a plotted cost.
  */
 export default function CursorBenchChartSection(props: CursorBenchChartSectionProps): JSX.Element {
-  // Latest control state, kept in sync via onStateChange for the visible
-  // surcharge indicator; the generic section passes its own live controls to
-  // adapter.tooltipLines.
-  const [controls, setControls] = createSignal<PricingControlState>({
-    ...Object.fromEntries(cursorBenchAdapter.controlSpecs.map((spec) => [spec.id, spec.default])),
-    ...props.initialState?.controls,
-  });
-
   return (
     <div data-testid="cursor-bench-chart">
       <BenchmarkChartSection
@@ -53,12 +44,33 @@ export default function CursorBenchChartSection(props: CursorBenchChartSectionPr
         records={props.records}
         lastUpdated={props.lastUpdated}
         initialState={props.initialState}
-        onStateChange={(state) => {
-          setControls(state.controls);
-          props.onStateChange?.(state);
-        }}
+        onStateChange={props.onStateChange}
+        beforeChart={(controls, onControlChange) => (
+          <div class="mb-4 rounded-box border border-base-300 bg-base-200/50 p-3" data-testid="cursor-surcharge-toggle">
+            <label
+              class="label cursor-pointer justify-start gap-3"
+              for={`chart-${CURSOR_BENCH_ID}-visible-surcharge`}
+            >
+              <span class="flex flex-1 flex-col gap-1">
+                <span class="font-medium">Include Cursor third-party fee</span>
+                <span class="text-sm text-base-content/70">
+                  Cursor Teams and Enterprise plans pay the $0.25/M third-party fee; Pro, Pro Plus, and Ultra plans do not.
+                </span>
+              </span>
+              <input
+                id={`chart-${CURSOR_BENCH_ID}-visible-surcharge`}
+                type="checkbox"
+                class="toggle toggle-sm toggle-primary"
+                aria-label="Include Cursor third-party fee"
+                checked={Boolean(controls()[SURCHARGE_CONTROL_ID])}
+                onChange={(event) => onControlChange(SURCHARGE_CONTROL_ID, event.currentTarget.checked)}
+              />
+            </label>
+          </div>
+        )}
         isControlVisible={(spec, state) =>
-          spec.id !== CACHE_HIT_RATE_CONTROL_ID || Boolean(state[SURCHARGE_CONTROL_ID])
+          spec.id !== SURCHARGE_CONTROL_ID &&
+          (spec.id !== CACHE_HIT_RATE_CONTROL_ID || Boolean(state[SURCHARGE_CONTROL_ID]))
         }
         showDiscountsControl={false}
         methodology={{
@@ -66,15 +78,6 @@ export default function CursorBenchChartSection(props: CursorBenchChartSectionPr
           content: <CursorMethodologyContent />,
         }}
       />
-      <Show when={Boolean(controls()[SURCHARGE_CONTROL_ID])}>
-        <div class="alert mt-3" role="status" data-testid="cursor-token-rate-assumptions">
-          <p class="flex flex-wrap items-center gap-2">
-            <span class="font-medium">Cursor Token Rate estimate enabled.</span>
-            <span class="badge badge-warning" data-testid="cursor-surcharge-included">Surcharge included</span>
-            <span class="text-sm text-base-content/70">Use the Methodology button above for details.</span>
-          </p>
-        </div>
-      </Show>
     </div>
   );
 }
@@ -90,6 +93,6 @@ export function cursorChartStateFromParams(params: Readonly<URLSearchParams>): C
     scale: cursorBenchAdapter.defaultXScale,
     // Keep the historical URL shape compact: the generic section fills the
     // slider default for rendering, while absent slider params stay absent.
-    controls: { [SURCHARGE_CONTROL_ID]: false, [CACHE_HIT_RATE_CONTROL_ID]: 90 },
+    controls: { [SURCHARGE_CONTROL_ID]: true, [CACHE_HIT_RATE_CONTROL_ID]: 90 },
   });
 }

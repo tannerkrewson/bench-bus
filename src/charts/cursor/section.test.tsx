@@ -16,7 +16,7 @@ function mount(ui: () => JSX.Element) {
 }
 
 describe("CursorBenchChartSection", () => {
-  it("renders the cursor section with surcharge toggle", () => {
+  it("renders the fee toggle on by default with plan coverage text above the graph", () => {
     const { container, dispose } = mount(() => <CursorBenchChartSection records={() => CURSOR_FIXTURE_RECORDS} />);
     expect(container.querySelector("section[data-benchmark='cursor']")).not.toBeNull();
     expect(container.querySelector("h2")?.textContent).toBe("Best value models on Cursor");
@@ -30,17 +30,35 @@ describe("CursorBenchChartSection", () => {
     expect(container.textContent).not.toContain("CursorBench score versus average benchmark workload cost per task from cursor.com/evals.");
     expect(container.querySelector("canvas")).not.toBeNull();
     expect([...container.querySelectorAll("button")].find((b) => b.textContent === "Log")?.getAttribute("aria-pressed")).toBe("true");
-    expect((container.querySelector("[data-testid='chart-controls'] input[aria-label^='Include Cursor Token Rate']") as HTMLInputElement).checked).toBe(false);
+    const toggle = container.querySelector("[data-testid='cursor-surcharge-toggle'] input") as HTMLInputElement;
+    expect(toggle.checked).toBe(true);
+    expect(container.querySelector("[data-testid='cursor-surcharge-toggle']")?.textContent).toContain("Cursor Teams and Enterprise plans pay");
+    expect(container.querySelector("[data-testid='cursor-surcharge-toggle']")?.textContent).toContain("Pro, Pro Plus, and Ultra plans do not");
+    expect(container.querySelector("[data-testid='chart-area']")?.compareDocumentPosition(toggle)).toBe(Node.DOCUMENT_POSITION_PRECEDING);
+    expect(container.querySelector("[data-testid='chart-controls'] input[aria-label^='Include Cursor Token Rate']")).toBeNull();
+    expect(container.querySelector(`#chart-cursor-control-${CACHE_HIT_RATE_CONTROL_ID}`)).not.toBeNull();
     expect(container.querySelector("input[aria-label='Show provider discounts']")).toBeNull();
     expect(container.querySelector("[data-testid='methodology-button-cursor']")).not.toBeNull();
     expect(container.textContent).not.toContain("see the methodology below");
     dispose();
   });
 
-  it("uses the 90% cache-hit default and exact help copy", () => {
-    const { container, dispose } = mount(() => <CursorBenchChartSection records={() => CURSOR_FIXTURE_RECORDS} />);
-    const toggle = container.querySelector("[data-testid='chart-controls'] input[aria-label^='Include Cursor Token Rate']") as HTMLInputElement;
+  it("toggles the fee and cache-hit control visibility", () => {
+    const states: ChartViewState[] = [];
+    const { container, dispose } = mount(() => (
+      <CursorBenchChartSection
+        records={() => CURSOR_FIXTURE_RECORDS}
+        onStateChange={(state) => states.push(state)}
+      />
+    ));
+    const toggle = container.querySelector("[data-testid='cursor-surcharge-toggle'] input") as HTMLInputElement;
     toggle.click();
+    expect(toggle.checked).toBe(false);
+    expect(states.at(-1)?.controls[SURCHARGE_CONTROL_ID]).toBe(false);
+    expect(container.querySelector(`#chart-cursor-control-${CACHE_HIT_RATE_CONTROL_ID}`)).toBeNull();
+    toggle.click();
+    expect(toggle.checked).toBe(true);
+    expect(states.at(-1)?.controls[SURCHARGE_CONTROL_ID]).toBe(true);
     const slider = container.querySelector(`#chart-cursor-control-${CACHE_HIT_RATE_CONTROL_ID}`) as HTMLInputElement;
     expect(slider.getAttribute("aria-label")).toBe("Estimated cache hit rate");
     expect(slider.value).toBe("90");
@@ -52,8 +70,6 @@ describe("CursorBenchChartSection", () => {
   it("preserves explicit selection and emits cache-hit state", () => {
     const states: ChartViewState[] = [];
     const { container, dispose } = mount(() => <CursorBenchChartSection records={() => CURSOR_FIXTURE_RECORDS} onStateChange={(state) => states.push(state)} />);
-    const toggle = container.querySelector("[data-testid='chart-controls'] input[aria-label^='Include Cursor Token Rate']") as HTMLInputElement;
-    toggle.click();
     const slider = container.querySelector(`#chart-cursor-control-${CACHE_HIT_RATE_CONTROL_ID}`) as HTMLInputElement;
     slider.value = "75";
     slider.dispatchEvent(new Event("input", { bubbles: true }));
@@ -64,8 +80,6 @@ describe("CursorBenchChartSection", () => {
   it("keeps chart layers synchronized through repeated slider updates", async () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
     const { container, dispose } = mount(() => <CursorBenchChartSection records={() => CURSOR_FIXTURE_RECORDS} />);
-    const toggle = container.querySelector("[data-testid='chart-controls'] input[aria-label^='Include Cursor Token Rate']") as HTMLInputElement;
-    toggle.click();
     const slider = container.querySelector(`#chart-cursor-control-${CACHE_HIT_RATE_CONTROL_ID}`) as HTMLInputElement;
     for (let value = 0; value <= 100; value += 1) {
       slider.value = String(value);
@@ -97,7 +111,7 @@ describe("Cursor chart URL state", () => {
   it("falls back to log and the 90% slider default", () => {
     const restored = cursorChartStateFromParams(new URLSearchParams(""));
     expect(restored.scale).toBe("log");
-    expect(restored.controls[SURCHARGE_CONTROL_ID]).toBe(false);
+    expect(restored.controls[SURCHARGE_CONTROL_ID]).toBe(true);
     expect(restored.controls[CACHE_HIT_RATE_CONTROL_ID]).toBe(90);
     const old = cursorChartStateFromParams(new URLSearchParams("chart.cursor.c.tokenMix=50"));
     expect(old.controls[CACHE_HIT_RATE_CONTROL_ID]).toBe(90);

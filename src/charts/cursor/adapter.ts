@@ -56,7 +56,7 @@ const SURCHARGE_CONTROL = {
   kind: "toggle",
   id: SURCHARGE_CONTROL_ID,
   label: `Include Cursor Token Rate ($${CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS}/M tok)`,
-  default: false,
+  default: true,
   description: "Estimate Cursor's flat third-party-model fee from published cost, completion tokens, and an estimated cache-hit rate; Cursor Models are exempt.",
 } as const;
 

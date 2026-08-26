@@ -110,7 +110,7 @@ const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
   };
   const cursorUrlDefaults: ChartStateSerializationDefaults = {
     scale: "log",
-    controls: { surcharge: false, cacheHitRate: 90 },
+    controls: { surcharge: true, cacheHitRate: 90 },
     showLabels: true,
     showFrontier: false,
     showDiscounts: true,
@@ -133,7 +133,7 @@ const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
         initialState={initialChartStateFor(
           "cursor",
           cursorBenchAdapter.controlSpecs,
-          { surcharge: false },
+          { surcharge: true },
         )}
         onStateChange={(state) => syncChartStateToUrl(state, "cursor", cursorUrlDefaults)}
       />

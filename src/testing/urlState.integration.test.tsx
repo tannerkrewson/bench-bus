@@ -22,7 +22,7 @@ import {
 import type { ChartViewState, PricingControlSpec } from "../charts/types";
 
 const AA_DEFAULTS = { scale: "log" as const, controls: { pricingMode: "cheapest", cacheHitRate: 0.9 } };
-const CURSOR_DEFAULTS = { scale: "log" as const, controls: { [SURCHARGE_CONTROL_ID]: false } };
+const CURSOR_DEFAULTS = { scale: "log" as const, controls: { [SURCHARGE_CONTROL_ID]: true } };
 
 const AA_STATE: ChartViewState = {
   scale: "linear",
@@ -96,7 +96,7 @@ describe("URL round-trip across both chart namespaces and time travel", () => {
     expect(aa.scale).toBe("log");
     expect(aa.controls.cacheHitRate).toBe(0.9);
     const cursor = chartStateFromParams(params, "cursor", controlSpecsFor("cursor"), CURSOR_DEFAULTS);
-    expect(cursor.controls[SURCHARGE_CONTROL_ID]).toBe(false);
+    expect(cursor.controls[SURCHARGE_CONTROL_ID]).toBe(true);
     expect(timeTravelStateFromParams(params)).toEqual({ selectedAsOf: null });
   });
 });

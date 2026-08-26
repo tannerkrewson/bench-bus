@@ -1,4 +1,4 @@
-import type { Component } from "solid-js";
+import type { Component, JSX } from "solid-js";
 
 /**
  * Generic score-versus-cost chart contracts.
@@ -172,6 +172,12 @@ export interface BenchmarkChartAdapter<TRecord> {
     controls: Readonly<PricingControlState>,
   ): readonly TooltipLine[];
 }
+
+/** Content rendered between a chart section's header and graph. */
+export type ChartBeforeContent = (
+  controls: () => Readonly<PricingControlState>,
+  onControlChange: (id: string, value: PricingControlValue) => void,
+) => JSX.Element;
 
 /** Full serializable interaction state of one benchmark chart. */
 export interface ChartViewState {
