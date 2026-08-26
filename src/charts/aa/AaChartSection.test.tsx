@@ -212,8 +212,8 @@ describe("AaChartSection", () => {
     const dialog = container.querySelector<HTMLDialogElement>("[data-testid='chart-methodology-modal']")!;
     trigger.click();
     expect(dialog.open).toBe(true);
-    expect(dialog.textContent).toContain("OpenRouter pricing");
-    expect(dialog.textContent).not.toContain("CursorBench source");
+    expect(dialog.textContent).toContain("Price source");
+    expect(dialog.textContent).not.toContain("cursor.com/evals");
     dispose();
   });
 

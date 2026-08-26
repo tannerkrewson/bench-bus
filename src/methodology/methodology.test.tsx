@@ -44,10 +44,11 @@ describe("graph methodology content", () => {
   it("keeps Artificial Analysis and OpenRouter facts in their graph only", () => {
     const { container, dispose } = mount(() => <AaMethodologyContent />);
     const text = container.textContent ?? "";
-    expect(text).toContain("actual canonical benchmark token counts");
-    expect(text).toContain("30-day realized averages");
-    expect(text).toContain("cache-write volume");
-    expect(text).toContain("OpenRouter pricing");
+    expect(text).toContain("real test runs");
+    expect(text).toContain("over 30 days");
+    expect(text).toContain("Cache writes are left out");
+    expect(text).toContain("Cheapest mode picks one provider");
+    expect(text).toContain("Price source");
     expect(text).not.toContain("CursorBench");
     dispose();
   });
@@ -57,9 +58,21 @@ describe("graph methodology content", () => {
     const text = container.textContent ?? "";
     expect(text).toContain("cursor.com/evals");
     expect(text).toContain("third-party multi-step agent workloads");
-    expect(text).toContain("percentage");
+    expect(text).toContain("come from cache");
     expect(text).toContain("Grok 4.6, Grok 4.5, and Composer 2.5");
-    expect(text).not.toContain("OpenRouter pricing");
+    expect(text).not.toContain("Price source");
+    dispose();
+  });
+
+  it("spaces methodology paragraphs clearly apart", () => {
+    const { container, dispose } = mount(() => (
+      <MethodologyModal benchmarkId="aa" title="Artificial Analysis methodology">
+        <AaMethodologyContent />
+      </MethodologyModal>
+    ));
+    const body = container.querySelector("[data-testid='methodology-body']");
+    expect(body).not.toBeNull();
+    expect(body?.className).toContain("space-y-6");
     dispose();
   });
 
