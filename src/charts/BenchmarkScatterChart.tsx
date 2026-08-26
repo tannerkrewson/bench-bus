@@ -177,6 +177,7 @@ export function trimDiscountSegment(
 export const DISCOUNT_SEGMENT_LENGTH = 28;
 const DISCOUNT_ARROWHEAD_SIZE = 4;
 const DISCOUNT_TICK_HALF_HEIGHT = 4;
+const DISCOUNT_DOT_PATTERN = "0.1 5";
 
 export interface DiscountConnectorGeometry {
   segments: { x1: number; y1: number; x2: number; y2: number }[];
@@ -1983,7 +1984,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 fill="none"
                 stroke={discount.color}
                 stroke-width="1.75"
-                stroke-dasharray="0.1 5"
+                stroke-dasharray={DISCOUNT_DOT_PATTERN}
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 data-testid="discount-line"
@@ -2008,19 +2009,16 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 </For>
                 <Show when={bridge}>
                   {(geometry) => (
-                    // Dash reveal via inline style: a zero-length dash hides
-                    // the bridge; growing it to the full middle sweeps the
-                    // line closed from the tick toward the arrowhead without
-                    // moving either marker.
+                    // Keep the bridge dotted while its zero-length dash is
+                    // revealed on family hover; the endpoint markers stay
+                    // fixed throughout the transition.
                     <line
                       x1={geometry().x1}
                       y1={discount.top}
                       x2={geometry().x2}
                       y2={discount.top}
                       style={{
-                        "stroke-dasharray": linked()
-                          ? `${geometry().length} ${geometry().length}`
-                          : `0 ${geometry().length}`,
+                        "stroke-dasharray": linked() ? DISCOUNT_DOT_PATTERN : "0 5",
                         transition: `stroke-dasharray ${DISCOUNT_BRIDGE_TRANSITION}`,
                       }}
                       data-testid="discount-line-bridge"
@@ -2041,11 +2039,12 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                   />
                 )}
                 {connector.tick && (
-                  <line
-                    x1={connector.tick.x}
-                    y1={discount.top - connector.tick.halfHeight}
-                    x2={connector.tick.x}
-                    y2={discount.top + connector.tick.halfHeight}
+                  <path
+                    d={discountArrowheadPath(
+                      connector.tick.x,
+                      discount.top,
+                      connector.tick.x + connector.tick.halfHeight,
+                    )}
                     stroke-dasharray="none"
                     data-testid="discount-line-tick"
                     data-discount-part="tick"

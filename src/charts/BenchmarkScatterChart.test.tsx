@@ -76,7 +76,7 @@ describe("BenchmarkScatterChart pure interaction policies", () => {
     expect(discountLineSegments(50, 51)).toEqual([{ x1: 50, y1: 0, x2: 51, y2: 0 }]);
   });
 
-  it("places the arrowhead at the left run's right end and the tick at the right run's left end", () => {
+  it("places left chevrons at the inner ends of both discount runs", () => {
     const geometry = discountConnectorGeometry(100, 0);
     expect(geometry.arrowhead).toEqual({
       tipX: DISCOUNT_SEGMENT_LENGTH,
@@ -457,7 +457,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
     dispose();
   });
 
-  it("renders fixed dotted endpoint runs with an angle bracket, tick, and hollow endpoint", async () => {
+  it("renders fixed dotted endpoint runs with inner chevrons and a hollow endpoint", async () => {
     const { container, dispose } = mount(() => (
       <BenchmarkScatterChart
         points={() => [{
@@ -490,8 +490,11 @@ describe("BenchmarkScatterChart discount annotations", () => {
     const arrowhead = group.querySelector("[data-testid='discount-line-arrowhead']")!;
     expect(arrowhead.getAttribute("d")).toMatch(/L .+ L/);
     const tick = group.querySelector("[data-testid='discount-line-tick']")!;
-    expect(tick.getAttribute("x1")).toBe(tick.getAttribute("x2"));
-    expect(Number(tick.getAttribute("y2")) - Number(tick.getAttribute("y1"))).toBe(8);
+    expect(tick.tagName).toBe("path");
+    expect(tick.getAttribute("d")).toBe(
+      discountArrowheadPath(Number(right.x1), Number(lines[0]?.getAttribute("y1")), Number(right.x1) + 4),
+    );
+    expect(tick.getAttribute("stroke-dasharray")).toBe("none");
     // The bridge spans exactly the open middle and stays hidden while
     // no model group is emphasized.
     const bridge = group.querySelector<SVGLineElement>("[data-testid='discount-line-bridge']")!;
@@ -628,14 +631,12 @@ describe("BenchmarkScatterChart discount annotations", () => {
       const connectorHit = container.querySelector<HTMLElement>("[data-testid='family-connector-hit']");
       expect(connectorHit).not.toBeNull();
       connectorHit?.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
-      // The hovered family's discounts sweep closed; other families stay stubbed.
+      // The hovered family's discounts become dotted; other families stay stubbed.
       const focusedId = container.querySelector("[data-hovered-label-id]")?.getAttribute("data-hovered-label-id") ?? null;
       expect(focusedId).toBe("model-high");
-      expect(leadingDashLength(focusedId!)).toBeGreaterThan(0);
+      expect(bridgeFor(focusedId!).style.strokeDasharray).toBe("0.1 5");
+      expect(leadingDashLength(focusedId!)).toBeCloseTo(0.1, 5);
       expect(leadingDashLength("lone")).toBe(0);
-      const bridge = bridgeFor(focusedId!);
-      const fullBridgeLength = Math.abs(Number(bridge.getAttribute("x2")) - Number(bridge.getAttribute("x1")));
-      expect(leadingDashLength(focusedId!)).toBeCloseTo(fullBridgeLength, 5);
       connectorHit?.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
       // Unhover retracts the bridge back to disconnected stubs.
       expect(leadingDashLength(focusedId!)).toBe(0);
