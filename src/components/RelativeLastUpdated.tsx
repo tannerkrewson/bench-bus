@@ -21,7 +21,10 @@ export default function RelativeLastUpdated(props: RelativeLastUpdatedProps) {
       {(label) => {
         const absolute = formatLastUpdated(props.timestamp?.() ?? null);
         return (
-          <span
+          <a
+            href="https://github.com/tannerkrewson/bench-bus/deployments"
+            target="_blank"
+            rel="noopener noreferrer"
             class="badge badge-ghost whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-primary"
             data-testid="relative-last-updated"
             title={absolute ? `Last updated ${absolute}` : undefined}
@@ -29,7 +32,7 @@ export default function RelativeLastUpdated(props: RelativeLastUpdatedProps) {
             tabindex="0"
           >
             {label()}
-          </span>
+          </a>
         );
       }}
     </Show>

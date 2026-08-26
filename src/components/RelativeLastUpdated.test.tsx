@@ -24,6 +24,10 @@ describe("RelativeLastUpdated", () => {
 
     const badge = () => container.querySelector("[data-testid='relative-last-updated']") as HTMLElement;
     expect(badge().textContent).toBe("Last updated just now");
+    expect(badge().tagName).toBe("A");
+    expect(badge().getAttribute("href")).toBe("https://github.com/tannerkrewson/bench-bus/deployments");
+    expect(badge().getAttribute("target")).toBe("_blank");
+    expect(badge().getAttribute("rel")).toBe("noopener noreferrer");
     expect(badge().getAttribute("title")).toBe("Last updated Aug 24, 2026, 11:59 AM UTC");
     expect(badge().getAttribute("aria-label")).toBe("Last updated Aug 24, 2026, 11:59 AM UTC");
 
