@@ -18,8 +18,6 @@ import {
 import { buildAaCollection, type AaCollectionResult } from "./normalize";
 
 export const AA_DEFAULT_MODEL_SLUG = "deepseek-v4-flash";
-/** Curated AA records retained even when AA has no cache-write rate. */
-export const AA_CURATED_MODEL_SLUGS = ["deepseek-v4-flash", "muse-spark-1-2"] as const;
 
 export function aaModelPageUrl(slug: string): string {
   return `https://artificialanalysis.ai/models/${encodeURIComponent(slug)}`;
@@ -76,9 +74,7 @@ export function collectFromHtml(
   const flightText = extractFlightText(html);
   const rows = parseFlightRows(flightText);
   const rawModels = rows.flatMap((row) => collectRawModels(row.value));
-  const collection = buildAaCollection(rawModels, {
-    allowNullCacheWriteSlugs: AA_CURATED_MODEL_SLUGS,
-  });
+  const collection = buildAaCollection(rawModels);
   const payload = aaSnapshotPayloadSchema.parse({
     observedAt,
     source: {

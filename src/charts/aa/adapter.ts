@@ -35,6 +35,7 @@ const CONFIRMED_OPENROUTER_MODEL_IDS: Readonly<Record<string, string>> = {
   "gemini-3-7-flash-low": "google/gemini-3.7-flash",
   "gemini-3-7-flash-medium": "google/gemini-3.7-flash",
   "glm-5-3": "z-ai/glm-5.3",
+  "glm-5-3-flash": "z-ai/glm-5.3-flash",
   "gpt-5-6-luna": "openai/gpt-5.6-luna",
   "gpt-5-6-luna-high": "openai/gpt-5.6-luna",
   "gpt-5-6-luna-low": "openai/gpt-5.6-luna",

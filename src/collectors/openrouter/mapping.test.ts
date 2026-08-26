@@ -32,6 +32,10 @@ describe("alias file validation", () => {
       openrouterId: "meta/muse-spark-1.2-contributor",
       undiscountedOpenrouterId: "meta/muse-spark-1.2",
     });
+    expect(file.entries.find((e) => e.aaModelSlug === "glm-5-3-flash")).toMatchObject({
+      aaModelId: "19496b81-9f41-4214-a77a-1df803b3c5ae",
+      openrouterId: "z-ai/glm-5.3-flash",
+    });
   });
 
   it("rejects variant-suffixed or alias openrouter ids", () => {

@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { AA_CURATED_MODEL_SLUGS, collectAa, collectFromHtml } from "./collector";
+import { collectAa, collectFromHtml } from "./collector";
 import { buildRscEndpoint, discoverRscParam, extractFlightText } from "./flight";
 import { buildAaCollection } from "./normalize";
 import { parseFlightRows } from "./flight";
+import { realGlm53FlashRawModel } from "./fixtures/aa-glm-5-3-flash";
 import aaPageHtml from "./fixtures/aa-page.html?raw";
 import brokenInvariantHtml from "./fixtures/aa-page-broken-invariant.html?raw";
 import noModelsHtml from "./fixtures/aa-page-no-models.html?raw";
@@ -151,33 +152,42 @@ describe("fail-closed behavior", () => {
 });
 
 describe("buildAaCollection", () => {
-  it("keeps Muse Spark in the curated null-cache-write allowlist", () => {
-    expect(AA_CURATED_MODEL_SLUGS).toContain("muse-spark-1-2");
+  it("retains the real GLM 5.3 Flash record with its source-null cache-write price", () => {
+    const result = buildAaCollection([realGlm53FlashRawModel]);
+    const model = result.records[0]!;
+    expect(model.id).toBe("19496b81-9f41-4214-a77a-1df803b3c5ae");
+    expect(model.slug).toBe("glm-5-3-flash");
+    expect(model.intelligenceIndex).toBe(57.4592004791323);
+    expect(model.price1mInputTokens).toBe(0.15);
+    expect(model.price1mOutputTokens).toBe(0.5);
+    expect(model.cacheHitPrice).toBe(0.026);
+    expect(model.cacheWritePrice).toBeNull();
+    expect(model.intelligenceIndexCost.total).toBe(138.0208940822332);
+    expect(model.canonicalIntelligenceIndexTokenCount).toEqual({
+      input: 2083518446,
+      output: 148780822,
+      answer: 14330281,
+      reasoning: 134450541,
+    });
   });
 
-  it("retains a curated model with a source-null cache-write price", () => {
-    const model = {
-      id: "deepseek-id",
-      slug: "deepseek-v4-flash",
-      name: "DeepSeek V4 Flash 0731",
-      shortName: "DeepSeek V4 Flash 0731 (max)",
-      releaseDate: "2026-07-31",
-      price1mInputTokens: 0.44,
-      price1mOutputTokens: 1.32,
-      cacheHitPrice: 0.014,
-      cacheWritePrice: null,
-      intelligenceIndex: 51.7665776089032,
-      intelligenceIndexCost: { total: 323.25907280569834 },
-      canonicalIntelligenceIndexTokenCount: {
-        input: 1_280_997_079,
-        output: 205_996_513,
-        answer: 10_185_879,
-        reasoning: 195_810_634,
-      },
-    };
-    expect(() => buildAaCollection([model])).toThrow(/No complete Artificial Analysis models/);
-    const result = buildAaCollection([model], { allowNullCacheWriteSlugs: [model.slug] });
-    expect(result.records[0]?.cacheWritePrice).toBeNull();
+  it("fails closed for missing or null fields other than cacheWritePrice", () => {
+    const missingCacheWrite = { ...realGlm53FlashRawModel };
+    delete missingCacheWrite.cacheWritePrice;
+    expect(() => buildAaCollection([missingCacheWrite])).toThrow(/No complete Artificial Analysis models/);
+
+    for (const field of ["id", "cacheHitPrice", "intelligenceIndex"] as const) {
+      expect(() =>
+        buildAaCollection([{ ...realGlm53FlashRawModel, [field]: null }]),
+      ).toThrow(/No complete Artificial Analysis models/);
+    }
+
+    expect(() =>
+      buildAaCollection([{
+        ...realGlm53FlashRawModel,
+        intelligenceIndexCost: { total: null },
+      }]),
+    ).toThrow(/No complete Artificial Analysis models/);
   });
 
   it("keeps the first occurrence when deduplicating by identity key", () => {

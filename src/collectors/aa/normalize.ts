@@ -35,19 +35,14 @@ const TOKEN_COUNT_FIELDS = ["input", "output", "answer", "reasoning"] as const;
  * Copy a complete raw model into a canonical record with fixed key order so
  * serialization is deterministic regardless of upstream key order. Values are
  * passed through by reference/exactly — no rounding, defaults, or recomputation.
- * Returns null when the record is incomplete (missing/null required field).
+ * Returns null when the record is incomplete (missing/null required field,
+ * except for a source-published null cache-write price).
  */
-export function normalizeModel(
-  raw: RawAaModel,
-  options: { allowNullCacheWrite?: boolean } = {},
-): ArtificialAnalysisModel | null {
+export function normalizeModel(raw: RawAaModel): ArtificialAnalysisModel | null {
   const record: Record<string, unknown> = {};
   for (const field of REQUIRED_TOP_LEVEL) {
     const value = raw[field];
-    if (
-      value === undefined ||
-      (value === null && (field !== "cacheWritePrice" || !options.allowNullCacheWrite))
-    ) return null;
+    if (value === undefined || (value === null && field !== "cacheWritePrice")) return null;
     record[field] = value;
   }
   const cost = {
@@ -96,19 +91,13 @@ export interface AaCollectionResult {
  * aborts the whole collection rather than being silently dropped — that
  * shape indicates upstream corruption or a format change.
  */
-export function buildAaCollection(
-  rawModels: RawAaModel[],
-  options: { allowNullCacheWriteSlugs?: readonly string[] } = {},
-): AaCollectionResult {
+export function buildAaCollection(rawModels: RawAaModel[]): AaCollectionResult {
   const byKey = new Map<string, ArtificialAnalysisModel>();
-  const allowNullCacheWriteSlugs = new Set(options.allowNullCacheWriteSlugs ?? []);
   let incompleteCount = 0;
   let duplicateCount = 0;
 
   for (const raw of rawModels) {
-    const normalized = normalizeModel(raw, {
-      allowNullCacheWrite: allowNullCacheWriteSlugs.has(String(raw["slug"])),
-    });
+    const normalized = normalizeModel(raw);
     if (!normalized) {
       incompleteCount += 1;
       continue;

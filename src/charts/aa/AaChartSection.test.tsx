@@ -272,6 +272,7 @@ describe("AaChartSection", () => {
       "gpt-5.6-sol",
     ]);
     expect(AA_DEFAULT_MODEL_SLUGS).toContain("deepseek-v4-flash");
+    expect(AA_DEFAULT_MODEL_SLUGS).toContain("glm-5-3-flash");
     expect(container.querySelector("[data-testid='aa-no-points']")).toBeNull();
     expect(AA_DEFAULT_COST_MODE).toBe("intelligence-vs-cost-per-task");
     dispose();

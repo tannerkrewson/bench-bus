@@ -50,6 +50,9 @@ describe("aaAdapter.computePoint", () => {
     expect(openRouterUrlForAaModel({ ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "gpt-5-6-sol-medium" })).toBe(
       "https://openrouter.ai/openai/gpt-5.6-sol",
     );
+    expect(openRouterUrlForAaModel({ ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "glm-5-3-flash" })).toBe(
+      "https://openrouter.ai/z-ai/glm-5.3-flash",
+    );
   });
 
   it("plots Intelligence Index against cheapest-provider workload cost", () => {

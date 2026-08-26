@@ -39,5 +39,6 @@ export const AA_DEFAULT_MODEL_SLUGS = [
   // when it is not on AA's automatically computed frontier.
   "claude-opus-5-medium",
   "glm-5-3",
+  "glm-5-3-flash",
   "qwen3-8-27b",
 ] as const;
