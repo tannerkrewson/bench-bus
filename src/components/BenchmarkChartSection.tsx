@@ -15,11 +15,13 @@ import {
 import type {
   BenchmarkChartAdapter,
   ChartViewState,
+  PlottablePoint,
   PricingControlSpec,
   PricingControlState,
   PriceDiscountAnnotation,
   TooltipLine,
 } from "../charts/types";
+import { timeVaryingDiscountNote } from "../content/discountNotes";
 import ChartControlPanel from "./ChartControlPanel";
 import ModelList from "./ModelList";
 import MethodologyModal from "../methodology/MethodologyModal";
@@ -126,6 +128,15 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
     const discount = discountFor(entry);
     return discount ? [...lines, ...discountDetailLines(entry.point, discount)] : lines;
   };
+  /** Caveat for providers whose off-peak discount windows move around. */
+  const discountNoteFor = (point: PlottablePoint, discount: PriceDiscountAnnotation | null) =>
+    discount
+      ? timeVaryingDiscountNote({
+          id: point.id,
+          label: point.label,
+          providers: [point.brand, discount.providerName],
+        })
+      : null;
 
   const hoveredInfo = createMemo<{ title: string; lines: readonly TooltipLine[] } | null>(() => {
     const h = hovered();
@@ -142,6 +153,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
     title: string;
     lines: readonly TooltipLine[];
     openRouterUrl: string | undefined;
+    discountNote: string | null;
   } | null>(() => {
     const id = selectedPointId();
     if (!id) return null;
@@ -151,6 +163,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
           title: entry.point.label,
           lines: detailLinesFor(entry),
           openRouterUrl: props.adapter.openRouterUrl?.(entry.record),
+          discountNote: discountNoteFor(entry.point, discountFor(entry)),
         }
       : null;
   });
@@ -345,6 +358,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
           title={() => selectedInfo()?.title ?? null}
           lines={() => selectedInfo()?.lines ?? []}
           openRouterUrl={() => selectedInfo()?.openRouterUrl}
+          discountNote={() => selectedInfo()?.discountNote ?? null}
           onClose={() => setSelectedPointId(null)}
         />
 

@@ -135,6 +135,77 @@ describe("AaChartSection", () => {
     dispose();
   });
 
+  it("flags hour-varying off-peak discounts for DeepSeek-like models in the detail modal", async () => {
+    const deepSeek = {
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug: "deepseek-r1-0528",
+      name: "DeepSeek R1 0528",
+      shortName: "DeepSeek R1",
+      canonicalTokens: { input: 1_000_000, output: 1_000_000 },
+      providers: [{
+        providerName: "DeepSeek (fp8)",
+        providerSlug: "deepseek-fp8",
+        effectiveInputPrice: 40,
+        effectiveOutputPrice: 52.465,
+        listedInputPrice: 80,
+        listedOutputPrice: 104.93,
+        discountPercentage: 50,
+      }],
+    };
+    const { container, dispose } = mount(() => (
+      <AaChartSection
+        records={() => [deepSeek]}
+        initialState={{ selectedIds: [deepSeek.slug], selectionSpecified: true }}
+      />
+    ));
+
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const endpoint = container.querySelector<HTMLElement>("[data-testid='discount-endpoint-hit']");
+    expect(endpoint).not.toBeNull();
+    endpoint?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    const dialog = container.querySelector<HTMLDialogElement>("[data-testid='chart-detail-modal']")!;
+    expect(dialog.open).toBe(true);
+    expect(dialog.querySelector("[data-testid='chart-detail-discount-note']")?.textContent).toBe(
+      "Off-peak discounts change by the hour. They often end during working hours in China and on weekends.",
+    );
+    dispose();
+  });
+
+  it("does not flag unaffected models with the time-varying-discount note", async () => {
+    const discounted = {
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug: "gpt-5.6-sol-high",
+      name: "GPT-5.6 Sol high",
+      shortName: "GPT-5.6 Sol high",
+      canonicalTokens: { input: 1_000_000, output: 1_000_000 },
+      providers: [{
+        providerName: "Provider A",
+        providerSlug: "provider-a",
+        effectiveInputPrice: 40,
+        effectiveOutputPrice: 52.465,
+        listedInputPrice: 80,
+        listedOutputPrice: 104.93,
+        discountPercentage: 50,
+      }],
+    };
+    const { container, dispose } = mount(() => (
+      <AaChartSection
+        records={() => [discounted]}
+        initialState={{ selectedIds: [discounted.slug], selectionSpecified: true }}
+      />
+    ));
+
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const endpoint = container.querySelector<HTMLElement>("[data-testid='discount-endpoint-hit']");
+    expect(endpoint).not.toBeNull();
+    endpoint?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    const dialog = container.querySelector<HTMLDialogElement>("[data-testid='chart-detail-modal']")!;
+    expect(dialog.open).toBe(true);
+    expect(dialog.textContent).toContain("Discount");
+    expect(dialog.querySelector("[data-testid='chart-detail-discount-note']")).toBeNull();
+    dispose();
+  });
+
   it("opens the AA methodology from the chart header", () => {
     const { container, dispose } = mount(() => <AaChartSection records={() => AA_FIXTURE_RECORDS} />);
     const trigger = container.querySelector<HTMLButtonElement>("[data-testid='methodology-button-aa']")!;
