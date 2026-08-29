@@ -4,11 +4,17 @@ import {
   type CursorEvalRecord,
   type DerivedAaChartRecord,
   type DerivedCursorChartRecord,
+  type DeepSweScoreRecord,
   type OpenRouterModelPricing,
 } from "../schemas";
 import type { DataBranchStore, ResolvedSnapshot } from "../snapshots/store";
 import type { AliasFile } from "../collectors/openrouter/mapping";
 import { DEFAULT_CURATED_MODELS, type CuratedModel } from "../collectors/openrouter/curated";
+import {
+  DEFAULT_DEEPSWE_ALIASES,
+  deepSweScoreIdentity,
+  type DeepSweAliasEntry,
+} from "../collectors/deepswe/mapping";
 import { isNonReasoningModel } from "../charts/modelMetadata";
 import { computeAaListedParetoFrontier, aaListedWorkloadCost } from "../collectors/aa/frontier";
 import {
@@ -62,6 +68,8 @@ export interface CompileOptions {
   frontierSlugs?: readonly string[];
   /** Explicit operator-approved OpenRouter identities, including models absent from AA. */
   curatedModels?: readonly CuratedModel[];
+  /** Explicit DeepSWE configuration-to-AA identity links. */
+  deepsweAliases?: readonly DeepSweAliasEntry[];
 }
 
 export interface SourceResolution {
@@ -88,7 +96,7 @@ export interface CompiledBundle {
   /** Effective point in time: the newest resolved source observation. */
   asOf: string;
   requestedAsOf: string;
-  sources: { aa: SourceResolution; openrouter: SourceResolution; cursor: SourceResolution };
+  sources: { aa: SourceResolution; openrouter: SourceResolution; deepswe: SourceResolution; cursor: SourceResolution };
   stats: CompileStats;
 }
 
@@ -108,6 +116,8 @@ export function joinAaWithPricing(
   aliases: AliasFile,
   frontierSlugs: readonly string[] = [],
   curatedModels: readonly CuratedModel[] = DEFAULT_CURATED_MODELS,
+  deepsweScores: readonly DeepSweScoreRecord[] = [],
+  deepsweAliases: readonly DeepSweAliasEntry[] = DEFAULT_DEEPSWE_ALIASES,
 ): { records: DerivedAaChartRecord[]; unmatchedAa: number; unmatchedOr: number; provisionalUsed: number } {
   const aliasSlugs = new Set(aliases.entries.map((e) => e.aaModelSlug));
   const frontierSet = new Set(frontierSlugs);
@@ -117,6 +127,14 @@ export function joinAaWithPricing(
   const provisionalSlugs = new Set(
     aliases.entries.filter((e) => e.status === "provisional").map((e) => e.aaModelSlug),
   );
+  const scoreByAaSlug = new Map<string, DeepSweScoreRecord>();
+  const scoreByIdentity = new Map(deepsweScores.map((score) => [deepSweScoreIdentity(score), score]));
+  for (const alias of deepsweAliases) {
+    const score = scoreByIdentity.get(
+      `${alias.deepSweModel}\u0000${alias.harness}\u0000${alias.reasoningEffort ?? ""}`,
+    );
+    if (score) scoreByAaSlug.set(alias.aaModelSlug, score);
+  }
 
   const pricingBySlug = new Map<string, OpenRouterModelPricing>();
   const pricingByOpenRouterId = new Map<string, OpenRouterModelPricing>();
@@ -164,6 +182,12 @@ export function joinAaWithPricing(
       name: model.name,
       shortName: model.shortName,
       intelligenceIndex: model.intelligenceIndex,
+      scoreSources: {
+        artificialAnalysis: model.intelligenceIndex,
+        ...(scoreByAaSlug.get(model.slug)
+          ? { deepSwePassAt1: scoreByAaSlug.get(model.slug)!.passAt1 }
+          : {}),
+      },
       canonicalTokens: {
         input: model.canonicalIntelligenceIndexTokenCount.input,
         output: model.canonicalIntelligenceIndexTokenCount.output,
@@ -210,24 +234,26 @@ export async function compileBundle(
   const requestedAsOf = options.asOf ?? LATEST_AS_OF;
 
   // Independent per-source point-in-time resolution.
-  const [aa, openrouter, cursor] = await Promise.all([
+  const [aa, openrouter, deepswe, cursor] = await Promise.all([
     store.resolveSnapshot("aa", requestedAsOf),
     store.resolveSnapshot("openrouter", requestedAsOf),
+    store.resolveSnapshot("deepswe", requestedAsOf),
     store.resolveSnapshot("cursor", requestedAsOf),
   ]);
 
   const resolutions = {
     aa: toResolution(aa),
     openrouter: toResolution(openrouter),
+    deepswe: toResolution(deepswe),
     cursor: toResolution(cursor),
   };
 
-  const observedTimes = [aa, openrouter, cursor]
+  const observedTimes = [aa, openrouter, deepswe, cursor]
     .flatMap((r) => (r ? [r.envelope.observedAt] : []))
     .sort();
   if (observedTimes.length === 0) {
     throw new NoDataAtTimeError(
-      `No aa, openrouter, or cursor snapshot at or before ${requestedAsOf}; nothing to compile`,
+      `No aa, openrouter, deepswe, or cursor snapshot at or before ${requestedAsOf}; nothing to compile`,
     );
   }
   // Effective data time: the newest observation actually backing this view.
@@ -252,6 +278,8 @@ export async function compileBundle(
       options.aliases,
       frontierSlugs,
       options.curatedModels,
+      deepswe ? (deepswe.envelope.records as DeepSweScoreRecord[]) : [],
+      options.deepsweAliases,
     );
     stats.aaMatched = joined.records.length;
     stats.aaUnmatched = joined.unmatchedAa;
@@ -263,6 +291,7 @@ export async function compileBundle(
         asOf,
         aaObservedAt: aa.envelope.observedAt,
         ...(openrouter ? { openrouterObservedAt: openrouter.envelope.observedAt } : {}),
+        ...(deepswe ? { deepsweObservedAt: deepswe.envelope.observedAt } : {}),
         ...(resolutions.cursor.available
           ? { cursorObservedAt: resolutions.cursor.observedAt as string }
           : {}),
@@ -286,6 +315,9 @@ export async function compileBundle(
         ...(resolutions.openrouter.available
           ? { openrouterObservedAt: resolutions.openrouter.observedAt as string }
           : {}),
+        ...(resolutions.deepswe.available
+          ? { deepsweObservedAt: resolutions.deepswe.observedAt as string }
+          : {}),
         cursorObservedAt: cursor.envelope.observedAt,
       },
       records,
@@ -298,6 +330,7 @@ export async function compileBundle(
     sources: {
       aa: encodeSourceAvailability(resolutions.aa),
       openrouter: encodeSourceAvailability(resolutions.openrouter),
+      deepswe: encodeSourceAvailability(resolutions.deepswe),
       cursor: encodeSourceAvailability(resolutions.cursor),
     },
     aa: aaDataset,

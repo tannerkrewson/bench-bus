@@ -90,20 +90,21 @@ async function loadIndex() {
 
 const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
   // "Last updated" reflects the freshest source snapshot actually backing
-  // each chart: AA scores + OpenRouter pricing for the first, Cursor evals
+  // each chart: AA/DeepSWE scores + OpenRouter pricing for the first, Cursor evals
   // for the second. Absent sources render no note rather than a fake date.
   const aaLastUpdated = () =>
     props.bundle.aa
       ? latestIsoTimestamp([
           props.bundle.sources.aa.observedAt,
           props.bundle.sources.openrouter.observedAt,
+          props.bundle.sources.deepswe.observedAt,
         ])
       : null;
   const cursorLastUpdated = () =>
     props.bundle.cursor ? props.bundle.sources.cursor.observedAt ?? null : null;
   const aaUrlDefaults: ChartStateSerializationDefaults = {
     scale: "log",
-    controls: { pricingMode: "cheapest", cacheHitRate: 0.9 },
+    controls: { scoreSource: "aa", pricingMode: "cheapest", cacheHitRate: 0.9 },
     showLabels: true,
     showFrontier: false,
     showDiscounts: true,
@@ -123,7 +124,7 @@ const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
         initialState={initialChartStateFor(
           "aa",
           aaControlSpecs,
-          { pricingMode: "cheapest", cacheHitRate: 0.9 },
+          { scoreSource: "aa", pricingMode: "cheapest", cacheHitRate: 0.9 },
         )}
         onStateChange={(state) => syncChartStateToUrl(state, "aa", aaUrlDefaults)}
       />

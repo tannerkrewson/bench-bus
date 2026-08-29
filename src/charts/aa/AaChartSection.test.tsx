@@ -45,6 +45,12 @@ describe("AaChartSection", () => {
     expect(
       container.querySelector("input#chart-aa-control-pricingMode, #chart-aa-control-pricingMode"),
     ).not.toBeNull();
+    const scoreSource = container.querySelector("#chart-aa-control-scoreSource") as HTMLSelectElement;
+    expect(scoreSource).not.toBeNull();
+    expect([...scoreSource.options].map((option) => option.textContent)).toEqual([
+      "Artificial Analysis",
+      "DeepSWE pass@1",
+    ]);
     // 3 plotted + 1 unplottable (no providers) in the default mode.
     const checkboxes = container.querySelectorAll("[data-testid='model-list'] input[type='checkbox']");
     expect(checkboxes).toHaveLength(3);
@@ -65,6 +71,17 @@ describe("AaChartSection", () => {
     expect(
       (container.querySelector("#chart-aa-control-cacheHitRate") as HTMLInputElement).value,
     ).toBe("0.9");
+    dispose();
+  });
+
+  it("omits records without scores when DeepSWE is selected", () => {
+    const { container, dispose } = mount(() => <AaChartSection records={() => AA_FIXTURE_RECORDS} />);
+    const scoreSource = container.querySelector("#chart-aa-control-scoreSource") as HTMLSelectElement;
+    scoreSource.value = "deepswe";
+    scoreSource.dispatchEvent(new Event("change", { bubbles: true }));
+
+    expect(container.textContent).toContain("no DeepSWE score");
+    expect(container.querySelectorAll("[data-testid='model-list'] input[type='checkbox']")).toHaveLength(1);
     dispose();
   });
 

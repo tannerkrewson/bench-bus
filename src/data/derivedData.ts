@@ -59,6 +59,7 @@ export function makeDemoBundle(): DecodedBundle {
     asOf: raw.asOf,
     aaObservedAt: raw.asOf,
     openrouterObservedAt: raw.asOf,
+    deepsweObservedAt: raw.asOf,
     cursorObservedAt: raw.asOf,
   };
   const cursor = encodeCursorDataset({
@@ -67,6 +68,7 @@ export function makeDemoBundle(): DecodedBundle {
   });
   if (!cursor) throw new Error("demo cursor encode failed");
   raw.sources.cursor = encodeSourceAvailability({ available: true, observedAt: raw.asOf });
+  raw.sources.deepswe = encodeSourceAvailability({ available: true, observedAt: raw.asOf });
   raw.cursor = cursor;
   return decodeBundle(raw);
 }

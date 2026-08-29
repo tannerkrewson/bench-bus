@@ -11,6 +11,8 @@ export const SCHEMA_VERSIONS = {
   aa: 1,
   /** OpenRouter effective-pricing provider summaries. */
   openrouter: 1,
+  /** DeepSWE leaderboard score records. */
+  deepswe: 1,
   /** Cursor eval table records (cursor.com/evals). */
   cursor: 1,
   /** Snapshot envelope wrapping any source's records. */
@@ -18,7 +20,7 @@ export const SCHEMA_VERSIONS = {
   /** Snapshot manifest index stored on the data branch. */
   manifest: 1,
   /** Derived chart records compiled for the browser. */
-  derived: 1,
+  derived: 2,
 } as const;
 
 export type SchemaSource = keyof typeof SCHEMA_VERSIONS;

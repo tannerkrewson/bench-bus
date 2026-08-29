@@ -3,10 +3,11 @@ import { isoUtcTimestamp } from "./primitives";
 import { SCHEMA_VERSIONS } from "./version";
 import type { ArtificialAnalysisModel } from "./aa";
 import type { OpenRouterModelPricing } from "./openrouter";
+import type { DeepSweScoreRecord } from "./deepswe";
 import type { CursorEvalRecord } from "./cursor";
 
-/** The three upstream sources Bench Bus collects, as a discriminated union tag. */
-export const snapshotSourceSchema = z.enum(["aa", "openrouter", "cursor"]);
+/** The four upstream sources Bench Bus collects, as a discriminated union tag. */
+export const snapshotSourceSchema = z.enum(["aa", "openrouter", "deepswe", "cursor"]);
 export type SnapshotSource = z.infer<typeof snapshotSourceSchema>;
 
 /** Repo-relative path on the data branch. */
@@ -28,7 +29,7 @@ export const snapshotEnvelopeSchema = z
   .object({
     schemaVersion: z.literal(SCHEMA_VERSIONS.snapshot),
     source: snapshotSourceSchema,
-    /** Source-format schema version (SCHEMA_VERSIONS.aa | openrouter | cursor). */
+    /** Source-format schema version (SCHEMA_VERSIONS.aa | openrouter | deepswe | cursor). */
     recordSchemaVersion: z.number().int().positive(),
     observedAt: isoUtcTimestamp,
     records: z.array(z.unknown()),
@@ -37,6 +38,7 @@ export const snapshotEnvelopeSchema = z
     (env) =>
       (env.source === "aa" && env.recordSchemaVersion === SCHEMA_VERSIONS.aa) ||
       (env.source === "openrouter" && env.recordSchemaVersion === SCHEMA_VERSIONS.openrouter) ||
+      (env.source === "deepswe" && env.recordSchemaVersion === SCHEMA_VERSIONS.deepswe) ||
       (env.source === "cursor" && env.recordSchemaVersion === SCHEMA_VERSIONS.cursor),
     { message: "recordSchemaVersion does not match the declared source" },
   );
@@ -47,14 +49,20 @@ export type SnapshotEnvelope = z.infer<typeof snapshotEnvelopeSchema>;
 export function makeSnapshotEnvelope(input: {
   source: SnapshotSource;
   observedAt: string;
-  records: ArtificialAnalysisModel[] | OpenRouterModelPricing[] | CursorEvalRecord[];
+  records:
+    | ArtificialAnalysisModel[]
+    | OpenRouterModelPricing[]
+    | DeepSweScoreRecord[]
+    | CursorEvalRecord[];
 }): SnapshotEnvelope {
   const recordSchemaVersion =
     input.source === "aa"
       ? SCHEMA_VERSIONS.aa
       : input.source === "openrouter"
         ? SCHEMA_VERSIONS.openrouter
-        : SCHEMA_VERSIONS.cursor;
+        : input.source === "deepswe"
+          ? SCHEMA_VERSIONS.deepswe
+          : SCHEMA_VERSIONS.cursor;
   return {
     schemaVersion: SCHEMA_VERSIONS.snapshot,
     source: input.source,
@@ -167,4 +175,5 @@ export function resolveLatestKnownGood(
 export type SnapshotRecords =
   | ArtificialAnalysisModel[]
   | OpenRouterModelPricing[]
+  | DeepSweScoreRecord[]
   | CursorEvalRecord[];

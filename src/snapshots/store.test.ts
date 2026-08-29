@@ -20,6 +20,9 @@ import {
 } from "../schemas/fixtures/openrouter-cursor";
 import { snapshotPath } from "./paths";
 import { DataBranchStore, validateRecords } from "./store";
+import { collectFromLeaderboard } from "../collectors/deepswe/collect";
+import { rawDeepSweLeaderboardSchema } from "../collectors/deepswe/api";
+import deepsweFixture from "../collectors/deepswe/fixtures/leaderboard-live.json";
 
 let root: string;
 
@@ -74,6 +77,20 @@ describe("DataBranchStore.writeSnapshot", () => {
     const resolved = await store.resolveSnapshot("aa", T2);
     expect(resolved?.envelope.observedAt).toBe(T1);
     expect(resolved?.envelope.records).toHaveLength(2);
+  });
+
+  it("persists a normalized DeepSWE collector payload under its source history", async () => {
+    const store = new DataBranchStore(root);
+    await store.init();
+    const payload = collectFromLeaderboard(
+      rawDeepSweLeaderboardSchema.parse(deepsweFixture),
+      T1,
+    );
+    const stored = await store.writeSnapshot(payload);
+    expect(stored.path).toBe(snapshotPath("deepswe", 1, T1));
+    await expect(store.resolveSnapshot("deepswe", T2)).resolves.toMatchObject({
+      envelope: { source: "deepswe", observedAt: T1 },
+    });
   });
 
   it("still rejects payloads with an unknown nested source", async () => {

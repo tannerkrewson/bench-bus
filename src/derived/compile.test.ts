@@ -21,6 +21,9 @@ import {
   upsertDerivedIndexEntry,
 } from "./compile";
 import { decodeBundle } from "./encode";
+import { collectFromLeaderboard } from "../collectors/deepswe/collect";
+import { rawDeepSweLeaderboardSchema } from "../collectors/deepswe/api";
+import deepsweFixture from "../collectors/deepswe/fixtures/leaderboard-live.json";
 
 /**
  * Fixture history with deliberately MISMATCHED source observation times:
@@ -116,19 +119,45 @@ describe("compileBundle", () => {
     expect(atT1.sources).toEqual({
       aa: { available: true, observedAt: T1 },
       openrouter: { available: true, observedAt: T1 },
+      deepswe: { available: false },
       cursor: { available: true, observedAt: T1 },
     });
     expect(atT1.asOf).toBe(T1);
-    expect(atT1.bundle.aa?.f).toEqual([T1, T1, T1]);
+    expect(atT1.bundle.aa?.f).toEqual([T1, T1, null, T1]);
 
     // asOf between t2 and t3: aa=t2, openrouter=t1 (lags), cursor=t1.
     const between = await compileBundle(store, { asOf: "2026-08-02T12:00:00.000Z", aliases: ALIASES });
     expect(between.sources.aa).toEqual({ available: true, observedAt: T2 });
     expect(between.sources.openrouter).toEqual({ available: true, observedAt: T1 });
+    expect(between.sources.deepswe).toEqual({ available: false });
     expect(between.sources.cursor).toEqual({ available: true, observedAt: T1 });
     // Effective data time is the newest resolved observation.
     expect(between.asOf).toBe(T2);
-    expect(between.bundle.aa?.f).toEqual([T2, T1, T1]);
+    expect(between.bundle.aa?.f).toEqual([T2, T1, null, T1]);
+  });
+
+  it("joins an explicit DeepSWE identity and leaves models without a score unplottable", async () => {
+    const deepswePayload = collectFromLeaderboard(
+      rawDeepSweLeaderboardSchema.parse(deepsweFixture),
+      T1,
+    );
+    await store.writeSnapshot(deepswePayload);
+    const compiled = await compileBundle(store, {
+      asOf: T1,
+      aliases: ALIASES,
+      deepsweAliases: [{
+        aaModelSlug: "claude-opus-5",
+        deepSweModel: "deepseek-v4-pro",
+        harness: "mini-swe-agent",
+        reasoningEffort: null,
+      }],
+    });
+    const records = decodeBundle(JSON.parse(compiled.json)).aa?.records ?? [];
+    expect(records.find((record) => record.slug === "claude-opus-5")?.scoreSources).toEqual({
+      artificialAnalysis: 42.7,
+      deepSwePassAt1: 0.0752212389380531,
+    });
+    expect(compiled.sources.deepswe).toEqual({ available: true, observedAt: T1 });
   });
 
   it("excludes models introduced later from earlier views", async () => {

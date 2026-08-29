@@ -5,6 +5,7 @@ import {
   execFileGitRunner,
 } from "./git";
 import { DataBranchStore } from "./store";
+import { snapshotSourceSchema } from "../schemas";
 
 /**
  * CLI for data-branch snapshot operations. Run with tsx, e.g.:
@@ -71,7 +72,7 @@ async function main(argv: string[]): Promise<void> {
     const asOf = flag(rest, "--as-of") ?? new Date().toISOString();
     const store = new DataBranchStore(dir);
     const resolved = await store.resolveSnapshot(
-      source as "aa" | "openrouter" | "cursor",
+      snapshotSourceSchema.parse(source),
       asOf,
     );
     if (!resolved) {

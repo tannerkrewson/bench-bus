@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { derivedAaChartRecordSchema } from "../schemas";
+import { derivedAaChartRecordSchema, SCHEMA_VERSIONS } from "../schemas";
 import { AA_FIXTURE_RECORDS, CURSOR_FIXTURE_RECORDS } from "../charts/fixtures";
 import { decodeBundle, encodeAaDataset, encodeCursorDataset, encodeSourceAvailability } from "./encode";
 
@@ -16,11 +16,11 @@ const PLOTTABLE_AA_RECORDS = AA_FIXTURE_RECORDS.filter((r) => r.providers.length
 function freshDatasets() {
   return {
     aa: encodeAaDataset({
-      freshness: { schemaVersion: 1, asOf: AT, aaObservedAt: AT, openrouterObservedAt: AT, cursorObservedAt: AT },
+      freshness: { schemaVersion: SCHEMA_VERSIONS.derived, asOf: AT, aaObservedAt: AT, openrouterObservedAt: AT, deepsweObservedAt: AT, cursorObservedAt: AT },
       records: [...PLOTTABLE_AA_RECORDS],
     }),
     cursor: encodeCursorDataset({
-      freshness: { schemaVersion: 1, asOf: AT, aaObservedAt: AT, openrouterObservedAt: AT, cursorObservedAt: AT },
+      freshness: { schemaVersion: SCHEMA_VERSIONS.derived, asOf: AT, aaObservedAt: AT, openrouterObservedAt: AT, deepsweObservedAt: AT, cursorObservedAt: AT },
       records: [...CURSOR_FIXTURE_RECORDS],
     }),
   };
@@ -29,11 +29,12 @@ function freshDatasets() {
 function bundle(overrides: Partial<Record<string, unknown>> = {}) {
   const { aa, cursor } = freshDatasets();
   return {
-    v: 1,
+    v: SCHEMA_VERSIONS.derived,
     asOf: AT,
     sources: {
       aa: encodeSourceAvailability({ available: true, observedAt: AT }),
       openrouter: encodeSourceAvailability({ available: true, observedAt: AT }),
+      deepswe: encodeSourceAvailability({ available: true, observedAt: AT }),
       cursor: encodeSourceAvailability({ available: true, observedAt: AT }),
     },
     aa,
@@ -68,7 +69,7 @@ describe("decodeBundle", () => {
       }],
     };
     const encoded = encodeAaDataset({
-      freshness: { schemaVersion: 1, asOf: AT, aaObservedAt: AT, openrouterObservedAt: AT, cursorObservedAt: AT },
+      freshness: { schemaVersion: SCHEMA_VERSIONS.derived, asOf: AT, aaObservedAt: AT, openrouterObservedAt: AT, deepsweObservedAt: AT, cursorObservedAt: AT },
       records: [discounted],
     });
     const decoded = decodeBundle(bundle({ aa: encoded }));

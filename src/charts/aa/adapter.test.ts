@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { derivedAaDatasetSchema } from "../../schemas";
+import { derivedAaDatasetSchema, SCHEMA_VERSIONS } from "../../schemas";
 import { decodeBundle } from "../../derived/encode";
 import {
   aaAdapter,
@@ -20,10 +20,11 @@ import {
 describe("aa fixtures and decode path", () => {
   it("fixture records are schema-valid derived AA records", () => {
     const freshness = {
-      schemaVersion: 1,
+      schemaVersion: SCHEMA_VERSIONS.derived,
       asOf: BUNDLE_AS_OF,
       aaObservedAt: BUNDLE_AS_OF,
       openrouterObservedAt: BUNDLE_AS_OF,
+      deepsweObservedAt: BUNDLE_AS_OF,
       cursorObservedAt: BUNDLE_AS_OF,
     };
     expect(() => derivedAaDatasetSchema.parse({ freshness, records: AA_FIXTURE_RECORDS })).not.toThrow();
@@ -40,7 +41,7 @@ describe("aa fixtures and decode path", () => {
 });
 
 describe("aaAdapter.computePoint", () => {
-  const controls = { pricingMode: "cheapest", cacheHitRate: 0.9 };
+  const controls = { scoreSource: "aa", pricingMode: "cheapest", cacheHitRate: 0.9 };
 
   it("links confirmed model identities and omits unknown identities", () => {
     expect(openRouterUrlForAaModel(AA_RECORD_PLOTTABLE_CHEAPEST)).toBe(
@@ -52,6 +53,18 @@ describe("aaAdapter.computePoint", () => {
     );
     expect(openRouterUrlForAaModel({ ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "glm-5-3-flash" })).toBe(
       "https://openrouter.ai/z-ai/glm-5.3-flash",
+    );
+    expect(openRouterUrlForAaModel({ ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "qwen3-8-flash-next" })).toBe(
+      "https://openrouter.ai/qwen/qwen3.8-flash",
+    );
+    expect(openRouterUrlForAaModel({ ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "deepseek-v4-flash-0420" })).toBe(
+      "https://openrouter.ai/deepseek/deepseek-v4-flash",
+    );
+    expect(openRouterUrlForAaModel({ ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "deepseek-v4-pro-0424" })).toBe(
+      "https://openrouter.ai/deepseek/deepseek-v4-pro",
+    );
+    expect(openRouterUrlForAaModel({ ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "hy3" })).toBe(
+      "https://openrouter.ai/tencent/hy3",
     );
   });
 
@@ -65,6 +78,15 @@ describe("aaAdapter.computePoint", () => {
         (AA_RECORD_PLOTTABLE_CHEAPEST.canonicalTokens.output / 1e6) * 13.9,
       8,
     );
+  });
+
+  it("plots DeepSWE pass@1 as a percentage when selected", () => {
+    const point = aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, {
+      scoreSource: "deepswe",
+      pricingMode: "cheapest",
+      cacheHitRate: 0.9,
+    });
+    expect(point?.y).toBe(51.2);
   });
 
   it("uses parenthesis-free labels and stable families for verbose DeepSeek and Luna sources", () => {
@@ -247,6 +269,17 @@ describe("aaAdapter.computePoint", () => {
     ).not.toBeNull();
   });
 
+  it("omits models with no DeepSWE score when that source is selected", () => {
+    expect(
+      aaAdapter.computePoint(AA_RECORD_NO_LISTING, {
+        scoreSource: "deepswe",
+        pricingMode: "cheapest",
+        cacheHitRate: 0.9,
+      }),
+    ).toBeNull();
+    expect(aaAdapter.unplottableLabel?.({ scoreSource: "deepswe" })).toBe("no DeepSWE score");
+  });
+
   it("falls back to control defaults when controls are missing", () => {
     const point = aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, {});
     expect(point).not.toBeNull(); // defaults: cheapest mode
@@ -260,7 +293,7 @@ describe("aaAdapter.computePoint", () => {
 
   it("exposes no normalized-workload control", () => {
     const ids = aaAdapter.controlSpecs.map((s) => s.id);
-    expect(ids).toEqual(["pricingMode", "cacheHitRate"]);
+    expect(ids).toEqual(["scoreSource", "pricingMode", "cacheHitRate"]);
   });
 });
 

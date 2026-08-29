@@ -19,6 +19,7 @@ export const AA_RECORD_PLOTTABLE_CHEAPEST: DerivedAaChartRecord = {
   name: "Claude Opus 5",
   shortName: "Opus 5",
   intelligenceIndex: 71.2,
+  scoreSources: { artificialAnalysis: 71.2, deepSwePassAt1: 0.512 },
   canonicalTokens: { input: 810_078_135, output: 114_542_834 },
   providers: [
     {
@@ -44,6 +45,7 @@ export const AA_RECORD_CROSS_PROVIDER: DerivedAaChartRecord = {
   name: "GPT-5.6 Sol",
   shortName: "GPT-5.6",
   intelligenceIndex: 74.8,
+  scoreSources: { artificialAnalysis: 74.8 },
   canonicalTokens: { input: 100_000_000, output: 900_000_000 },
   providers: [
     {
@@ -68,6 +70,7 @@ export const AA_RECORD_NO_LISTING: DerivedAaChartRecord = {
   name: "Gemini 3.7 Flash",
   shortName: "Gemini 3.7F",
   intelligenceIndex: 62.4,
+  scoreSources: { artificialAnalysis: 62.4 },
   canonicalTokens: { input: 402_881_440, output: 61_003_988 },
   providers: [
     {
@@ -88,6 +91,7 @@ export const AA_RECORD_UNPLOTTABLE: DerivedAaChartRecord = {
   name: "Mystery Model",
   shortName: "Mystery",
   intelligenceIndex: 40.1,
+  scoreSources: { artificialAnalysis: 40.1 },
   canonicalTokens: { input: 100_000_000, output: 10_000_000 },
   providers: [],
   weighted: { weightedInputPrice: 0, weightedOutputPrice: 0 },
@@ -113,6 +117,7 @@ export function makeAaBundleFixture(): CompactBundle {
     asOf: BUNDLE_AS_OF,
     aaObservedAt: BUNDLE_AS_OF,
     openrouterObservedAt: BUNDLE_AS_OF,
+    deepsweObservedAt: BUNDLE_AS_OF,
     cursorObservedAt: BUNDLE_AS_OF,
   };
   const aa = encodeAaDataset({ freshness, records: [...AA_FIXTURE_RECORDS] });
@@ -123,6 +128,7 @@ export function makeAaBundleFixture(): CompactBundle {
     sources: {
       aa: encodeSourceAvailability({ available: true, observedAt: BUNDLE_AS_OF }),
       openrouter: encodeSourceAvailability({ available: true, observedAt: BUNDLE_AS_OF }),
+      deepswe: encodeSourceAvailability({ available: true, observedAt: BUNDLE_AS_OF }),
       cursor: 0,
     },
     aa,

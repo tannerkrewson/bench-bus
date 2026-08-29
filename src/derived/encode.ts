@@ -19,14 +19,14 @@ import {
  * - Top-level bundle object with SHORT KEYS:
  *     `v`      derived schema version (SCHEMA_VERSIONS.derived)
  *     `asOf`   effective point in time (max resolved source observedAt)
- *     `sources` per-source availability: `["1", observedAt]` when a snapshot
+  *     `sources` per-source availability: `["1", observedAt]` when a snapshot
  *              at/before asOf exists, `0` when it does not (no fabrication)
  *     `aa`     compact AA dataset or `null` (null = pricing unavailable or
  *              AA benchmark data unavailable at asOf)
  *     `cursor` compact Cursor dataset or `null`
  *
  * - Each dataset is `{ f, m }`:
- *     `f`  freshness tuple `[aaObservedAt, openrouterObservedAt, cursorObservedAt]`
+ *     `f`  freshness tuple `[aaObservedAt, openrouterObservedAt, deepsweObservedAt, cursorObservedAt]`
  *          where an entry is the source's observation time or `null` when no
  *          eligible snapshot exists for that source at `asOf` (it contributes
  *          no data to that dataset; nothing is fabricated)
@@ -39,7 +39,8 @@ import {
  *         listedInputPrice|null, listedOutputPrice|null, discountPercentage|null,
  *         undiscountedModelId|null], ...],
  *       [weightedInputPrice, weightedOutputPrice],
- *       [price1mInputTokens, price1mOutputTokens, cacheHitPrice]]`
+ *       [price1mInputTokens, price1mOutputTokens, cacheHitPrice],
+ *       [artificialAnalysisScore, deepSwePassAt1|null]]`
  *
  * - Cursor record tuple (mirrors DerivedCursorChartRecord):
  *     `[modelId, modelName, provider, isThirdParty (0|1), score,
@@ -69,6 +70,7 @@ export interface CompactBundle {
   sources: {
     aa: CompactSourceAvailability;
     openrouter: CompactSourceAvailability;
+    deepswe: CompactSourceAvailability;
     cursor: CompactSourceAvailability;
   };
   aa: CompactDataset | null;
@@ -78,7 +80,7 @@ export interface CompactBundle {
 /** `{ f, m }` dataset with positional records; record shape differs per chart. */
 export interface CompactDataset {
   /** Freshness tuple; an entry is the source's observedAt or null when unavailable. */
-  f: [string | null, string | null, string | null];
+  f: [string | null, string | null, string | null, string | null];
   /** Positional record tuples (AA or Cursor shape); validated on decode. */
   m: unknown[];
 }
@@ -95,6 +97,7 @@ type CompactAaRecord = [
   >, // providers
   [number, number], // weighted
   [number, number, number], // listed
+  [number, number | null], // scoreSources [AA, DeepSWE pass@1]
 ];
 
 type CompactCursorRecord = [
@@ -117,6 +120,7 @@ export function encodeAaDataset(
     f: [
       dataset.freshness.aaObservedAt ?? null,
       dataset.freshness.openrouterObservedAt ?? null,
+      dataset.freshness.deepsweObservedAt ?? null,
       dataset.freshness.cursorObservedAt ?? null,
     ],
     m: dataset.records.map(
@@ -147,6 +151,7 @@ export function encodeAaDataset(
         }),
         [r.weighted.weightedInputPrice, r.weighted.weightedOutputPrice],
         [r.listed.price1mInputTokens, r.listed.price1mOutputTokens, r.listed.cacheHitPrice],
+        [r.scoreSources.artificialAnalysis, r.scoreSources.deepSwePassAt1 ?? null],
       ],
     ),
   };
@@ -160,6 +165,7 @@ export function encodeCursorDataset(
     f: [
       dataset.freshness.aaObservedAt ?? null,
       dataset.freshness.openrouterObservedAt ?? null,
+      dataset.freshness.deepsweObservedAt ?? null,
       dataset.freshness.cursorObservedAt ?? null,
     ],
     m: dataset.records.map(
@@ -179,11 +185,11 @@ export function encodeCursorDataset(
 }
 
 function decodeFreshness(bundleAsOf: string, f: unknown) {
-  if (!Array.isArray(f) || f.length !== 3) {
+  if (!Array.isArray(f) || f.length !== 4) {
     throw new TypeError(`Invalid freshness tuple: ${JSON.stringify(f)}`);
   }
-  const [aaObservedAt, openrouterObservedAt, cursorObservedAt] = f;
-  for (const entry of [aaObservedAt, openrouterObservedAt, cursorObservedAt]) {
+  const [aaObservedAt, openrouterObservedAt, deepsweObservedAt, cursorObservedAt] = f;
+  for (const entry of [aaObservedAt, openrouterObservedAt, deepsweObservedAt, cursorObservedAt]) {
     if (entry !== null && typeof entry !== "string") {
       throw new TypeError(`Invalid freshness tuple: ${JSON.stringify(f)}`);
     }
@@ -193,6 +199,7 @@ function decodeFreshness(bundleAsOf: string, f: unknown) {
     asOf: bundleAsOf,
     ...(typeof aaObservedAt === "string" ? { aaObservedAt } : {}),
     ...(typeof openrouterObservedAt === "string" ? { openrouterObservedAt } : {}),
+    ...(typeof deepsweObservedAt === "string" ? { deepsweObservedAt } : {}),
     ...(typeof cursorObservedAt === "string" ? { cursorObservedAt } : {}),
   });
 }
@@ -211,6 +218,7 @@ export interface DecodedBundle {
   sources: {
     aa: { available: boolean; observedAt?: string };
     openrouter: { available: boolean; observedAt?: string };
+    deepswe: { available: boolean; observedAt?: string };
     cursor: { available: boolean; observedAt?: string };
   };
   aa: { freshness: ReturnType<typeof decodeFreshness>; records: DerivedAaChartRecord[] } | null;
@@ -240,6 +248,7 @@ export function decodeBundle(raw: unknown): DecodedBundle {
   const sources = {
     aa: decodeAvailability(sourcesRaw.aa),
     openrouter: decodeAvailability(sourcesRaw.openrouter),
+    deepswe: decodeAvailability(sourcesRaw.deepswe),
     cursor: decodeAvailability(sourcesRaw.cursor),
   };
 
@@ -251,11 +260,11 @@ export function decodeBundle(raw: unknown): DecodedBundle {
     const { f, m } = dataset as { f: unknown; m: unknown };
     if (!Array.isArray(m)) throw new TypeError("Invalid aa records array");
     const records = m.map((row) => {
-      if (!Array.isArray(row) || row.length !== 8) {
+      if (!Array.isArray(row) || row.length !== 9) {
         throw new TypeError(`Invalid compact AA record: ${JSON.stringify(row)}`);
       }
-      const [slug, name, shortName, intelligenceIndex, tokens, providers, weighted, listed] = row as CompactAaRecord;
-      if (!Array.isArray(tokens) || !Array.isArray(providers) || !Array.isArray(weighted) || !Array.isArray(listed)) {
+      const [slug, name, shortName, intelligenceIndex, tokens, providers, weighted, listed, scoreSources] = row as CompactAaRecord;
+      if (!Array.isArray(tokens) || !Array.isArray(providers) || !Array.isArray(weighted) || !Array.isArray(listed) || !Array.isArray(scoreSources)) {
         throw new TypeError(`Invalid compact AA record structure: ${slug}`);
       }
       return derivedAaChartRecordSchema.parse({
@@ -279,6 +288,10 @@ export function decodeBundle(raw: unknown): DecodedBundle {
           price1mInputTokens: listed[0],
           price1mOutputTokens: listed[1],
           cacheHitPrice: listed[2],
+        },
+        scoreSources: {
+          artificialAnalysis: scoreSources[0],
+          ...(scoreSources[1] !== null ? { deepSwePassAt1: scoreSources[1] } : {}),
         },
       });
     });

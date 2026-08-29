@@ -10,7 +10,7 @@
  */
 
 /** Data source identifiers, matching the derived bundle's `sources` keys. */
-export type SourceId = "aa" | "openrouter" | "cursor";
+export type SourceId = "aa" | "openrouter" | "deepswe" | "cursor";
 
 /** One entry of the derived output index (mirrors src/derived/compile.ts). */
 export interface BundleIndexEntry {

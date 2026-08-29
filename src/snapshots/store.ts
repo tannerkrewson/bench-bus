@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import {
   openRouterModelPricingSchema,
+  validateDeepSweScoreCollection,
   normalizeSnapshotInput,
   resolveManifestEntryAt,
   snapshotEnvelopeSchema,
@@ -49,6 +50,9 @@ export function validateRecords(
   }
   if (source === "cursor") {
     return validateCursorEvalCollection(records);
+  }
+  if (source === "deepswe") {
+    return validateDeepSweScoreCollection(records);
   }
   if (!Array.isArray(records)) {
     throw new TypeError("OpenRouter pricing collection must be an array");

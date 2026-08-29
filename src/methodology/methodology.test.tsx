@@ -49,6 +49,8 @@ describe("graph methodology content", () => {
     expect(text).toContain("Cache writes are left out");
     expect(text).toContain("Cheapest mode picks one provider");
     expect(text).toContain("Price source");
+    expect(text).toContain("DeepSWE pass@1");
+    expect(text).toContain("models without a score in the selected source are omitted");
     expect(text).not.toContain("CursorBench");
     dispose();
   });
@@ -84,7 +86,7 @@ describe("graph methodology content", () => {
       </>
     ));
     const links = container.querySelectorAll<HTMLAnchorElement>("a");
-    expect(links).toHaveLength(3);
+    expect(links).toHaveLength(4);
     links.forEach((link) => {
       expect(link.target).toBe("_blank");
       expect(link.rel).toBe("noopener noreferrer");

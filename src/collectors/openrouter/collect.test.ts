@@ -33,7 +33,13 @@ function routerFetch(routes: Record<string, unknown | (() => Response)>): typeof
     if (
       url.includes("gpt-5.6-luna-20260709") ||
       url.includes("muse-spark-1.2-contributor-20260805") ||
-      url.includes("glm-5.3-flash-20260826")
+      url.includes("glm-5.3-flash-20260826") ||
+      url.includes("qwen3.8-flash-20260826") ||
+      url.includes("mimo-v2.5-20260422") ||
+      url.includes("glm-5.2-20260616") ||
+      url.includes("deepseek-v4-flash-20260423") ||
+      url.includes("deepseek-v4-pro-20260423") ||
+      url.includes("hy3-20260706")
     ) {
       return Promise.resolve(jsonResponse(fullPricing));
     }
@@ -81,6 +87,12 @@ const baseOptions = (overrides: Partial<Parameters<typeof collectOpenRouterPrici
     "deepseek-v4-pro-20260813": fullPricing,
     "qwen3.8-max-20260803": fullPricing,
     "nemotron-3-super-120b-a12b-20230311": fullPricing,
+    "qwen3.8-flash-20260826": fullPricing,
+    "mimo-v2.5-20260422": fullPricing,
+    "glm-5.2-20260616": fullPricing,
+    "deepseek-v4-flash-20260423": fullPricing,
+    "deepseek-v4-pro-20260423": fullPricing,
+    "hy3-20260706": fullPricing,
   }),
   ...overrides,
 });
@@ -103,6 +115,12 @@ function routesFor(_fetchImpl: unknown): Record<string, unknown> {
     "deepseek-v4-pro-20260813": fullPricing,
     "qwen3.8-max-20260803": fullPricing,
     "nemotron-3-super-120b-a12b-20230311": fullPricing,
+    "qwen3.8-flash-20260826": fullPricing,
+    "mimo-v2.5-20260422": fullPricing,
+    "glm-5.2-20260616": fullPricing,
+    "deepseek-v4-flash-20260423": fullPricing,
+    "deepseek-v4-pro-20260423": fullPricing,
+    "hy3-20260706": fullPricing,
   };
 }
 

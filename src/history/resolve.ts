@@ -65,11 +65,12 @@ export function resolveTimeTravel(index: BundleIndex, state: Readonly<TimeTravel
  * point in time.
  */
 export function freshnessFromBundle(bundle: {
-  sources: { aa: { available: boolean; observedAt?: string }; openrouter: { available: boolean; observedAt?: string }; cursor: { available: boolean; observedAt?: string } };
+  sources: { aa: { available: boolean; observedAt?: string }; openrouter: { available: boolean; observedAt?: string }; deepswe: { available: boolean; observedAt?: string }; cursor: { available: boolean; observedAt?: string } };
 }): SourceFreshness[] {
   return [
     { source: "aa", available: bundle.sources.aa.available, observedAt: bundle.sources.aa.observedAt },
     { source: "openrouter", available: bundle.sources.openrouter.available, observedAt: bundle.sources.openrouter.observedAt },
+    { source: "deepswe", available: bundle.sources.deepswe.available, observedAt: bundle.sources.deepswe.observedAt },
     { source: "cursor", available: bundle.sources.cursor.available, observedAt: bundle.sources.cursor.observedAt },
   ];
 }
@@ -114,6 +115,7 @@ export function relativeAge(observedAt: string, now: string): string {
 export const SOURCE_LABELS: Record<SourceFreshness["source"], string> = {
   aa: "Artificial Analysis",
   openrouter: "OpenRouter pricing",
+  deepswe: "DeepSWE scores",
   cursor: "CursorBench",
 };
 

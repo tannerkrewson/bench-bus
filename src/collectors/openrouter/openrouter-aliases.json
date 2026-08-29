@@ -1,6 +1,6 @@
 {
-  "version": 2,
-  "description": "Explicit Artificial Analysis -> OpenRouter model identity mapping. Curated by humans: automatic matching must never silently extend this file. `status: confirmed` = identity verified against both live catalogs (2026-08-21: AA model objects extracted from the artificialanalysis.ai page payload; OpenRouter ids verified against /api/v1/models). `provisional` = plausible but unverified, surfaced in every run report. `aaModelId` is the Artificial Analysis model UUID from the AA page payload. `openrouterId` is the stable OpenRouter model id (no date suffix, no :variant, no ~ alias); the collector resolves the canonical date-suffixed slug at runtime via /api/v1/models. `undiscountedOpenrouterId`, when present, explicitly links a discounted tier to the OpenRouter model whose listed prices form the comparison line. NOTE: AA model slugs use dashes where names use dots (e.g. AA slug gpt-5-6-sol for GPT-5.6 Sol).",
+  "version": 3,
+  "description": "Explicit Artificial Analysis -> OpenRouter model identity mapping. Curated by humans: automatic matching must never silently extend this file. `status: confirmed` = identity verified against both live catalogs (AA model objects from the artificialanalysis.ai page payload and OpenRouter ids from /api/v1/models, refreshed 2026-08-29). `provisional` = plausible but unverified, surfaced in every run report. `aaModelId` is the Artificial Analysis model UUID from the AA page payload. `openrouterId` is the stable OpenRouter model id (no date suffix, no :variant, no ~ alias); the collector resolves the canonical date-suffixed slug at runtime via /api/v1/models. `undiscountedOpenrouterId`, when present, explicitly links a discounted tier to the OpenRouter model whose listed prices form the comparison line. NOTE: AA model slugs use dashes where names use dots (e.g. AA slug gpt-5-6-sol for GPT-5.6 Sol).",
   "entries": [
     {
       "aaModelSlug": "claude-opus-5",
@@ -188,6 +188,48 @@
       "openrouterId": "openai/gpt-5.6-sol",
       "status": "confirmed",
       "note": "AA exposes effort variants; OpenRouter exposes pricing on the shared GPT-5.6 Sol base model identity."
+    },
+    {
+      "aaModelSlug": "qwen3-8-flash-next",
+      "aaModelId": "9ac3908c-9eb2-44db-8c01-3ec7da6fc2ae",
+      "openrouterId": "qwen/qwen3.8-flash",
+      "status": "confirmed",
+      "note": "AA names this Qwen3.8-Flash-Next; OpenRouter's dated qwen/qwen3.8-flash catalog identity has the same 2026-08-26 release."
+    },
+    {
+      "aaModelSlug": "mimo-v2-5-0424",
+      "aaModelId": "22d09131-343b-4adf-8760-533e20a2155f",
+      "openrouterId": "xiaomi/mimo-v2.5",
+      "status": "confirmed",
+      "note": "AA's MiMo-V2.5 record is slugged mimo-v2-5-0424; OpenRouter's canonical identity is xiaomi/mimo-v2.5-20260422."
+    },
+    {
+      "aaModelSlug": "glm-5-2",
+      "aaModelId": "f7a4ea75-e548-4069-80d4-9be8bc7c009b",
+      "openrouterId": "z-ai/glm-5.2",
+      "status": "confirmed",
+      "note": "AA GLM-5.2 max record maps to OpenRouter z-ai/glm-5.2."
+    },
+    {
+      "aaModelSlug": "deepseek-v4-flash-0420",
+      "aaModelId": "d8ddb241-b3e4-4c25-a6a3-72eb1b30c541",
+      "openrouterId": "deepseek/deepseek-v4-flash",
+      "status": "confirmed",
+      "note": "OpenRouter calls this DeepSeek V4 Flash 0423; AA's corresponding measured record is slugged deepseek-v4-flash-0420 and released 2026-04-24."
+    },
+    {
+      "aaModelSlug": "deepseek-v4-pro-0424",
+      "aaModelId": "bf220674-68bd-43cc-a1b8-ce5ed4d2f18d",
+      "openrouterId": "deepseek/deepseek-v4-pro",
+      "status": "confirmed",
+      "note": "OpenRouter calls this DeepSeek V4 Pro 0423; AA's corresponding measured record is slugged deepseek-v4-pro-0424 and released 2026-04-24."
+    },
+    {
+      "aaModelSlug": "hy3",
+      "aaModelId": "b23e6c69-96e5-44c9-8f58-4b42e0c399d5",
+      "openrouterId": "tencent/hy3",
+      "status": "confirmed",
+      "note": "AA Hy3 maps to OpenRouter tencent/hy3; both catalogs identify the 2026-07-06 model."
     }
   ]
 }

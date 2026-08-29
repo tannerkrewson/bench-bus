@@ -16,7 +16,7 @@ import { timeVaryingDiscountNote } from "../../content/discountNotes";
 import ChartControlPanel from "../../components/ChartControlPanel";
 import ModelList from "../../components/ModelList";
 import type { DerivedAaChartRecord } from "../../schemas";
-import { aaAdapter, aaControlledTooltipLines } from "./adapter";
+import { aaAdapter, aaControlledTooltipLines, aaYAxisLabel } from "./adapter";
 import { AA_DEFAULT_CACHE_HIT_RATE } from "./pricing";
 import {
   discountDetailLines,
@@ -327,7 +327,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
                     showCrowns={showCrowns}
                     showDiscounts={showDiscounts}
                     xAxisLabel={() => aaAdapter.xAxisLabel}
-                    yAxisLabel={() => aaAdapter.yAxisLabel}
+                    yAxisLabel={() => aaYAxisLabel(controls())}
                     onHover={(id, pos, details) =>
                       setHovered(id && pos ? { id, left: pos.left, top: pos.top, discount: details?.discount } : null)
                     }

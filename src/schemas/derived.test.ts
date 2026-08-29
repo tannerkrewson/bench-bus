@@ -7,11 +7,13 @@ import {
   type DerivedCursorChartRecord,
   type FreshnessMetadata,
 } from "./derived";
+import { SCHEMA_VERSIONS } from "./version";
 import { validOpenRouterPricing, validCursorRecord } from "./fixtures/openrouter-cursor";
 import { validAaModel } from "./fixtures/aa";
 
 const freshness: FreshnessMetadata = {
-  schemaVersion: 1,
+  schemaVersion: SCHEMA_VERSIONS.derived,
+  deepsweObservedAt: "2026-08-20T20:00:00.000Z",
   asOf: "2026-08-21T00:00:00.000Z",
   aaObservedAt: "2026-08-20T22:00:00.000Z",
   openrouterObservedAt: "2026-08-20T23:00:00.000Z",
@@ -23,6 +25,7 @@ const aaRecord: DerivedAaChartRecord = {
   name: validAaModel.name,
   shortName: validAaModel.shortName,
   intelligenceIndex: validAaModel.intelligenceIndex,
+  scoreSources: { artificialAnalysis: validAaModel.intelligenceIndex },
   canonicalTokens: {
     input: validAaModel.canonicalIntelligenceIndexTokenCount.input,
     output: validAaModel.canonicalIntelligenceIndexTokenCount.output,

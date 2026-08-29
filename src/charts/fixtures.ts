@@ -25,6 +25,7 @@ export const AA_FIXTURE_RECORDS: readonly DerivedAaChartRecord[] = [
     name: "Claude Opus 5",
     shortName: "Opus 5",
     intelligenceIndex: 71.2,
+    scoreSources: { artificialAnalysis: 71.2 },
     canonicalTokens: { input: 810_078_135, output: 114_542_834 },
     providers: [
       { providerName: "Azure (US)", providerSlug: "azure-us", effectiveInputPrice: 2.5, effectiveOutputPrice: 12.5 },
@@ -38,6 +39,7 @@ export const AA_FIXTURE_RECORDS: readonly DerivedAaChartRecord[] = [
     name: "GPT-5.6 Sol",
     shortName: "GPT-5.6",
     intelligenceIndex: 74.8,
+    scoreSources: { artificialAnalysis: 74.8 },
     canonicalTokens: { input: 640_112_004, output: 98_220_115 },
     providers: [
       { providerName: "OpenAI", providerSlug: "openai", effectiveInputPrice: 1.4, effectiveOutputPrice: 9.8 },
@@ -50,6 +52,7 @@ export const AA_FIXTURE_RECORDS: readonly DerivedAaChartRecord[] = [
     name: "Gemini 3.7 Flash",
     shortName: "Gemini 3.7F",
     intelligenceIndex: 62.4,
+    scoreSources: { artificialAnalysis: 62.4 },
     canonicalTokens: { input: 402_881_440, output: 61_003_988 },
     providers: [
       { providerName: "AI Studio", providerSlug: "ai-studio", effectiveInputPrice: 0.35, effectiveOutputPrice: 1.9 },
@@ -64,6 +67,7 @@ export const AA_FIXTURE_RECORDS: readonly DerivedAaChartRecord[] = [
     name: "Mystery Model",
     shortName: "Mystery",
     intelligenceIndex: 40.1,
+    scoreSources: { artificialAnalysis: 40.1 },
     canonicalTokens: { input: 100_000_000, output: 10_000_000 },
     providers: [],
     weighted: { weightedInputPrice: 0, weightedOutputPrice: 0 },

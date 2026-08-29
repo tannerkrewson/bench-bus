@@ -17,6 +17,9 @@ import {
 
 /** URL/namespace id of the Artificial Analysis chart. */
 export const AA_BENCHMARK_ID = "aa";
+export const AA_SCORE_SOURCE_CONTROL_ID = "scoreSource";
+
+type AaScoreSource = "aa" | "deepswe";
 
 /**
  * Confirmed AA -> OpenRouter identities from the committed alias mapping,
@@ -30,7 +33,10 @@ const CONFIRMED_OPENROUTER_MODEL_IDS: Readonly<Record<string, string>> = {
   "claude-opus-5-xhigh": "anthropic/claude-opus-5",
   "claude-sonnet-5": "anthropic/claude-sonnet-5",
   "deepseek-v4-flash-0731": "deepseek/deepseek-v4-flash-0731",
+  "deepseek-v4-flash": "deepseek/deepseek-v4-flash-0731",
+  "deepseek-v4-flash-0420": "deepseek/deepseek-v4-flash",
   "deepseek-v4-pro": "deepseek/deepseek-v4-pro-0813",
+  "deepseek-v4-pro-0424": "deepseek/deepseek-v4-pro",
   "gemini-3-7-flash": "google/gemini-3.7-flash",
   "gemini-3-7-flash-low": "google/gemini-3.7-flash",
   "gemini-3-7-flash-medium": "google/gemini-3.7-flash",
@@ -48,12 +54,15 @@ const CONFIRMED_OPENROUTER_MODEL_IDS: Readonly<Record<string, string>> = {
   "gpt-5-6-sol-high": "openai/gpt-5.6-sol",
   "gpt-5-6-sol-xhigh": "openai/gpt-5.6-sol",
   "glm-5-2": "z-ai/glm-5.2",
+  "hy3": "tencent/hy3",
   "grok-4-6": "x-ai/grok-4.6",
   "kimi-k3": "moonshotai/kimi-k3",
   "mimo-v2-5": "xiaomi/mimo-v2.5",
+  "mimo-v2-5-0424": "xiaomi/mimo-v2.5",
   "muse-spark-1-2": "meta/muse-spark-1.2-contributor",
   "nvidia-nemotron-3-super-120b-a12b": "nvidia/nemotron-3-super-120b-a12b",
   "qwen3-8-max": "qwen/qwen3.8-max",
+  "qwen3-8-flash-next": "qwen/qwen3.8-flash",
 };
 
 export function openRouterUrlForAaModel(
@@ -77,6 +86,18 @@ const PRICING_MODE_CONTROL = {
   ],
 } as const;
 
+const SCORE_SOURCE_CONTROL = {
+  kind: "select",
+  id: AA_SCORE_SOURCE_CONTROL_ID,
+  label: "Score source",
+  default: "aa",
+  description: "Choose the benchmark that supplies the graph's vertical score.",
+  options: [
+    { value: "aa", label: "Artificial Analysis" },
+    { value: "deepswe", label: "DeepSWE pass@1" },
+  ],
+} as const;
+
 const CACHE_HIT_CONTROL = {
   kind: "slider",
   id: "cacheHitRate",
@@ -90,7 +111,22 @@ const CACHE_HIT_CONTROL = {
   format: (v: number) => `${Math.round(v * 100)}%`,
 } as const;
 
-export const AA_CONTROL_SPECS = [PRICING_MODE_CONTROL, CACHE_HIT_CONTROL] as const;
+export const AA_CONTROL_SPECS = [SCORE_SOURCE_CONTROL, PRICING_MODE_CONTROL, CACHE_HIT_CONTROL] as const;
+
+function scoreForSource(record: DerivedAaChartRecord, controls: Readonly<PricingControlState>): number | null {
+  const source = String(controls[AA_SCORE_SOURCE_CONTROL_ID] ?? SCORE_SOURCE_CONTROL.default) as AaScoreSource;
+  if (source === "deepswe") {
+    const score = record.scoreSources.deepSwePassAt1;
+    return score === undefined ? null : score * 100;
+  }
+  return record.scoreSources.artificialAnalysis;
+}
+
+export function aaYAxisLabel(controls: Readonly<PricingControlState>): string {
+  return String(controls[AA_SCORE_SOURCE_CONTROL_ID] ?? SCORE_SOURCE_CONTROL.default) === "deepswe"
+    ? "DeepSWE pass@1 (%)"
+    : "Intelligence Index";
+}
 
 function providerDiscountAnnotation(
   provider: DerivedAaChartRecord["providers"][number],
@@ -210,6 +246,8 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
     // chart intentionally excludes every explicitly marked non-reasoning row
     // so it cannot leak into selection, overlays, or frontier calculations.
     if (isNonReasoningModel(record.name, record.slug)) return null;
+    const score = scoreForSource(record, controls);
+    if (score === null) return null;
     const mode = controls["pricingMode"] ?? PRICING_MODE_CONTROL.default;
     const cacheHitRate = Number(controls["cacheHitRate"] ?? AA_DEFAULT_CACHE_HIT_RATE);
     const { input, output } = record.canonicalTokens;
@@ -246,24 +284,32 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
       effortGroup: metadata.groupKey,
       ...(metadata.effort ? { effort: metadata.effort } : {}),
       x: cost,
-      y: record.intelligenceIndex,
+      y: score,
       ...(discount ? { discount } : {}),
-       ...(mode === "cheapest"
-         ? { discounts: explicitProviderDiscounts(record, cost, plottedProviderName) }
-         : {}),
+      ...(mode === "cheapest"
+        ? { discounts: explicitProviderDiscounts(record, cost, plottedProviderName) }
+        : {}),
     };
   },
 
   searchText: (record) => `${record.name} ${record.shortName} ${record.slug}`,
 
-  unplottableLabel: (controls) =>
-    String(controls["pricingMode"] ?? PRICING_MODE_CONTROL.default) === "listed"
+  unplottableLabel: (controls) => {
+    if (String(controls[AA_SCORE_SOURCE_CONTROL_ID] ?? SCORE_SOURCE_CONTROL.default) === "deepswe") {
+      return "no DeepSWE score";
+    }
+    return String(controls["pricingMode"] ?? PRICING_MODE_CONTROL.default) === "listed"
       ? "no listed rate"
-      : "no OpenRouter price",
-  unplottableDescription: (controls) =>
-    String(controls["pricingMode"] ?? PRICING_MODE_CONTROL.default) === "listed"
+      : "no OpenRouter price";
+  },
+  unplottableDescription: (controls) => {
+    if (String(controls[AA_SCORE_SOURCE_CONTROL_ID] ?? SCORE_SOURCE_CONTROL.default) === "deepswe") {
+      return "No DeepSWE pass@1 score is available for this model.";
+    }
+    return String(controls["pricingMode"] ?? PRICING_MODE_CONTROL.default) === "listed"
       ? "No Artificial Analysis listed rate is available for this model."
-      : "No OpenRouter price is available in this mode. Choose AA listed to use the source-listed rate when available.",
+      : "No OpenRouter price is available in this mode. Choose AA listed to use the source-listed rate when available.";
+  },
 
   tooltipLines: (record, point, controls): readonly TooltipLine[] =>
     aaControlledTooltipLines(record, point, controls),
@@ -282,8 +328,12 @@ export function aaControlledTooltipLines(
   controls: Readonly<PricingControlState>,
 ): readonly TooltipLine[] {
   const mode = String(controls["pricingMode"] ?? PRICING_MODE_CONTROL.default);
+  const scoreSource = String(controls[AA_SCORE_SOURCE_CONTROL_ID] ?? SCORE_SOURCE_CONTROL.default);
   const lines: TooltipLine[] = [
-    { label: "Intelligence Index", value: record.intelligenceIndex.toFixed(1) },
+    {
+      label: scoreSource === "deepswe" ? "DeepSWE pass@1" : "Intelligence Index",
+      value: scoreSource === "deepswe" ? `${(point.y / 100).toFixed(3)} (${point.y.toFixed(1)}%)` : point.y.toFixed(1),
+    },
     { label: "Est. workload cost", value: `$${point.x.toFixed(2)}` },
   ];
   if (mode === "cheapest") {

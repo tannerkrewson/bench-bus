@@ -71,12 +71,13 @@ describe("freshnessFromBundle (mismatched source sampling)", () => {
       sources: {
         aa: { available: true, observedAt: T2 }, // AA sampled daily
         openrouter: { available: true, observedAt: "2026-08-21T01:23:00.000Z" }, // OR every ~2h
+        deepswe: { available: false },
         cursor: { available: true, observedAt: T1 }, // Cursor daily, different offset
       },
     });
-    expect(freshness.map((f) => f.source)).toEqual(["aa", "openrouter", "cursor"]);
+    expect(freshness.map((f) => f.source)).toEqual(["aa", "openrouter", "deepswe", "cursor"]);
     expect(freshness[1]?.observedAt).toBe("2026-08-21T01:23:00.000Z");
-    expect(freshness[2]?.observedAt).toBe(T1);
+    expect(freshness[3]?.observedAt).toBe(T1);
   });
 
   it("reports unavailable sources without fabricating an observation time", () => {
@@ -84,12 +85,14 @@ describe("freshnessFromBundle (mismatched source sampling)", () => {
       sources: {
         aa: { available: false },
         openrouter: { available: false },
+        deepswe: { available: false },
         cursor: { available: true, observedAt: T1 },
       },
     });
     expect(freshness[0]).toEqual({ source: "aa", available: false, observedAt: undefined });
     expect(freshness[1]?.available).toBe(false);
-    expect(freshness[2]?.available).toBe(true);
+    expect(freshness[2]?.available).toBe(false);
+    expect(freshness[3]?.available).toBe(true);
   });
 });
 

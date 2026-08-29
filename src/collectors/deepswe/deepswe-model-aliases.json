@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "description": "Explicit DeepSWE configuration to Artificial Analysis identity links. Entries are admitted only when both upstream records are verified.",
+  "entries": [
+    {
+      "aaModelSlug": "deepseek-v4-pro-0424",
+      "deepSweModel": "deepseek-v4-pro",
+      "harness": "mini-swe-agent",
+      "reasoningEffort": null,
+      "note": "DeepSWE's model label is the April DeepSeek V4 Pro release; AA's authoritative slug is deepseek-v4-pro-0424."
+    },
+    {
+      "aaModelSlug": "glm-5-2",
+      "deepSweModel": "glm-5-2",
+      "harness": "mini-swe-agent",
+      "reasoningEffort": "max",
+      "note": "Exact model and max-effort configuration match."
+    },
+    {
+      "aaModelSlug": "mimo-v2-5-pro",
+      "deepSweModel": "mimo-v2-5-pro",
+      "harness": "mini-swe-agent",
+      "reasoningEffort": null,
+      "note": "Exact model and default-effort configuration match."
+    },
+    {
+      "aaModelSlug": "qwen3-7-max",
+      "deepSweModel": "qwen3-7-max",
+      "harness": "mini-swe-agent",
+      "reasoningEffort": null,
+      "note": "Exact model and default-effort configuration match."
+    },
+    {
+      "aaModelSlug": "glm-5-1",
+      "deepSweModel": "glm-5-1",
+      "harness": "mini-swe-agent",
+      "reasoningEffort": null,
+      "note": "Exact model and default-effort configuration match."
+    },
+    {
+      "aaModelSlug": "qwen3-6-plus",
+      "deepSweModel": "qwen3-6-plus",
+      "harness": "mini-swe-agent",
+      "reasoningEffort": null,
+      "note": "Exact model and default-effort configuration match."
+    },
+    {
+      "aaModelSlug": "gemini-3-5-flash",
+      "deepSweModel": "gemini-3-5-flash",
+      "harness": "mini-swe-agent",
+      "reasoningEffort": "medium",
+      "note": "AA's sole measured Gemini 3.5 Flash row and DeepSWE's medium configuration."
+    }
+  ]
+}

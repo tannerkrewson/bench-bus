@@ -13,7 +13,11 @@ export const AaMethodologyContent: Component = () => (
       <a class="link link-hover" href="https://artificialanalysis.ai/" target="_blank" rel="noopener noreferrer">
         Artificial Analysis
       </a>{" "}
-      publishes the score. Token counts come from real test runs.
+      publishes the default score. The Score source control can instead use{" "}
+      <a class="link link-hover" href="https://deepswe.datacurve.ai/artifacts/v1/leaderboard-live.json" target="_blank" rel="noopener noreferrer">
+        DeepSWE pass@1
+      </a>{" "}
+      scores; models without a score in the selected source are omitted. Token counts come from real test runs.
     </p>
     <p>
       <strong>Price source.</strong>{" "}
