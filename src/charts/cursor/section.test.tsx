@@ -6,8 +6,6 @@ import { CACHE_HIT_RATE_CONTROL_ID, CURSOR_BENCH_ID, SURCHARGE_CONTROL_ID } from
 import { CURSOR_FIXTURE_RECORDS } from "../fixtures";
 import type { ChartViewState } from "../types";
 
-const CURSOR_SUBTITLE = "This is an improved version of the CursorBench graph. On Cursor Teams and Enterprise plans, third-party model requests have a $0.25 per million tokens fee, which is not reflected on the official CursorBench, but is included by default on Bench Bus. First-party Cursor models, including Grok and Composer, are exempt from the Cursor Token Rate.";
-
 function mount(ui: () => JSX.Element) {
   const container = document.createElement("div");
   document.body.appendChild(container);
@@ -16,24 +14,27 @@ function mount(ui: () => JSX.Element) {
 }
 
 describe("CursorBenchChartSection", () => {
-  it("renders the fee toggle on by default with plan coverage text above the graph", () => {
+  it("renders the compact accessible fee toggle above the graph", () => {
     const { container, dispose } = mount(() => <CursorBenchChartSection records={() => CURSOR_FIXTURE_RECORDS} />);
     expect(container.querySelector("section[data-benchmark='cursor']")).not.toBeNull();
     expect(container.querySelector("h2")?.textContent).toBe("Best value models on Cursor");
-    const subtitle = container.querySelector("[data-testid='chart-subtitle']") as HTMLElement;
-    expect(subtitle.textContent).toBe(CURSOR_SUBTITLE);
-    const link = subtitle.querySelector("a") as HTMLAnchorElement;
-    expect(link.textContent).toBe("CursorBench");
-    expect(link.href).toBe("https://cursor.com/evals");
-    expect(link.target).toBe("_blank");
-    expect(link.rel).toBe("noopener noreferrer");
+    expect(container.querySelector("[data-testid='chart-subtitle']")).toBeNull();
     expect(container.textContent).not.toContain("CursorBench score versus average benchmark workload cost per task from cursor.com/evals.");
     expect(container.querySelector("canvas")).not.toBeNull();
     expect([...container.querySelectorAll("button")].find((b) => b.textContent === "Log")?.getAttribute("aria-pressed")).toBe("true");
     const toggle = container.querySelector("[data-testid='cursor-surcharge-toggle'] input") as HTMLInputElement;
     expect(toggle.checked).toBe(true);
-    expect(container.querySelector("[data-testid='cursor-surcharge-toggle']")?.textContent).toContain("Cursor Teams and Enterprise plans pay");
-    expect(container.querySelector("[data-testid='cursor-surcharge-toggle']")?.textContent).toContain("Pro, Pro Plus, and Ultra plans do not");
+    expect(container.querySelector("[data-testid='cursor-surcharge-toggle']")?.textContent).toContain("Include Cursor third-party fee");
+    expect(container.querySelector("[data-testid='cursor-surcharge-toggle']")?.textContent).toContain("Teams/Enterprise: +$0.25/M on third-party models; Cursor models exempt.");
+    expect(toggle.getAttribute("aria-label")).toBe("Include Cursor third-party fee");
+    expect(toggle.getAttribute("aria-describedby")).toBe("chart-cursor-surcharge-help");
+    expect(container.querySelector("label[for='chart-cursor-visible-surcharge']")?.textContent).toContain("Include Cursor third-party fee");
+    expect(container.querySelector("[data-testid='cursor-surcharge-toggle']")?.classList).toContain("w-full");
+    expect(container.querySelector("[data-testid='cursor-surcharge-toggle']")?.classList).toContain("px-3");
+    expect(toggle.classList).toContain("shrink-0");
+    expect(container.querySelector("[data-testid='cursor-surcharge-toggle']")?.querySelector("#chart-cursor-surcharge-help"))
+      .not.toBeNull();
+    expect((container.querySelector("input[aria-label='Show Gemini 3.7 Flash']") as HTMLInputElement | null)?.checked).toBe(true);
     expect(container.querySelector("[data-testid='chart-area']")?.compareDocumentPosition(toggle)).toBe(Node.DOCUMENT_POSITION_PRECEDING);
     expect(container.querySelector("[data-testid='chart-controls'] input[aria-label^='Include Cursor Token Rate']")).toBeNull();
     expect(container.querySelector(`#chart-cursor-control-${CACHE_HIT_RATE_CONTROL_ID}`)).not.toBeNull();
@@ -74,6 +75,18 @@ describe("CursorBenchChartSection", () => {
     slider.value = "75";
     slider.dispatchEvent(new Event("input", { bubbles: true }));
     expect(states.at(-1)?.controls[CACHE_HIT_RATE_CONTROL_ID]).toBe(75);
+    dispose();
+  });
+
+  it("preserves an explicit URL model selection over the default view", () => {
+    const gpt = { ...CURSOR_FIXTURE_RECORDS[0]!, modelId: "gpt-5-5", modelName: "GPT 5.5" };
+    const initial = cursorChartStateFromParams(new URLSearchParams("chart.cursor.sel=gpt-5-5"));
+    const { container, dispose } = mount(() => (
+      <CursorBenchChartSection records={() => [...CURSOR_FIXTURE_RECORDS, gpt]} initialState={initial} />
+    ));
+
+    expect((container.querySelector("input[aria-label='Show GPT 5.5']") as HTMLInputElement).checked).toBe(true);
+    expect((container.querySelector("input[aria-label='Show Gemini 3.7 Flash']") as HTMLInputElement).checked).toBe(false);
     dispose();
   });
 

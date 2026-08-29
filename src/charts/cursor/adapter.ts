@@ -28,12 +28,12 @@ export const SURCHARGE_CONTROL_ID = "surcharge";
 export const CACHE_HIT_RATE_CONTROL_ID = "cacheHitRate";
 
 export const CURSOR_DEFAULT_MODEL_GROUPS = [
-  "opus-5", "grok-4-6", "luna", "sol", "terra", "fable-5", "composer-2-5",
+  "opus-5", "grok-4-6", "luna", "sol", "terra", "fable-5", "composer-2-5", "gemini-3-7-flash",
 ] as const;
 
 const CURSOR_KNOWN_MODEL_GROUPS = new Set([
   ...CURSOR_DEFAULT_MODEL_GROUPS,
-  "opus-4-8", "sonnet-5", "gemini-3-6-flash", "gemini-3-7-flash", "kimi-k3", "glm-5-2", "glm-5-3",
+  "opus-4-8", "sonnet-5", "gemini-3-6-flash", "gpt-5-5", "kimi-k3", "glm-5-2", "glm-5-3",
 ]);
 
 export function isCursorHiddenDefaultGroup(groupKey: string): boolean {
@@ -108,11 +108,7 @@ export function formatCursorCostUsd(cost: number): string {
 export const cursorBenchAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord> = {
   benchmarkId: CURSOR_BENCH_ID,
   title: "Best value models on Cursor",
-  subtitle: [
-    "This is an improved version of the ",
-    { label: "CursorBench", href: "https://cursor.com/evals" },
-    " graph. On Cursor Teams and Enterprise plans, third-party model requests have a $0.25 per million tokens fee, which is not reflected on the official CursorBench, but is included by default on Bench Bus. First-party Cursor models, including Grok and Composer, are exempt from the Cursor Token Rate.",
-  ],
+  subtitle: "",
   xAxisLabel: "Avg cost per task (USD, cursor.com/evals)",
   yAxisLabel: "CursorBench score",
   defaultXScale: "log",

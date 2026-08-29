@@ -46,26 +46,33 @@ export default function CursorBenchChartSection(props: CursorBenchChartSectionPr
         initialState={props.initialState}
         onStateChange={props.onStateChange}
         beforeChart={(controls, onControlChange) => (
-          <div class="mb-4 rounded-box border border-base-300 bg-base-200/50 p-3" data-testid="cursor-surcharge-toggle">
-            <label
-              class="label cursor-pointer justify-start gap-3"
-              for={`chart-${CURSOR_BENCH_ID}-visible-surcharge`}
-            >
-              <span class="flex flex-1 flex-col gap-1">
-                <span class="font-medium">Include Cursor third-party fee</span>
-                <span class="text-sm text-base-content/70">
-                  Cursor Teams and Enterprise plans pay the $0.25/M third-party fee; Pro, Pro Plus, and Ultra plans do not.
-                </span>
-              </span>
-              <input
-                id={`chart-${CURSOR_BENCH_ID}-visible-surcharge`}
-                type="checkbox"
-                class="toggle toggle-sm toggle-primary"
-                aria-label="Include Cursor third-party fee"
-                checked={Boolean(controls()[SURCHARGE_CONTROL_ID])}
-                onChange={(event) => onControlChange(SURCHARGE_CONTROL_ID, event.currentTarget.checked)}
-              />
-            </label>
+          <div
+            class="mb-4 flex w-full items-center gap-3 rounded-box border border-base-300 bg-base-200/50 px-3 py-2 sm:gap-4"
+            data-testid="cursor-surcharge-toggle"
+          >
+            <div class="min-w-0 flex-1">
+              <label
+                class="block cursor-pointer text-sm font-semibold leading-tight"
+                for={`chart-${CURSOR_BENCH_ID}-visible-surcharge`}
+              >
+                Include Cursor third-party fee
+              </label>
+              <p
+                id={`chart-${CURSOR_BENCH_ID}-surcharge-help`}
+                class="mt-0.5 text-xs leading-snug text-base-content/70"
+              >
+                Teams/Enterprise: +$0.25/M on third-party models; Cursor models exempt.
+              </p>
+            </div>
+            <input
+              id={`chart-${CURSOR_BENCH_ID}-visible-surcharge`}
+              type="checkbox"
+              class="toggle toggle-sm toggle-primary shrink-0"
+              aria-label="Include Cursor third-party fee"
+              aria-describedby={`chart-${CURSOR_BENCH_ID}-surcharge-help`}
+              checked={Boolean(controls()[SURCHARGE_CONTROL_ID])}
+              onChange={(event) => onControlChange(SURCHARGE_CONTROL_ID, event.currentTarget.checked)}
+            />
           </div>
         )}
         isControlVisible={(spec, state) =>

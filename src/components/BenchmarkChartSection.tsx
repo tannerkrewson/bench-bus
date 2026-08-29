@@ -227,9 +227,11 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
               </a>
             </h2>
             <div class="mt-1 flex flex-wrap items-center gap-2">
-              <p class="text-sm text-base-content/70" data-testid="chart-subtitle">
-                <ChartSubtitleContent content={props.adapter.subtitle} />
-              </p>
+              <Show when={props.adapter.subtitle}>
+                <p class="text-sm text-base-content/70" data-testid="chart-subtitle">
+                  <ChartSubtitleContent content={props.adapter.subtitle} />
+                </p>
+              </Show>
               <RelativeLastUpdated timestamp={props.lastUpdated} />
             </div>
           </div>

@@ -35,12 +35,16 @@ describe("cursorBenchAdapter identity + axes", () => {
     });
   });
 
-  it("uses the concise linked subtitle contract", () => {
-    expect(cursorBenchAdapter.subtitle).toEqual([
-      "This is an improved version of the ",
-      { label: "CursorBench", href: "https://cursor.com/evals" },
-      " graph. On Cursor Teams and Enterprise plans, third-party model requests have a $0.25 per million tokens fee, which is not reflected on the official CursorBench, but is included by default on Bench Bus. First-party Cursor models, including Grok and Composer, are exempt from the Cursor Token Rate.",
-    ]);
+  it("does not publish the removed Cursor subtitle", () => {
+    expect(cursorBenchAdapter.subtitle).toBe("");
+  });
+
+  it("defaults to Gemini 3.7 Flash while excluding GPT 5.5", () => {
+    const records = [
+      { ...byId("composer-2"), modelId: "gpt-5-5", modelName: "GPT 5.5" },
+      byId("gemini-3.7-flash"),
+    ];
+    expect(cursorDefaultVisibleIds(records)).toEqual(["gemini-3.7-flash"]);
   });
 
   it("hides the current Kimi, Gemini 3.6 Flash, and GLM families by default", () => {
