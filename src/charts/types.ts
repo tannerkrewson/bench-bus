@@ -114,6 +114,9 @@ export interface ChartSubtitleLink {
   readonly href: string;
 }
 
+/** A verified external source link shown below a benchmark chart. */
+export type ChartSourceLink = ChartSubtitleLink;
+
 /** Plain text or link parts for a subtitle, kept separate from Solid JSX. */
 export type ChartSubtitle = string | readonly (string | ChartSubtitleLink)[];
 
@@ -132,6 +135,8 @@ export interface BenchmarkChartAdapter<TRecord> {
   readonly title: string;
   /** Concise explanation of the benchmark score and cost metrics. */
   readonly subtitle: ChartSubtitle;
+  /** Verified source pages for the data shown by this benchmark. */
+  readonly sourceLinks?: readonly ChartSourceLink[];
   /** Stable id + display label for any record, plotted or not. */
   readonly identity: (record: TRecord) => { readonly id: string; readonly label: string };
   readonly xAxisLabel: string;

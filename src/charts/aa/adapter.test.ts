@@ -326,7 +326,8 @@ describe("aaAdapter.computePoint", () => {
         cacheHitRate: 0.9,
       }),
     ).toBeNull();
-    expect(aaAdapter.unplottableLabel?.({ scoreSource: "deepswe" })).toBe("no DeepSWE score");
+    expect(aaAdapter.unplottableLabel).toBeUndefined();
+    expect(aaAdapter.unplottableDescription).toBeUndefined();
   });
 
   it("falls back to control defaults when controls are missing", () => {
@@ -395,6 +396,14 @@ describe("aaAdapter subtitle", () => {
       ". This chart uses the latest prices and discounts from ",
       { label: "OpenRouter", href: "https://openrouter.ai/" },
       " to find the real models on the Pareto frontier.\nNote, some open models, mainly DeepSeek, can swing wildly in price by the hour around Chinese business hours and weekends, but Bench Bus automatically updates multiple times per day.",
+    ]);
+  });
+
+  it("exposes verified source links independently from subtitle copy", () => {
+    expect(aaAdapter.sourceLinks).toEqual([
+      { label: "Artificial Analysis", href: "https://artificialanalysis.ai/" },
+      { label: "OpenRouter", href: "https://openrouter.ai/" },
+      { label: "DeepSWE", href: "https://deepswe.datacurve.ai/artifacts/v1/leaderboard-live.json" },
     ]);
   });
 });

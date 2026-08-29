@@ -237,6 +237,11 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
     { label: "OpenRouter", href: "https://openrouter.ai/" },
     " to find the real models on the Pareto frontier.\nNote, some open models, mainly DeepSeek, can swing wildly in price by the hour around Chinese business hours and weekends, but Bench Bus automatically updates multiple times per day.",
   ],
+  sourceLinks: [
+    { label: "Artificial Analysis", href: "https://artificialanalysis.ai/" },
+    { label: "OpenRouter", href: "https://openrouter.ai/" },
+    { label: "DeepSWE", href: "https://deepswe.datacurve.ai/artifacts/v1/leaderboard-live.json" },
+  ],
   xAxisLabel: "Estimated Intelligence Index workload cost (USD)",
   yAxisLabel: "Intelligence Index",
   defaultXScale: "log",

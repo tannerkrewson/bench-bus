@@ -1,4 +1,7 @@
 # DeepSWE leaderboard collector.
+#
+# NOTE ON SCHEDULING: GitHub scheduled workflows are best-effort. Bench Bus
+# tolerates delayed runs by retaining the last-known-good source snapshot.
 name: Collect DeepSWE scores
 
 on:

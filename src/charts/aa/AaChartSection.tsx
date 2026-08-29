@@ -357,7 +357,11 @@ export default function AaChartSection(props: AaChartSectionProps) {
                 </div>
               </Show>
             </div>
-            <ChartSources benchmarkId={aaAdapter.benchmarkId} content={aaAdapter.subtitle} />
+            <ChartSources
+              benchmarkId={aaAdapter.benchmarkId}
+              content={aaAdapter.subtitle}
+              sourceLinks={aaAdapter.sourceLinks}
+            />
           </Show>
         </div>
         <ChartDetailModal

@@ -39,6 +39,12 @@ describe("cursorBenchAdapter identity + axes", () => {
     expect(cursorBenchAdapter.subtitle).toBe("");
   });
 
+  it("exposes the verified Cursor eval source separately from the subtitle", () => {
+    expect(cursorBenchAdapter.sourceLinks).toEqual([
+      { label: "CursorBench", href: "https://cursor.com/evals" },
+    ]);
+  });
+
   it("defaults to Gemini 3.7 Flash while excluding GPT 5.5", () => {
     const records = [
       { ...byId("composer-2"), modelId: "gpt-5-5", modelName: "GPT 5.5" },

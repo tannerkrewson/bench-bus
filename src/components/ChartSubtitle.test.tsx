@@ -67,4 +67,18 @@ describe("ChartSubtitleContent", () => {
     expect(container.querySelector("[data-testid='chart-sources']")).toBeNull();
     dispose();
   });
+
+  it("prefers explicit source metadata when subtitle copy has no links", () => {
+    const { container, dispose } = mount(() => (
+      <ChartSources
+        benchmarkId="cursor"
+        content=""
+        sourceLinks={[{ label: "CursorBench", href: "https://cursor.com/evals" }]}
+      />
+    ));
+    const sourceLink = container.querySelector<HTMLAnchorElement>("[data-testid='chart-sources'] a");
+    expect(sourceLink?.textContent).toBe("CursorBench");
+    expect(sourceLink?.href).toBe("https://cursor.com/evals");
+    dispose();
+  });
 });

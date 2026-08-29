@@ -1,15 +1,16 @@
 import { For, Show } from "solid-js";
-import type { ChartSubtitle } from "../charts/types";
+import type { ChartSourceLink, ChartSubtitle } from "../charts/types";
 import { chartSubtitleLinks } from "./ChartSubtitle";
 
 export interface ChartSourcesProps {
   benchmarkId: string;
   content: ChartSubtitle;
+  sourceLinks?: readonly ChartSourceLink[];
 }
 
-/** Accessible source navigation built only from verified subtitle link metadata. */
+/** Accessible source navigation built only from verified source-link metadata. */
 export default function ChartSources(props: ChartSourcesProps) {
-  const links = () => chartSubtitleLinks(props.content);
+  const links = () => props.sourceLinks ?? chartSubtitleLinks(props.content);
   const titleId = `chart-sources-${props.benchmarkId}`;
 
   return (

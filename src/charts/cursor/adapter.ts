@@ -109,6 +109,7 @@ export const cursorBenchAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord>
   benchmarkId: CURSOR_BENCH_ID,
   title: "Best value models on Cursor",
   subtitle: "",
+  sourceLinks: [{ label: "CursorBench", href: "https://cursor.com/evals" }],
   xAxisLabel: "Avg cost per task (USD, cursor.com/evals)",
   yAxisLabel: "CursorBench score",
   defaultXScale: "log",

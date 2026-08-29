@@ -81,7 +81,9 @@ describe("AaChartSection", () => {
     scoreSource.value = "deepswe";
     scoreSource.dispatchEvent(new Event("change", { bubbles: true }));
 
-    expect(container.textContent).toContain("no DeepSWE score");
+    expect(container.textContent).toContain("no pricing");
+    expect(container.textContent).toContain("Unavailable with the current pricing settings.");
+    expect(container.textContent).not.toContain("no DeepSWE score");
     expect(container.querySelectorAll("[data-testid='model-list'] input[type='checkbox']")).toHaveLength(1);
     dispose();
   });

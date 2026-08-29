@@ -362,7 +362,11 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
                 </div>
               </Show>
             </div>
-            <ChartSources benchmarkId={props.adapter.benchmarkId} content={props.adapter.subtitle} />
+            <ChartSources
+              benchmarkId={props.adapter.benchmarkId}
+              content={props.adapter.subtitle}
+              sourceLinks={props.adapter.sourceLinks}
+            />
           </Show>
         </div>
 
