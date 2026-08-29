@@ -25,12 +25,13 @@
     transform: translateX(0);
   }
 
-  /* Keep the crossover quick while the logo is fully outside its clipped viewport. */
+  /* Hold off-screen, then step to the left so the crossover cannot fly backward. */
   44% {
     transform: translateX(calc(100vw + 100%));
+    animation-timing-function: steps(1, end);
   }
 
-  50% {
+  52% {
     transform: translateX(calc(-100vw - 100%));
   }
 
@@ -45,6 +46,13 @@
 }
 
 .bench-bus-logo-drive {
+  position: fixed;
+  top: var(--bench-bus-logo-top);
+  left: var(--bench-bus-logo-left);
+  width: var(--bench-bus-logo-width);
+  height: var(--bench-bus-logo-height);
+  z-index: 9999;
+  pointer-events: none;
   animation: bench-bus-logo-drive 2800ms ease-in-out both;
 }
 

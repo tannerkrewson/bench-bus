@@ -96,22 +96,29 @@ describe("App", () => {
     const headerBus = headerLogo.querySelector("img")!;
     const watermarks = logos.slice(1);
 
-    // The clipped header viewport drives only the bus image.
+    // The clipped header viewport drives only the bus image, which leaves its slot.
     expect(headerLogo.classList.contains("bench-bus-logo-viewport")).toBe(true);
     headerLogo.click();
     expect(headerLogo.classList.contains("bench-bus-logo-drive")).toBe(false);
     expect(headerBus.classList.contains("bench-bus-logo-drive")).toBe(true);
+    expect(headerBus.style.getPropertyValue("--bench-bus-logo-left")).toBe("0px");
     headerLogo.click();
     expect(headerBus.classList.contains("bench-bus-logo-drive")).toBe(true);
     const animationEnd = new Event("animationend");
     Object.defineProperty(animationEnd, "animationName", { value: "bench-bus-logo-drive" });
     headerBus.dispatchEvent(animationEnd);
     expect(headerBus.classList.contains("bench-bus-logo-drive")).toBe(false);
+    expect(headerBus.style.getPropertyValue("--bench-bus-logo-left")).toBe("");
+
+    // A completed run can be started again from the original slot.
+    headerLogo.click();
+    expect(headerBus.classList.contains("bench-bus-logo-drive")).toBe(true);
+    headerBus.dispatchEvent(animationEnd);
 
     // Watermarks drive only the bus image; the caption span stays pinned.
     watermarks.forEach((watermark) => {
       const bus = watermark.querySelector("img")!;
-      const caption = watermark.querySelector("span")!;
+      const caption = watermark.querySelector("span:last-child")!;
       expect(watermark.classList.contains("bench-bus-logo-viewport")).toBe(true);
       watermark.click();
       expect(watermark.classList.contains("bench-bus-logo-drive")).toBe(false);
@@ -123,6 +130,7 @@ describe("App", () => {
       Object.defineProperty(busAnimationEnd, "animationName", { value: "bench-bus-logo-drive" });
       bus.dispatchEvent(busAnimationEnd);
       expect(bus.classList.contains("bench-bus-logo-drive")).toBe(false);
+      expect(bus.style.getPropertyValue("--bench-bus-logo-left")).toBe("");
     });
 
     const media = vi.spyOn(window, "matchMedia").mockImplementation((query) => ({

@@ -173,13 +173,15 @@ const App: Component = () => {
                 title="Bench Bus logo"
                 onClick={driveLogo}
               >
-                <img
-                  class="h-12 w-16 object-contain sm:h-14 sm:w-20"
-                  src="/logo.svg"
-                  alt=""
-                  aria-hidden="true"
-                  onAnimationEnd={resetLogo}
-                />
+                <span class="inline-flex h-12 w-16 shrink-0 items-center justify-center sm:h-14 sm:w-20" aria-hidden="true">
+                  <img
+                    class="h-12 w-16 object-contain sm:h-14 sm:w-20"
+                    src="/logo.svg"
+                    alt=""
+                    aria-hidden="true"
+                    onAnimationEnd={resetLogo}
+                  />
+                </span>
               </button>
               <div>
                 <h1 class="text-xl font-bold tracking-tight sm:text-2xl">Bench Bus</h1>

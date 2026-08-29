@@ -17,13 +17,15 @@ export default function ChartWatermark() {
       title="Bench Bus watermark, benchb.us"
       onClick={driveWatermarkBus}
     >
-      <img
-        class="h-7 w-9 object-contain"
-        src="/logo.svg"
-        alt=""
-        aria-hidden="true"
-        onAnimationEnd={resetLogo}
-      />
+      <span class="inline-flex h-7 w-9 shrink-0 items-center justify-center" aria-hidden="true">
+        <img
+          class="h-7 w-9 object-contain"
+          src="/logo.svg"
+          alt=""
+          aria-hidden="true"
+          onAnimationEnd={resetLogo}
+        />
+      </span>
       <span>benchb.us</span>
     </button>
   );
