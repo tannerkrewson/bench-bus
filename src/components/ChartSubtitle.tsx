@@ -9,6 +9,17 @@ export function chartSubtitlePlainText(content: ChartSubtitle): string {
   return content.map((part) => (typeof part === "string" ? part : part.label)).join("");
 }
 
+/** Reuse only source links declared by the benchmark subtitle metadata. */
+export function chartSubtitleLinks(content: ChartSubtitle): ChartSubtitleLink[] {
+  if (typeof content === "string") return [];
+  const seen = new Set<string>();
+  return content.flatMap((part) => {
+    if (typeof part === "string" || seen.has(part.href)) return [];
+    seen.add(part.href);
+    return [part];
+  });
+}
+
 function isLinkPart(part: string | ChartSubtitleLink): part is ChartSubtitleLink {
   return typeof part !== "string";
 }

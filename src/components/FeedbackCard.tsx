@@ -13,7 +13,7 @@ const FeedbackCard: Component = () => (
     <div class="card-body gap-3 px-5 py-4">
       <h2 id="feedback-card-title" class="card-title text-lg">Help improve Bench Bus</h2>
       <p class="text-sm text-base-content/70">
-        If you spot a bug or have a suggestion for Bench Bus, please tell us about it.
+        If you spot a bug or have a suggestion for Bench Bus, please tell me about it!
       </p>
       <div class="card-actions">
         <a

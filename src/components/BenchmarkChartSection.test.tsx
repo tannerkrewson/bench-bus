@@ -124,11 +124,15 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     expect(watermark.parentElement?.className).toContain("absolute");
     expect(watermark.parentElement?.className).toContain("bottom-20");
     expect(watermark.parentElement?.className).toContain("left-32");
-    expect(watermark.parentElement?.className).toContain("bg-base-100/90");
+    expect(watermark.parentElement?.className).not.toContain("rounded-box");
+    expect(watermark.parentElement?.className).not.toContain("bg-base-100/90");
+    expect(watermark.parentElement?.className).not.toContain("shadow");
+    expect(watermark.parentElement?.className).not.toContain("ring");
     expect(watermark.getAttribute("aria-label")).toBe("Bench Bus watermark, benchb.us");
     expect(container.querySelector("[data-testid='chart-area']")?.className).toContain("min-h-");
     const scroll = container.querySelector("[data-testid='chart-scroll']") as HTMLElement;
     const scrollContent = container.querySelector("[data-testid='chart-scroll-content']") as HTMLElement;
+    expect(scrollContent.contains(watermark)).toBe(true);
     expect(scroll.className).toContain("overflow-x-auto");
     expect(scrollContent.className).toContain("min-w-[720px]");
     expect(scrollContent.className).toContain("sm:min-w-0");
@@ -436,6 +440,44 @@ describe("BenchmarkChartSection (Cursor fixture shape)", () => {
     ));
     expect(container.querySelector("[data-testid='chart-controls'] input[type='search']")).toBeNull();
     expect(container.querySelector("[data-testid='model-list'] input[type='search']")).not.toBeNull();
+    dispose();
+  });
+
+  it("renders deduplicated accessible source links below the graph", () => {
+    const { container, dispose } = mount(() => (
+      <BenchmarkChartSection
+        adapter={{
+          ...aaDemoAdapter,
+          benchmarkId: "aa-sources",
+          subtitle: [
+            { label: "Artificial Analysis", href: "https://artificialanalysis.ai/" },
+            " and ",
+            { label: "OpenRouter", href: "https://openrouter.ai/" },
+            " again from ",
+            { label: "OpenRouter", href: "https://openrouter.ai/" },
+          ],
+        }}
+        records={() => AA_FIXTURE_RECORDS}
+      />
+    ));
+
+    const sources = container.querySelector("[data-testid='chart-sources']") as HTMLElement;
+    expect(sources).not.toBeNull();
+    expect(sources.querySelector("h3")?.textContent).toBe("Sources");
+    expect(sources.getAttribute("aria-labelledby")).toBe(sources.querySelector("h3")?.id);
+    const links = [...sources.querySelectorAll<HTMLAnchorElement>("a")];
+    expect(links.map((link) => link.textContent)).toEqual(["Artificial Analysis", "OpenRouter"]);
+    expect(links.map((link) => link.href)).toEqual([
+      "https://artificialanalysis.ai/",
+      "https://openrouter.ai/",
+    ]);
+    links.forEach((link) => {
+      expect(link.target).toBe("_blank");
+      expect(link.rel).toBe("noopener noreferrer");
+    });
+    expect(container.querySelector("canvas")!.compareDocumentPosition(sources)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
     dispose();
   });
 

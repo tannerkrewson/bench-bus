@@ -8,7 +8,7 @@ import { chartStateFromParams, chartStateToParams } from "../urlState";
 import { aaAdapter } from "./adapter";
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
 
-const AA_SUBTITLE = "Artificial Analysis shows standard model pricing, but models can have discounts and cheaper providers on OpenRouter. This chart uses the latest prices and discounts from OpenRouter to find the real models on the Pareto frontier. Note, some open models, mainly DeepSeek, can swing wildly in price by the hour around Chinese business hours and weekends, but Bench Bus automatically updates multiple times per day.";
+const AA_SUBTITLE = "Artificial Analysis shows standard model pricing, but models can have discounts and cheaper providers on OpenRouter. This chart uses the latest prices and discounts from OpenRouter to find the real models on the Pareto frontier.\nNote, some open models, mainly DeepSeek, can swing wildly in price by the hour around Chinese business hours and weekends, but Bench Bus automatically updates multiple times per day.";
 
 function mount(ui: () => JSX.Element) {
   const container = document.createElement("div");
@@ -31,6 +31,7 @@ describe("AaChartSection", () => {
     expect(titleLink?.textContent).toBe("Best value models on OpenRouter");
     const subtitle = container.querySelector("[data-testid='chart-subtitle']") as HTMLElement;
     expect(subtitle.textContent).toBe(AA_SUBTITLE);
+    expect(subtitle.classList.contains("whitespace-pre-line")).toBe(true);
     const links = [...subtitle.querySelectorAll<HTMLAnchorElement>("a")];
     expect(links.map((link) => link.textContent)).toEqual(["Artificial Analysis", "OpenRouter", "OpenRouter"]);
     links.forEach((link) => {

@@ -5,6 +5,7 @@ import BenchmarkScatterChart from "../charts/BenchmarkScatterChart";
 import ChartDetailModal from "../charts/ChartDetailModal";
 import ChartTooltip from "../charts/ChartTooltip";
 import ChartWatermark from "./ChartWatermark";
+import ChartSources from "./ChartSources";
 import {
   buildChartPlot,
   discountDetailLines,
@@ -228,7 +229,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
             </h2>
             <div class="mt-1 flex flex-wrap items-center gap-2">
               <Show when={props.adapter.subtitle}>
-                <p class="text-sm text-base-content/70" data-testid="chart-subtitle">
+                <p class="whitespace-pre-line text-sm text-base-content/70" data-testid="chart-subtitle">
                   <ChartSubtitleContent content={props.adapter.subtitle} />
                 </p>
               </Show>
@@ -339,10 +340,10 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
                     title={() => hoveredInfo()?.title ?? null}
                     lines={() => hoveredInfo()?.lines ?? []}
                   />
+                  <div class="absolute bottom-20 left-32 z-10">
+                    <ChartWatermark />
+                  </div>
                 </div>
-              </div>
-              <div class="absolute bottom-20 left-32 z-10 rounded-box bg-base-100/90 px-2 py-1 shadow-sm ring-1 ring-base-300">
-                <ChartWatermark />
               </div>
             </Show>
             <div class="mt-2 flex flex-wrap items-center justify-center gap-4 text-sm text-base-content/70">
@@ -361,6 +362,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
                 </div>
               </Show>
             </div>
+            <ChartSources benchmarkId={props.adapter.benchmarkId} content={props.adapter.subtitle} />
           </Show>
         </div>
 

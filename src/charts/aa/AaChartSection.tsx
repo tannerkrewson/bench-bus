@@ -4,6 +4,7 @@ import BenchmarkScatterChart from "../BenchmarkScatterChart";
 import ChartDetailModal from "../ChartDetailModal";
 import ChartTooltip from "../ChartTooltip";
 import ChartWatermark from "../../components/ChartWatermark";
+import ChartSources from "../../components/ChartSources";
 import { buildChartPlot } from "../plotData";
 import type {
   ChartViewState,
@@ -237,7 +238,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
               </a>
             </h2>
             <div class="mt-1 flex flex-wrap items-center gap-2">
-              <p class="text-sm text-base-content/70" data-testid="chart-subtitle">
+              <p class="whitespace-pre-line text-sm text-base-content/70" data-testid="chart-subtitle">
                 <ChartSubtitleContent content={aaAdapter.subtitle} />
               </p>
               <RelativeLastUpdated timestamp={props.lastUpdated} />
@@ -334,10 +335,10 @@ export default function AaChartSection(props: AaChartSectionProps) {
                     title={() => hoveredInfo()?.title ?? null}
                     lines={() => hoveredInfo()?.lines ?? []}
                   />
+                  <div class="absolute bottom-20 left-32 z-10">
+                    <ChartWatermark />
+                  </div>
                 </div>
-              </div>
-              <div class="absolute bottom-20 left-32 z-10 rounded-box bg-base-100/90 px-2 py-1 shadow-sm ring-1 ring-base-300">
-                <ChartWatermark />
               </div>
             </Show>
             <div class="mt-2 flex flex-wrap items-center justify-center gap-4 text-sm text-base-content/70">
@@ -356,6 +357,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
                 </div>
               </Show>
             </div>
+            <ChartSources benchmarkId={aaAdapter.benchmarkId} content={aaAdapter.subtitle} />
           </Show>
         </div>
         <ChartDetailModal

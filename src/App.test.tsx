@@ -19,6 +19,19 @@ describe("App", () => {
     expect(container.querySelector("section[data-benchmark='cursor'] canvas")).not.toBeNull();
     expect(container.querySelectorAll("[data-testid='chart-watermark']")).toHaveLength(2);
     expect(container.querySelector("[data-testid='chart-watermark']")?.textContent).toContain("benchb.us");
+    const sourceSections = [...container.querySelectorAll<HTMLElement>("[data-testid='chart-sources']")];
+    expect(sourceSections).toHaveLength(2);
+    expect(sourceSections.map((section) => [...section.querySelectorAll("a")].map((link) => link.textContent))).toEqual([
+      ["Artificial Analysis", "OpenRouter"],
+      ["CursorBench"],
+    ]);
+    sourceSections.forEach((section) => {
+      expect(section.getAttribute("aria-labelledby")).toBe(section.querySelector("h3")?.id);
+      section.querySelectorAll<HTMLAnchorElement>("a").forEach((link) => {
+        expect(link.target).toBe("_blank");
+        expect(link.rel).toBe("noopener noreferrer");
+      });
+    });
     const crownLegends = container.querySelectorAll("[role='img'][aria-label^='Pareto crown']");
     expect(crownLegends).toHaveLength(2);
     crownLegends.forEach((legend) => {

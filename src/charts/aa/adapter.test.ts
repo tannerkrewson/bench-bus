@@ -394,7 +394,7 @@ describe("aaAdapter subtitle", () => {
       { label: "OpenRouter", href: "https://openrouter.ai/" },
       ". This chart uses the latest prices and discounts from ",
       { label: "OpenRouter", href: "https://openrouter.ai/" },
-      " to find the real models on the Pareto frontier. Note, some open models, mainly DeepSeek, can swing wildly in price by the hour around Chinese business hours and weekends, but Bench Bus automatically updates multiple times per day.",
+      " to find the real models on the Pareto frontier.\nNote, some open models, mainly DeepSeek, can swing wildly in price by the hour around Chinese business hours and weekends, but Bench Bus automatically updates multiple times per day.",
     ]);
   });
 });

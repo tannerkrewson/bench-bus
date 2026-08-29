@@ -18,7 +18,7 @@ describe("FeedbackCard", () => {
       "Help improve Bench Bus",
     );
     expect(container.textContent).toContain(
-      "If you spot a bug or have a suggestion for Bench Bus, please tell us about it.",
+      "If you spot a bug or have a suggestion for Bench Bus, please tell me about it!",
     );
 
     const link = container.querySelector<HTMLAnchorElement>("[data-testid='feedback-github-link']")!;
