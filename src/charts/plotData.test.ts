@@ -64,12 +64,12 @@ describe("discount presentation", () => {
       undiscountedModelId: "meta/muse-spark-1.2",
     };
     expect(discountSummaryLines({ x: point.x }, discount)).toEqual([
-      { label: "Discount math", value: "$7.00 - 43% = $4.00" },
+      { label: "Discount math", value: "$7.00 * (1 - 43.4%) = $4.00" },
       { label: "Provider", value: "Provider: OpenRouter" },
       { label: "Why", value: "Contributor model collects your data" },
     ]);
     expect(discountHoverTitle(point, discount)).toBe("Muse Spark 1.2 - 43% off · Provider: OpenRouter");
-    expect(discountMath(point, discount)).toBe("$7.00 - 43% = $4.00");
+    expect(discountMath(point, discount)).toBe("$7.00 * (1 - 43.4%) = $4.00");
     expect(discountDetailLines(point, discount).map((line) => line.label)).toEqual([
       "Discount",
       "Why discounted",
@@ -104,6 +104,15 @@ describe("explicitDiscountForAnnotation", () => {
     expect(explicitDiscountForAnnotation(discount)).toEqual(discount);
     expect(explicitDiscountForAnnotation({ ...discount, percentage: 101 })).toBeNull();
     expect(explicitDiscountForAnnotation({ ...discount, percentage: 99 })).toBeNull();
+  });
+
+  it("rejects a percentage that disagrees with its raw/effective costs", () => {
+    expect(explicitDiscountForAnnotation({ percentage: 40, preDiscountX: 10, effectiveX: 5 })).toBeNull();
+    expect(explicitDiscountForAnnotation({ percentage: 50, preDiscountX: 10, effectiveX: 5.001 })).toEqual({
+      percentage: 50,
+      preDiscountX: 10,
+      effectiveX: 5.001,
+    });
   });
 });
 

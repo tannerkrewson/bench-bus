@@ -313,6 +313,76 @@ describe("compileBundle", () => {
     expect(joined.unmatchedOr).toBe(0);
   });
 
+  it("keeps Grok 4.6 high and medium variants on one priced family", () => {
+    const high: ArtificialAnalysisModel = {
+      ...validAaModel,
+      id: "c8adc5cf-fd5a-407b-af51-dc3bede3e49c",
+      slug: "grok-4-6",
+      name: "Grok 4.6 (high)",
+      shortName: "Grok 4.6 (high)",
+      intelligenceIndex: 60.92297113115,
+      canonicalIntelligenceIndexTokenCount: {
+        input: 854_677_596,
+        output: 72_155_789,
+        answer: 9_660_772,
+        reasoning: 62_495_017,
+      },
+      price1mInputTokens: 2,
+      price1mOutputTokens: 6,
+      cacheHitPrice: 0.5,
+    };
+    const medium: ArtificialAnalysisModel = {
+      ...high,
+      id: "26614164-6840-4e17-a65a-2deb2fe7e87b",
+      slug: "grok-4-6-medium",
+      name: "Grok 4.6 (medium)",
+      shortName: "Grok 4.6 (medium)",
+      intelligenceIndex: 59.0064109828411,
+      canonicalIntelligenceIndexTokenCount: {
+        input: 639_062_659,
+        output: 55_318_467,
+        answer: 8_367_869,
+        reasoning: 46_950_598,
+      },
+    };
+    const aliases = parseAliasFile(JSON.stringify({
+      version: 1,
+      entries: [
+        {
+          aaModelSlug: high.slug,
+          aaModelId: high.id,
+          openrouterId: "x-ai/grok-4.6",
+          status: "confirmed",
+        },
+        {
+          aaModelSlug: medium.slug,
+          aaModelId: medium.id,
+          openrouterId: "x-ai/grok-4.6",
+          status: "confirmed",
+        },
+      ],
+    }), "Grok aliases");
+    const pricing: OpenRouterModelPricing = {
+      ...validOpenRouterPricing,
+      permaslug: "x-ai/grok-4.6",
+      aaModelSlug: high.slug,
+      aaModelId: high.id,
+    };
+    const joined = joinAaWithPricing([high, medium], [pricing], aliases, [high.slug, medium.slug]);
+    expect(joined.records.map((record) => record.slug)).toEqual([high.slug, medium.slug]);
+    expect(joined.records[0]?.providers).toEqual(joined.records[1]?.providers);
+    expect(joined.records.map((record) => record.canonicalTokens)).toEqual([
+      { input: 854_677_596, output: 72_155_789 },
+      { input: 639_062_659, output: 55_318_467 },
+    ]);
+    expect(joined.records.map((record) => record.intelligenceIndex)).toEqual([
+      high.intelligenceIndex,
+      medium.intelligenceIndex,
+    ]);
+    expect(joined.unmatchedAa).toBe(0);
+    expect(joined.unmatchedOr).toBe(0);
+  });
+
   it("retains an unmatched listed-frontier model with explicit no-data OpenRouter fields", () => {
     const joined = joinAaWithPricing(
       [validAaModel, validAaModel2],

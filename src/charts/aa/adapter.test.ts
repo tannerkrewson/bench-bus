@@ -51,6 +51,12 @@ describe("aaAdapter.computePoint", () => {
     expect(openRouterUrlForAaModel({ ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "gpt-5-6-sol-medium" })).toBe(
       "https://openrouter.ai/openai/gpt-5.6-sol",
     );
+    expect(openRouterUrlForAaModel({ ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "grok-4-6" })).toBe(
+      "https://openrouter.ai/x-ai/grok-4.6",
+    );
+    expect(openRouterUrlForAaModel({ ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "grok-4-6-medium" })).toBe(
+      "https://openrouter.ai/x-ai/grok-4.6",
+    );
     expect(openRouterUrlForAaModel({ ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "glm-5-3-flash" })).toBe(
       "https://openrouter.ai/z-ai/glm-5.3-flash",
     );
@@ -111,6 +117,33 @@ describe("aaAdapter.computePoint", () => {
     expect(deepSeekPoint.label).not.toMatch(/[()]/);
   });
 
+  it("uses the documented DeepSeek V4 Pro 0813 peak rates as raw listed prices", () => {
+    const record = {
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug: "deepseek-v4-pro",
+      name: "DeepSeek V4 Pro 0813 (Reasoning, Max Effort)",
+      shortName: "DeepSeek V4 Pro 0813 (max)",
+      canonicalTokens: { input: 918_390_769, output: 127_918_722 },
+      providers: [{
+        providerName: "StreamLake",
+        providerSlug: "streamlake",
+        effectiveInputPrice: 0.5795,
+        effectiveOutputPrice: 1.738,
+        listedInputPrice: 1.32,
+        listedOutputPrice: 3.96,
+        discountPercentage: 56,
+      }],
+      listed: { price1mInputTokens: 1.32, price1mOutputTokens: 3.96, cacheHitPrice: 0.044 },
+    };
+    const point = aaAdapter.computePoint(record, controls)!;
+    const rawCost = (918_390_769 / 1e6) * 1.32 + (127_918_722 / 1e6) * 3.96;
+    expect(point.discount?.preDiscountX).toBeCloseTo(rawCost, 10);
+    expect(point.discount?.percentage).toBeCloseTo(
+      (1 - point.x / rawCost) * 100,
+      10,
+    );
+  });
+
   it("annotates only a cheapest provider with explicit listed-price discount metadata", () => {
     const record = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
@@ -134,7 +167,7 @@ describe("aaAdapter.computePoint", () => {
     });
   });
 
-  it("retains a source-backed 100% discount when listed prices provide its pre-cost", () => {
+  it("uses the workload ratio instead of an inconsistent provider percentage", () => {
     const record = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
       canonicalTokens: { input: 1_000_000, output: 1_000_000 },
@@ -151,10 +184,26 @@ describe("aaAdapter.computePoint", () => {
     const point = aaAdapter.computePoint(record, controls)!;
     expect(point.x).toBe(12);
     expect(point.discount).toEqual({
-      percentage: 100,
+      percentage: 60,
       preDiscountX: 30,
       providerName: "Free input provider",
     });
+  });
+
+  it("derives a metadata-only discount from its effective workload cost", () => {
+    const record = {
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      canonicalTokens: { input: 1_000_000, output: 1_000_000 },
+      providers: [{
+        providerName: "Metadata Provider",
+        providerSlug: "metadata",
+        effectiveInputPrice: 6,
+        effectiveOutputPrice: 12,
+        discountPercentage: 40,
+      }],
+    };
+    const point = aaAdapter.computePoint(record, controls)!;
+    expect(point.discount).toMatchObject({ percentage: 40, preDiscountX: 30 });
   });
 
   it("renders every explicit provider discount as a separate annotation", () => {
@@ -285,10 +334,9 @@ describe("aaAdapter.computePoint", () => {
     expect(point).not.toBeNull(); // defaults: cheapest mode
   });
 
-  it("explains provider-mode rows that can use AA listed pricing", () => {
-    expect(aaAdapter.unplottableLabel?.({ pricingMode: "cheapest" })).toBe("no OpenRouter price");
-    expect(aaAdapter.unplottableDescription?.({ pricingMode: "cheapest" })).toContain("Choose AA listed");
-    expect(aaAdapter.unplottableLabel?.({ pricingMode: "listed" })).toBe("no listed rate");
+  it("uses the generic unplottable handling without a pricing-mode escape hatch", () => {
+    expect(aaAdapter.unplottableLabel).toBeUndefined();
+    expect(aaAdapter.unplottableDescription).toBeUndefined();
   });
 
   it("exposes no normalized-workload control", () => {

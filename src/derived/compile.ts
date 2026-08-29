@@ -80,7 +80,7 @@ export interface SourceResolution {
 export interface CompileStats {
   /** AA chart records emitted, including listed-frontier records without OpenRouter pricing. */
   aaMatched: number;
-  /** AA benchmark models dropped because they are outside the listed frontier and have no OpenRouter pricing. */
+  /** AA benchmark models dropped because they have no OpenRouter pricing. */
   aaUnmatched: number;
   /** OpenRouter pricing records with no AA benchmark model at this time. */
   openrouterUnmatched: number;

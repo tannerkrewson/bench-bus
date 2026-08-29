@@ -16,7 +16,7 @@ export const openRouterProviderSummarySchema = z
     /** Optional listed prices when the effective endpoint supplies them for this provider. */
     listedInputPrice: finiteNumber.optional(),
     listedOutputPrice: finiteNumber.optional(),
-    /** Explicit source-provided discount percentage; never computed from price ratios. */
+    /** Source-provided discount metadata, retained for provenance and validation. */
     discountPercentage: finiteNumber.refine((value) => value >= 0 && value <= 100, {
       message: "discountPercentage must be between 0 and 100",
     }).optional(),

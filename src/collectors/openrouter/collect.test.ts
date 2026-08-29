@@ -172,6 +172,15 @@ describe("collectOpenRouterPricing", () => {
     }
   });
 
+  it("collects Grok 4.6 high and medium against one family identity", async () => {
+    const report = await collectOpenRouterPricing(baseOptions());
+    for (const slug of ["grok-4-6", "grok-4-6-medium"]) {
+      expect(report.records.find((record) => record.aaModelSlug === slug)).toMatchObject({
+        permaslug: "x-ai/grok-4.6",
+      });
+    }
+  });
+
   it("looks up frontier and forced curated identities before unmatched models are discarded", async () => {
     const catalogWithExtras = {
       ...catalogFixture,
@@ -287,6 +296,46 @@ describe("collectOpenRouterPricing", () => {
     expect(claude.listedCacheReadPrice).toBe(1);
     expect(claude.providerSummaries[0]?.discountPercentage).toBe(20);
     expect(claude.providerSummaries[0]?.listedInputPrice).toBe(1.5);
+  });
+
+  it("uses effective-row prices before page-derived prices before catalog fallbacks", async () => {
+    const effectiveWithDirectPrices = {
+      ...fullPricing,
+      data: {
+        ...fullPricing.data,
+        providerSummaries: fullPricing.data.providerSummaries.map((provider, index) =>
+          index === 0
+            ? {
+                ...provider,
+                listedInputPrice: 1.5,
+                listedOutputPrice: 30,
+              }
+            : provider,
+        ),
+      },
+    };
+    const page = `<script>self.__next_f.push([1,"4:{\\"provider_name\\":\\"Claude Platform on AWS\\",\\"provider_slug\\":\\"claude-on-aws/fp8\\",\\"pricing\\":{\\"prompt\\":\\"0.0000008\\",\\"completion\\":\\"0.000016\\",\\"discount\\":0.2}}"])</script>`;
+    const fallback = baseOptions().fetchImpl!;
+    const fetchImpl = ((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input);
+      if (url === "https://openrouter.ai/anthropic/claude-opus-5") {
+        return Promise.resolve(new Response(page, { status: 200, headers: { "content-type": "text/html" } }));
+      }
+      if (url.includes("claude-opus-5-20260723")) {
+        return Promise.resolve(jsonResponse(effectiveWithDirectPrices));
+      }
+      return fallback(input, init);
+    }) as typeof fetch;
+    const report = await collectOpenRouterPricing(baseOptions({
+      collectProviderDiscounts: true,
+      fetchImpl,
+    }));
+    const claude = report.records.find((record) => record.aaModelSlug === "claude-opus-5")!;
+    expect(claude.providerSummaries[0]).toMatchObject({
+      listedInputPrice: 1.5,
+      listedOutputPrice: 30,
+      discountPercentage: 20,
+    });
   });
 
   it("resolves canonical date-suffixed slugs before querying effective pricing", async () => {

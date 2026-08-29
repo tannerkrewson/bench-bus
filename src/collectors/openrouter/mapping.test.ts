@@ -36,6 +36,13 @@ describe("alias file validation", () => {
       aaModelId: "19496b81-9f41-4214-a77a-1df803b3c5ae",
       openrouterId: "z-ai/glm-5.3-flash",
     });
+    expect(file.entries.find((e) => e.aaModelSlug === "deepseek-v4-pro")).toMatchObject({
+      openrouterId: "deepseek/deepseek-v4-pro-0813",
+    });
+    expect(file.entries.find((e) => e.aaModelSlug === "grok-4-6-medium")).toMatchObject({
+      aaModelId: "26614164-6840-4e17-a65a-2deb2fe7e87b",
+      openrouterId: "x-ai/grok-4.6",
+    });
   });
 
   it("rejects variant-suffixed or alias openrouter ids", () => {

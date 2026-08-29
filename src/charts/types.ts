@@ -26,7 +26,7 @@ export type ModelBrand =
 
 /** One plottable model point. x is estimated cost in USD, y is the score. */
 export interface PriceDiscountAnnotation {
-  /** Explicit percentage discount supplied by the pricing source (0–100). */
+  /** Percentage implied by the source-backed pre/effective workload costs (0–100). */
   percentage: number;
   /** Undiscounted workload cost in USD, from the same provider price. */
   preDiscountX: number;

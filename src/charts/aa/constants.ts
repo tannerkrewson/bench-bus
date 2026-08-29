@@ -27,6 +27,7 @@ export const AA_DEFAULT_MODEL_SLUGS = [
   "hy3",
   "claude-opus-5",
   "grok-4-6",
+  "grok-4-6-medium",
   "glm-5-2",
   "gpt-5-6-sol",
   "gpt-5-6-sol-xhigh",

@@ -55,8 +55,8 @@ describe("AaChartSection", () => {
     const checkboxes = container.querySelectorAll("[data-testid='model-list'] input[type='checkbox']");
     expect(checkboxes).toHaveLength(3);
     expect(container.textContent).toContain("Mystery Model");
-    expect(container.textContent).toContain("no OpenRouter price");
-    expect(container.textContent).toContain("Choose AA listed to use the source-listed rate");
+    expect(container.textContent).toContain("no pricing");
+    expect(container.textContent).toContain("Unavailable with the current pricing settings.");
     expect(container.querySelector("[data-testid='model-list'] .cursor-not-allowed")).not.toBeNull();
     expect(container.querySelector("[data-testid='methodology-button-aa']")).not.toBeNull();
     expect(container.querySelector("[data-testid='chart-methodology-modal']")).not.toBeNull();
@@ -145,7 +145,7 @@ describe("AaChartSection", () => {
     endpoint?.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
     const tooltip = container.querySelector("[data-testid='chart-tooltip']");
     expect(tooltip?.textContent).toContain("GPT-5.6 Sol high - 50% off");
-    expect(tooltip?.textContent).toContain("$184.93 - 50% = $92.47");
+    expect(tooltip?.textContent).toContain("$184.93 * (1 - 50%) = $92.47");
     expect(tooltip?.textContent).toContain("Provider: Provider A");
     expect(tooltip?.textContent).toContain("Source provider discount from Provider A");
     dispose();
@@ -260,7 +260,7 @@ describe("AaChartSection", () => {
     dispose();
   });
 
-  it("plots listed pricing after switching from the default OpenRouter mode", () => {
+  it("plots listed pricing after switching from the default OpenRouter mode", async () => {
     const listedOnly = {
       ...AA_RECORD_UNPLOTTABLE,
       slug: "listed-only",
@@ -268,6 +268,7 @@ describe("AaChartSection", () => {
       listed: { price1mInputTokens: 2, price1mOutputTokens: 8, cacheHitPrice: 0.2 },
     };
     const { container, dispose } = mount(() => <AaChartSection records={() => [listedOnly]} />);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     expect(container.querySelector("[data-testid='aa-unplottable-count']")).toBeNull();
     const pricingMode = container.querySelector("#chart-aa-control-pricingMode") as HTMLSelectElement;
     pricingMode.value = "listed";

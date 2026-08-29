@@ -49,6 +49,10 @@ export function explicitDiscountForAnnotation(
       (!Number.isFinite(discount.effectiveX) ||
         (discount.effectiveX < 0 || (discount.effectiveX === 0 && discount.percentage !== 100))))
   ) return null;
+  if (discount.effectiveX !== undefined) {
+    const impliedPercentage = discountPercentageFromCosts(discount.preDiscountX, discount.effectiveX);
+    if (impliedPercentage === undefined || Math.abs(impliedPercentage - discount.percentage) > 0.05) return null;
+  }
   return discount;
 }
 
@@ -63,6 +67,18 @@ export interface ModelLabelParts {
 /** Round a source discount to the nearest whole percent for display. */
 export function roundDiscountPercent(percentage: number): number {
   return Math.round(percentage);
+}
+
+/** Calculate the workload discount from the displayed pre/effective costs. */
+export function discountPercentageFromCosts(
+  preDiscountX: number,
+  effectiveX: number,
+): number | undefined {
+  if (
+    !Number.isFinite(preDiscountX) || preDiscountX <= 0 ||
+    !Number.isFinite(effectiveX) || effectiveX < 0 || effectiveX > preDiscountX
+  ) return undefined;
+  return (1 - effectiveX / preDiscountX) * 100;
 }
 
 /** Plain-English explanation suitable for the compact hover tooltip. */
@@ -88,7 +104,11 @@ export function discountMath(
   point: Pick<PlottablePoint, "x">,
   discount: PriceDiscountAnnotation,
 ): string {
-  return `$${discount.preDiscountX.toFixed(2)} - ${roundDiscountPercent(discount.percentage)}% = $${point.x.toFixed(2)}`;
+  const effectiveX = discount.effectiveX ?? point.x;
+  const percentage = Number.isInteger(discount.percentage)
+    ? String(discount.percentage)
+    : discount.percentage.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+  return `$${discount.preDiscountX.toFixed(2)} * (1 - ${percentage}%) = $${effectiveX.toFixed(2)}`;
 }
 
 export function discountHoverTitle(

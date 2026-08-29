@@ -56,11 +56,18 @@
       "note": "Verified 2026-08-21: AA slug is grok-4-6 ('Grok 4.6 (high)', release 2026-08-12); x-ai/grok-4.6 canonical x-ai/grok-4.6-20260810."
     },
     {
+      "aaModelSlug": "grok-4-6-medium",
+      "aaModelId": "26614164-6840-4e17-a65a-2deb2fe7e87b",
+      "openrouterId": "x-ai/grok-4.6",
+      "status": "confirmed",
+      "note": "Verified 2026-08-29: AA Grok 4.6 medium uses the shared x-ai/grok-4.6 family pricing; its AA token workload and score remain variant-specific."
+    },
+    {
       "aaModelSlug": "deepseek-v4-pro",
       "aaModelId": "83173329-c09a-41f1-a028-a282a5f908d7",
       "openrouterId": "deepseek/deepseek-v4-pro-0813",
       "status": "confirmed",
-      "note": "Verified 2026-08-21: AA deepseek-v4-pro is 'DeepSeek V4 Pro 0813 (Reasoning, Max Effort)' (release 2026-08-13), so it maps to the GA release deepseek/deepseek-v4-pro-0813 (canonical -20260813). The plain deepseek/deepseek-v4-pro id is the OLD 0423 release (canonical -20260423) and matches AA's dated deepseek-v4-pro-0424 slug instead."
+      "note": "Verified 2026-08-21: AA deepseek-v4-pro is 'DeepSeek V4 Pro 0813 (Reasoning, Max Effort)' (release 2026-08-13), so it maps to the GA release deepseek/deepseek-v4-pro-0813 (canonical -20260813). The plain deepseek/deepseek-v4-pro id is the OLD 0423 release (canonical -20260423) and matches AA's dated deepseek-v4-pro-0424 slug instead. AA and DeepSeek's published peak pre-discount rates are $1.32/M input-cache-miss and $3.96/M output."
     },
     {
       "aaModelSlug": "qwen3-8-max",

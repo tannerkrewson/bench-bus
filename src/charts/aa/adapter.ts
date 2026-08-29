@@ -8,6 +8,7 @@ import type {
 } from "../types";
 import { inferModelBrand } from "../brand";
 import { isNonReasoningModel, modelDisplayMetadata } from "../modelMetadata";
+import { discountPercentageFromCosts } from "../plotData";
 import {
   AA_DEFAULT_CACHE_HIT_RATE,
   listedCostUsd,
@@ -56,6 +57,8 @@ const CONFIRMED_OPENROUTER_MODEL_IDS: Readonly<Record<string, string>> = {
   "glm-5-2": "z-ai/glm-5.2",
   "hy3": "tencent/hy3",
   "grok-4-6": "x-ai/grok-4.6",
+  "grok-4-6-high": "x-ai/grok-4.6",
+  "grok-4-6-medium": "x-ai/grok-4.6",
   "kimi-k3": "moonshotai/kimi-k3",
   "mimo-v2-5": "xiaomi/mimo-v2.5",
   "mimo-v2-5-0424": "xiaomi/mimo-v2.5",
@@ -144,6 +147,9 @@ function providerDiscountAnnotation(
     listedInput !== undefined && listedOutput !== undefined && listedInput > 0 && listedOutput > 0
       ? (inputTokens / 1e6) * listedInput + (outputTokens / 1e6) * listedOutput
       : undefined;
+  // Direct listed prices are authoritative. The explicit percentage is only
+  // a fallback when no listed prices exist; stale metadata must not change
+  // the percentage implied by the displayed workload prices.
   const preDiscountX = listedPreDiscountX ?? (
     explicitPercentage !== undefined && explicitPercentage > 0 && explicitPercentage < 100
       ? effectiveX / (1 - explicitPercentage / 100)
@@ -152,15 +158,13 @@ function providerDiscountAnnotation(
   if (!Number.isFinite(effectiveX) || effectiveX < 0 || preDiscountX === undefined || preDiscountX <= effectiveX) {
     return undefined;
   }
+  if (explicitPercentage !== undefined && explicitPercentage <= 0) return undefined;
   // OpenRouter publishes provider-level discount percentages for some
   // endpoints. A model-linked tier (such as Contributor) instead declares
-  // its undiscounted model identity in the mapping; its display percentage is
-  // derived from those two explicit source-backed workload endpoints.
-  const percentage = explicitPercentage ?? (
-    provider.undiscountedModelId !== undefined
-      ? (1 - effectiveX / preDiscountX) * 100
-      : undefined
-  );
+  // its undiscounted model identity in the mapping. In both cases the
+  // displayed percentage is recomputed from the source-backed workload costs.
+  if (explicitPercentage === undefined && provider.undiscountedModelId === undefined) return undefined;
+  const percentage = discountPercentageFromCosts(preDiscountX, effectiveX);
   if (percentage === undefined || !Number.isFinite(percentage) || percentage <= 0 || percentage > 100) return undefined;
   const tolerance = plottedCost === undefined ? 0 : Math.max(0.005, Math.abs(plottedCost) * 1e-6);
   return {
@@ -293,23 +297,6 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
   },
 
   searchText: (record) => `${record.name} ${record.shortName} ${record.slug}`,
-
-  unplottableLabel: (controls) => {
-    if (String(controls[AA_SCORE_SOURCE_CONTROL_ID] ?? SCORE_SOURCE_CONTROL.default) === "deepswe") {
-      return "no DeepSWE score";
-    }
-    return String(controls["pricingMode"] ?? PRICING_MODE_CONTROL.default) === "listed"
-      ? "no listed rate"
-      : "no OpenRouter price";
-  },
-  unplottableDescription: (controls) => {
-    if (String(controls[AA_SCORE_SOURCE_CONTROL_ID] ?? SCORE_SOURCE_CONTROL.default) === "deepswe") {
-      return "No DeepSWE pass@1 score is available for this model.";
-    }
-    return String(controls["pricingMode"] ?? PRICING_MODE_CONTROL.default) === "listed"
-      ? "No Artificial Analysis listed rate is available for this model."
-      : "No OpenRouter price is available in this mode. Choose AA listed to use the source-listed rate when available.";
-  },
 
   tooltipLines: (record, point, controls): readonly TooltipLine[] =>
     aaControlledTooltipLines(record, point, controls),

@@ -254,30 +254,24 @@ export async function collectOpenRouterPricing(
       }
       const providerSummaries = response.data.providerSummaries.map((p) => {
         const pageDiscount = discountsByProvider.get(p.providerSlug);
+        // Precedence is explicit: fields from the effective-pricing provider
+        // row, then the model-page provider listing, then the mapped
+        // undiscounted catalog model. The more indirect sources never replace
+        // a value supplied by the effective endpoint.
+        const listedInputPrice =
+          p.listedInputPrice ?? pageDiscount?.listedInputPrice ?? undiscounted?.listedInputPrice;
+        const listedOutputPrice =
+          p.listedOutputPrice ?? pageDiscount?.listedOutputPrice ?? undiscounted?.listedOutputPrice;
+        const discountPercentage =
+          p.discountPercentage ?? pageDiscount?.discountPercentage;
         return {
           providerName: p.providerName,
           providerSlug: p.providerSlug,
           effectiveInputPrice: p.effectiveInputPrice,
           effectiveOutputPrice: p.effectiveOutputPrice,
-          ...(p.listedInputPrice !== undefined
-            ? { listedInputPrice: p.listedInputPrice }
-            : pageDiscount
-              ? { listedInputPrice: pageDiscount.listedInputPrice }
-              : undiscounted?.listedInputPrice !== undefined
-                ? { listedInputPrice: undiscounted.listedInputPrice }
-                : {}),
-          ...(p.listedOutputPrice !== undefined
-            ? { listedOutputPrice: p.listedOutputPrice }
-            : pageDiscount
-              ? { listedOutputPrice: pageDiscount.listedOutputPrice }
-              : undiscounted?.listedOutputPrice !== undefined
-                ? { listedOutputPrice: undiscounted.listedOutputPrice }
-                : {}),
-          ...(p.discountPercentage !== undefined
-            ? { discountPercentage: p.discountPercentage }
-            : pageDiscount
-              ? { discountPercentage: pageDiscount.discountPercentage }
-              : {}),
+          ...(listedInputPrice !== undefined ? { listedInputPrice } : {}),
+          ...(listedOutputPrice !== undefined ? { listedOutputPrice } : {}),
+          ...(discountPercentage !== undefined ? { discountPercentage } : {}),
           ...(entry.undiscountedOpenrouterId
             ? { undiscountedModelId: entry.undiscountedOpenrouterId }
             : {}),

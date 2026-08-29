@@ -244,7 +244,7 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     endpoint?.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
     const tooltip = container.querySelector("[data-testid='chart-tooltip']");
     expect(tooltip?.textContent).toContain("GPT-5.6 Sol high - 50% off");
-    expect(tooltip?.textContent).toContain("$184.93 - 50% = $92.47");
+    expect(tooltip?.textContent).toContain("$184.93 * (1 - 50%) = $92.47");
     expect(tooltip?.textContent).toContain("Provider: Provider A");
     expect(tooltip?.textContent).toContain("Source provider discount from Provider A");
     dispose();

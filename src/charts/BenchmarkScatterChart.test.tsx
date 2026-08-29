@@ -535,7 +535,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
           label: "DeepSeek alternative",
           x: 6,
           y: 70,
-          discount: { percentage: 40, preDiscountX: 10, effectiveX: 4 },
+          discount: { percentage: 60, preDiscountX: 10, effectiveX: 4 },
         }]}
         scale={() => "log"}
         xAxisLabel={() => "Cost"}
@@ -1232,7 +1232,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
           y: 70,
           discounts: [
             { percentage: 40, preDiscountX: 10, effectiveX: 6, providerName: "Provider A" },
-            { percentage: 25, preDiscountX: 8, effectiveX: 5, providerName: "Provider B" },
+            { percentage: 37.5, preDiscountX: 8, effectiveX: 5, providerName: "Provider B" },
           ],
         }]}
         scale={() => "log"}

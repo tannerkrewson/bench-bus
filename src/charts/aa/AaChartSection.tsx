@@ -273,11 +273,6 @@ export default function AaChartSection(props: AaChartSectionProps) {
                 query={query}
                 onQueryChange={setQuery}
                 onToggleSelect={toggleSelect}
-                unplottableLabel={() => aaAdapter.unplottableLabel?.(controls()) ?? "no pricing"}
-                unplottableDescription={() =>
-                  aaAdapter.unplottableDescription?.(controls()) ??
-                  "Unavailable with the current pricing settings."
-                }
                 unplottable={() => allBuild().unplottable.map((u) => aaAdapter.identity(u.record))}
               />
             </Show>
