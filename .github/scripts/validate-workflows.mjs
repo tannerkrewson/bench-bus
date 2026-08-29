@@ -34,8 +34,8 @@ const expectations = [
   },
   {
     file: "collect-deepswe.yml",
-    cron: "30 5 * * *",
-    runsPerDay: 1,
+    cron: "30 1,5,9,13,17,21 * * *",
+    runsPerDay: 6,
   },
 ];
 

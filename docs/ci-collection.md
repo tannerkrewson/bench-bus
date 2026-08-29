@@ -1,6 +1,6 @@
 # Collection workflows (GitHub Actions)
 
-Three scheduled workflows collect benchmark data, validate it, store it on the
+Four scheduled workflows collect benchmark data, validate it, store it on the
 dedicated `bench-bus-data` branch, and push. They never touch the deployed
 site: the site build reads the data branch separately (see the deployment
 workflow, owned separately).
@@ -10,8 +10,9 @@ workflow, owned separately).
 | `collect-openrouter.yml` | `0 1,5,9,13,17,21 * * *` (six times daily, UTC) | OpenRouter effective pricing | `collect-openrouter` |
 | `collect-aa.yml` | `17 0,4,8,12,16,20 * * *` (six times daily, UTC) | Artificial Analysis models | `collect-aa` |
 | `collect-cursor.yml` | `41 1,5,9,13,17,21 * * *` (six times daily, UTC) | Cursor eval table | `collect-cursor` |
+| `collect-deepswe.yml` | `30 1,5,9,13,17,21 * * *` (six times daily, UTC) | DeepSWE leaderboard scores | `collect-deepswe` |
 
-All three also support `workflow_dispatch` for manual recovery/testing.
+All four also support `workflow_dispatch` for manual recovery/testing.
 
 ## Scheduling caveat (important)
 
@@ -24,7 +25,7 @@ missed cron as data corruption; use `workflow_dispatch` for recovery.
 
 ## Pipeline shape (shared composite action)
 
-All three workflows delegate to `./.github/actions/collect-and-store`, which
+All four workflows delegate to `./.github/actions/collect-and-store`, which
 runs, in order:
 
 1. **Collect** — `npm run collect:<source> -- --out <temp envelope.json>`.
