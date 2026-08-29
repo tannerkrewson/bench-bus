@@ -76,10 +76,6 @@ async function main(): Promise<number> {
   const store = new DataBranchStore(args.dataDir);
   const compiled = await compileBundle(store, { asOf: args.asOf, aliases, curatedModels });
 
-  await fs.mkdir(args.outDir, { recursive: true });
-  const bundleFile = path.join(args.outDir, `${args.name}.json`);
-  await fs.writeFile(bundleFile, compiled.json, "utf8");
-
   const indexFile = path.join(args.outDir, "index.json");
   let rawIndex: string | undefined;
   try {
@@ -88,6 +84,11 @@ async function main(): Promise<number> {
     rawIndex = undefined;
   }
   const index = parseDerivedIndex(rawIndex);
+
+  await fs.mkdir(args.outDir, { recursive: true });
+  const bundleFile = path.join(args.outDir, `${args.name}.json`);
+  await fs.writeFile(bundleFile, compiled.json, "utf8");
+
   const indexJson = upsertDerivedIndexEntry(index, {
     asOf: compiled.asOf,
     path: `${args.name}.json`,
