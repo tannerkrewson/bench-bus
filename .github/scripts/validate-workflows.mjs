@@ -19,15 +19,15 @@ const workflowsDir = join(ghDir, "workflows");
 const expectations = [
   {
     file: "collect-openrouter.yml",
-    crons: ["0 21 * * *"],
+    cron: "0 1,5,9,13,17,21 * * *",
   },
   {
     file: "collect-aa.yml",
-    crons: ["17 4 * * *"],
+    cron: "17 0,4,8,12,16,20 * * *",
   },
   {
     file: "collect-cursor.yml",
-    crons: ["41 5 * * *"],
+    cron: "41 1,5,9,13,17,21 * * *",
   },
 ];
 
@@ -36,6 +36,15 @@ const check = (label, ok) => {
   console.log(`${ok ? "PASS" : "FAIL"}  ${label}`);
   if (!ok) failures += 1;
 };
+
+function runsPerDay(cron) {
+  const fields = cron.trim().split(/\s+/);
+  if (fields.length !== 5) return 0;
+  const [minute, hour, dayOfMonth, month, dayOfWeek] = fields;
+  if (dayOfMonth !== "*" || month !== "*" || dayOfWeek !== "*") return 0;
+  if (!/^\d+$/.test(minute) || !/^\d+(,\d+)*$/.test(hour)) return 0;
+  return new Set(hour.split(",")).size;
+}
 
 async function main() {
   const workflowFiles = (await readdir(workflowsDir)).filter((f) => f.endsWith(".yml"));
@@ -55,9 +64,15 @@ async function main() {
     const text = await readFile(join(workflowsDir, expectation.file), "utf8");
     const name = expectation.file;
 
-    for (const cron of expectation.crons) {
-      check(`${name}: schedule includes cron "${cron}"`, text.includes(`cron: "${cron}"`));
-    }
+    const cronMatches = [...text.matchAll(/^\s*- cron: "([^"]+)"\s*$/gm)].map(
+      (match) => match[1],
+    );
+    check(
+      `${name}: has exactly one six-runs-per-day schedule`,
+      cronMatches.length === 1 &&
+        cronMatches[0] === expectation.cron &&
+        runsPerDay(cronMatches[0]) === 6,
+    );
     check(`${name}: workflow_dispatch trigger present`, text.includes("workflow_dispatch"));
     check(
       `${name}: concurrency group with cancel-in-progress: false (queue, never race)`,

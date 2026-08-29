@@ -18,7 +18,7 @@ function entry(asOf: string, aa = true, cursor = true): BundleIndexEntry {
   return { asOf, path: `${asOf}.json`, aa, cursor };
 }
 
-/** Mismatched sampling: aa sampled daily, openrouter every 2h (different times). */
+/** Different source observation times exercise independent freshness reporting. */
 const INDEX: BundleIndex = {
   v: 1,
   entries: [entry(T1), entry(T2), entry(T3)],

@@ -1,4 +1,4 @@
-# OpenRouter effective-pricing collector.
+# OpenRouter effective-pricing collector (six times daily).
 #
 # NOTE ON SCHEDULING: GitHub scheduled workflows are best-effort — they can be
 # delayed or dropped during high-load periods. Bench Bus is designed to
@@ -10,9 +10,9 @@ name: Collect OpenRouter pricing
 
 on:
   schedule:
-    # Daily at 5pm ET. GitHub cron is UTC-only, so this is 21:00 UTC during
-    # daylight time and 4pm ET during standard time.
-    - cron: "0 21 * * *"
+    # Six times daily in UTC. GitHub cron is UTC-only; the 21:00 UTC run is
+    # 5pm ET during daylight time and 4pm ET during standard time.
+    - cron: "0 1,5,9,13,17,21 * * *"
   workflow_dispatch:
 
 # Overlapping runs queue instead of racing on the data branch.

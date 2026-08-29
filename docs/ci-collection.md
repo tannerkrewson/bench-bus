@@ -7,9 +7,9 @@ workflow, owned separately).
 
 | Workflow | Schedule (UTC) | Source | Concurrency group |
 | --- | --- | --- | --- |
-| `collect-openrouter.yml` | `23 */2 * * *` (~every 2 h, off-round minute) | OpenRouter effective pricing | `collect-openrouter` |
-| `collect-aa.yml` | `17 4 * * *` (daily) | Artificial Analysis models | `collect-aa` |
-| `collect-cursor.yml` | `41 5 * * *` (daily) | Cursor eval table | `collect-cursor` |
+| `collect-openrouter.yml` | `0 1,5,9,13,17,21 * * *` (six times daily, UTC) | OpenRouter effective pricing | `collect-openrouter` |
+| `collect-aa.yml` | `17 0,4,8,12,16,20 * * *` (six times daily, UTC) | Artificial Analysis models | `collect-aa` |
+| `collect-cursor.yml` | `41 1,5,9,13,17,21 * * *` (six times daily, UTC) | Cursor eval table | `collect-cursor` |
 
 All three also support `workflow_dispatch` for manual recovery/testing.
 

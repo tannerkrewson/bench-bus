@@ -1,4 +1,4 @@
-# Artificial Analysis Intelligence Index collector (daily).
+# Artificial Analysis Intelligence Index collector (six times daily).
 #
 # NOTE ON SCHEDULING: GitHub scheduled workflows are best-effort — they can be
 # delayed or dropped during high-load periods. Bench Bus is designed to
@@ -10,9 +10,9 @@ name: Collect Artificial Analysis models
 
 on:
   schedule:
-    # Daily at an off-peak, off-round UTC time (AA's benchmark dataset changes
-    # infrequently relative to OpenRouter pricing).
-    - cron: "17 4 * * *"
+    # Six times daily at an off-peak, off-round UTC time. The existing
+    # 04:17 UTC slot remains one of the scheduled runs.
+    - cron: "17 0,4,8,12,16,20 * * *"
   workflow_dispatch:
 
 # Overlapping runs queue instead of racing on the data branch.

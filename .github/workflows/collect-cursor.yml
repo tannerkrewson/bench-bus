@@ -1,4 +1,4 @@
-# Cursor eval table (CursorBench) collector (daily).
+# Cursor eval table (CursorBench) collector (six times daily).
 #
 # NOTE ON SCHEDULING: GitHub scheduled workflows are best-effort — they can be
 # delayed or dropped during high-load periods. Bench Bus is designed to
@@ -10,9 +10,9 @@ name: Collect Cursor eval table
 
 on:
   schedule:
-    # Daily at an off-peak, off-round UTC time, staggered away from the
-    # Artificial Analysis run.
-    - cron: "41 5 * * *"
+    # Six times daily at an off-peak, off-round UTC time, preserving the
+    # existing 05:41 UTC slot and staying staggered from the AA run.
+    - cron: "41 1,5,9,13,17,21 * * *"
   workflow_dispatch:
 
 # Overlapping runs queue instead of racing on the data branch.
