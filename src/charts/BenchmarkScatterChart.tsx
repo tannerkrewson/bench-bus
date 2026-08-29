@@ -67,14 +67,41 @@ const DISCOUNT_HIT_RADIUS = 8;
 const DISCOUNT_ENDPOINT_GAP = MODEL_DOT_RADIUS + 2;
 const PLOT_ANIMATION_DURATION = 180;
 const EMPHASIS_TRANSITION_DURATION = 140;
-// Bridge emphasis honors reduced motion with an instant, unanimated change.
-const DISCOUNT_BRIDGE_TRANSITION = `${(
-  typeof window !== "undefined" && typeof window.matchMedia === "function" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches
-) ? 0 : PLOT_ANIMATION_DURATION}ms ease-out`;
+const DISCOUNT_EXIT_DURATION = PLOT_ANIMATION_DURATION;
+const TOUCH_TAP_MOVE_TOLERANCE = 10;
 // Keep leaders visually attached to the real dot edge; the layout collision
 // pass, not a large decorative gap, keeps them out of nearby dots.
 const LEADER_LINE_GAP = 1;
+
+function prefersReducedMotion(): boolean {
+  return typeof window !== "undefined" && typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function motionDuration(duration: number): number {
+  return prefersReducedMotion() ? 0 : duration;
+}
+
+function motionTransition(property: string, duration: number): string {
+  const effectiveDuration = motionDuration(duration);
+  return effectiveDuration === 0 ? "none" : `${property} ${effectiveDuration}ms ease-out`;
+}
+
+function discountRevealTransition(): string {
+  const duration = motionDuration(PLOT_ANIMATION_DURATION);
+  return duration === 0
+    ? "none"
+    : `stroke-dashoffset ${duration}ms ease-out, opacity 0ms linear ${duration}ms`;
+}
+
+function discountRevealVisibilityTransition(): string {
+  const duration = motionDuration(PLOT_ANIMATION_DURATION);
+  return duration === 0 ? "none" : `opacity 0ms linear ${duration}ms`;
+}
+
+function isTouchLikePointer(pointerType: string | undefined): boolean {
+  return pointerType === "touch" || pointerType === "pen";
+}
 
 /** Geometry for the leftward horizontal and downward vertical dot guides.
  *  Rendered only while a dot hit (hover or discount-endpoint) is active. */
@@ -413,8 +440,12 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     connectorGroupKeys: string[];
     pointGroupKeys: string[];
   };
-  type PlotDataSnapshot = { shape: PlotDataShape };
+  type PlotDataSnapshot = { data: uPlot.AlignedData; shape: PlotDataShape };
   let previousPlotData: PlotDataSnapshot | null = null;
+  let lifecycleGeneration = 0;
+  let plotAnimationGeneration = 0;
+  let emphasisAnimationGeneration = 0;
+  let disposed = false;
   let currentSeries: CurrentSeries = {
     x: [],
     y: [],
@@ -459,6 +490,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     modelLabel: string;
   }[]>([]);
   const [discountDecorations, setDiscountDecorations] = createSignal<DiscountDecoration[]>([]);
+  const [discountExitIds, setDiscountExitIds] = createSignal<ReadonlySet<string>>(new Set());
+  const [discountDrawnIds, setDiscountDrawnIds] = createSignal<ReadonlySet<string>>(new Set());
   const [plotXSnapshot, setPlotXSnapshot] = createSignal("");
   // currentSeries and plot are intentionally kept outside Solid because uPlot
   // owns their lifecycle. Publish a revision after each completed plot render
@@ -472,6 +505,123 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   let hoveredConnectorId: string | null = null;
   let hoveredDiscountEndpointId: string | null = null;
   let baseSeriesAlphas: number[] = [];
+
+  type PersistentInteraction =
+    | { kind: "family"; id: string }
+    | { kind: "discount-endpoint"; id: string }
+    | { kind: "point"; id: string }
+    | { kind: "crown"; id: string };
+  let persistentInteraction: PersistentInteraction | null = null;
+  let touchCandidate: { left: number; top: number } | null = null;
+  let discountDrawTimer: ReturnType<typeof setTimeout> | null = null;
+  let discountExitTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const clonePlotData = (data: uPlot.AlignedData): uPlot.AlignedData =>
+    data.map((series) => Array.from(series as ArrayLike<number | null>)) as unknown as uPlot.AlignedData;
+
+  const cancelPlotAnimation = () => {
+    plotAnimationGeneration += 1;
+    if (plotAnimationFrame !== null && typeof window !== "undefined") {
+      window.cancelAnimationFrame(plotAnimationFrame);
+    }
+    plotAnimationFrame = null;
+  };
+
+  const cancelEmphasisAnimation = () => {
+    emphasisAnimationGeneration += 1;
+    if (emphasisAnimationFrame !== null && typeof window !== "undefined") {
+      window.cancelAnimationFrame(emphasisAnimationFrame);
+    }
+    emphasisAnimationFrame = null;
+  };
+
+  const cancelLabelUpdate = () => {
+    if (labelUpdateFrame !== null && typeof window !== "undefined") {
+      window.cancelAnimationFrame(labelUpdateFrame);
+    }
+    labelUpdateFrame = null;
+  };
+
+  const cancelPlotUpdate = () => {
+    if (plotUpdateFrame !== null && typeof window !== "undefined") {
+      window.cancelAnimationFrame(plotUpdateFrame);
+    }
+    plotUpdateFrame = null;
+  };
+
+  const cancelDiscountDraw = () => {
+    if (discountDrawTimer !== null) {
+      clearTimeout(discountDrawTimer);
+    }
+    discountDrawTimer = null;
+  };
+
+  const beginPlotLifecycle = () => {
+    lifecycleGeneration += 1;
+    cancelPlotAnimation();
+    cancelEmphasisAnimation();
+    cancelLabelUpdate();
+    cancelPlotUpdate();
+    cancelDiscountDraw();
+  };
+
+  const scheduleDiscountDraw = () => {
+    if (discountDrawTimer !== null) return;
+    if (prefersReducedMotion()) {
+      setDiscountDrawnIds(new Set(discountDecorations().map((discount) => discount.id)));
+      return;
+    }
+    const generation = lifecycleGeneration;
+    discountDrawTimer = setTimeout(() => {
+      discountDrawTimer = null;
+      if (disposed || generation !== lifecycleGeneration) return;
+      setDiscountDrawnIds(new Set(
+        discountDecorations()
+          .filter((discount) => !discountExitIds().has(discount.id))
+          .map((discount) => discount.id),
+      ));
+    }, 0);
+  };
+
+  /** Keep removed discount geometry mounted long enough for its arrow to fade. */
+  const publishDiscountDecorations = (next: DiscountDecoration[]) => {
+    const previous = discountDecorations();
+    const nextIds = new Set(next.map((discount) => discount.id));
+    const previousIds = new Set(previous.map((discount) => discount.id));
+    const effectiveExitDuration = motionDuration(DISCOUNT_EXIT_DURATION);
+    if (effectiveExitDuration === 0) {
+      if (discountExitTimer !== null) clearTimeout(discountExitTimer);
+      discountExitTimer = null;
+      setDiscountDecorations(next);
+      setDiscountExitIds(new Set<string>());
+      setDiscountDrawnIds(new Set(next.map((discount) => discount.id)));
+      return;
+    }
+    const oldExitIds = discountExitIds();
+    const exitingIds = new Set([...oldExitIds].filter((id) => !nextIds.has(id)));
+    const newlyExiting = previous.filter((discount) => !nextIds.has(discount.id));
+    newlyExiting.forEach((discount) => exitingIds.add(discount.id));
+    const merged = [
+      ...next,
+      ...previous.filter((discount) => !nextIds.has(discount.id)),
+    ];
+    setDiscountDecorations(merged);
+    setDiscountExitIds(exitingIds);
+
+    const drawnIds = new Set([...discountDrawnIds()].filter((id) => nextIds.has(id)));
+    const hasNewDiscount = next.some((discount) => !previousIds.has(discount.id) || oldExitIds.has(discount.id));
+    setDiscountDrawnIds(drawnIds);
+    if (hasNewDiscount) scheduleDiscountDraw();
+
+    if (newlyExiting.length > 0 && discountExitTimer === null) {
+      discountExitTimer = setTimeout(() => {
+        discountExitTimer = null;
+        const activeExitIds = discountExitIds();
+        setDiscountDecorations((items) => items.filter((discount) => !activeExitIds.has(discount.id)));
+        setDiscountExitIds(new Set<string>());
+      }, effectiveExitDuration);
+    }
+  };
 
   const refreshSeries = () => {
     const points = props.points();
@@ -734,7 +884,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     if (!plot || !container?.parentElement) {
       setLabelPositions([]);
       setPointDecorations([]);
-      setDiscountDecorations([]);
+      publishDiscountDecorations([]);
       hoveredLabelBounds = null;
       setHoveredLabelId(null);
       return;
@@ -743,7 +893,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     const over = container.querySelector<HTMLElement>(".u-over");
     if (!over) {
       setLabelPositions([]);
-      setDiscountDecorations([]);
+      publishDiscountDecorations([]);
       hoveredLabelBounds = null;
       setHoveredLabelId(null);
       return;
@@ -821,7 +971,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
          annotation: discount.annotation,
        }];
     });
-    setDiscountDecorations(discountGeometry);
+    publishDiscountDecorations(discountGeometry);
     const discountLines = discountGeometry.map((discount) => ({
       left1: discount.preLeft,
       top1: discount.top,
@@ -903,8 +1053,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   const scheduleLabelPositions = () => {
     if (labelUpdateFrame !== null) return;
     if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+      const generation = lifecycleGeneration;
       labelUpdateFrame = window.requestAnimationFrame(() => {
         labelUpdateFrame = null;
+        if (disposed || generation !== lifecycleGeneration) return;
         updateLabelPositions();
         // uPlot's first layout can complete after its constructor returns.
         // Publish another imperative-lifecycle revision after the overlay has
@@ -931,6 +1083,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   };
 
   const setConnectorHover = (id: string) => {
+    if (persistentInteraction !== null) return;
     hoveredConnectorId = id;
     hoveredIndex = null;
     clearHoveredPoint();
@@ -938,6 +1091,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   };
 
   const clearConnectorHover = (id: string) => {
+    if (persistentInteraction !== null) return;
     if (hoveredConnectorId !== id) return;
     hoveredConnectorId = null;
     setLabelHover(null);
@@ -973,6 +1127,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   };
 
   const clearDiscountEndpointHover = (id: string) => {
+    if (persistentInteraction !== null) return;
     if (hoveredDiscountEndpointId !== id) return;
     hoveredDiscountEndpointId = null;
     hoveredIndex = null;
@@ -981,7 +1136,12 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     if (plot) applyCrosshairDirections(plot, { left: null, top: null });
   };
 
-  const clearPointerInteraction = () => {
+  const clearPointerInteraction = (force = false) => {
+    if (!force && persistentInteraction !== null) return;
+    if (force) {
+      persistentInteraction = null;
+      touchCandidate = null;
+    }
     hoveredIndex = null;
     hoveredConnectorId = null;
     hoveredDiscountEndpointId = null;
@@ -990,6 +1150,20 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     clearHoveredPoint();
     props.onHover?.(null);
     if (plot) applyCrosshairDirections(plot, { left: null, top: null });
+  };
+
+  const reconcilePersistentInteraction = () => {
+    if (!persistentInteraction) return;
+    const id = persistentInteraction.id;
+    const stillPlotted = currentSeries.ids.includes(id);
+    const stillDiscounted = currentSeries.discounts.some((discount) => discount.id === id);
+    const stillFrontier = currentSeries.frontierIds.includes(id);
+    const remainsValid = persistentInteraction.kind === "discount-endpoint"
+      ? stillDiscounted
+      : persistentInteraction.kind === "crown"
+        ? stillFrontier
+        : stillPlotted;
+    if (!remainsValid) clearPointerInteraction(true);
   };
 
   const cursorPosition = (u: uPlot) => {
@@ -1397,23 +1571,23 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         focusedConnectorIndex !== null && focusedConnectorIndex >= 0 ? focusedConnectorIndex : null,
         focusedPointGroupKeys,
       );
-      if (emphasisAnimationFrame !== null && typeof window !== "undefined") {
-        window.cancelAnimationFrame(emphasisAnimationFrame);
-        emphasisAnimationFrame = null;
-      }
+      cancelEmphasisAnimation();
       const current = plot;
       const from = current.series.map((series) => series.alpha ?? 1);
       const needsAnimation = current.series.some((series, index) =>
         Math.abs((series.alpha ?? 1) - (alphas[index] ?? 1)) > 0.001,
       );
       if (!needsAnimation) return;
-      if (typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
+      if (motionDuration(EMPHASIS_TRANSITION_DURATION) === 0 || typeof window === "undefined" ||
+          typeof window.requestAnimationFrame !== "function") {
         current.series.forEach((series, index) => { series.alpha = alphas[index] ?? 1; });
         current.redraw(false, false);
       } else {
         const startedAt = performance.now();
+        const lifecycle = lifecycleGeneration;
+        const animation = emphasisAnimationGeneration;
         const animate = (timestamp: number) => {
-          if (plot !== current) return;
+          if (disposed || lifecycle !== lifecycleGeneration || animation !== emphasisAnimationGeneration || plot !== current) return;
           const progress = Math.min(1, Math.max(0, (timestamp - startedAt) / EMPHASIS_TRANSITION_DURATION));
           const eased = 1 - (1 - progress) ** 3;
           current.series.forEach((series, index) => {
@@ -1440,16 +1614,16 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     if (!container) return;
     const hoveredId = hoveredIndex === null ? null : currentSeries.ids[hoveredIndex];
     const scrollY = typeof window !== "undefined" ? window.scrollY : 0;
+    beginPlotLifecycle();
     refreshSeries();
+    reconcilePersistentInteraction();
     setPlotXSnapshot(currentSeries.x.join(","));
-    plot?.destroy();
-    if (plotAnimationFrame !== null && typeof window !== "undefined") {
-      window.cancelAnimationFrame(plotAnimationFrame);
-      plotAnimationFrame = null;
-    }
+    const oldPlot = plot;
+    plot = null;
+    oldPlot?.destroy();
     const initialData = dataFor();
     plot = new uPlot(buildOptions(), initialData, container);
-    previousPlotData = { shape: plotDataShape() };
+    previousPlotData = { data: clonePlotData(initialData), shape: plotDataShape() };
     setPlotRevision((revision) => revision + 1);
     baseSeriesAlphas = plot.series.map((series) => series.alpha ?? 1);
     applyPlotEmphasis();
@@ -1480,15 +1654,43 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         clearPointerInteraction();
       }
     };
+    const clearPersistentOnPointerDown = (event: PointerEvent) => {
+      if (isTouchLikePointer(event.pointerType)) {
+        if (persistentInteraction !== null) clearPointerInteraction(true);
+      }
+    };
+    const clearPersistentOnTouchStart = () => {
+      if (persistentInteraction !== null) clearPointerInteraction(true);
+    };
+    const clearPersistentOnTouchEnd = (event: TouchEvent) => {
+      const root = container?.parentElement;
+      if (persistentInteraction !== null && root && !root.contains(event.target as Node)) {
+        clearPointerInteraction(true);
+      }
+    };
+    const clearPersistentOnClick = (event: MouseEvent) => {
+      const root = container?.parentElement;
+      if (persistentInteraction !== null && root && !root.contains(event.target as Node)) {
+        clearPointerInteraction(true);
+      }
+    };
     document.addEventListener("pointermove", clearWhenOutside, true);
     document.addEventListener("mousemove", clearWhenOutside, true);
     document.addEventListener("pointerout", clearWhenOutside, true);
     document.addEventListener("mouseout", clearWhenOutside, true);
+    document.addEventListener("pointerdown", clearPersistentOnPointerDown, true);
+    document.addEventListener("touchstart", clearPersistentOnTouchStart, true);
+    document.addEventListener("touchend", clearPersistentOnTouchEnd, true);
+    document.addEventListener("click", clearPersistentOnClick, true);
     onCleanup(() => {
       document.removeEventListener("pointermove", clearWhenOutside, true);
       document.removeEventListener("mousemove", clearWhenOutside, true);
       document.removeEventListener("pointerout", clearWhenOutside, true);
       document.removeEventListener("mouseout", clearWhenOutside, true);
+      document.removeEventListener("pointerdown", clearPersistentOnPointerDown, true);
+      document.removeEventListener("touchstart", clearPersistentOnTouchStart, true);
+      document.removeEventListener("touchend", clearPersistentOnTouchEnd, true);
+      document.removeEventListener("click", clearPersistentOnClick, true);
     });
 
     const resize = () => {
@@ -1523,21 +1725,20 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   const animatePlotData = (nextData: uPlot.AlignedData, nextShape: PlotDataShape) => {
     if (!plot) return;
-    if (plotAnimationFrame !== null && typeof window !== "undefined") {
-      window.cancelAnimationFrame(plotAnimationFrame);
-      plotAnimationFrame = null;
-    }
+    cancelPlotAnimation();
     const fromSnapshot = previousPlotData;
-    if (fromSnapshot === null || typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
+    if (fromSnapshot === null || motionDuration(PLOT_ANIMATION_DURATION) === 0 || typeof window === "undefined" ||
+        typeof window.requestAnimationFrame !== "function") {
       plot.setData(nextData);
-      previousPlotData = { shape: nextShape };
+      previousPlotData = { data: clonePlotData(nextData), shape: nextShape };
+      updateLabelPositions();
       return;
     }
 
-    // A second toggle can arrive before the first animation completes. Use
-    // uPlot's live interpolated frame as the source so rapid toggles do not
-    // snap back to the previous destination.
-    const fromData = plot.data;
+    // A second toggle can arrive before the first animation completes. The
+    // snapshot is updated on every frame, so a canceled animation always
+    // restarts from the exact geometry currently visible on the canvas.
+    const fromData = clonePlotData(fromSnapshot.data);
     const fromShape = fromSnapshot.shape;
     const oldPathIndexes = new Map(fromShape.pathSlots.map((slot, index) => [slot, index]));
     const oldPointIndexes = new Map(fromShape.pointIds.map((id, index) => [id, index]));
@@ -1579,8 +1780,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     };
 
     const startedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
+    const lifecycle = lifecycleGeneration;
+    const animation = plotAnimationGeneration;
     const frame = (timestamp: number) => {
-      if (!plot) return;
+      if (disposed || lifecycle !== lifecycleGeneration || animation !== plotAnimationGeneration || !plot) return;
       const progress = Math.min(1, Math.max(0, (timestamp - startedAt) / PLOT_ANIMATION_DURATION));
       const eased = 1 - (1 - progress) ** 3;
       const interpolated = nextData.map((series, seriesIndex) =>
@@ -1596,12 +1799,13 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       // overlay from that same frame so labels, crowns, and connector hit
       // targets travel with the dots instead of jumping to the destination.
       updateLabelPositions();
+      previousPlotData = { data: clonePlotData(interpolated), shape: nextShape };
       setPlotRevision((revision) => revision + 1);
       if (progress < 1) {
         plotAnimationFrame = window.requestAnimationFrame(frame);
       } else {
         plotAnimationFrame = null;
-        previousPlotData = { shape: nextShape };
+        previousPlotData = { data: clonePlotData(nextData), shape: nextShape };
       }
     };
     plotAnimationFrame = window.requestAnimationFrame(frame);
@@ -1610,6 +1814,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   const applyPlotData = () => {
     const hoveredId = hoveredIndex === null ? null : currentSeries.ids[hoveredIndex];
     refreshSeries();
+    reconcilePersistentInteraction();
     setPlotXSnapshot(currentSeries.x.join(","));
     const data = dataFor();
     const shape = plotDataShape();
@@ -1643,8 +1848,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       applyPlotData();
       return;
     }
+    const generation = lifecycleGeneration;
     plotUpdateFrame = window.requestAnimationFrame(() => {
       plotUpdateFrame = null;
+      if (disposed || generation !== lifecycleGeneration) return;
       applyPlotData();
     });
   };
@@ -1658,15 +1865,15 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   );
 
   onCleanup(() => {
-    if (typeof window !== "undefined") {
-      if (plotUpdateFrame !== null) window.cancelAnimationFrame(plotUpdateFrame);
-      if (plotAnimationFrame !== null) window.cancelAnimationFrame(plotAnimationFrame);
-      if (emphasisAnimationFrame !== null) window.cancelAnimationFrame(emphasisAnimationFrame);
-      if (labelUpdateFrame !== null) window.cancelAnimationFrame(labelUpdateFrame);
-    }
-    plotUpdateFrame = null;
-    emphasisAnimationFrame = null;
-    labelUpdateFrame = null;
+    disposed = true;
+    lifecycleGeneration += 1;
+    cancelPlotUpdate();
+    cancelPlotAnimation();
+    cancelEmphasisAnimation();
+    cancelLabelUpdate();
+    cancelDiscountDraw();
+    if (discountExitTimer !== null) clearTimeout(discountExitTimer);
+    discountExitTimer = null;
   });
 
   createEffect(
@@ -1685,6 +1892,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           // A hidden label cannot remain the source of family emphasis. Clear
           // the DOM hover bounds before rebuilding the overlay so the next
           // label-enabled render starts neutral too.
+          if (persistentInteraction?.kind === "family") clearPointerInteraction(true);
           hoveredLabelBounds = null;
           setHoveredLabelId(null);
         }
@@ -1785,9 +1993,108 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     };
   });
 
+  const activatePoint = (target: HoverTarget, rawPointer?: { left: number; top: number }) => {
+    if (!plot) return;
+    clearPointerInteraction(true);
+    hoveredIndex = target.pointIndex;
+    hoveredConnectorId = null;
+    hoveredDiscountEndpointId = null;
+    setHoveredCrownId(null);
+    setHoveredLabelId(null);
+    const dot = plotPosition(target.plotLeft, target.plotTop);
+    plot.setCursor({ left: target.plotLeft, top: target.plotTop }, false);
+    applyCrosshairDirections(plot, { left: target.plotLeft, top: target.plotTop });
+    publishHoveredPosition(dot ?? null);
+    publishHoveredReadout(target, dot);
+    props.onHover?.(
+      target.id,
+      rawPointer ?? dot,
+      target.discount ? { kind: "point", discount: target.discount } : undefined,
+    );
+    persistentInteraction = { kind: "point", id: target.id };
+  };
+
+  const activateTouchTarget = (
+    targetElement: Element | null,
+    pointer: { left: number; top: number } | undefined,
+  ) => {
+    if (!plot) return;
+    const crown = targetElement?.closest("[data-testid='pareto-crown']");
+    const crownId = crown?.getAttribute("data-model-id");
+    if (crownId) {
+      clearPointerInteraction(true);
+      setHoveredCrownId(crownId);
+      persistentInteraction = { kind: "crown", id: crownId };
+      return;
+    }
+
+    const label = targetElement?.closest("[data-testid='model-label']");
+    const labelId = label?.getAttribute("data-model-id");
+    if (labelId) {
+      clearPointerInteraction(true);
+      setModelLabelHover(labelId);
+      persistentInteraction = { kind: "family", id: labelId };
+      return;
+    }
+
+    const connector = targetElement?.closest("[data-testid='family-connector-hit'], [data-testid='discount-line-hit']");
+    const connectorId = connector?.getAttribute("data-model-id") ?? connector?.getAttribute("data-discount-id");
+    if (connectorId) {
+      clearPointerInteraction(true);
+      setConnectorHover(connectorId);
+      persistentInteraction = { kind: "family", id: connectorId };
+      return;
+    }
+
+    const endpoint = targetElement?.closest("[data-testid='discount-endpoint-hit']");
+    const endpointId = endpoint?.getAttribute("data-discount-id");
+    if (endpointId) {
+      const discount = discountDecorations().find((candidate) => candidate.id === endpointId);
+      if (discount && !discountExitIds().has(discount.id)) {
+        clearPointerInteraction(true);
+        setDiscountEndpointHover(discount);
+        persistentInteraction = { kind: "discount-endpoint", id: endpointId };
+        return;
+      }
+    }
+
+    if (pointer) {
+      const target = hoveredTarget(plot, pointer);
+      if (target) {
+        activatePoint(target, plotPosition(target.plotLeft, target.plotTop));
+        return;
+      }
+    }
+    clearPointerInteraction(true);
+  };
+
+  const touchPointFromEvent = (event: TouchEvent): { left: number; top: number } | undefined => {
+    const touch = event.changedTouches[0];
+    if (!touch || !Number.isFinite(touch.clientX) || !Number.isFinite(touch.clientY)) return undefined;
+    const over = container?.querySelector<HTMLElement>(".u-over");
+    if (!over) return undefined;
+    const rect = over.getBoundingClientRect();
+    return { left: touch.clientX - rect.left, top: touch.clientY - rect.top };
+  };
+
+  const beginTouchCandidate = (left: number, top: number) => {
+    if (Number.isFinite(left) && Number.isFinite(top)) touchCandidate = { left, top };
+  };
+
+  const finishTouchCandidate = (targetElement: Element | null, left: number, top: number) => {
+    const candidate = touchCandidate;
+    touchCandidate = null;
+    if (!candidate) return;
+    if (Math.hypot(left - candidate.left, top - candidate.top) > TOUCH_TAP_MOVE_TOLERANCE) {
+      clearPointerInteraction(true);
+      return;
+    }
+    activateTouchTarget(targetElement, { left, top });
+  };
+
   /** Keep cursor state alive while labels/connectors (outside .u-over) own the pointer. */
   const handleOverlayPointerMove = (event: PointerEvent) => {
-    if (!plot) return;
+    if (!plot || persistentInteraction !== null) return;
     const over = container?.querySelector<HTMLElement>(".u-over");
     if (!over) return;
     const overRect = over.getBoundingClientRect();
@@ -1876,13 +2183,56 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     if (target) props.onSelectPoint?.(target.id);
   };
 
+  const handlePointerDown = (event: PointerEvent) => {
+    if (!isTouchLikePointer(event.pointerType)) return;
+    const over = container?.querySelector<HTMLElement>(".u-over");
+    if (!over) return;
+    const rect = over.getBoundingClientRect();
+    beginTouchCandidate(event.clientX - rect.left, event.clientY - rect.top);
+  };
+
+  const handlePointerUp = (event: PointerEvent) => {
+    if (!isTouchLikePointer(event.pointerType)) return;
+    const over = container?.querySelector<HTMLElement>(".u-over");
+    const rect = over?.getBoundingClientRect();
+    if (!rect) {
+      touchCandidate = null;
+      return;
+    }
+    finishTouchCandidate(
+      event.target instanceof Element ? event.target : null,
+      event.clientX - rect.left,
+      event.clientY - rect.top,
+    );
+  };
+
+  const handleTouchStart = (event: TouchEvent) => {
+    const point = touchPointFromEvent(event);
+    if (point) beginTouchCandidate(point.left, point.top);
+  };
+
+  const handleTouchEnd = (event: TouchEvent) => {
+    const point = touchPointFromEvent(event);
+    if (!point) {
+      touchCandidate = null;
+      return;
+    }
+    finishTouchCandidate(event.target instanceof Element ? event.target : null, point.left, point.top);
+  };
+
   return (
     <div
       class="relative w-full"
       onPointerMove={handleOverlayPointerMove}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={() => { touchCandidate = null; }}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={() => { touchCandidate = null; }}
       onClick={handleChartClick}
-      onPointerLeave={clearPointerInteraction}
-      onMouseLeave={clearPointerInteraction}
+      onPointerLeave={() => clearPointerInteraction()}
+      onMouseLeave={() => clearPointerInteraction()}
       data-hovered-label-id={hoveredLabelId() ?? undefined}
       role="group"
       aria-label={`Scatter chart of ${props.yAxisLabel()} versus ${xAxisLabelForScale(props.xAxisLabel(), props.scale())}`}
@@ -2008,20 +2358,43 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 data-discount-id={discount.id}
                 data-discount-percentage={discount.percentage}
                 data-discount-provider-role={discount.providerRole ?? "plotted"}
-                opacity={isFocusedFamilyId(discount.pointId) ? 0.75 : 0.2}
-                style={{ transition: "opacity 140ms ease-out" }}
+                opacity={discountExitIds().has(discount.id) ? 0 : isFocusedFamilyId(discount.pointId) ? 0.75 : 0.2}
+                style={{
+                  "stroke-dashoffset": discountDrawnIds().has(discount.id) ? "0" : "100%",
+                  transition: [
+                    motionTransition("opacity", EMPHASIS_TRANSITION_DURATION),
+                    motionTransition("stroke-dashoffset", PLOT_ANIMATION_DURATION),
+                  ].filter((value) => value !== "none").join(", ") || "none",
+                }}
               >
                 {/* Fixed endpoint runs leave a scale-independent open middle. */}
                 <For each={connector.segments}>
                   {(segment) => (
-                    <line
-                      x1={segment.x1}
-                      y1={discount.top}
-                      x2={segment.x2}
-                      y2={discount.top}
-                      data-testid="discount-line-segment"
-                      data-discount-part="segment"
-                    />
+                    <>
+                      <line
+                        x1={segment.x1}
+                        y1={discount.top}
+                        x2={segment.x2}
+                        y2={discount.top}
+                        opacity={discountDrawnIds().has(discount.id) ? 1 : 0}
+                        style={{ transition: discountRevealVisibilityTransition() }}
+                        data-testid="discount-line-segment"
+                        data-discount-part="segment"
+                      />
+                      <line
+                        x1={segment.x1}
+                        y1={discount.top}
+                        x2={segment.x2}
+                        y2={discount.top}
+                        pathLength="1"
+                        stroke-dasharray="1"
+                        stroke-dashoffset={discountDrawnIds().has(discount.id) ? "0" : "1"}
+                        opacity={discountDrawnIds().has(discount.id) ? 0 : 1}
+                        style={{ transition: discountRevealTransition() }}
+                        data-testid="discount-line-reveal"
+                        data-discount-part="reveal"
+                      />
+                    </>
                   )}
                 </For>
                 <Show when={bridge}>
@@ -2034,7 +2407,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                       x2={geometry().x2}
                       y2={discount.top}
                       stroke-opacity={linked() ? "1" : "0"}
-                      style={{ transition: `stroke-opacity ${DISCOUNT_BRIDGE_TRANSITION}` }}
+                      style={{ transition: motionTransition("stroke-opacity", PLOT_ANIMATION_DURATION) }}
                       data-testid="discount-line-bridge"
                       data-discount-part="bridge"
                     />
@@ -2076,11 +2449,15 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                   stroke={discount.color}
                   stroke-width={POINT_STROKE_WIDTH}
                   stroke-dasharray="none"
+                  stroke-dashoffset="0"
                   data-testid="discount-endpoint-dot"
                   data-discount-endpoint="pre"
                   style={{
                     "pointer-events": "none",
-                    transition: "cx 180ms ease-out, cy 180ms ease-out",
+                    transition: [
+                      motionTransition("cx", PLOT_ANIMATION_DURATION),
+                      motionTransition("cy", PLOT_ANIMATION_DURATION),
+                    ].filter((value) => value !== "none").join(", ") || "none",
                   }}
                 />
               </g>
@@ -2094,39 +2471,48 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         {(discount) => {
           const segment = trimDiscountSegment(discount.preLeft, discount.effectiveLeft);
           return (
-            <>
-              {segment && (
+            <Show when={!discountExitIds().has(discount.id)}>
+              <>
+                {segment && (
+                  <span
+                    class="pointer-events-auto absolute z-2"
+                    style={{
+                      left: `${Math.min(segment.x1, segment.x2)}px`,
+                      top: `${discount.top - DISCOUNT_HIT_RADIUS}px`,
+                      width: `${Math.abs(segment.x2 - segment.x1)}px`,
+                      height: `${DISCOUNT_HIT_RADIUS * 2}px`,
+                      transition: [
+                        motionTransition("left", PLOT_ANIMATION_DURATION),
+                        motionTransition("top", PLOT_ANIMATION_DURATION),
+                        motionTransition("width", PLOT_ANIMATION_DURATION),
+                      ].filter((value) => value !== "none").join(", ") || "none",
+                    }}
+                    data-testid="discount-line-hit"
+                    data-discount-id={discount.id}
+                    onMouseEnter={() => setConnectorHover(discount.pointId)}
+                    onMouseLeave={() => clearConnectorHover(discount.pointId)}
+                  />
+                )}
                 <span
-                  class="pointer-events-auto absolute z-2"
+                  class="pointer-events-auto absolute z-3"
                   style={{
-                    left: `${Math.min(segment.x1, segment.x2)}px`,
-                    top: `${discount.top - DISCOUNT_HIT_RADIUS}px`,
-                    width: `${Math.abs(segment.x2 - segment.x1)}px`,
-                    height: `${DISCOUNT_HIT_RADIUS * 2}px`,
-                    transition: "left 180ms ease-out, top 180ms ease-out, width 180ms ease-out",
+                    left: `${discount.preLeft - DOT_HIT_RADIUS}px`,
+                    top: `${discount.top - DOT_HIT_RADIUS}px`,
+                    width: `${DOT_HIT_RADIUS * 2}px`,
+                    height: `${DOT_HIT_RADIUS * 2}px`,
+                    transition: [
+                      motionTransition("left", PLOT_ANIMATION_DURATION),
+                      motionTransition("top", PLOT_ANIMATION_DURATION),
+                    ].filter((value) => value !== "none").join(", ") || "none",
                   }}
-                  data-testid="discount-line-hit"
+                  data-testid="discount-endpoint-hit"
                   data-discount-id={discount.id}
-                  onMouseEnter={() => setConnectorHover(discount.pointId)}
-                  onMouseLeave={() => clearConnectorHover(discount.pointId)}
+                  data-discount-endpoint="pre"
+                  onMouseEnter={() => setDiscountEndpointHover(discount)}
+                  onMouseLeave={() => clearDiscountEndpointHover(`${discount.id}:pre`)}
                 />
-              )}
-              <span
-                class="pointer-events-auto absolute z-3"
-                style={{
-                  left: `${discount.preLeft - DOT_HIT_RADIUS}px`,
-                  top: `${discount.top - DOT_HIT_RADIUS}px`,
-                  width: `${DOT_HIT_RADIUS * 2}px`,
-                  height: `${DOT_HIT_RADIUS * 2}px`,
-                  transition: "left 180ms ease-out, top 180ms ease-out",
-                }}
-                data-testid="discount-endpoint-hit"
-                data-discount-id={discount.id}
-                data-discount-endpoint="pre"
-                onMouseEnter={() => setDiscountEndpointHover(discount)}
-                onMouseLeave={() => clearDiscountEndpointHover(`${discount.id}:pre`)}
-              />
-            </>
+              </>
+            </Show>
           );
         }}
       </For>
@@ -2143,24 +2529,35 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 top: `${point.top - 27}px`,
                 color: themeStyles().textColor,
                 opacity: isFocusedFamilyId(point.id) ? 1 : 0.2,
-                transition: "left 180ms ease-out, top 180ms ease-out, opacity 140ms ease-out",
+                transition: [
+                  motionTransition("left", PLOT_ANIMATION_DURATION),
+                  motionTransition("top", PLOT_ANIMATION_DURATION),
+                  motionTransition("opacity", EMPHASIS_TRANSITION_DURATION),
+                ].filter((value) => value !== "none").join(", ") || "none",
               }}
               role="img"
               aria-label={description}
               tabIndex="0"
               onMouseEnter={() => {
+                if (persistentInteraction !== null) return;
                 // Crown hit targets sit above the plot, so the underlying
                 // uPlot surface cannot clear a dot hover when the pointer
                 // moves upward into the crown.
                 clearPointerInteraction();
                 setHoveredCrownId(point.id);
               }}
-              onMouseLeave={() => setHoveredCrownId(null)}
+              onMouseLeave={() => {
+                if (persistentInteraction?.kind === "crown" && persistentInteraction.id === point.id) return;
+                setHoveredCrownId(null);
+              }}
               onFocus={() => {
                 clearPointerInteraction();
                 setHoveredCrownId(point.id);
               }}
-              onBlur={() => setHoveredCrownId(null)}
+              onBlur={() => {
+                if (persistentInteraction?.kind === "crown" && persistentInteraction.id === point.id) return;
+                setHoveredCrownId(null);
+              }}
               data-testid="pareto-crown"
               data-model-id={point.id}
             >
@@ -2214,7 +2611,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                   stroke={themeStyles().leaderColor}
                   stroke-opacity={isFocusedFamilyId(label.id) ? "0.5" : "0.1"}
                   stroke-width="0.75"
-                  style={{ transition: "stroke-opacity 140ms ease-out" }}
+                  style={{ transition: motionTransition("stroke-opacity", EMPHASIS_TRANSITION_DURATION) }}
                   data-testid="model-label-leader"
                 />
               );
@@ -2224,7 +2621,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         <For each={labelPositions()}>
           {(label) => (
             <span
-              class="pointer-events-none absolute z-1 cursor-default whitespace-nowrap rounded bg-base-100/80 px-1 text-left text-xs leading-5 shadow-sm"
+              class="pointer-events-auto absolute z-1 cursor-default whitespace-nowrap rounded bg-base-100/80 px-1 text-left text-xs leading-5 shadow-sm"
               style={{
                 left: `${label.left}px`,
                 top: `${label.top}px`,
@@ -2236,7 +2633,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 opacity: isFocusedFamilyId(label.id) ? 1 : 0.2,
                 "font-size": `${LABEL_MAIN_FONT_SIZE}px`,
                 "line-height": `${MODEL_LABEL_LINE_HEIGHT}px`,
-                transition: "opacity 140ms ease-out",
+                transition: motionTransition("opacity", EMPHASIS_TRANSITION_DURATION),
               }}
               data-testid="model-label"
               data-model-id={label.id}

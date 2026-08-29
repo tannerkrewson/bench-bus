@@ -160,6 +160,16 @@ function chartRect(width: number, height: number) {
   return { x: 0, y: 0, left: 0, top: 0, right: width, bottom: height, width, height } as DOMRect;
 }
 
+function touchPointerEvent(type: string, clientX: number, clientY: number): Event {
+  const event = new Event(type, { bubbles: true });
+  Object.defineProperties(event, {
+    clientX: { configurable: true, value: clientX },
+    clientY: { configurable: true, value: clientY },
+    pointerType: { configurable: true, value: "touch" },
+  });
+  return event;
+}
+
 /** Give the overlay a real plot box; jsdom otherwise reports zero dimensions. */
 function mountSizedChart(ui: () => JSX.Element) {
   const widthDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientWidth");
@@ -423,9 +433,12 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect(arrows[0]?.getAttribute("data-discount-id")).toBe("discounted-model");
     expect(arrows[0]?.getAttribute("data-discount-percentage")).toBe("40");
     expect(arrows[0]?.querySelectorAll("[data-discount-part='segment']")).toHaveLength(2);
+    expect(arrows[0]?.querySelectorAll("[data-testid='discount-line-reveal']")).toHaveLength(2);
+    expect(arrows[0]?.querySelector("[data-testid='discount-line-reveal']")?.getAttribute("pathLength")).toBe("1");
     expect(arrows[0]?.querySelector("[data-discount-part='arrowhead']")).not.toBeNull();
     expect(arrows[0]?.querySelector("[data-discount-part='tick']")).not.toBeNull();
     expect(arrows[0]?.getAttribute("stroke-dasharray")).toBe("0.1 5");
+    expect((arrows[0] as SVGGElement).style.transition).toContain("stroke-dashoffset");
     expect(container.querySelectorAll("[data-testid='focused-discount-dot']")).toHaveLength(0);
     expect(container.querySelectorAll("[data-testid='discount-endpoint-dot'][data-discount-endpoint='pre']")).toHaveLength(1);
     expect(container.querySelectorAll("[data-testid='discount-endpoint-dot'] circle")).toHaveLength(0);
@@ -453,6 +466,10 @@ describe("BenchmarkScatterChart discount annotations", () => {
     setPoints([initialPoints[1]!]);
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(container.querySelectorAll("[data-testid='discount-line']")).toHaveLength(1);
+    expect(container.querySelector("[data-testid='discount-line']")?.getAttribute("opacity")).toBe("0");
+    expect(container.querySelectorAll("[data-testid='discount-line-hit']")).toHaveLength(0);
+    await new Promise((resolve) => setTimeout(resolve, 200));
     expect(container.querySelectorAll("[data-testid='discount-line']")).toHaveLength(0);
     dispose();
   });
@@ -707,6 +724,42 @@ describe("BenchmarkScatterChart discount annotations", () => {
     requestFrame.mockRestore();
   });
 
+  it("cancels an in-flight transition before it can paint stale geometry", async () => {
+    const [points, setPoints] = createSignal<readonly PlottablePoint[]>([
+      { id: "first", label: "First", x: 4, y: 60, effortGroup: "family", effort: "low" },
+      { id: "second", label: "Second", x: 8, y: 70, effortGroup: "family", effort: "high" },
+    ]);
+    const { container, dispose } = mountSizedChart(() => (
+      <BenchmarkScatterChart
+        points={points}
+        scale={() => "linear"}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        height={320}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+    setPoints([
+      { id: "first", label: "First", x: 8, y: 60, effortGroup: "family", effort: "low" },
+      { id: "second", label: "Second", x: 12, y: 70, effortGroup: "family", effort: "high" },
+    ]);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    setPoints([
+      { id: "first", label: "First", x: 16, y: 60, effortGroup: "family", effort: "low" },
+      { id: "second", label: "Second", x: 20, y: 70, effortGroup: "family", effort: "high" },
+    ]);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise((resolve) => setTimeout(resolve, 240));
+    const connector = container.querySelector<SVGLineElement>("[data-testid='family-connector-hit']")!;
+    const settled = ["x1", "y1", "x2", "y2"].map((name) => connector.getAttribute(name));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(["x1", "y1", "x2", "y2"].map((name) => connector.getAttribute(name))).toEqual(settled);
+    expect(container.querySelector<HTMLElement>("[data-testid='benchmark-scatter-plot']")?.dataset.plotX).toBe("16,20");
+    dispose();
+  });
+
   it("animates shared overlays when a token-rate update removes a model", async () => {
     const [points, setPoints] = createSignal<readonly PlottablePoint[]>([
       { id: "first", label: "Model", x: 4, y: 60 },
@@ -897,6 +950,130 @@ describe("BenchmarkScatterChart discount annotations", () => {
     dispose();
   });
 
+  it("keeps a touch-tapped label emphasized until another site tap", async () => {
+    const { container, dispose } = mountSizedChart(() => (
+      <BenchmarkScatterChart
+        points={() => [
+          { id: "opus-low", label: "Opus 5 low", x: 4, y: 60, effortGroup: "opus-5", effort: "low" },
+          { id: "opus-high", label: "Opus 5 high", x: 6, y: 70, effortGroup: "opus-5", effort: "high" },
+          { id: "other", label: "Other", x: 12, y: 80 },
+        ]}
+        scale={() => "linear"}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        height={320}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const label = container.querySelector<HTMLElement>("[data-testid='model-label'][data-model-id='opus-high']")!;
+    const other = container.querySelector<HTMLElement>("[data-testid='model-label'][data-model-id='other']")!;
+    const left = Number.parseFloat(label.style.left) + 2;
+    const top = Number.parseFloat(label.style.top) + 2;
+    label.dispatchEvent(touchPointerEvent("pointerdown", left, top));
+    label.dispatchEvent(touchPointerEvent("pointerup", left, top));
+    expect(container.querySelector("[data-hovered-label-id='opus-high']")).not.toBeNull();
+    expect(other.style.opacity).toBe("0.2");
+
+    const root = container.querySelector<HTMLElement>("[data-testid='benchmark-scatter']")!;
+    root.dispatchEvent(touchPointerEvent("pointermove", 300, 300));
+    expect(container.querySelector("[data-hovered-label-id='opus-high']")).not.toBeNull();
+    expect(other.style.opacity).toBe("0.2");
+
+    document.body.dispatchEvent(touchPointerEvent("pointerdown", 1, 1));
+    expect(container.querySelector("[data-hovered-label-id]")).toBeNull();
+    expect(other.style.opacity).toBe("1");
+
+    const connector = container.querySelector<SVGLineElement>("[data-testid='family-connector-hit']")!;
+    connector.dispatchEvent(touchPointerEvent("pointerdown", 100, 100));
+    connector.dispatchEvent(touchPointerEvent("pointerup", 100, 100));
+    expect(container.querySelector("[data-hovered-label-id='opus-high']")).not.toBeNull();
+    expect(other.style.opacity).toBe("0.2");
+    document.body.dispatchEvent(touchPointerEvent("pointerdown", 1, 1));
+    expect(container.querySelector("[data-hovered-label-id]")).toBeNull();
+    dispose();
+  });
+
+  it("keeps a touch-tapped discount endpoint active until an outside tap", async () => {
+    const onHover = vi.fn();
+    const { container, dispose } = mountSizedChart(() => (
+      <BenchmarkScatterChart
+        points={() => [{
+          id: "discounted",
+          label: "Discounted",
+          x: 6,
+          y: 70,
+          discount: { percentage: 40, preDiscountX: 10 },
+        }]}
+        scale={() => "linear"}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        onHover={onHover}
+        height={320}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const endpoint = container.querySelector<HTMLElement>("[data-testid='discount-endpoint-hit']")!;
+    const left = Number.parseFloat(endpoint.style.left) + 8;
+    const top = Number.parseFloat(endpoint.style.top) + 8;
+    endpoint.dispatchEvent(touchPointerEvent("pointerdown", left, top));
+    endpoint.dispatchEvent(touchPointerEvent("pointerup", left, top));
+    expect(container.querySelector("[data-testid='hovered-dot']")).not.toBeNull();
+    expect(onHover).toHaveBeenLastCalledWith(
+      "discounted",
+      expect.anything(),
+      { kind: "discount-endpoint", discount: { percentage: 40, preDiscountX: 10 } },
+    );
+
+    container.querySelector<HTMLElement>("[data-testid='benchmark-scatter']")!
+      .dispatchEvent(touchPointerEvent("pointermove", 400, 280));
+    expect(container.querySelector("[data-testid='hovered-dot']")).not.toBeNull();
+    document.body.dispatchEvent(touchPointerEvent("pointerdown", 1, 1));
+    expect(container.querySelector("[data-testid='hovered-dot']")).toBeNull();
+    dispose();
+  });
+
+  it("uses immediate chart updates when reduced motion is preferred", async () => {
+    const matchMedia = vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+      matches: query === "(prefers-reduced-motion: reduce)",
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList);
+    const [points, setPoints] = createSignal<readonly PlottablePoint[]>([
+      { id: "first", label: "First", x: 4, y: 60, discount: { percentage: 20, preDiscountX: 8 } },
+    ]);
+    let dispose = () => {};
+    try {
+      const mounted = mountSizedChart(() => (
+        <BenchmarkScatterChart
+          points={points}
+          scale={() => "linear"}
+          xAxisLabel={() => "Cost"}
+          yAxisLabel={() => "Score"}
+          height={320}
+        />
+      ));
+      dispose = mounted.dispose;
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      const line = mounted.container.querySelector<SVGGElement>("[data-testid='discount-line']")!;
+      expect(line.style.transition).toBe("none");
+      expect(line.style.strokeDashoffset).toBe("0");
+      setPoints([{ id: "first", label: "First", x: 12, y: 70 }]);
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      expect(mounted.container.querySelector("[data-testid='discount-line']")).toBeNull();
+    } finally {
+      dispose();
+      matchMedia.mockRestore();
+    }
+  });
+
   it("keeps guides hidden for raw pointer and label movement until a dot is hit", async () => {
     const { container, dispose } = mountSizedChart(() => (
       <BenchmarkScatterChart
@@ -1073,6 +1250,9 @@ describe("BenchmarkScatterChart discount annotations", () => {
     setShowDiscounts(false);
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(container.querySelectorAll("[data-testid='discount-line']")).toHaveLength(1);
+    expect(container.querySelector("[data-testid='discount-line']")?.getAttribute("opacity")).toBe("0");
+    await new Promise((resolve) => setTimeout(resolve, 200));
     expect(container.querySelectorAll("[data-testid='discount-line']")).toHaveLength(0);
     dispose();
   });
