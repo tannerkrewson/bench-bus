@@ -49,6 +49,23 @@ function normalizeDisplayName(value: string): string {
   return removeVendorPrefix(normalized);
 }
 
+/**
+ * AA and OpenRouter use different April release markers for the legacy V4
+ * models. Keep the product-facing marker consistent while leaving the later
+ * 0731 and 0813 releases untouched.
+ */
+function normalizeDeepSeekRelease(value: string, id?: string): string {
+  const haystack = `${value} ${id ?? ""}`;
+  const isDeepSeekV4 =
+    /\bdeepseek\b.*\bv4\b.*\b(?:flash|pro)\b/i.test(value) ||
+    /(?:^|\/)deepseek-v4-(?:flash|pro)(?:-|$)/i.test(id ?? "");
+  if (!isDeepSeekV4) return value;
+  if (/\b(?:0423|0731|0813)\b/i.test(haystack) || /(?:^|\/)deepseek-v4-(?:flash|pro)$/i.test(id ?? "")) {
+    return value;
+  }
+  return `${value.replace(/\s+\b(?:0420|0424)\b/gi, "").trim()} 0423`;
+}
+
 function splitModelName(label: string): { base: string; effort?: ModelEffort } {
   const normalized = normalizeWhitespace(label);
   const withoutNonReasoning = normalized.replace(NON_REASONING_PATTERN, "");
@@ -71,7 +88,7 @@ function effortFromId(id: string | undefined): ModelEffort | undefined {
 /** Stable URL-safe family key, independent of effort and source benchmark. */
 export function modelGroupKey(label: string, id?: string): string {
   const parsed = splitModelName(label);
-  const source = parsed.base || normalizeDisplayName(id ?? "") || "unknown-model";
+  const source = normalizeDeepSeekRelease(parsed.base, id) || normalizeDisplayName(id ?? "") || "unknown-model";
   return source
     .toLocaleLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
@@ -86,10 +103,11 @@ export function modelGroupKey(label: string, id?: string): string {
 export function modelDisplayMetadata(label: string, id?: string): ModelDisplayMetadata {
   const parsed = splitModelName(label);
   const effort = parsed.effort ?? effortFromId(id);
-  const display = normalizeWhitespace(effort ? `${parsed.base} ${effort}` : parsed.base);
+  const base = normalizeDeepSeekRelease(parsed.base, id);
+  const display = normalizeWhitespace(effort ? `${base} ${effort}` : base);
   return {
     label: display,
-    groupKey: modelGroupKey(parsed.base, id),
+    groupKey: modelGroupKey(base, id),
     ...(effort ? { effort } : {}),
   };
 }

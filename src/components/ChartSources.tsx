@@ -20,7 +20,7 @@ export default function ChartSources(props: ChartSourcesProps) {
         aria-labelledby={titleId}
         data-testid="chart-sources"
       >
-        <h3 id={titleId} class="font-medium text-base-content">Sources</h3>
+        <h3 id={titleId} class="font-medium text-base-content">Sources:</h3>
         <ul class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
           <For each={links()}>
             {(link) => (

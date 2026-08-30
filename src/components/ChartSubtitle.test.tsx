@@ -48,6 +48,7 @@ describe("ChartSubtitleContent", () => {
     ] as const;
     const { container, dispose } = mount(() => <ChartSources benchmarkId="test" content={content} />);
 
+    expect(container.querySelector("[data-testid='chart-sources'] h3")?.textContent).toBe("Sources:");
     const sourceLinks = [...container.querySelectorAll<HTMLAnchorElement>("[data-testid='chart-sources'] a")];
     expect(sourceLinks.map((link) => link.textContent)).toEqual(["Artificial Analysis", "OpenRouter"]);
     expect(sourceLinks.map((link) => link.href)).toEqual([

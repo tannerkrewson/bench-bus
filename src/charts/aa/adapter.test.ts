@@ -117,6 +117,19 @@ describe("aaAdapter.computePoint", () => {
     expect(deepSeekPoint.label).not.toMatch(/[()]/);
   });
 
+  it("adds the legacy DeepSeek release marker to concise selector labels", () => {
+    const point = aaAdapter.computePoint({
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug: "deepseek-v4-flash-0420",
+      name: "DeepSeek V4 Flash",
+    }, controls)!;
+    expect(point).toMatchObject({
+      label: "DeepSeek v4 Flash 0423",
+      selectionLabel: "DeepSeek v4 Flash 0423",
+      effortGroup: "deepseek-v4-flash-0423",
+    });
+  });
+
   it("uses the documented DeepSeek V4 Pro 0813 peak rates as raw listed prices", () => {
     const record = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
@@ -388,15 +401,10 @@ describe("aa tooltips and metadata", () => {
 });
 
 describe("aaAdapter subtitle", () => {
-  it("uses the concise linked subtitle contract", () => {
-    expect(aaAdapter.subtitle).toEqual([
-      { label: "Artificial Analysis", href: "https://artificialanalysis.ai/" },
-      " shows standard model pricing, but models can have discounts and cheaper providers on ",
-      { label: "OpenRouter", href: "https://openrouter.ai/" },
-      ". This chart uses the latest prices and discounts from ",
-      { label: "OpenRouter", href: "https://openrouter.ai/" },
-      " to find the real models on the Pareto frontier.\nNote, some open models, mainly DeepSeek, can swing wildly in price by the hour around Chinese business hours and weekends, but Bench Bus automatically updates multiple times per day.",
-    ]);
+  it("uses the requested concise methodology copy", () => {
+    expect(aaAdapter.subtitle).toBe(
+      "This chart uses the latest prices and discounts from OpenRouter to find the real models on the Pareto frontier, updated multiple times per day, as some prices change around weekends and Chinese working hours",
+    );
   });
 
   it("exposes verified source links independently from subtitle copy", () => {

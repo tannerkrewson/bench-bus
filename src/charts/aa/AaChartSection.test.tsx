@@ -8,7 +8,7 @@ import { chartStateFromParams, chartStateToParams } from "../urlState";
 import { aaAdapter } from "./adapter";
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
 
-const AA_SUBTITLE = "Artificial Analysis shows standard model pricing, but models can have discounts and cheaper providers on OpenRouter. This chart uses the latest prices and discounts from OpenRouter to find the real models on the Pareto frontier.\nNote, some open models, mainly DeepSeek, can swing wildly in price by the hour around Chinese business hours and weekends, but Bench Bus automatically updates multiple times per day.";
+const AA_SUBTITLE = "This chart uses the latest prices and discounts from OpenRouter to find the real models on the Pareto frontier, updated multiple times per day, as some prices change around weekends and Chinese working hours";
 
 function mount(ui: () => JSX.Element) {
   const container = document.createElement("div");
@@ -33,14 +33,11 @@ describe("AaChartSection", () => {
     expect(subtitle.textContent).toBe(AA_SUBTITLE);
     expect(subtitle.classList.contains("whitespace-pre-line")).toBe(true);
     const links = [...subtitle.querySelectorAll<HTMLAnchorElement>("a")];
-    expect(links.map((link) => link.textContent)).toEqual(["Artificial Analysis", "OpenRouter", "OpenRouter"]);
+    expect(links).toHaveLength(0);
     links.forEach((link) => {
       expect(link.target).toBe("_blank");
       expect(link.rel).toBe("noopener noreferrer");
     });
-    expect(links[0]?.href).toBe("https://artificialanalysis.ai/");
-    expect(links[1]?.href).toBe("https://openrouter.ai/");
-    expect(links[2]?.href).toBe("https://openrouter.ai/");
     expect(container.textContent).not.toContain("Intelligence Index score versus estimated benchmark workload cost per task.");
     expect(container.querySelector("canvas")).not.toBeNull();
     expect(
@@ -147,10 +144,10 @@ describe("AaChartSection", () => {
     expect(endpoint).not.toBeNull();
     endpoint?.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
     const tooltip = container.querySelector("[data-testid='chart-tooltip']");
-    expect(tooltip?.textContent).toContain("GPT-5.6 Sol high - 50% off");
+    expect(tooltip?.textContent).toContain("GPT-5.6 Sol high (50% off)");
     expect(tooltip?.textContent).toContain("$184.93 * (1 - 50%) = $92.47");
-    expect(tooltip?.textContent).toContain("Provider: Provider A");
-    expect(tooltip?.textContent).toContain("Source provider discount from Provider A");
+    expect(tooltip?.textContent).toContain("Provider A");
+    expect(tooltip?.textContent).not.toContain("Source provider discount from Provider A");
     dispose();
   });
 

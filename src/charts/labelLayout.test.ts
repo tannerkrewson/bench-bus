@@ -56,6 +56,29 @@ describe("layoutModelLabels", () => {
     expect(width).toBeLessThan(anchor.label.length * LABEL_MAIN_FONT_SIZE);
   });
 
+  it("keeps the model name when a discount suffix cannot fit", () => {
+    const [label] = layoutModelLabels(
+      [{
+        id: "mimo",
+        label: "MiMo-v2.5 (75% off)",
+        mainLabel: "MiMo-v2.5",
+        discountLabel: "(75% off)",
+        accessibleLabel: "MiMo-v2.5 (75% off)",
+        anchorLeft: 50,
+        anchorTop: 50,
+        color: "red",
+      }],
+      { left: 10, top: 10, right: 100, bottom: 100 },
+    );
+
+    expect(label).toMatchObject({
+      label: "MiMo-v2.5",
+      mainLabel: "MiMo-v2.5",
+      accessibleLabel: "MiMo-v2.5 (75% off)",
+    });
+    expect(label?.discountLabel).toBeUndefined();
+  });
+
   it("keeps ordinary labels safe with the conservative main-font fallback", () => {
     const anchor = {
       id: "terra",
@@ -157,6 +180,26 @@ describe("layoutModelLabels", () => {
     );
     expect(label).toBeDefined();
     expect(label!.top + label!.height < 94 || label!.top > 106).toBe(true);
+  });
+
+  it("keeps a dense-chart model name visible when only its leader is blocked", () => {
+    const labels = layoutModelLabels(
+      [
+        { id: "grok", label: "Grok 4.6", anchorLeft: 150, anchorTop: 100, color: "red" },
+        { id: "neighbor", label: "Neighbor", anchorLeft: 220, anchorTop: 100, color: "blue" },
+      ],
+      bounds,
+      {
+        obstacles: [
+          { id: "grok", left: 150, top: 100 },
+          { id: "neighbor", left: 220, top: 100 },
+          { id: "leader-blocker", left: 120, top: 100 },
+        ],
+        leaderObstacles: [{ id: "leader-blocker", left: 120, top: 100 }],
+      },
+    );
+
+    expect(labels.find((label) => label.id === "grok")).toBeDefined();
   });
 
   it("keeps labels clear of larger crown obstacles", () => {

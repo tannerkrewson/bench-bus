@@ -514,6 +514,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   let persistentInteraction: PersistentInteraction | null = null;
   let touchCandidate: { left: number; top: number } | null = null;
   let discountDrawTimer: ReturnType<typeof setTimeout> | null = null;
+  let discountDrawFrame: number | null = null;
   let discountExitTimer: ReturnType<typeof setTimeout> | null = null;
 
   const clonePlotData = (data: uPlot.AlignedData): uPlot.AlignedData =>
@@ -554,6 +555,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       clearTimeout(discountDrawTimer);
     }
     discountDrawTimer = null;
+    if (discountDrawFrame !== null && typeof window !== "undefined") {
+      window.cancelAnimationFrame(discountDrawFrame);
+    }
+    discountDrawFrame = null;
   };
 
   const beginPlotLifecycle = () => {
@@ -566,21 +571,34 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   };
 
   const scheduleDiscountDraw = () => {
-    if (discountDrawTimer !== null) return;
+    if (discountDrawTimer !== null || discountDrawFrame !== null) return;
     if (prefersReducedMotion()) {
       setDiscountDrawnIds(new Set(discountDecorations().map((discount) => discount.id)));
       return;
     }
     const generation = lifecycleGeneration;
-    discountDrawTimer = setTimeout(() => {
-      discountDrawTimer = null;
+    const publish = () => {
       if (disposed || generation !== lifecycleGeneration) return;
       setDiscountDrawnIds(new Set(
         discountDecorations()
           .filter((discount) => !discountExitIds().has(discount.id))
           .map((discount) => discount.id),
       ));
-    }, 0);
+    };
+    // Give the hidden stroke one painted frame before revealing it. A zero-delay
+    // timer can run before the browser paints the newly mounted SVG, which
+    // turns the intended draw animation into an opacity swap.
+    if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+      discountDrawFrame = window.requestAnimationFrame(() => {
+        discountDrawFrame = null;
+        publish();
+      });
+    } else {
+      discountDrawTimer = setTimeout(() => {
+        discountDrawTimer = null;
+        publish();
+      }, 0);
+    }
   };
 
   /** Keep removed discount geometry mounted long enough for its arrow to fade. */
@@ -2421,6 +2439,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                       connector.arrowhead.wingX,
                     )}
                     stroke-dasharray="none"
+                    opacity={linked() ? 0 : 1}
+                    style={{ transition: motionTransition("opacity", EMPHASIS_TRANSITION_DURATION) }}
                     data-testid="discount-line-arrowhead"
                     data-discount-part="arrowhead"
                   />
@@ -2433,6 +2453,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                       connector.tick.x + connector.tick.halfHeight,
                     )}
                     stroke-dasharray="none"
+                    opacity={linked() ? 0 : 1}
+                    style={{ transition: motionTransition("opacity", EMPHASIS_TRANSITION_DURATION) }}
                     data-testid="discount-line-tick"
                     data-discount-part="tick"
                   />

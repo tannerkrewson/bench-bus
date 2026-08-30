@@ -229,14 +229,7 @@ function explicitProviderDiscounts(
 export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
   benchmarkId: AA_BENCHMARK_ID,
   title: "Best value models on OpenRouter",
-  subtitle: [
-    { label: "Artificial Analysis", href: "https://artificialanalysis.ai/" },
-    " shows standard model pricing, but models can have discounts and cheaper providers on ",
-    { label: "OpenRouter", href: "https://openrouter.ai/" },
-    ". This chart uses the latest prices and discounts from ",
-    { label: "OpenRouter", href: "https://openrouter.ai/" },
-    " to find the real models on the Pareto frontier.\nNote, some open models, mainly DeepSeek, can swing wildly in price by the hour around Chinese business hours and weekends, but Bench Bus automatically updates multiple times per day.",
-  ],
+  subtitle: "This chart uses the latest prices and discounts from OpenRouter to find the real models on the Pareto frontier, updated multiple times per day, as some prices change around weekends and Chinese working hours",
   sourceLinks: [
     { label: "Artificial Analysis", href: "https://artificialanalysis.ai/" },
     { label: "OpenRouter", href: "https://openrouter.ai/" },
@@ -288,7 +281,7 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
       label: metadata.label,
       // Preserve existing concise source names, but never leak verbose
       // parenthetical metadata into selector names.
-      selectionLabel: record.name.includes("(") ? metadata.label : record.name,
+      selectionLabel: record.name.includes("(") || metadata.label.endsWith(" 0423") ? metadata.label : record.name,
       brand: inferModelBrand(record.name, record.slug),
       effortGroup: metadata.groupKey,
       ...(metadata.effort ? { effort: metadata.effort } : {}),

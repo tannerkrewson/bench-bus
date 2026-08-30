@@ -64,11 +64,10 @@ describe("discount presentation", () => {
       undiscountedModelId: "meta/muse-spark-1.2",
     };
     expect(discountSummaryLines({ x: point.x }, discount)).toEqual([
-      { label: "Discount math", value: "$7.00 * (1 - 43.4%) = $4.00" },
-      { label: "Provider", value: "Provider: OpenRouter" },
-      { label: "Why", value: "Contributor model collects your data" },
+      { label: "Discount", value: "$7.00 * (1 - 43.4%) = $4.00" },
+      { label: "Provider", value: "OpenRouter" },
     ]);
-    expect(discountHoverTitle(point, discount)).toBe("Muse Spark 1.2 - 43% off · Provider: OpenRouter");
+    expect(discountHoverTitle(point, discount)).toBe("Muse Spark 1.2 (43% off)");
     expect(discountMath(point, discount)).toBe("$7.00 * (1 - 43.4%) = $4.00");
     expect(discountDetailLines(point, discount).map((line) => line.label)).toEqual([
       "Discount",
@@ -90,10 +89,10 @@ describe("discount presentation", () => {
       plottedProviderName: "Winning Provider",
     };
     expect(discountProviderSummary(discount)).toBe(
-      "Discounted/pre-discount provider: Discounted Provider; plotted provider: Winning Provider",
+      "Discounted provider: Discounted Provider; plotted provider: Winning Provider",
     );
     expect(discountHoverTitle({ label: "Model", x: 6 }, discount)).toContain(
-      "Model - 50% off · Discounted/pre-discount provider: Discounted Provider; plotted provider: Winning Provider",
+      "Model (50% off)",
     );
   });
 });

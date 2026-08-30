@@ -30,6 +30,22 @@ describe("modelDisplayMetadata", () => {
     });
   });
 
+  it("marks legacy DeepSeek V4 releases as 0423 without changing later releases", () => {
+    expect(modelDisplayMetadata("DeepSeek V4 Flash (Reasoning, Max Effort)", "deepseek-v4-flash-0420")).toEqual({
+      label: "DeepSeek v4 Flash 0423 max",
+      groupKey: "deepseek-v4-flash-0423",
+      effort: "max",
+    });
+    expect(modelDisplayMetadata("DeepSeek V4 Pro 0424", "deepseek-v4-pro-0424")).toMatchObject({
+      label: "DeepSeek v4 Pro 0423",
+      groupKey: "deepseek-v4-pro-0423",
+    });
+    expect(modelDisplayMetadata("DeepSeek V4 Pro 0813 (max)", "deepseek-v4-pro")).toMatchObject({
+      label: "DeepSeek v4 Pro 0813 max",
+      groupKey: "deepseek-v4-pro-0813",
+    });
+  });
+
   it("keeps the canonical GPT prefix and shortens extra high", () => {
     const aa = modelDisplayMetadata("GPT-5.6 Luna (low)");
     const cursor = modelDisplayMetadata("5.6 Luna xhigh");

@@ -362,89 +362,109 @@ export function layoutModelLabels(
   const sideOffset = LABEL_DOT_RADIUS + LABEL_GAP;
 
   for (const anchor of sorted) {
-    const width = labelWidth(anchor, bounds);
-    if (width === null) continue;
-    const height = LABEL_HEIGHT;
-    const minLeft = bounds.left;
-    const maxLeft = Math.max(minLeft, bounds.right - width);
-    const minTop = bounds.top;
-    const maxTop = Math.max(minTop, bounds.bottom - height);
-    // Keep labels on the open left side of the solid model line by default;
-    // callers can still override this for a specific crowded label.
-    const preferredSide = options.preferredSides?.get(anchor.id) ?? "left";
-    const sides: ("left" | "right" | "center")[] = preferredSide === "left"
-      ? ["left", "right", "center"]
-      : ["right", "left", "center"];
-    const verticalOffsets = [
-      0,
-      -height - LABEL_GAP,
-      height + LABEL_GAP,
-      -2 * (height + LABEL_GAP),
-      2 * (height + LABEL_GAP),
-      -3 * (height + LABEL_GAP),
-      3 * (height + LABEL_GAP),
-    ];
-    const candidates: { left: number; top: number; side: "left" | "right" | "center" }[] = [];
-    const addCandidate = (side: "left" | "right" | "center", verticalOffset: number) => {
-      const horizontalOffset = side === "left"
-        ? -width - sideOffset
-        : side === "right" ? sideOffset : -width / 2;
-      candidates.push({
-        left: clamp(anchor.anchorLeft + horizontalOffset, minLeft, maxLeft),
-        top: clamp(anchor.anchorTop - height / 2 + verticalOffset, minTop, maxTop),
-        side,
-      });
-    };
-    // Local candidates keep labels near their own dot. The broader sweep is a
-    // last resort for crowded clusters and remains bounded by the plot.
-    for (const side of sides) {
-      for (const verticalOffset of verticalOffsets) addCandidate(side, verticalOffset);
-    }
-    const verticalRange = Math.max(
-      Math.max(...verticalOffsets.map((offset) => Math.abs(offset))) + height,
-      bounds.bottom - bounds.top,
-    );
-    for (const side of sides) {
-      for (let verticalOffset = -verticalRange; verticalOffset <= verticalRange; verticalOffset += 18) {
-        addCandidate(side, verticalOffset);
-      }
-    }
-
     let best: PositionedLabel | undefined;
-    let bestScore = Infinity;
-    const seen = new Set<string>();
-    for (const candidate of candidates) {
-      const key = `${candidate.left}:${candidate.top}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      const positioned: PositionedLabel = {
-        ...anchor,
-        left: candidate.left,
-        top: candidate.top,
-        width,
-        height,
+    let fallback: PositionedLabel | undefined;
+    // A discount suffix is useful context, but it should not make the model
+    // name disappear entirely when the plot is crowded. Retry compactly while
+    // retaining accessibleLabel/title with the complete discount text.
+    const layoutAnchors = anchor.discountLabel
+      ? [
+          anchor,
+          { ...anchor, label: anchor.mainLabel ?? anchor.label, discountLabel: undefined },
+        ]
+      : [anchor];
+    for (const layoutAnchor of layoutAnchors) {
+      const width = labelWidth(layoutAnchor, bounds);
+      if (width === null) continue;
+      const height = LABEL_HEIGHT;
+      const minLeft = bounds.left;
+      const maxLeft = Math.max(minLeft, bounds.right - width);
+      const minTop = bounds.top;
+      const maxTop = Math.max(minTop, bounds.bottom - height);
+      // Keep labels on the open left side of the solid model line by default;
+      // callers can still override this for a specific crowded label.
+      const preferredSide = options.preferredSides?.get(layoutAnchor.id) ?? "left";
+      const sides: ("left" | "right" | "center")[] = preferredSide === "left"
+        ? ["left", "right", "center"]
+        : ["right", "left", "center"];
+      const verticalOffsets = [
+        0,
+        -height - LABEL_GAP,
+        height + LABEL_GAP,
+        -2 * (height + LABEL_GAP),
+        2 * (height + LABEL_GAP),
+        -3 * (height + LABEL_GAP),
+        3 * (height + LABEL_GAP),
+      ];
+      const candidates: { left: number; top: number; side: "left" | "right" | "center" }[] = [];
+      const addCandidate = (side: "left" | "right" | "center", verticalOffset: number) => {
+        const horizontalOffset = side === "left"
+          ? -width - sideOffset
+          : side === "right" ? sideOffset : -width / 2;
+        candidates.push({
+          left: clamp(layoutAnchor.anchorLeft + horizontalOffset, minLeft, maxLeft),
+          top: clamp(layoutAnchor.anchorTop - height / 2 + verticalOffset, minTop, maxTop),
+          side,
+        });
       };
-      if (placed.some((existing) => overlaps(positioned, existing))) continue;
-      if (obstacles.some((point) => point.id !== anchor.id && coversPoint(positioned, point))) continue;
-      if (coversPoint(positioned, { id: anchor.id, left: anchor.anchorLeft, top: anchor.anchorTop })) continue;
-      if (options.lines?.some((line) => coversLine(positioned, line))) continue;
-      if (options.leaderObstacles?.some((point) => leaderCrossesPoint(positioned, point))) continue;
-      if (placed.some((existing) =>
-        labelLeaderCrossesLabel(positioned, existing) || labelLeaderCrossesLabel(existing, positioned),
-      )) continue;
-      const targetLeft = preferredSide === "left"
-        ? anchor.anchorLeft - width - sideOffset
-        : anchor.anchorLeft + sideOffset;
-      const distance =
-        Math.abs(candidate.left - targetLeft) * 0.05 +
-        Math.abs(candidate.top - (anchor.anchorTop - height / 2)) * 0.02;
-      if (distance < bestScore) {
-        best = positioned;
-        bestScore = distance;
+      // Local candidates keep labels near their own dot. The broader sweep is a
+      // last resort for crowded clusters and remains bounded by the plot.
+      for (const side of sides) {
+        for (const verticalOffset of verticalOffsets) addCandidate(side, verticalOffset);
       }
+      const verticalRange = Math.max(
+        Math.max(...verticalOffsets.map((offset) => Math.abs(offset))) + height,
+        bounds.bottom - bounds.top,
+      );
+      for (const side of sides) {
+        for (let verticalOffset = -verticalRange; verticalOffset <= verticalRange; verticalOffset += 18) {
+          addCandidate(side, verticalOffset);
+        }
+      }
+
+      let bestScore = Infinity;
+      const seen = new Set<string>();
+      for (const candidate of candidates) {
+        const key = `${candidate.left}:${candidate.top}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const positioned: PositionedLabel = {
+          ...layoutAnchor,
+          left: candidate.left,
+          top: candidate.top,
+          width,
+          height,
+        };
+        if (placed.some((existing) => overlaps(positioned, existing))) continue;
+        if (obstacles.some((point) => point.id !== layoutAnchor.id && coversPoint(positioned, point))) continue;
+        if (coversPoint(positioned, { id: layoutAnchor.id, left: layoutAnchor.anchorLeft, top: layoutAnchor.anchorTop })) continue;
+        if (options.lines?.some((line) => coversLine(positioned, line))) continue;
+        // Keep the least disruptive text placement available if every strict
+        // candidate's leader clearance fails. The model name is more useful
+        // than silently omitting a crowded point, while annotation lines still
+        // remain clear of the text itself.
+        if (!fallback) fallback = positioned;
+        if (options.leaderObstacles?.some((point) => leaderCrossesPoint(positioned, point))) continue;
+        if (placed.some((existing) =>
+          labelLeaderCrossesLabel(positioned, existing) || labelLeaderCrossesLabel(existing, positioned),
+        )) continue;
+        const targetLeft = preferredSide === "left"
+          ? layoutAnchor.anchorLeft - width - sideOffset
+          : layoutAnchor.anchorLeft + sideOffset;
+        const distance =
+          Math.abs(candidate.left - targetLeft) * 0.05 +
+          Math.abs(candidate.top - (layoutAnchor.anchorTop - height / 2)) * 0.02;
+        if (distance < bestScore) {
+          best = positioned;
+          bestScore = distance;
+        }
+      }
+      if (best) break;
     }
 
-    // No collision-free candidate means this label is intentionally omitted.
+    // Labels remain visible in dense plots when their text itself can fit. A
+    // too-wide label still has no valid fallback and is intentionally omitted.
+    if (!best) best = fallback;
     if (!best) continue;
     placed.push(best);
     result.set(anchor.id, best);

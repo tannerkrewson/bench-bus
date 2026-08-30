@@ -95,8 +95,8 @@ export function discountProviderSummary(discount: PriceDiscountAnnotation): stri
     ? discount.plottedProviderName
     : provider;
   return plottedProvider && plottedProvider !== provider
-    ? `Discounted/pre-discount provider: ${provider}; plotted provider: ${plottedProvider}`
-    : `Provider: ${provider}`;
+    ? `Discounted provider: ${provider}; plotted provider: ${plottedProvider}`
+    : provider;
 }
 
 /** Format the source price transformation as one compact equation. */
@@ -115,7 +115,7 @@ export function discountHoverTitle(
   point: Pick<PlottablePoint, "label" | "x">,
   discount: PriceDiscountAnnotation,
 ): string {
-  return `${point.label} - ${roundDiscountPercent(discount.percentage)}% off · ${discountProviderSummary(discount)}`;
+  return `${point.label} (${roundDiscountPercent(discount.percentage)}% off)`;
 }
 
 /** Compact discount rows kept understandable at a glance. */
@@ -124,9 +124,8 @@ export function discountSummaryLines(
   discount: PriceDiscountAnnotation,
 ): TooltipLine[] {
   return [
-    { label: "Discount math", value: discountMath(point, discount) },
+    { label: "Discount", value: discountMath(point, discount) },
     { label: "Provider", value: discountProviderSummary(discount) },
-    { label: "Why", value: discountReason(discount) },
   ];
 }
 

@@ -439,6 +439,11 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect(arrows[0]?.querySelector("[data-discount-part='tick']")).not.toBeNull();
     expect(arrows[0]?.getAttribute("stroke-dasharray")).toBe("0.1 5");
     expect((arrows[0] as SVGGElement).style.transition).toContain("stroke-dashoffset");
+    expect(arrows[0]?.querySelector("[data-testid='discount-line-reveal']")?.getAttribute("stroke-dashoffset")).toBe("1");
+    expect(arrows[0]?.querySelector("[data-discount-part='segment']")?.getAttribute("opacity")).toBe("0");
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(arrows[0]?.querySelector("[data-testid='discount-line-reveal']")?.getAttribute("stroke-dashoffset")).toBe("0");
+    expect(arrows[0]?.querySelector("[data-discount-part='segment']")?.getAttribute("opacity")).toBe("1");
     expect(container.querySelectorAll("[data-testid='focused-discount-dot']")).toHaveLength(0);
     expect(container.querySelectorAll("[data-testid='discount-endpoint-dot'][data-discount-endpoint='pre']")).toHaveLength(1);
     expect(container.querySelectorAll("[data-testid='discount-endpoint-dot'] circle")).toHaveLength(0);
@@ -590,7 +595,9 @@ describe("BenchmarkScatterChart discount annotations", () => {
     const firstHit = container.querySelector<HTMLElement>("[data-testid='discount-line-hit']");
     firstHit?.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
     expect(lines.map((line) => line.getAttribute("opacity"))).toEqual(["0.75", "0.75"]);
+    expect(lines.map((line) => line.querySelector("[data-discount-part='arrowhead']")?.getAttribute("opacity"))).toEqual(["0", "0"]);
     firstHit?.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+    expect(lines.map((line) => line.querySelector("[data-discount-part='arrowhead']")?.getAttribute("opacity"))).toEqual(["1", "1"]);
     dispose();
   });
 
@@ -717,9 +724,9 @@ describe("BenchmarkScatterChart discount annotations", () => {
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     expect(container.querySelector("[data-testid='discount-line']")?.getAttribute("data-discount-id")).toBe("model-99");
-    // One frame-coalesced render handles all 100 slider updates; no
-    // update/render feedback loop can enqueue one render per input.
-    expect(requestFrame.mock.calls.length).toBeLessThanOrEqual(4);
+    // One frame-coalesced render handles all 100 slider updates; the separate
+    // discount reveal frame is the only additional scheduled frame.
+    expect(requestFrame.mock.calls.length).toBeLessThanOrEqual(5);
     dispose();
     requestFrame.mockRestore();
   });

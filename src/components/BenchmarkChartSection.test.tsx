@@ -247,10 +247,10 @@ describe("BenchmarkChartSection (AA fixture shape)", () => {
     expect(endpoint).not.toBeNull();
     endpoint?.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
     const tooltip = container.querySelector("[data-testid='chart-tooltip']");
-    expect(tooltip?.textContent).toContain("GPT-5.6 Sol high - 50% off");
+    expect(tooltip?.textContent).toContain("GPT-5.6 Sol high (50% off)");
     expect(tooltip?.textContent).toContain("$184.93 * (1 - 50%) = $92.47");
-    expect(tooltip?.textContent).toContain("Provider: Provider A");
-    expect(tooltip?.textContent).toContain("Source provider discount from Provider A");
+    expect(tooltip?.textContent).toContain("Provider A");
+    expect(tooltip?.textContent).not.toContain("Source provider discount from Provider A");
     dispose();
   });
 
@@ -463,7 +463,7 @@ describe("BenchmarkChartSection (Cursor fixture shape)", () => {
 
     const sources = container.querySelector("[data-testid='chart-sources']") as HTMLElement;
     expect(sources).not.toBeNull();
-    expect(sources.querySelector("h3")?.textContent).toBe("Sources");
+    expect(sources.querySelector("h3")?.textContent).toBe("Sources:");
     expect(sources.getAttribute("aria-labelledby")).toBe(sources.querySelector("h3")?.id);
     const links = [...sources.querySelectorAll<HTMLAnchorElement>("a")];
     expect(links.map((link) => link.textContent)).toEqual(["Artificial Analysis", "OpenRouter"]);
