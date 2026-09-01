@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render } from "solid-js/web";
+import { createSignal } from "solid-js";
 import type { JSX } from "solid-js";
 import RelativeLastUpdated from "./RelativeLastUpdated";
 
@@ -41,6 +42,21 @@ describe("RelativeLastUpdated", () => {
   it("renders nothing for an invalid timestamp", () => {
     const { container, dispose } = mount(() => <RelativeLastUpdated timestamp={() => "invalid"} />);
     expect(container.querySelector("[data-testid='relative-last-updated']")).toBeNull();
+    dispose();
+  });
+
+  it("updates when the timestamp accessor changes", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-01T22:30:00Z"));
+    const [timestamp, setTimestamp] = createSignal("2026-08-21T00:00:00Z");
+    const { container, dispose } = mount(() => <RelativeLastUpdated timestamp={timestamp} />);
+
+    const badge = () => container.querySelector("[data-testid='relative-last-updated']") as HTMLElement;
+    expect(badge().getAttribute("aria-label")).toBe("Last updated Aug 21, 2026, 12:00 AM UTC");
+
+    setTimestamp("2026-09-01T22:28:06.896Z");
+    expect(badge().getAttribute("aria-label")).toBe("Last updated Sep 1, 2026, 10:28 PM UTC");
+
     dispose();
   });
 });
