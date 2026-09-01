@@ -2,8 +2,9 @@
 
 Four scheduled workflows collect benchmark data, validate it, store it on the
 dedicated `bench-bus-data` branch, and push. They never touch the deployed
-site: the site build reads the data branch separately (see the deployment
-workflow, owned separately).
+site: the site build reads the data branch separately. After a successful
+collection, `deploy.yml` receives the completion event and publishes the new
+data automatically.
 
 | Workflow | Schedule (UTC) | Source | Concurrency group |
 | --- | --- | --- | --- |
@@ -43,6 +44,10 @@ runs, in order:
    is the checked-out branch. A no-op commit is not an error.
 4. **Push** — `git push origin HEAD:bench-bus-data` from the data-branch
    checkout.
+
+The push is the handoff to the deployment workflow. Because it is performed
+with `GITHUB_TOKEN`, it cannot itself trigger another workflow; `deploy.yml`
+listens for successful completion of these collector workflows instead.
 
 Failure semantics: a failure at any step leaves the `bench-bus-data` checkout
 untouched, so a push never happens and the remote data branch keeps its

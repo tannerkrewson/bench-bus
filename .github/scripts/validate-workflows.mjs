@@ -134,6 +134,24 @@ async function main() {
     action.includes("HEAD:bench-bus-data"),
   );
 
+  const deploy = await readFile(join(workflowsDir, "deploy.yml"), "utf8");
+  const collectorNames = [
+    "Collect Artificial Analysis models",
+    "Collect OpenRouter pricing",
+    "Collect DeepSWE scores",
+    "Collect Cursor eval table",
+  ];
+  check(
+    "deploy workflow runs after collector completion",
+    deploy.includes("workflow_run:") &&
+      deploy.includes("types: [completed]") &&
+      collectorNames.every((name) => deploy.includes(`- ${name}`)),
+  );
+  check(
+    "deploy workflow skips failed collector completions",
+    deploy.includes("github.event.workflow_run.conclusion == 'success'"),
+  );
+
   if (failures > 0) {
     console.error(`\nworkflow validation FAILED: ${failures} check(s) failed`);
     process.exit(1);

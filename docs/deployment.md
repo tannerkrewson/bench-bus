@@ -39,12 +39,13 @@ Pages itself must be activated by a human with admin access:
 
 ## How deploys relate to data collection
 
-There are two independent pipelines:
+Collection and deployment remain separate pipelines, but a successful
+collection now hands off to deployment automatically:
 
 | Pipeline | Workflow(s) | Branch | Output |
 | --- | --- | --- | --- |
 | Collection | `collect-*.yml` (cron) | `bench-bus-data` | immutable validated snapshots + manifests |
-| Deployment | `deploy.yml` (push to `main`) | reads `bench-bus-data` | static site artifact on Pages |
+| Deployment | `deploy.yml` (push to `main`, successful collector completion, or manual dispatch) | reads `bench-bus-data` | static site artifact on Pages |
 
 `deploy.yml` checks out `main` (app source) plus `bench-bus-data` (last
 known-good data, read-only), runs the derived-data compiler
@@ -56,6 +57,11 @@ Pages artifact. Collectors never run during deploy, and deploys never write to
 Data freshness: the compiled bundle carries explicit per-source `observedAt`
 metadata which the site displays (freshness chips + time travel), so a delayed
 or missed collection cron shows up as visible staleness, never as breakage.
+
+The collector workflows push with `GITHUB_TOKEN`, and GitHub intentionally does
+not start a second workflow for that token-generated branch push. `deploy.yml`
+therefore listens for the collectors' `workflow_run` completion event and only
+builds for successful collector runs.
 
 ## Failure semantics
 

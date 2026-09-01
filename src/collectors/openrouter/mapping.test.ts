@@ -120,6 +120,30 @@ describe("suggestAliases", () => {
     expect(result.ambiguous).toEqual([]);
   });
 
+  it("matches dotted release numbers and effort variants to one base identity", () => {
+    const result = suggestAliases(
+      ["claude-fable-5-1", "claude-fable-5-1-high"],
+      catalog("anthropic/claude-fable-5.1"),
+    );
+    expect(result.obvious).toEqual([
+      { aaModelSlug: "claude-fable-5-1", openrouterId: "anthropic/claude-fable-5.1" },
+      { aaModelSlug: "claude-fable-5-1-high", openrouterId: "anthropic/claude-fable-5.1" },
+    ]);
+    expect(result.ambiguous).toEqual([]);
+    expect(result.unmatched).toEqual([]);
+  });
+
+  it("keeps normalized separator collisions ambiguous", () => {
+    const result = suggestAliases(
+      ["model-5-1"],
+      catalog("vendor/model.5.1", "other/model_5_1"),
+    );
+    expect(result.obvious).toEqual([]);
+    expect(result.ambiguous).toEqual([
+      { aaModelSlug: "model-5-1", candidates: ["other/model_5_1", "vendor/model.5.1"] },
+    ]);
+  });
+
   it("reports unmatched AA slugs", () => {
     const result = suggestAliases(["totally-unknown-model"], catalog("anthropic/claude-opus-5"));
     expect(result.unmatched).toEqual(["totally-unknown-model"]);

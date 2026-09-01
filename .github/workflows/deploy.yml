@@ -10,6 +10,11 @@
 # Any failure there blocks deployment (the deploy job never runs). Stale but
 # valid data always remains deployable.
 #
+# DEPLOYMENT TRIGGERS: a successful collector completion also starts this
+# workflow, because collector pushes target bench-bus-data and do not trigger a
+# new workflow through the Actions token. Human code pushes and workflow
+# dispatch remain supported.
+#
 # ACTIVATION (human, one-time): see docs/deployment.md — repo visibility,
 # Settings -> Pages -> source "GitHub Actions", custom domain benchb.us + DNS.
 
@@ -19,6 +24,13 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Collect Artificial Analysis models
+      - Collect OpenRouter pricing
+      - Collect DeepSWE scores
+      - Collect Cursor eval table
+    types: [completed]
 
 # Pages deployments are strictly serialized: never cancel a deploy in flight.
 concurrency:
@@ -31,6 +43,7 @@ permissions:
 jobs:
   # Gate: the app must fully pass before anything is published.
   build:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:

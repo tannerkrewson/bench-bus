@@ -9,8 +9,8 @@ import type { CuratedModel } from "./curated";
  *
  * This file is the ONLY sanctioned link between the two catalogs. Automatic
  * matching may SUGGEST entries (see `suggestAliases`) but must never silently
- * extend the mapping: ambiguous or missing matches are surfaced for human
- * curation instead.
+ * extend the mapping except for a uniquely identified AA frontier model:
+ * ambiguous or missing matches are surfaced for human curation instead.
  */
 export const aliasEntrySchema = z
   .object({
@@ -106,13 +106,27 @@ export interface AmbiguousSuggestion {
 }
 
 /**
- * Suggest AA -> OpenRouter links by exact basename match between the AA slug
- * and the OpenRouter id. Output is advisory only:
+ * Suggest AA -> OpenRouter links by matching the AA slug to an OpenRouter id
+ * basename. Exact matches win; otherwise punctuation-normalized names (for
+ * example, `model-5-1` and `model-5.1`) and known reasoning-effort suffixes
+ * (for example, `model-5-1-high` -> `model-5-1`) are eligible. Output is advisory only:
  * - `obvious`: exactly one catalog id matches; a human may add it to the alias file.
  * - `ambiguous`: multiple candidates; always requires human curation.
  * - `unmatched`: no candidate found.
  * Nothing here mutates the alias file or feeds the collector directly.
  */
+const REASONING_EFFORT_SUFFIX = /-(?:extra-high|xhigh|low|medium|high|max)$/i;
+
+function normalizedBasename(value: string): string {
+  return value.toLocaleLowerCase().replace(/[._]/g, "-").replace(/-+/g, "-");
+}
+
+function basenameMatchKeys(value: string): string[] {
+  const full = normalizedBasename(value);
+  const base = full.replace(REASONING_EFFORT_SUFFIX, "");
+  return base === full ? [full] : [full, base];
+}
+
 export function suggestAliases(
   aaModelSlugs: string[],
   catalog: CatalogModel[],
@@ -122,23 +136,38 @@ export function suggestAliases(
   unmatched: string[];
 } {
   const byBasename = new Map<string, string[]>();
+  const byNormalizedBasename = new Map<string, string[]>();
   for (const model of catalog) {
     if (model.id.startsWith("~") || model.id.includes(":")) continue;
     const base = model.id.includes("/") ? model.id.split("/")[1]! : model.id;
     const list = byBasename.get(base) ?? [];
     list.push(model.id);
     byBasename.set(base, list);
+    const normalized = normalizedBasename(base);
+    const normalizedList = byNormalizedBasename.get(normalized) ?? [];
+    normalizedList.push(model.id);
+    byNormalizedBasename.set(normalized, normalizedList);
   }
 
   const obvious: ObviousSuggestion[] = [];
   const ambiguous: AmbiguousSuggestion[] = [];
   const unmatched: string[] = [];
   for (const slug of aaModelSlugs) {
-    const candidates = byBasename.get(slug) ?? [];
-    if (candidates.length === 1) {
-      obvious.push({ aaModelSlug: slug, openrouterId: candidates[0]! });
-    } else if (candidates.length > 1) {
-      ambiguous.push({ aaModelSlug: slug, candidates: candidates.sort() });
+    let candidates = byBasename.get(slug) ?? [];
+    if (candidates.length === 0) {
+      for (const key of basenameMatchKeys(slug)) {
+        const matches = byNormalizedBasename.get(key);
+        if (matches !== undefined && matches.length > 0) {
+          candidates = matches;
+          break;
+        }
+      }
+    }
+    const uniqueCandidates = [...new Set(candidates)].sort();
+    if (uniqueCandidates.length === 1) {
+      obvious.push({ aaModelSlug: slug, openrouterId: uniqueCandidates[0]! });
+    } else if (uniqueCandidates.length > 1) {
+      ambiguous.push({ aaModelSlug: slug, candidates: uniqueCandidates });
     } else {
       unmatched.push(slug);
     }
@@ -157,8 +186,9 @@ export function provisionalAliases(file: AliasFile): AliasEntry[] {
 
 /**
  * Resolve automatic AA frontier identities against the catalog without
- * guessing: only one exact basename candidate is accepted. These entries are
- * provisional because the identity was selected by the pipeline, not a human.
+ * guessing: only one exact or normalized basename candidate is accepted.
+ * These entries are provisional because the identity was selected by the
+ * pipeline, not a human.
  */
 export function frontierAliases(
   frontier: readonly AaFrontierIdentity[],

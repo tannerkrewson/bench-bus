@@ -43,6 +43,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate workflow contracts
+        run: node .github/scripts/validate-workflows.mjs
+
       - name: Typecheck (strict)
         run: npm run typecheck
 
