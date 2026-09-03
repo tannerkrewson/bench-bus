@@ -59,6 +59,8 @@ export const COLOR_BLIND_MODEL_GROUP_PALETTE = {
     "#3d405b", // slate
     "#283618", // forest
     "#5a3d5c", // plum
+    "#3c2f80", // indigo
+    "#7b2c3f", // burgundy
   ],
   dark: [
     "#56b4e9", // sky blue
@@ -77,6 +79,8 @@ export const COLOR_BLIND_MODEL_GROUP_PALETTE = {
     "#b8c0ff", // periwinkle
     "#d0e17d", // lime
     "#d5b2c4", // mauve
+    "#ffd166", // amber
+    "#d8b4fe", // lavender
   ],
 } as const;
 

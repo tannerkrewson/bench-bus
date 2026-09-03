@@ -156,6 +156,27 @@ describe("aaAdapter.computePoint", () => {
     });
   });
 
+  it("adds the canonical current DeepSeek release to bare AA labels", () => {
+    const flash = aaAdapter.computePoint({
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug: "deepseek-v4-flash",
+      name: "DeepSeek V4 Flash",
+    }, controls)!;
+    const pro = aaAdapter.computePoint({
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug: "deepseek-v4-pro",
+      name: "DeepSeek V4 Pro",
+    }, controls)!;
+    expect(flash).toMatchObject({
+      label: "DeepSeek v4 Flash 0731",
+      selectionLabel: "DeepSeek v4 Flash 0731",
+    });
+    expect(pro).toMatchObject({
+      label: "DeepSeek v4 Pro 0813",
+      selectionLabel: "DeepSeek v4 Pro 0813",
+    });
+  });
+
   it("compares the cheapest provider against AA listed workload pricing", () => {
     const record = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,

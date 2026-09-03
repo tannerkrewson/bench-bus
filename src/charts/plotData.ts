@@ -103,7 +103,7 @@ export function discountHoverTitle(
   point: Pick<PlottablePoint, "label" | "x">,
   discount: PriceDiscountAnnotation,
 ): string {
-  return `${point.label} (${roundDiscountPercent(discount.percentage)}% below AA listed)`;
+  return `${point.label} (${roundDiscountPercent(discount.percentage)}% discount)`;
 }
 
 /** Compact discount rows kept understandable at a glance. */
@@ -123,7 +123,7 @@ export function discountDetailLines(
   discount: PriceDiscountAnnotation,
 ): TooltipLine[] {
   return [
-    { label: "Savings vs AA listed", value: `${roundDiscountPercent(discount.percentage)}% below AA listed` },
+    { label: "Savings vs AA listed", value: `${roundDiscountPercent(discount.percentage)}% discount` },
     { label: "Cheapest provider", value: discount.providerName ?? "Cheapest OpenRouter provider" },
     { label: "AA listed cost", value: `$${discount.preDiscountX.toFixed(2)}` },
     { label: "OpenRouter cost", value: `$${(discount.effectiveX ?? point.x).toFixed(2)}` },
@@ -135,7 +135,7 @@ export function modelLabelParts(
   discount: PriceDiscountAnnotation | null,
 ): ModelLabelParts {
   if (!discount) return { mainLabel: label, accessibleLabel: label };
-  const discountLabel = `(${roundDiscountPercent(discount.percentage)}% below AA listed)`;
+  const discountLabel = `(${roundDiscountPercent(discount.percentage)}% discount)`;
   return {
     mainLabel: label,
     discountLabel,

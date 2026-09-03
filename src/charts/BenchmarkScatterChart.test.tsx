@@ -779,8 +779,8 @@ describe("BenchmarkScatterChart discount annotations", () => {
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     const label = container.querySelector("[data-testid='model-label']") as HTMLElement;
     const discount = container.querySelector("[data-testid='model-label-discount']") as HTMLElement;
-     expect(label?.textContent).toBe("Model (43% below AA listed)");
-     expect(label?.getAttribute("aria-label")).toBe("Model (43% below AA listed)");
+    expect(label?.textContent).toBe("Model (43% discount)");
+    expect(label?.getAttribute("aria-label")).toBe("Model (43% discount)");
     expect(label?.getAttribute("role")).toBe("img");
     expect(discount).not.toBeNull();
     expect(Number.parseFloat(getComputedStyle(discount).fontSize)).toBeLessThan(13);

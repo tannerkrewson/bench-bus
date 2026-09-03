@@ -302,7 +302,12 @@ describe("AaChartSection", () => {
       name: "Listed Only",
       listed: { price1mInputTokens: 2, price1mOutputTokens: 8, cacheHitPrice: 0.2 },
     };
-    const { container, dispose } = mount(() => <AaChartSection records={() => [listedOnly]} />);
+    const { container, dispose } = mount(() => (
+      <AaChartSection
+        records={() => [listedOnly]}
+        initialState={{ selectedIds: [listedOnly.slug], selectionSpecified: true }}
+      />
+    ));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     expect(container.querySelector("[data-testid='aa-unplottable-count']")).toBeNull();
@@ -323,9 +328,22 @@ describe("AaChartSection", () => {
 
     expect(states[states.length - 1]?.selectedIds).toEqual(expect.arrayContaining([
       ...AA_DEFAULT_MODEL_SLUGS,
-      "gpt-5.6-sol",
-      "gemini-3.7-flash",
     ]));
+    expect(AA_DEFAULT_MODEL_SLUGS).toEqual(expect.arrayContaining([
+      "gpt-5-6-luna-low",
+      "gpt-5-6-luna-medium",
+      "gpt-5-6-luna-high",
+      "gpt-5-6-luna-xhigh",
+      "gpt-5-6-luna",
+      "gpt-5-6-sol-low",
+      "gpt-5-6-sol-medium",
+      "gpt-5-6-sol-high",
+      "gpt-5-6-sol-xhigh",
+      "gpt-5-6-sol",
+      "mimo-v2-5-0424",
+    ]));
+    expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("gpt-5-6-luna-non-reasoning");
+    expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("mistral-medium-3-5");
     expect(AA_DEFAULT_MODEL_SLUGS).toContain("deepseek-v4-flash");
     expect(AA_DEFAULT_MODEL_SLUGS).toContain("glm-5-3-flash");
     expect(container.querySelector("[data-testid='aa-no-points']")).toBeNull();
@@ -333,7 +351,16 @@ describe("AaChartSection", () => {
     dispose();
   });
 
-  it("defaults newly discovered Anthropic, GPT, and Gemini models to visible", () => {
+  it("does not automatically show uncurated newly discovered models", () => {
+    const astra = {
+      ...AA_RECORD_UNPLOTTABLE,
+      slug: "gpt-6-astra",
+      name: "GPT-6 Astra (max)",
+      shortName: "GPT-6 Astra (max)",
+      intelligenceIndex: 61,
+      providers: [{ providerName: "OpenAI", providerSlug: "openai", effectiveInputPrice: 1, effectiveOutputPrice: 5 }],
+      listed: { price1mInputTokens: 10, price1mOutputTokens: 50, cacheHitPrice: 1 },
+    };
     const astraLow = {
       ...AA_RECORD_UNPLOTTABLE,
       slug: "gpt-6-astra-low",
@@ -374,16 +401,17 @@ describe("AaChartSection", () => {
     const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
     const { dispose } = mount(() => (
       <AaChartSection
-        records={() => [astraLow, astraHigh, anthropic, gemini, unrelated]}
+        records={() => [astra, astraLow, astraHigh, anthropic, gemini, unrelated]}
         onStateChange={(state) => states.push(state)}
       />
     ));
 
     const selected = states[states.length - 1]?.selectedIds ?? [];
-    expect(selected).toContain("gpt-6-astra-low");
-    expect(selected).toContain("gpt-6-astra-high");
-    expect(selected).toContain("claude-new-model");
-    expect(selected).toContain("gemini-new-model");
+    expect(selected).toContain("gpt-6-astra");
+    expect(selected).not.toContain("gpt-6-astra-low");
+    expect(selected).not.toContain("gpt-6-astra-high");
+    expect(selected).not.toContain("claude-new-model");
+    expect(selected).not.toContain("gemini-new-model");
     expect(selected).not.toContain("unrelated-model");
     dispose();
   });
@@ -414,15 +442,15 @@ describe("AaChartSection", () => {
   it("does not let an unpriced newer release hide an older priced default", () => {
     const priced = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
-      slug: "muse-spark-1-2",
-      name: "Muse Spark 1.2",
-      shortName: "Muse Spark 1.2",
+      slug: "muse-spark-1-3-xhigh",
+      name: "Muse Spark 1.3 (xhigh)",
+      shortName: "Muse Spark 1.3 (xhigh)",
     };
     const unpriced = {
       ...priced,
-      slug: "muse-spark-1-3",
-      name: "Muse Spark 1.3",
-      shortName: "Muse Spark 1.3",
+      slug: "muse-spark-1-4-xhigh",
+      name: "Muse Spark 1.4 (xhigh)",
+      shortName: "Muse Spark 1.4 (xhigh)",
       providers: [],
       weighted: { weightedInputPrice: 0, weightedOutputPrice: 0, },
       listed: { price1mInputTokens: 0, price1mOutputTokens: 0, cacheHitPrice: 0 },
@@ -432,50 +460,50 @@ describe("AaChartSection", () => {
       <AaChartSection records={() => [priced, unpriced]} onStateChange={(state) => states.push(state)} />
     ));
     const selected = states[states.length - 1]?.selectedIds ?? [];
-    expect(selected).toContain("muse-spark-1-2");
-    expect(selected).not.toContain("muse-spark-1-3");
+    expect(selected).toContain("muse-spark-1-3-xhigh");
+    expect(selected).not.toContain("muse-spark-1-4-xhigh");
     dispose();
   });
 
-  it("includes every reasoning variant of a frontier family and excludes its non-reasoning base", () => {
-    const familyBase = {
+  it("keeps all Luna and Sol reasoning variants while excluding non-reasoning rows", () => {
+    const variants = [
+      ["gpt-5-6-luna-low", "GPT-5.6 Luna (low)"],
+      ["gpt-5-6-luna-medium", "GPT-5.6 Luna (medium)"],
+      ["gpt-5-6-luna-high", "GPT-5.6 Luna (high)"],
+      ["gpt-5-6-luna-xhigh", "GPT-5.6 Luna (xhigh)"],
+      ["gpt-5-6-luna", "GPT-5.6 Luna (max)"],
+      ["gpt-5-6-sol-low", "GPT-5.6 Sol (low)"],
+      ["gpt-5-6-sol-medium", "GPT-5.6 Sol (medium)"],
+      ["gpt-5-6-sol-high", "GPT-5.6 Sol (high)"],
+      ["gpt-5-6-sol-xhigh", "GPT-5.6 Sol (xhigh)"],
+      ["gpt-5-6-sol", "GPT-5.6 Sol (max)"],
+    ] as const;
+    const records = variants.map(([slug, name]) => ({
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
-      slug: "frontier-family",
-      name: "Frontier Family",
-      shortName: "Frontier Family",
-      intelligenceIndex: 40,
-      canonicalTokens: { input: 100_000_000, output: 10_000_000 },
-      listed: { price1mInputTokens: 2, price1mOutputTokens: 2, cacheHitPrice: 1 },
-    };
-    const familyHigh = {
-      ...familyBase,
-      slug: "frontier-family-high",
-      name: "Frontier Family High",
-      intelligenceIndex: 99,
-      listed: { price1mInputTokens: 0.01, price1mOutputTokens: 0.01, cacheHitPrice: 0.01 },
-    };
-    const familyLow = {
-      ...familyBase,
-      slug: "frontier-family-low",
-      name: "Frontier Family (Adaptive Reasoning, Low Effort)",
-      intelligenceIndex: 50,
-      listed: { price1mInputTokens: 0.02, price1mOutputTokens: 0.02, cacheHitPrice: 0.01 },
+      slug,
+      name,
+      shortName: name,
+    }));
+    const nonReasoning = {
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug: "gpt-5-6-luna-non-reasoning",
+      name: "GPT-5.6 Luna (Non-reasoning)",
+      shortName: "GPT-5.6 Luna (Non-reasoning)",
     };
     const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
     const { dispose } = mount(() => (
       <AaChartSection
-        records={() => [...AA_FIXTURE_RECORDS, familyBase, familyHigh, familyLow]}
+        records={() => [...records, nonReasoning]}
         onStateChange={(state) => states.push(state)}
       />
     ));
     const selected = states[states.length - 1]?.selectedIds ?? [];
-    expect(selected).toContain("frontier-family-high");
-    expect(selected).toContain("frontier-family-low");
-    expect(selected).not.toContain("frontier-family");
+    expect(selected).toEqual(expect.arrayContaining(variants.map(([slug]) => slug)));
+    expect(selected).not.toContain("gpt-5-6-luna-non-reasoning");
     dispose();
   });
 
-  it("updates frontier defaults with snapshots and preserves explicit selections", () => {
+  it("keeps uncurated frontier discoveries selector-only and preserves explicit selections", () => {
     const frontierRecord = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
       slug: "frontier-not-curated",
@@ -501,21 +529,21 @@ describe("AaChartSection", () => {
     ));
 
     expect(container.querySelectorAll("[data-testid='model-list'] input[type='checkbox']")).toHaveLength(4);
-    expect(states[states.length - 1]?.selectedIds).toContain("frontier-not-curated");
+    expect(states[states.length - 1]?.selectedIds).not.toContain("frontier-not-curated");
     expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("frontier-not-curated");
     setRecords([...AA_FIXTURE_RECORDS, replacementFrontierRecord]);
-    expect(states[states.length - 1]?.selectedIds).toContain("frontier-from-new-snapshot");
+    expect(states[states.length - 1]?.selectedIds).not.toContain("frontier-from-new-snapshot");
     expect(states[states.length - 1]?.selectedIds).not.toContain("frontier-not-curated");
     const frontierCheckbox = container.querySelector(
       "input[aria-label='Show Frontier From New Snapshot']",
     ) as HTMLInputElement;
     frontierCheckbox.click();
-    expect(states[states.length - 1]?.selectedIds).not.toContain("frontier-from-new-snapshot");
+    expect(states[states.length - 1]?.selectedIds).toContain("frontier-from-new-snapshot");
     const reset = [...container.querySelectorAll("[data-testid='model-list'] button")].find(
       (button) => button.textContent === "Reset to default",
     );
     reset?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    expect(states[states.length - 1]?.selectedIds).toContain("frontier-from-new-snapshot");
+    expect(states[states.length - 1]?.selectedIds).not.toContain("frontier-from-new-snapshot");
     dispose();
 
     const explicitStates: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];

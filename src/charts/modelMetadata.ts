@@ -60,10 +60,12 @@ function normalizeDeepSeekRelease(value: string, id?: string): string {
     /\bdeepseek\b.*\bv4\b.*\b(?:flash|pro)\b/i.test(value) ||
     /(?:^|\/)deepseek-v4-(?:flash|pro)(?:-|$)/i.test(id ?? "");
   if (!isDeepSeekV4) return value;
-  if (/\b(?:0423|0731|0813)\b/i.test(haystack) || /(?:^|\/)deepseek-v4-(?:flash|pro)$/i.test(id ?? "")) {
-    return value;
-  }
-  return `${value.replace(/\s+\b(?:0420|0424)\b/gi, "").trim()} 0423`;
+  const product = /\bflash\b/i.test(haystack) ? "flash" : "pro";
+  const explicitRelease = haystack.match(/\b(0423|0731|0813)\b/i)?.[1];
+  const legacyRelease = /\b(?:0420|0424)\b/i.test(haystack);
+  const release = explicitRelease ?? (legacyRelease ? "0423" : product === "flash" ? "0731" : "0813");
+  if (new RegExp(`\\b${release}\\b`, "i").test(value)) return value;
+  return `${value.replace(/\s+\b(?:0420|0424)\b/gi, "").trim()} ${release}`;
 }
 
 function splitModelName(label: string): { base: string; effort?: ModelEffort } {
@@ -209,7 +211,7 @@ export function latestModelVersionIds<T extends { id: string; label: string }>(
  * labels concise. Effort and source-only parenthetical annotations are omitted.
  */
 export function expandedModelName(label: string, id?: string): string {
-  const base = splitModelName(label).base || normalizeDisplayName(label);
+  const base = normalizeDeepSeekRelease(splitModelName(label).base || normalizeDisplayName(label), id);
   const haystack = `${label} ${id ?? ""}`.toLocaleLowerCase();
   if (/(?:claude|anthropic|opus|sonnet|fable)/.test(haystack)) {
     return `Anthropic ${/^claude\b/i.test(base) ? base : `Claude ${base}`}`;

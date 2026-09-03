@@ -31,6 +31,14 @@ describe("modelDisplayMetadata", () => {
       groupKey: "deepseek-v4-flash-0731",
       effort: "max",
     });
+    expect(modelDisplayMetadata("DeepSeek V4 Flash", "deepseek-v4-flash")).toMatchObject({
+      label: "DeepSeek v4 Flash 0731",
+      groupKey: "deepseek-v4-flash-0731",
+    });
+    expect(modelDisplayMetadata("DeepSeek V4 Pro", "deepseek-v4-pro")).toMatchObject({
+      label: "DeepSeek v4 Pro 0813",
+      groupKey: "deepseek-v4-pro-0813",
+    });
     expect(modelDisplayMetadata("Claude Fable 5.1 (Adaptive Reasoning, High Effort, Default Fallback)")).toEqual({
       label: "Fable 5.1 high",
       groupKey: "fable-5-1",

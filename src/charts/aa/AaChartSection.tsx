@@ -24,7 +24,6 @@ import {
   discountForPoint,
   discountHoverTitle,
   discountSummaryLines,
-  paretoFrontier,
 } from "../plotData";
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
 import { expandedModelName, isNonReasoningModel, latestModelVersionIds, modelGroupKey } from "../modelMetadata";
@@ -45,9 +44,6 @@ export interface AaChartSectionProps {
    */
   lastUpdated?: () => string | null;
 }
-
-/** Provider families that should remain visible as new AA models arrive. */
-const DEFAULT_VISIBLE_BRANDS = new Set(["anthropic", "openai", "google"]);
 
 /**
  * Artificial Analysis chart section: Intelligence Index versus estimated
@@ -106,32 +102,10 @@ export default function AaChartSection(props: AaChartSectionProps) {
       { ...defaultControls(), pricingMode: "listed", cacheHitRate: AA_DEFAULT_CACHE_HIT_RATE },
       "",
     );
-    const frontierPoints = paretoFrontier(listedBuild.entries.map((entry) => entry.point));
-    const frontierGroups = new Set(
-      frontierPoints.map((point) => point.effortGroup).filter((group): group is string => group !== undefined),
-    );
-    // A frontier family represents a connected reasoning-effort family, not
-    // just the one variant that happened to win. Include every other
-    // reasoning variant with the same name/version, while never pulling in a
-    // non-reasoning base model merely because it shares that family key.
-    const frontierVariantIds = listedBuild.entries
-      .filter(({ point }) => point.effortGroup !== undefined && point.effort !== undefined && frontierGroups.has(point.effortGroup))
-      .map(({ point }) => point.id);
-    const primaryProviderIds = allBuild().entries
-      .filter(({ point }) => point.brand !== undefined && DEFAULT_VISIBLE_BRANDS.has(point.brand))
-      .map(({ point }) => point.id);
-    const deepSweScoreIds = controls()[AA_SCORE_SOURCE_CONTROL_ID] === "deepswe"
-      ? visibleRecords()
-          .filter((record) => record.scoreSources.deepSwePassAt1 !== undefined)
-          .map((record) => record.slug)
-      : [];
-    const candidateIds = [...new Set([
-      ...AA_DEFAULT_MODEL_SLUGS,
-      ...primaryProviderIds,
-      ...frontierPoints.map((point) => point.id),
-      ...frontierVariantIds,
-      ...deepSweScoreIds,
-    ])];
+    // Keep the initial graph intentionally curated. Newer releases still
+    // replace older selected releases through latestModelVersionIds, while
+    // unrelated discoveries remain available in the selector only.
+    const candidateIds = AA_DEFAULT_MODEL_SLUGS.filter((id) => !isNonReasoningModel("", id));
     return latestModelVersionIds(
       listedBuild.entries.map(({ point }) => ({ id: point.id, label: point.label })),
       candidateIds,

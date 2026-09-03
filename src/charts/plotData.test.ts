@@ -41,14 +41,14 @@ describe("buildChartPlot", () => {
 
 describe("modelLabelWithDiscount", () => {
   it("formats AA-relative savings rounded to whole percent with an accessible label", () => {
-    expect(modelLabelWithDiscount("Model", { percentage: 43.1, preDiscountX: 10 })).toBe("Model (43% below AA listed)");
-    expect(modelLabelWithDiscount("Model", { percentage: 43.5, preDiscountX: 10 })).toBe("Model (44% below AA listed)");
-    expect(modelLabelWithDiscount("Model", { percentage: 100, preDiscountX: 10, effectiveX: 0 })).toBe("Model (100% below AA listed)");
+    expect(modelLabelWithDiscount("Model", { percentage: 43.1, preDiscountX: 10 })).toBe("Model (43% discount)");
+    expect(modelLabelWithDiscount("Model", { percentage: 43.5, preDiscountX: 10 })).toBe("Model (44% discount)");
+    expect(modelLabelWithDiscount("Model", { percentage: 100, preDiscountX: 10, effectiveX: 0 })).toBe("Model (100% discount)");
     expect(modelLabelWithDiscount("Model", null)).toBe("Model");
     expect(modelLabelParts("Model", { percentage: 43.1, preDiscountX: 10 })).toEqual({
       mainLabel: "Model",
-      discountLabel: "(43% below AA listed)",
-      accessibleLabel: "Model (43% below AA listed)",
+      discountLabel: "(43% discount)",
+      accessibleLabel: "Model (43% discount)",
     });
   });
 });
@@ -66,7 +66,7 @@ describe("discount presentation", () => {
       { label: "Savings vs AA listed", value: "$7.00 * (1 - 43.4%) = $4.00" },
       { label: "Cheapest provider", value: "OpenRouter" },
     ]);
-    expect(discountHoverTitle(point, discount)).toBe("Muse Spark 1.2 (43% below AA listed)");
+    expect(discountHoverTitle(point, discount)).toBe("Muse Spark 1.2 (43% discount)");
     expect(discountMath(point, discount)).toBe("$7.00 * (1 - 43.4%) = $4.00");
     expect(discountDetailLines(point, discount).map((line) => line.label)).toEqual([
       "Savings vs AA listed",
@@ -84,7 +84,7 @@ describe("discount presentation", () => {
       providerName: "Winning Provider",
     };
     expect(discountProviderSummary(discount)).toBe("Winning Provider");
-    expect(discountHoverTitle({ label: "Model", x: 6 }, discount)).toContain("Model (50% below AA listed)");
+    expect(discountHoverTitle({ label: "Model", x: 6 }, discount)).toContain("Model (50% discount)");
   });
 });
 

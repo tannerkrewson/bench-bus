@@ -190,8 +190,10 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
       id: record.slug,
       label: metadata.label,
       // Preserve existing concise source names, but never leak verbose
-      // parenthetical metadata into selector names.
-      selectionLabel: record.name.includes("(") || metadata.label.endsWith(" 0423") ? metadata.label : record.name,
+      // parenthetical metadata into selector names. DeepSeek release numbers
+      // are canonicalized because bare AA slugs map to dated OpenRouter ids.
+      selectionLabel:
+        record.name.includes("(") || /deepseek/i.test(`${record.name} ${record.slug}`) ? metadata.label : record.name,
       brand: inferModelBrand(record.name, record.slug),
       effortGroup: metadata.groupKey,
       ...(metadata.effort ? { effort: metadata.effort } : {}),

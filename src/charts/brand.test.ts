@@ -196,6 +196,32 @@ describe("model brand colors", () => {
     expect(new Set(modelGroupColors(keys, true).values()).size).toBe(keys.length);
   });
 
+  it("keeps the curated AA default families on distinct palette slots", () => {
+    const keys = [
+      "gpt-5-6-luna",
+      "gpt-5-6-sol",
+      "muse-spark-1-3",
+      "opus-5",
+      "fable-5-1",
+      "gpt-6-astra",
+      "gemini-3-8-flash",
+      "gemini-3-1-pro-preview",
+      "deepseek-v4-flash-0731",
+      "deepseek-v4-pro-0813",
+      "glm-5-3",
+      "glm-5-3-flash",
+      "grok-4-6",
+      "kimi-k3",
+      "qwen3-8-flash-next",
+      "qwen3-8-max",
+      "minimax-m3",
+      "mimo-v2-5-0424",
+    ];
+
+    expect(new Set(modelGroupColors(keys, false).values()).size).toBe(keys.length);
+    expect(new Set(modelGroupColors(keys, true).values()).size).toBe(keys.length);
+  });
+
   it("keeps every color-blind slot above the contrast target on supported surfaces", () => {
     for (const color of COLOR_BLIND_MODEL_GROUP_PALETTE.light) {
       for (const surface of COLOR_BLIND_SURFACE_SWATCHES.light) {

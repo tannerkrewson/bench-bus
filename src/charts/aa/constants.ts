@@ -2,46 +2,41 @@
 export const AA_DEFAULT_COST_MODE = "intelligence-vs-cost-per-task" as const;
 
 /**
- * Legacy curated models that remain visible alongside the data-driven default
- * families. Keep upstream slugs verbatim so URL/session selections remain
- * stable as the catalog changes.
+ * Reasoning models shown in the initial AA/OpenRouter chart view. Keep
+ * upstream AA slugs verbatim so URL/session selections remain stable as the
+ * catalog changes. Non-reasoning rows are excluded by the chart section.
  */
 export const AA_DEFAULT_MODEL_SLUGS = [
-  "mimo-v2-5-pro",
   "gpt-5-6-luna-low",
-  "gpt-5-6-sol-low",
-  "gemini-3-5-flash-lite",
-  "claude-opus-5-xhigh",
-  "claude-opus-5-low",
-  "mimo-v2-5-0424",
   "gpt-5-6-luna",
   "gpt-5-6-luna-medium",
-  "gpt-5-6-sol-medium",
-  "claude-opus-5-high",
-  "deepseek-v4-pro",
-  "deepseek-v4-pro-0424",
-  "gpt-5-6-luna-xhigh",
-  "gpt-5-6-sol-high",
   "gpt-5-6-luna-high",
-  "gemini-3-7-flash",
-  "hy3",
-  "claude-opus-5",
-  "grok-4-6",
-  "grok-4-6-medium",
-  "glm-5-2",
-  "gpt-5-6-sol",
+  "gpt-5-6-luna-xhigh",
+  "gpt-5-6-sol-low",
+  "gpt-5-6-sol-medium",
+  "gpt-5-6-sol-high",
   "gpt-5-6-sol-xhigh",
-  "gemini-3-7-flash-low",
-  "gemini-3-7-flash-medium",
-  "kimi-k3",
+  "gpt-5-6-sol",
+  "muse-spark-1-3-xhigh",
+  "claude-opus-5-high",
+  "claude-opus-5",
+  "claude-opus-5-xhigh",
+  "claude-fable-5-1-high",
+  "claude-fable-5-1-xhigh",
+  "claude-fable-5-1",
+  "gpt-6-astra",
+  "gemini-3-8-flash",
+  "gemini-3-1-pro-preview",
+  // These AA slugs map to deepseek/deepseek-v4-flash-0731 and
+  // deepseek/deepseek-v4-pro-0813 respectively.
   "deepseek-v4-flash",
-  "deepseek-v4-flash-0420",
-  "muse-spark-1-2",
-  // Keep the explicitly curated model visible in the best-value defaults even
-  // when it is not on AA's automatically computed frontier.
-  "claude-opus-5-medium",
+  "deepseek-v4-pro",
   "glm-5-3",
   "glm-5-3-flash",
-  "qwen3-8-27b",
+  "grok-4-6",
+  "kimi-k3",
   "qwen3-8-flash-next",
+  "qwen3-8-max",
+  "minimax-m3",
+  "mimo-v2-5-0424",
 ] as const;
