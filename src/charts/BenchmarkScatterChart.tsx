@@ -50,7 +50,7 @@ export interface BenchmarkScatterChartProps {
 }
 
 export interface BenchmarkHoverDetails {
-  kind: "point" | "discount-endpoint";
+  kind: "point";
   discount?: PriceDiscountAnnotation;
 }
 
@@ -63,7 +63,6 @@ const MODEL_DOT_RADIUS = (DOT_SIZE - POINT_STROKE_WIDTH) / 2;
 const MODEL_LABEL_LINE_HEIGHT = 20;
 const DOT_HIT_RADIUS = 14;
 const HOVER_RING_RADIUS = MODEL_DOT_RADIUS + 3;
-const DISCOUNT_HIT_RADIUS = 8;
 const DISCOUNT_ENDPOINT_GAP = MODEL_DOT_RADIUS + 2;
 const PLOT_ANIMATION_DURATION = 180;
 const EMPHASIS_TRANSITION_DURATION = 140;
@@ -91,7 +90,7 @@ function isTouchLikePointer(pointerType: string | undefined): boolean {
 }
 
 /** Geometry for the leftward horizontal and downward vertical dot guides.
- *  Rendered only while a dot hit (hover or discount-endpoint) is active. */
+ *  Rendered only while a plotted dot hit is active. */
 export interface CrosshairGuideGeometry {
   horizontal: { left: number; width: number };
   vertical: { left: number; top: number; height: number };
@@ -401,6 +400,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   } | null>(null);
   const [hoveredCrownId, setHoveredCrownId] = createSignal<string | null>(null);
   const [hoveredLabelId, setHoveredLabelId] = createSignal<string | null>(null);
+  const [hoveredConnectorFamilyId, setHoveredConnectorFamilyId] = createSignal<string | null>(null);
   const clearHoveredPoint = () => {
     setHoveredPosition(null);
     setHoveredAxisReadout(null);
@@ -418,7 +418,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     modelLabel: string;
   }[]>([]);
   const [discountDecorations, setDiscountDecorations] = createSignal<DiscountDecoration[]>([]);
-  const [hoveredDiscountId, setHoveredDiscountId] = createSignal<string | null>(null);
   const [plotXSnapshot, setPlotXSnapshot] = createSignal("");
   // currentSeries and plot are intentionally kept outside Solid because uPlot
   // owns their lifecycle. Publish a revision after each completed plot render
@@ -430,12 +429,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   // independently from the cursor state. Labels use the same family focus,
   // but never own a dot tooltip or snapped cursor.
   let hoveredConnectorId: string | null = null;
-  let hoveredDiscountEndpointId: string | null = null;
   let baseSeriesAlphas: number[] = [];
 
   type PersistentInteraction =
     | { kind: "family"; id: string }
-    | { kind: "discount-endpoint"; id: string }
     | { kind: "point"; id: string }
     | { kind: "crown"; id: string };
   let persistentInteraction: PersistentInteraction | null = null;
@@ -484,9 +481,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   const publishDiscountDecorations = (next: DiscountDecoration[]) => {
     setDiscountDecorations(next);
-    if (hoveredDiscountId() !== null && !next.some((discount) => discount.id === hoveredDiscountId())) {
-      setHoveredDiscountId(null);
-    }
   };
 
   const refreshSeries = () => {
@@ -943,7 +937,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   const setModelLabelHover = (id: string | null) => {
     setLabelHover(id);
-    setHoveredDiscountId(null);
     // A dot tooltip may already be open when the pointer enters the label.
     // Labels intentionally own only emphasis, never tooltip content.
     props.onHover?.(null);
@@ -952,7 +945,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   const setConnectorHover = (id: string) => {
     if (persistentInteraction !== null) return;
     hoveredConnectorId = id;
-    setHoveredDiscountId(null);
+    setHoveredConnectorFamilyId(id);
     hoveredIndex = null;
     clearHoveredPoint();
     setModelLabelHover(id);
@@ -962,60 +955,22 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     if (persistentInteraction !== null) return;
     if (hoveredConnectorId !== id) return;
     hoveredConnectorId = null;
+    setHoveredConnectorFamilyId(null);
     setLabelHover(null);
     props.onHover?.(null);
   };
 
-  const setDiscountConnectorHover = (discountId: string, pointId: string) => {
+  const setDiscountEndpointHover = (pointId: string) => {
     if (persistentInteraction !== null) return;
+    // The original-price chevron is an entry point for family emphasis, not a
+    // second model point. Match the solid effort connector: no tooltip,
+    // crosshair, or hover ring, and reveal every family discount connector.
     setConnectorHover(pointId);
-    setHoveredDiscountId(discountId);
   };
 
-  const clearDiscountConnectorHover = (discountId: string, pointId: string) => {
-    if (persistentInteraction !== null || hoveredDiscountId() !== discountId) return;
-    setHoveredDiscountId(null);
-    clearConnectorHover(pointId);
-  };
-
-  const setDiscountEndpointHover = (discount: DiscountDecoration) => {
-    if (!plot) return;
-    const pointIndex = currentSeries.ids.indexOf(discount.pointId);
-    if (pointIndex < 0) return;
-    const plotLeft = plot.valToPos(discount.preX, "x");
-    const plotTop = plot.valToPos(discount.y, "y");
-    if (!Number.isFinite(plotLeft) || !Number.isFinite(plotTop)) return;
-    hoveredDiscountEndpointId = `${discount.id}:pre`;
-    hoveredConnectorId = null;
-    setHoveredDiscountId(discount.id);
-    hoveredIndex = pointIndex;
-    hoveredLabelBounds = null;
-    setHoveredLabelId(null);
-    const target: HoverTarget = {
-      pointIndex,
-      id: discount.pointId,
-      plotLeft,
-      plotTop,
-      dataIndex: pointIndex,
-      cost: discount.preX,
-    };
-    const dot = { left: discount.preLeft, top: discount.top };
-    plot.setCursor({ left: plotLeft, top: plotTop }, false);
-    applyCrosshairDirections(plot, { left: plotLeft, top: plotTop });
-    publishHoveredPosition(dot ?? null);
-    publishHoveredReadout(target, dot);
-    props.onHover?.(discount.pointId, dot, { kind: "discount-endpoint", discount: discount.annotation });
-  };
-
-  const clearDiscountEndpointHover = (id: string) => {
+  const clearDiscountEndpointHover = (pointId: string) => {
     if (persistentInteraction !== null) return;
-    if (hoveredDiscountEndpointId !== id) return;
-    hoveredDiscountEndpointId = null;
-    setHoveredDiscountId(null);
-    hoveredIndex = null;
-    clearHoveredPoint();
-    props.onHover?.(null);
-    if (plot) applyCrosshairDirections(plot, { left: null, top: null });
+    clearConnectorHover(pointId);
   };
 
   const clearPointerInteraction = (force = false) => {
@@ -1026,8 +981,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     }
     hoveredIndex = null;
     hoveredConnectorId = null;
-    hoveredDiscountEndpointId = null;
-    setHoveredDiscountId(null);
+    setHoveredConnectorFamilyId(null);
     hoveredLabelBounds = null;
     setHoveredLabelId(null);
     clearHoveredPoint();
@@ -1039,13 +993,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     if (!persistentInteraction) return;
     const id = persistentInteraction.id;
     const stillPlotted = currentSeries.ids.includes(id);
-    const stillDiscounted = currentSeries.discounts.some((discount) => discount.id === id);
     const stillFrontier = currentSeries.frontierIds.includes(id);
-    const remainsValid = persistentInteraction.kind === "discount-endpoint"
-      ? stillDiscounted
-      : persistentInteraction.kind === "crown"
-        ? stillFrontier
-        : stillPlotted;
+    const remainsValid = persistentInteraction.kind === "crown" ? stillFrontier : stillPlotted;
     if (!remainsValid) clearPointerInteraction(true);
   };
 
@@ -1374,7 +1323,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
               }
               applyCrosshairDirections(u, { left: null, top: null });
               hoveredIndex = null;
-              setHoveredDiscountId(null);
               clearHoveredPoint();
               props.onHover?.(null);
               return;
@@ -1391,7 +1339,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 u.setCursor(rawPlotPointer, false);
               }
               applyCrosshairDirections(u, { left: null, top: null });
-              setHoveredDiscountId(null);
               clearHoveredPoint();
               props.onHover?.(null);
             } else {
@@ -1405,7 +1352,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 u.setCursor({ left: target.plotLeft, top: target.plotTop }, false);
                 applyCrosshairDirections(u);
               }
-              setHoveredDiscountId(target.discount ? target.id : null);
               props.onHover?.(
                  target.id,
                  rawPointer ?? dot,
@@ -1821,6 +1767,15 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     return group ? group.members.some((member) => member.id === id) : focusedId === id;
   };
 
+  const isHoveredConnectorFamilyId = (id: string): boolean => {
+    const focusedId = hoveredConnectorFamilyId();
+    if (focusedId === null) return false;
+    const group = currentSeries.variantGroups.find((candidate) =>
+      candidate.members.some((member) => member.id === focusedId),
+    );
+    return group ? group.members.some((member) => member.id === id) : focusedId === id;
+  };
+
   const focusedGeometry = createMemo(() => {
     plotRevision();
     const id = hoveredLabelId();
@@ -1881,7 +1836,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     clearPointerInteraction(true);
     hoveredIndex = target.pointIndex;
     hoveredConnectorId = null;
-    hoveredDiscountEndpointId = null;
+    setHoveredConnectorFamilyId(null);
     setHoveredCrownId(null);
     setHoveredLabelId(null);
     const dot = plotPosition(target.plotLeft, target.plotTop);
@@ -1894,7 +1849,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       rawPointer ?? dot,
       target.discount ? { kind: "point", discount: target.discount } : undefined,
     );
-    setHoveredDiscountId(target.discount ? target.id : null);
     persistentInteraction = { kind: "point", id: target.id };
   };
 
@@ -1930,24 +1884,14 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       return;
     }
 
-    const discountConnector = targetElement?.closest("[data-testid='discount-line-hit']");
-    const discountConnectorId = discountConnector?.getAttribute("data-discount-id");
-    if (discountConnectorId) {
-      clearPointerInteraction(true);
-      const discount = discountDecorations().find((candidate) => candidate.id === discountConnectorId);
-      if (discount) setDiscountConnectorHover(discount.id, discount.pointId);
-      persistentInteraction = { kind: "family", id: discount?.pointId ?? discountConnectorId };
-      return;
-    }
-
     const endpoint = targetElement?.closest("[data-testid='discount-endpoint-hit']");
     const endpointId = endpoint?.getAttribute("data-discount-id");
     if (endpointId) {
       const discount = discountDecorations().find((candidate) => candidate.id === endpointId);
       if (discount) {
         clearPointerInteraction(true);
-        setDiscountEndpointHover(discount);
-        persistentInteraction = { kind: "discount-endpoint", id: endpointId };
+        setConnectorHover(discount.pointId);
+        persistentInteraction = { kind: "family", id: discount.pointId };
         return;
       }
     }
@@ -1998,11 +1942,11 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     };
     const targetElement = event.target instanceof Element ? event.target : null;
     const isChartOverlayTarget = targetElement?.closest(
-      "[data-testid='model-label'], [data-testid='family-connector-hit'], [data-testid='discount-line-hit']",
+      "[data-testid='model-label'], [data-testid='family-connector-hit']",
     ) !== null;
     // These overlays own their complete interaction lifecycle. Letting the
     // root pointer handler re-run dot snapping here can replace a crown or
-    // discount-endpoint tooltip with the neighboring plotted dot.
+    // discount-endpoint interaction with the neighboring plotted dot.
     if (targetElement?.closest("[data-testid='pareto-crown'], [data-testid='discount-endpoint-hit']")) return;
     // The chart root is larger than uPlot's actual plot surface because it
     // also contains labels, watermark, and axis space. Pointer movement in
@@ -2029,7 +1973,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       plot.setCursor(rawPlotPointer, false);
       applyCrosshairDirections(plot, { left: null, top: null });
       hoveredIndex = null;
-      if (hoveredConnectorId === null) setHoveredDiscountId(null);
       clearHoveredPoint();
       props.onHover?.(null);
       return;
@@ -2039,7 +1982,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       plot.setCursor(rawPlotPointer, false);
       applyCrosshairDirections(plot, { left: null, top: null });
       clearHoveredPoint();
-      setHoveredDiscountId(null);
       props.onHover?.(null);
       return;
     }
@@ -2048,7 +1990,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     applyCrosshairDirections(plot, { left: target.plotLeft, top: target.plotTop });
     publishHoveredPosition(dot ?? null);
     publishHoveredReadout(target, dot);
-    setHoveredDiscountId(target.discount ? target.id : null);
     props.onHover?.(
       target.id,
       rawPointer ?? dot,
@@ -2065,10 +2006,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       props.onSelectPoint?.(discountEndpointId);
       return;
     }
-    // Labels, family connectors, discount lines, and crowns own their own
+    // Labels, family connectors, and crowns own their own
     // interaction. A discount endpoint remains a valid model-dot target.
     if (targetElement?.closest(
-      "[data-testid='pareto-crown'], [data-testid='discount-line-hit'], [data-testid='family-connector-hit'], [data-testid='model-label']",
+      "[data-testid='pareto-crown'], [data-testid='family-connector-hit'], [data-testid='model-label']",
     )) return;
     const over = container?.querySelector<HTMLElement>(".u-over");
     if (!over || !Number.isFinite(event.clientX) || !Number.isFinite(event.clientY)) return;
@@ -2242,7 +2183,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
               discount.effectiveLeft,
               DISCOUNT_ENDPOINT_GAP,
             );
-            const linked = () => hoveredDiscountId() === discount.id;
+            const linked = () => isHoveredConnectorFamilyId(discount.pointId);
             return (
               <g
                 fill="none"
@@ -2291,54 +2232,29 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           }}
         </For>
       </svg>
-      {/* Keep discount lines interactive without making the SVG decoration
-          layer capture pointer movement from the uPlot surface. */}
+      {/* The pre-discount chevron is interactive; dotted connectors are visual
+          output of a family hover and must not create a large invisible hit area. */}
       <For each={discountDecorations()}>
-        {(discount) => {
-          const segment = trimDiscountSegment(discount.preLeft, discount.effectiveLeft);
-          return (
-            <>
-              {segment && (
-                <span
-                  class="pointer-events-auto absolute z-2"
-                  style={{
-                    left: `${Math.min(segment.x1, segment.x2)}px`,
-                    top: `${discount.top - DISCOUNT_HIT_RADIUS}px`,
-                    width: `${Math.abs(segment.x2 - segment.x1)}px`,
-                    height: `${DISCOUNT_HIT_RADIUS * 2}px`,
-                    transition: [
-                      motionTransition("left", PLOT_ANIMATION_DURATION),
-                      motionTransition("top", PLOT_ANIMATION_DURATION),
-                      motionTransition("width", PLOT_ANIMATION_DURATION),
-                    ].filter((value) => value !== "none").join(", ") || "none",
-                  }}
-                  data-testid="discount-line-hit"
-                  data-discount-id={discount.id}
-                  onMouseEnter={() => setDiscountConnectorHover(discount.id, discount.pointId)}
-                  onMouseLeave={() => clearDiscountConnectorHover(discount.id, discount.pointId)}
-                />
-              )}
-              <span
-                class="pointer-events-auto absolute z-3"
-                style={{
-                  left: `${discount.preLeft - DOT_HIT_RADIUS}px`,
-                  top: `${discount.top - DOT_HIT_RADIUS}px`,
-                  width: `${DOT_HIT_RADIUS * 2}px`,
-                  height: `${DOT_HIT_RADIUS * 2}px`,
-                  transition: [
-                    motionTransition("left", PLOT_ANIMATION_DURATION),
-                    motionTransition("top", PLOT_ANIMATION_DURATION),
-                  ].filter((value) => value !== "none").join(", ") || "none",
-                }}
-                data-testid="discount-endpoint-hit"
-                data-discount-id={discount.id}
-                data-discount-endpoint="pre"
-                onMouseEnter={() => setDiscountEndpointHover(discount)}
-                onMouseLeave={() => clearDiscountEndpointHover(`${discount.id}:pre`)}
-              />
-            </>
-          );
-        }}
+        {(discount) => (
+          <span
+            class="pointer-events-auto absolute z-3"
+            style={{
+              left: `${discount.preLeft - DOT_HIT_RADIUS}px`,
+              top: `${discount.top - DOT_HIT_RADIUS}px`,
+              width: `${DOT_HIT_RADIUS * 2}px`,
+              height: `${DOT_HIT_RADIUS * 2}px`,
+              transition: [
+                motionTransition("left", PLOT_ANIMATION_DURATION),
+                motionTransition("top", PLOT_ANIMATION_DURATION),
+              ].filter((value) => value !== "none").join(", ") || "none",
+            }}
+            data-testid="discount-endpoint-hit"
+            data-discount-id={discount.id}
+            data-discount-endpoint="pre"
+            onMouseEnter={() => setDiscountEndpointHover(discount.pointId)}
+            onMouseLeave={() => clearDiscountEndpointHover(discount.pointId)}
+          />
+        )}
       </For>
       {/* HTML crown hit targets sit above the canvas without making the full
           SVG decoration layer intercept pointer movement from the plot. */}

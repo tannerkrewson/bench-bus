@@ -116,7 +116,7 @@ describe("AaChartSection", () => {
     dispose();
   });
 
-  it("explains a discounted model when its pre-discount endpoint is hovered", async () => {
+  it("emphasizes the model family when its pre-discount endpoint is hovered", async () => {
     const discounted = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
       slug: "gpt-5.6-sol-high",
@@ -144,11 +144,10 @@ describe("AaChartSection", () => {
     const endpoint = container.querySelector<HTMLElement>("[data-testid='discount-endpoint-hit']");
     expect(endpoint).not.toBeNull();
     endpoint?.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
-    const tooltip = container.querySelector("[data-testid='chart-tooltip']");
-    expect(tooltip?.textContent).toContain("GPT-5.6 Sol high (50% off)");
-    expect(tooltip?.textContent).toContain("$184.93 * (1 - 50%) = $92.47");
-    expect(tooltip?.textContent).toContain("Provider A");
-    expect(tooltip?.textContent).not.toContain("Source provider discount from Provider A");
+    expect(container.querySelector("[data-testid='chart-tooltip']")).toBeNull();
+    expect(container.querySelector("[data-testid='hovered-dot']")).toBeNull();
+    expect(container.querySelector("[data-hovered-label-id='gpt-5.6-sol-high']")).not.toBeNull();
+    expect(container.querySelectorAll("[data-testid='discount-line-connector']")).toHaveLength(1);
     dispose();
   });
 

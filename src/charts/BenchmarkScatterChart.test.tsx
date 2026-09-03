@@ -296,12 +296,12 @@ describe("BenchmarkScatterChart discount annotations", () => {
       />
     ));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    const lineHit = container.querySelector<HTMLElement>("[data-testid='discount-line-hit']")!;
+    const leader = container.querySelector<SVGLineElement>("[data-testid='model-label-leader']")!;
     const root = container.querySelector<HTMLElement>("[data-testid='benchmark-scatter']")!;
     root.dispatchEvent(new MouseEvent("pointermove", {
       bubbles: true,
-      clientX: Number.parseFloat(lineHit.style.left),
-      clientY: Number.parseFloat(lineHit.style.top) + 8,
+      clientX: Number(leader.getAttribute("x1")),
+      clientY: Number(leader.getAttribute("y1")),
     }));
     expect(onHover).toHaveBeenLastCalledWith(
       "plotted",
@@ -335,12 +335,10 @@ describe("BenchmarkScatterChart discount annotations", () => {
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     const endpoint = container.querySelector<HTMLElement>("[data-testid='discount-endpoint-hit']")!;
     endpoint.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
-    expect(onHover).toHaveBeenLastCalledWith(
-      "cheap",
-      expect.anything(),
-      { kind: "discount-endpoint", discount: { percentage: 20, preDiscountX: 4 } },
-    );
-    expect(container.querySelector("[data-testid='hovered-dot']")).not.toBeNull();
+    expect(onHover).toHaveBeenLastCalledWith(null);
+    expect(container.querySelector("[data-testid='hovered-dot']")).toBeNull();
+    expect(container.querySelector("[data-hovered-label-id='cheap']")).not.toBeNull();
+    expect(container.querySelectorAll("[data-testid='discount-line-connector']")).toHaveLength(1);
 
     const crown = container.querySelector<HTMLElement>("[data-testid='pareto-crown']")!;
     crown.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
@@ -388,7 +386,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
     ];
     const [points, setPoints] = createSignal<readonly PlottablePoint[]>(initialPoints);
     const [scale, setScale] = createSignal<"log" | "linear">("log");
-    const { container, dispose } = mount(() => (
+    const { container, dispose } = mountSizedChart(() => (
       <BenchmarkScatterChart
         points={points}
         scale={scale}
@@ -407,20 +405,34 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect(arrows[0]?.querySelector("[data-testid='discount-original-price-arrow']")).not.toBeNull();
     expect(arrows[0]?.querySelector("[data-discount-part='original-price-arrow']")).not.toBeNull();
     expect(arrows[0]?.getAttribute("stroke-dasharray")).toBe("0.1 5");
-    expect(container.querySelectorAll("[data-testid='discount-line-hit']")).toHaveLength(1);
+    // Dotted connectors are visual output of a family hover, not a broad
+    // invisible hover target.
+    expect(container.querySelectorAll("[data-testid='discount-line-hit']")).toHaveLength(0);
     expect(container.querySelectorAll("[data-testid='discount-endpoint-hit'][data-discount-endpoint='pre']")).toHaveLength(1);
-    const discountHit = container.querySelector("[data-testid='discount-line-hit']") as HTMLElement;
-    discountHit.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    const root = container.querySelector<HTMLElement>("[data-testid='benchmark-scatter']")!;
+    const leader = container.querySelector<SVGLineElement>("[data-testid='model-label-leader']")!;
+    const endpoint = container.querySelector<HTMLElement>("[data-testid='discount-endpoint-hit']")!;
+    const pointLeft = Number(leader.getAttribute("x1"));
+    const pointTop = Number(leader.getAttribute("y1"));
+    const preLeft = Number.parseFloat(endpoint.style.left) + 14;
+    // The old invisible rectangle claimed this empty midpoint and opened a
+    // discount hover while the pointer was traveling toward another model.
+    root.dispatchEvent(new MouseEvent("pointermove", {
+      bubbles: true,
+      clientX: (preLeft + pointLeft) / 2,
+      clientY: pointTop,
+    }));
+    expect(container.querySelector("[data-hovered-label-id]")).toBeNull();
+    expect(container.querySelector("[data-testid='hovered-dot']")).toBeNull();
+    expect(container.querySelectorAll("[data-testid='discount-line-connector']")).toHaveLength(0);
+    const endpointHit = endpoint;
+    endpointHit.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
     expect(arrows[0]?.querySelectorAll("[data-discount-part='connector']")).toHaveLength(1);
     expect(container.querySelector("[data-hovered-label-id='discounted-model']")).not.toBeNull();
-    discountHit.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
-    expect(arrows[0]?.querySelectorAll("[data-discount-part='connector']")).toHaveLength(0);
-    const endpointHit = container.querySelector("[data-testid='discount-endpoint-hit']") as HTMLElement;
-    endpointHit.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
-    expect(container.querySelector("[data-testid='hovered-dot']")).not.toBeNull();
-    expect(container.querySelector("[data-testid='hover-axis-readouts']")?.textContent).toContain("$10");
-    endpointHit.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
     expect(container.querySelector("[data-testid='hovered-dot']")).toBeNull();
+    expect(container.querySelector("[data-testid='hover-axis-readouts']")).toBeNull();
+    endpointHit.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+    expect(arrows[0]?.querySelectorAll("[data-discount-part='connector']")).toHaveLength(0);
     expect(arrows[0]?.querySelector("[data-testid='discount-original-price-arrow']")?.getAttribute("d")).toContain("L");
 
     setScale("linear");
@@ -430,12 +442,11 @@ describe("BenchmarkScatterChart discount annotations", () => {
     setPoints([initialPoints[1]!]);
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    expect(container.querySelectorAll("[data-testid='discount-line-hit']")).toHaveLength(0);
     expect(container.querySelectorAll("[data-testid='discount-line']")).toHaveLength(0);
     dispose();
   });
 
-  it("renders only the original-price chevron until the model is hovered", async () => {
+  it("reveals the dotted connector from the original-price chevron without a dot hover", async () => {
     const { container, dispose } = mount(() => (
       <BenchmarkScatterChart
         points={() => [{
@@ -459,13 +470,15 @@ describe("BenchmarkScatterChart discount annotations", () => {
     const arrowhead = group.querySelector("[data-testid='discount-original-price-arrow']")!;
     expect(arrowhead.getAttribute("d")).toMatch(/L .+ L/);
     expect(container.querySelectorAll("[data-testid='discount-endpoint-dot']")).toHaveLength(0);
-    const lineHit = container.querySelector<HTMLElement>("[data-testid='discount-line-hit']")!;
-    lineHit.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    const endpointHit = container.querySelector<HTMLElement>("[data-testid='discount-endpoint-hit']")!;
+    endpointHit.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
     const connector = group.querySelector<SVGLineElement>("[data-testid='discount-line-connector']")!;
     expect(connector).not.toBeNull();
     expect(connector.getAttribute("stroke-dasharray")).toBeNull();
     expect(Math.abs(Number(connector.getAttribute("x2")) - Number(connector.getAttribute("x1")))).toBeGreaterThan(1);
-    lineHit.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+    expect(container.querySelector("[data-testid='hovered-dot']")).toBeNull();
+    expect(container.querySelector("[data-testid='hover-axis-readouts']")).toBeNull();
+    endpointHit.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
     expect(group.querySelector("[data-testid='discount-line-connector']")).toBeNull();
     dispose();
   });
@@ -492,14 +505,15 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect(discount.querySelectorAll("[data-testid='discount-original-price-arrow']")).toHaveLength(1);
     expect(discount.querySelector("[data-discount-endpoint='effective']")).toBeNull();
     expect(container.querySelectorAll("[data-testid='discount-endpoint-hit'][data-discount-endpoint='effective']")).toHaveLength(0);
-    const lineHit = container.querySelector<HTMLElement>("[data-testid='discount-line-hit']")!;
-    lineHit.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    const endpointHit = container.querySelector<HTMLElement>("[data-testid='discount-endpoint-hit']")!;
+    endpointHit.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
     const line = discount.querySelector("[data-testid='discount-line-connector']")!;
     expect(Math.abs(Number(line.getAttribute("x2")) - Number(line.getAttribute("x1")))).toBeGreaterThan(1);
+    endpointHit.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
     dispose();
   });
 
-  it("shows only the hovered model's discount connector", async () => {
+  it("shows every family discount connector from a solid effort hover", async () => {
     const { container, dispose } = mountSizedChart(() => (
       <BenchmarkScatterChart
         points={() => [
@@ -533,18 +547,17 @@ describe("BenchmarkScatterChart discount annotations", () => {
     expect(lines).toHaveLength(2);
     expect(lines.map((line) => line.getAttribute("opacity"))).toEqual(["0.75", "0.75"]);
     expect(lines.map((line) => line.querySelectorAll("[data-discount-part='connector']").length)).toEqual([0, 0]);
-     const firstHit = container.querySelector<HTMLElement>("[data-testid='discount-line-hit']");
-     firstHit?.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
-     expect(lines.map((line) => line.getAttribute("opacity"))).toEqual(["0.75", "0.75"]);
-     expect(lines.map((line) => line.querySelectorAll("[data-discount-part='connector']").length)).toEqual([1, 0]);
-     firstHit?.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: 10, clientY: 10 }));
-     expect(lines.map((line) => line.querySelectorAll("[data-discount-part='connector']").length)).toEqual([1, 0]);
-     firstHit?.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+    expect(container.querySelectorAll("[data-testid='discount-line-hit']")).toHaveLength(0);
+    const connectorHit = container.querySelector<HTMLElement>("[data-testid='family-connector-hit']")!;
+    connectorHit.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    expect(lines.map((line) => line.getAttribute("opacity"))).toEqual(["0.75", "0.75"]);
+    expect(lines.map((line) => line.querySelectorAll("[data-discount-part='connector']").length)).toEqual([1, 1]);
+    connectorHit.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
     expect(lines.map((line) => line.querySelectorAll("[data-discount-part='connector']").length)).toEqual([0, 0]);
     dispose();
   });
 
-  it("does not connect sibling effort discounts when another model is hovered", async () => {
+  it("connects sibling effort discounts without connecting unrelated discounts", async () => {
     const { container, dispose } = mountSizedChart(() => (
       <BenchmarkScatterChart
         points={() => [
@@ -588,7 +601,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
       connectorHit?.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
       const focusedId = container.querySelector("[data-hovered-label-id]")?.getAttribute("data-hovered-label-id") ?? null;
       expect(focusedId).toBe("model-high");
-      expect(container.querySelectorAll("[data-testid='discount-line-connector']")).toHaveLength(0);
+      expect(container.querySelectorAll("[data-testid='discount-line-connector']")).toHaveLength(2);
       connectorHit?.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
       expect(container.querySelectorAll("[data-testid='discount-line-connector']")).toHaveLength(0);
     } finally {
@@ -927,7 +940,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
     dispose();
   });
 
-  it("keeps a touch-tapped discount endpoint active until an outside tap", async () => {
+  it("keeps a touch-tapped discount endpoint family emphasis until an outside tap", async () => {
     const onHover = vi.fn();
     const { container, dispose } = mountSizedChart(() => (
       <BenchmarkScatterChart
@@ -951,16 +964,14 @@ describe("BenchmarkScatterChart discount annotations", () => {
     const top = Number.parseFloat(endpoint.style.top) + 8;
     endpoint.dispatchEvent(touchPointerEvent("pointerdown", left, top));
     endpoint.dispatchEvent(touchPointerEvent("pointerup", left, top));
-    expect(container.querySelector("[data-testid='hovered-dot']")).not.toBeNull();
-    expect(onHover).toHaveBeenLastCalledWith(
-      "discounted",
-      expect.anything(),
-      { kind: "discount-endpoint", discount: { percentage: 40, preDiscountX: 10 } },
-    );
+    expect(container.querySelector("[data-testid='hovered-dot']")).toBeNull();
+    expect(container.querySelector("[data-hovered-label-id='discounted']")).not.toBeNull();
+    expect(container.querySelectorAll("[data-testid='discount-line-connector']")).toHaveLength(1);
+    expect(onHover).toHaveBeenLastCalledWith(null);
 
     container.querySelector<HTMLElement>("[data-testid='benchmark-scatter']")!
       .dispatchEvent(touchPointerEvent("pointermove", 400, 280));
-    expect(container.querySelector("[data-testid='hovered-dot']")).not.toBeNull();
+    expect(container.querySelector("[data-testid='hovered-dot']")).toBeNull();
     document.body.dispatchEvent(touchPointerEvent("pointerdown", 1, 1));
     expect(container.querySelector("[data-testid='hovered-dot']")).toBeNull();
     dispose();
