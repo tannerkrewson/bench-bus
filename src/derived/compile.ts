@@ -78,7 +78,7 @@ export interface SourceResolution {
 }
 
 export interface CompileStats {
-  /** AA chart records emitted, including listed-frontier records without OpenRouter pricing. */
+  /** AA chart records emitted, including listed-frontier and scored DeepSWE records without OpenRouter pricing. */
   aaMatched: number;
   /** AA benchmark models dropped because they have no OpenRouter pricing. */
   aaUnmatched: number;
@@ -106,9 +106,9 @@ function toResolution(resolved: ResolvedSnapshot | undefined): SourceResolution 
 
 /**
  * Build typed AA chart records by joining AA models with OpenRouter pricing.
- * Listed-frontier models are retained from AA even when no OpenRouter row is
- * available; this preserves a source-backed listed-pricing view without
- * inventing provider or weighted prices.
+ * Listed-frontier models and verified DeepSWE-scored models are retained from
+ * AA even when no OpenRouter row is available; this preserves source-backed
+ * listed-pricing views without inventing provider or weighted prices.
  */
 export function joinAaWithPricing(
   aaModels: ArtificialAnalysisModel[],
@@ -170,8 +170,12 @@ export function joinAaWithPricing(
     const match = pricingBySlug.get(model.slug) ?? (
       aliasOpenRouterId === undefined ? undefined : pricingByOpenRouterId.get(aliasOpenRouterId)
     );
+    const deepSweScore = scoreByAaSlug.get(model.slug);
     const isValidListedFrontier = frontierSet.has(model.slug) && aaListedWorkloadCost(model) !== null;
-    if (!match && !isValidListedFrontier) {
+    // A verified DeepSWE score is enough to retain an AA record. It may have
+    // no current OpenRouter pricing, but AA listed pricing still supports the
+    // DeepSWE score view without inventing a provider price.
+    if (!match && !isValidListedFrontier && !deepSweScore) {
       unmatchedAa += 1;
       continue;
     }
@@ -184,8 +188,8 @@ export function joinAaWithPricing(
       intelligenceIndex: model.intelligenceIndex,
       scoreSources: {
         artificialAnalysis: model.intelligenceIndex,
-        ...(scoreByAaSlug.get(model.slug)
-          ? { deepSwePassAt1: scoreByAaSlug.get(model.slug)!.passAt1 }
+        ...(deepSweScore
+          ? { deepSwePassAt1: deepSweScore.passAt1 }
           : {}),
       },
       canonicalTokens: {

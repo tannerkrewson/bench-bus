@@ -160,6 +160,31 @@ describe("compileBundle", () => {
     expect(compiled.sources.deepswe).toEqual({ available: true, observedAt: T1 });
   });
 
+  it("retains a verified DeepSWE model without current OpenRouter pricing", () => {
+    const score = collectFromLeaderboard(
+      rawDeepSweLeaderboardSchema.parse(deepsweFixture),
+      T1,
+    ).records.find((record) => record.model === "deepseek-v4-pro")!;
+    const joined = joinAaWithPricing(
+      [validAaModel],
+      [],
+      ALIASES,
+      [],
+      [],
+      [score],
+      [{
+        aaModelSlug: validAaModel.slug,
+        deepSweModel: "deepseek-v4-pro",
+        harness: "mini-swe-agent",
+        reasoningEffort: null,
+      }],
+    );
+
+    expect(joined.records).toHaveLength(1);
+    expect(joined.records[0]?.providers).toEqual([]);
+    expect(joined.records[0]?.scoreSources.deepSwePassAt1).toBe(score.passAt1);
+  });
+
   it("excludes models introduced later from earlier views", async () => {
     const atT1 = await compileBundle(store, { asOf: T1, aliases: ALIASES });
     const t1Slugs = decodeBundle(JSON.parse(atT1.json)).aa?.records.map((r) => r.slug);

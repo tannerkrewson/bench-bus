@@ -26,6 +26,10 @@ export const deepSweAliasFileSchema = z
   .refine(
     (file) => new Set(file.entries.map((entry) => entry.aaModelSlug)).size === file.entries.length,
     { message: "duplicate aaModelSlug in DeepSWE alias file" },
+  )
+  .refine(
+    (file) => new Set(file.entries.map(deepSweAliasIdentity)).size === file.entries.length,
+    { message: "duplicate DeepSWE model configuration in alias file" },
   );
 
 export function parseDeepSweAliasFile(raw: string, source = "DeepSWE alias file") {

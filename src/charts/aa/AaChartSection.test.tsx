@@ -72,14 +72,15 @@ describe("AaChartSection", () => {
     dispose();
   });
 
-  it("omits records without scores when DeepSWE is selected", () => {
+  it("uses listed pricing and selects scored records when DeepSWE is selected", () => {
     const { container, dispose } = mount(() => <AaChartSection records={() => AA_FIXTURE_RECORDS} />);
     const scoreSource = container.querySelector("#chart-aa-control-scoreSource") as HTMLSelectElement;
     scoreSource.value = "deepswe";
     scoreSource.dispatchEvent(new Event("change", { bubbles: true }));
 
-    expect(container.textContent).toContain("no pricing");
-    expect(container.textContent).toContain("Unavailable with the current pricing settings.");
+    const pricingMode = container.querySelector("#chart-aa-control-pricingMode") as HTMLSelectElement;
+    expect(pricingMode.value).toBe("listed");
+    expect(container.querySelector("#chart-aa-control-cacheHitRate")).not.toBeNull();
     expect(container.textContent).not.toContain("no DeepSWE score");
     expect(container.querySelectorAll("[data-testid='model-list'] input[type='checkbox']")).toHaveLength(1);
     dispose();

@@ -17,7 +17,7 @@ import { timeVaryingDiscountNote } from "../../content/discountNotes";
 import ChartControlPanel from "../../components/ChartControlPanel";
 import ModelList from "../../components/ModelList";
 import type { DerivedAaChartRecord } from "../../schemas";
-import { aaAdapter, aaControlledTooltipLines, aaYAxisLabel } from "./adapter";
+import { AA_SCORE_SOURCE_CONTROL_ID, aaAdapter, aaControlledTooltipLines, aaYAxisLabel } from "./adapter";
 import { AA_DEFAULT_CACHE_HIT_RATE } from "./pricing";
 import {
   discountDetailLines,
@@ -55,6 +55,19 @@ export interface AaChartSectionProps {
 export default function AaChartSection(props: AaChartSectionProps) {
   const defaultControls = (): PricingControlState =>
     Object.fromEntries(aaAdapter.controlSpecs.map((spec) => [spec.id, spec.default]));
+  const initialControls = {
+    ...defaultControls(),
+    ...props.initialState?.controls,
+  };
+  // DeepSWE covers models that may not have a current OpenRouter provider;
+  // listed AA pricing keeps the score view populated by default. An explicit
+  // URL pricing mode still wins.
+  if (
+    initialControls[AA_SCORE_SOURCE_CONTROL_ID] === "deepswe" &&
+    props.initialState?.controls?.pricingMode === undefined
+  ) {
+    initialControls.pricingMode = "listed";
+  }
 
   const [scale, setScale] = createSignal(props.initialState?.scale ?? aaAdapter.defaultXScale);
   const [query, setQuery] = createSignal(props.initialState?.query ?? "");
@@ -67,10 +80,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
   const [showFrontier, setShowFrontier] = createSignal(props.initialState?.showFrontier ?? false);
   const [showCrowns, setShowCrowns] = createSignal(props.initialState?.showCrowns ?? true);
   const [showDiscounts, setShowDiscounts] = createSignal(props.initialState?.showDiscounts ?? true);
-  const [controls, setControls] = createSignal<PricingControlState>({
-    ...defaultControls(),
-    ...props.initialState?.controls,
-  });
+  const [controls, setControls] = createSignal<PricingControlState>(initialControls);
 
   const [hovered, setHovered] = createSignal<{
     id: string;
@@ -104,7 +114,17 @@ export default function AaChartSection(props: AaChartSectionProps) {
     const frontierVariantIds = listedBuild.entries
       .filter(({ point }) => point.effortGroup !== undefined && point.effort !== undefined && frontierGroups.has(point.effortGroup))
       .map(({ point }) => point.id);
-    return [...new Set([...AA_DEFAULT_MODEL_SLUGS, ...frontierPoints.map((point) => point.id), ...frontierVariantIds])];
+    const deepSweScoreIds = controls()[AA_SCORE_SOURCE_CONTROL_ID] === "deepswe"
+      ? visibleRecords()
+          .filter((record) => record.scoreSources.deepSwePassAt1 !== undefined)
+          .map((record) => record.slug)
+      : [];
+    return [...new Set([
+      ...AA_DEFAULT_MODEL_SLUGS,
+      ...frontierPoints.map((point) => point.id),
+      ...frontierVariantIds,
+      ...deepSweScoreIds,
+    ])];
   });
   const [selectedIds, setSelectedIds] = createSignal<string[]>(
     selectionSpecified()
@@ -118,7 +138,8 @@ export default function AaChartSection(props: AaChartSectionProps) {
     if (!selectionSpecified()) setSelectedIds(defaults);
   });
   // Keep the selector filter independent from chart visibility: the selector
-  // searches all priced models, while the chart contains only selected models.
+  // searches all records that are plottable under the active pricing settings,
+  // while the chart contains only selected models.
   // Missing default slugs simply have no matching entry and cannot break plot.
   const build = createMemo(() => {
     const candidate = allBuild();
@@ -216,7 +237,13 @@ export default function AaChartSection(props: AaChartSectionProps) {
   };
 
   const setControl = (id: string, value: number | boolean | string) => {
-    setControls((prev) => ({ ...prev, [id]: value }));
+    setControls((prev) => ({
+      ...prev,
+      [id]: value,
+      ...(id === AA_SCORE_SOURCE_CONTROL_ID && value === "deepswe" && prev.pricingMode === "cheapest"
+        ? { pricingMode: "listed" }
+        : {}),
+    }));
   };
 
   return (
