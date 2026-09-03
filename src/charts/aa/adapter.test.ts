@@ -66,11 +66,17 @@ describe("aaAdapter.computePoint", () => {
     expect(openRouterUrlForAaModel({ ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "deepseek-v4-flash-0420" })).toBe(
       "https://openrouter.ai/deepseek/deepseek-v4-flash",
     );
+    expect(openRouterUrlForAaModel({ ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "deepseek-v4-flash" })).toBe(
+      "https://openrouter.ai/deepseek/deepseek-v4-flash-0731",
+    );
     expect(openRouterUrlForAaModel({ ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "deepseek-v4-pro-0424" })).toBe(
       "https://openrouter.ai/deepseek/deepseek-v4-pro",
     );
     expect(openRouterUrlForAaModel({ ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "hy3" })).toBe(
       "https://openrouter.ai/tencent/hy3",
+    );
+    expect(openRouterUrlForAaModel({ ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "minimax-m3" })).toBe(
+      "https://openrouter.ai/minimax/minimax-m3",
     );
   });
 

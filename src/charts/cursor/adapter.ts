@@ -9,7 +9,7 @@ import type {
   TooltipLine,
 } from "../types";
 import { inferModelBrand } from "../brand";
-import { modelDisplayMetadata } from "../modelMetadata";
+import { latestModelVersionIds, modelDisplayMetadata } from "../modelMetadata";
 import {
   blendCursorNonOutputPrice,
   cursorCompletionTokens,
@@ -41,8 +41,13 @@ export function isCursorHiddenDefaultGroup(groupKey: string): boolean {
     groupKey === "gemini-3-6-flash" || groupKey.startsWith("glm-");
 }
 
-export function cursorDefaultVisibleIds(records: readonly DerivedCursorChartRecord[]): string[] {
-  return records
+export function cursorDefaultVisibleIds(
+  records: readonly DerivedCursorChartRecord[],
+  points?: readonly PlottablePoint[],
+): string[] {
+  const plottableIds = points === undefined ? null : new Set(points.map((point) => point.id));
+  const eligibleRecords = records.filter((record) => plottableIds === null || plottableIds.has(record.modelId));
+  const candidates = eligibleRecords
     .filter((record) => {
       const groupKey = modelDisplayMetadata(record.modelName, record.modelId).groupKey;
       return !isCursorHiddenDefaultGroup(groupKey) &&
@@ -50,6 +55,13 @@ export function cursorDefaultVisibleIds(records: readonly DerivedCursorChartReco
           !CURSOR_KNOWN_MODEL_GROUPS.has(groupKey));
     })
     .map((record) => record.modelId);
+  return latestModelVersionIds(
+    eligibleRecords.map((record) => ({
+      id: record.modelId,
+      label: modelDisplayMetadata(record.modelName, record.modelId).label,
+    })),
+    candidates,
+  );
 }
 
 const SURCHARGE_CONTROL = {
@@ -115,7 +127,7 @@ export const cursorBenchAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord>
   defaultXScale: "log",
   controlSpecs: [SURCHARGE_CONTROL, CACHE_HIT_RATE_CONTROL],
   identity: (record) => ({ id: record.modelId, label: modelDisplayMetadata(record.modelName, record.modelId).label }),
-  defaultSelectionIds: (records) => cursorDefaultVisibleIds(records),
+  defaultSelectionIds: (records, points) => cursorDefaultVisibleIds(records, points),
   computePoint: (record, controls): PlottablePoint | null => {
     const includeTokenRate = Boolean(controls[SURCHARGE_CONTROL_ID] ?? SURCHARGE_CONTROL.default);
     const cost = effectiveCursorCostUsd(record, includeTokenRate, cacheHitRateFromControls(controls));

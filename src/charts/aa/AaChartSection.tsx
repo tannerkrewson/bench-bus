@@ -27,7 +27,7 @@ import {
   paretoFrontier,
 } from "../plotData";
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
-import { isNonReasoningModel, modelGroupKey } from "../modelMetadata";
+import { expandedModelName, isNonReasoningModel, latestModelVersionIds, modelGroupKey } from "../modelMetadata";
 import MethodologyModal from "../../methodology/MethodologyModal";
 import { AaMethodologyContent } from "../../methodology/MethodologyPanel";
 import RelativeLastUpdated from "../../components/RelativeLastUpdated";
@@ -119,12 +119,16 @@ export default function AaChartSection(props: AaChartSectionProps) {
           .filter((record) => record.scoreSources.deepSwePassAt1 !== undefined)
           .map((record) => record.slug)
       : [];
-    return [...new Set([
+    const candidateIds = [...new Set([
       ...AA_DEFAULT_MODEL_SLUGS,
       ...frontierPoints.map((point) => point.id),
       ...frontierVariantIds,
       ...deepSweScoreIds,
     ])];
+    return latestModelVersionIds(
+      allBuild().entries.map(({ point }) => ({ id: point.id, label: point.label })),
+      candidateIds,
+    );
   });
   const [selectedIds, setSelectedIds] = createSignal<string[]>(
     selectionSpecified()
@@ -202,7 +206,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
     const entry = build().entries.find((e) => e.point.id === id);
     return entry
       ? {
-          title: entry.point.label,
+          title: expandedModelName(entry.record.name, entry.record.slug),
           lines: detailLinesFor(entry),
           openRouterUrl: aaAdapter.openRouterUrl?.(entry.record),
           discountNote: discountNoteFor(entry.point, discountFor(entry)),

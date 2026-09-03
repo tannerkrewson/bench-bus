@@ -29,7 +29,7 @@ import ModelList from "./ModelList";
 import MethodologyModal from "../methodology/MethodologyModal";
 import RelativeLastUpdated from "./RelativeLastUpdated";
 import ChartSubtitleContent from "./ChartSubtitle";
-import { modelGroupKey } from "../charts/modelMetadata";
+import { expandedModelName, modelGroupKey } from "../charts/modelMetadata";
 
 export interface ChartMethodology {
   title: string;
@@ -163,14 +163,14 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
     const id = selectedPointId();
     if (!id) return null;
     const entry = build().entries.find((e) => e.point.id === id);
-    return entry
-      ? {
-          title: entry.point.label,
-          lines: detailLinesFor(entry),
-          openRouterUrl: props.adapter.openRouterUrl?.(entry.record),
-          discountNote: discountNoteFor(entry.point, discountFor(entry)),
-        }
-      : null;
+    if (!entry) return null;
+    const identity = props.adapter.identity(entry.record);
+    return {
+      title: expandedModelName(identity.label, identity.id),
+      lines: detailLinesFor(entry),
+      openRouterUrl: props.adapter.openRouterUrl?.(entry.record),
+      discountNote: discountNoteFor(entry.point, discountFor(entry)),
+    };
   });
 
   const emitState = () => {

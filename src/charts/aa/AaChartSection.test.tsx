@@ -152,6 +152,37 @@ describe("AaChartSection", () => {
     dispose();
   });
 
+  it("uses the provider-qualified model name in the detail modal", async () => {
+    const discounted = {
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug: "claude-opus-5",
+      name: "Claude Opus 5",
+      shortName: "Opus 5",
+      canonicalTokens: { input: 1_000_000, output: 1_000_000 },
+      providers: [{
+        providerName: "Provider A",
+        providerSlug: "provider-a",
+        effectiveInputPrice: 40,
+        effectiveOutputPrice: 52.465,
+        listedInputPrice: 80,
+        listedOutputPrice: 104.93,
+        discountPercentage: 50,
+      }],
+    };
+    const { container, dispose } = mount(() => (
+      <AaChartSection
+        records={() => [discounted]}
+        initialState={{ selectedIds: [discounted.slug], selectionSpecified: true }}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const endpoint = container.querySelector<HTMLElement>("[data-testid='discount-endpoint-hit']");
+    endpoint?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    const dialog = container.querySelector<HTMLDialogElement>("[data-testid='chart-detail-modal']")!;
+    expect(dialog.querySelector("h3")?.textContent).toBe("Anthropic Claude Opus 5");
+    dispose();
+  });
+
   it("flags hour-varying off-peak discounts for DeepSeek-like models in the detail modal", async () => {
     const deepSeek = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
@@ -294,6 +325,55 @@ describe("AaChartSection", () => {
     expect(AA_DEFAULT_MODEL_SLUGS).toContain("glm-5-3-flash");
     expect(container.querySelector("[data-testid='aa-no-points']")).toBeNull();
     expect(AA_DEFAULT_COST_MODE).toBe("intelligence-vs-cost-per-task");
+    dispose();
+  });
+
+  it("removes superseded model releases from the implicit defaults", () => {
+    const oldRelease = {
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug: "glm-5-2",
+      name: "GLM-5.2 (max)",
+      shortName: "GLM-5.2 (max)",
+    };
+    const newRelease = {
+      ...oldRelease,
+      slug: "glm-5-3",
+      name: "GLM-5.3 (max)",
+      shortName: "GLM-5.3 (max)",
+    };
+    const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
+    const { dispose } = mount(() => (
+      <AaChartSection records={() => [oldRelease, newRelease]} onStateChange={(state) => states.push(state)} />
+    ));
+    const selected = states[states.length - 1]?.selectedIds ?? [];
+    expect(selected).toContain("glm-5-3");
+    expect(selected).not.toContain("glm-5-2");
+    dispose();
+  });
+
+  it("does not let an unpriced newer release hide an older priced default", () => {
+    const priced = {
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug: "muse-spark-1-2",
+      name: "Muse Spark 1.2",
+      shortName: "Muse Spark 1.2",
+    };
+    const unpriced = {
+      ...priced,
+      slug: "muse-spark-1-3",
+      name: "Muse Spark 1.3",
+      shortName: "Muse Spark 1.3",
+      providers: [],
+      weighted: { weightedInputPrice: 0, weightedOutputPrice: 0, },
+      listed: { price1mInputTokens: 0, price1mOutputTokens: 0, cacheHitPrice: 0 },
+    };
+    const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
+    const { dispose } = mount(() => (
+      <AaChartSection records={() => [priced, unpriced]} onStateChange={(state) => states.push(state)} />
+    ));
+    const selected = states[states.length - 1]?.selectedIds ?? [];
+    expect(selected).toContain("muse-spark-1-2");
+    expect(selected).not.toContain("muse-spark-1-3");
     dispose();
   });
 

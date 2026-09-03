@@ -9,6 +9,8 @@ import type {
 import { inferModelBrand } from "../brand";
 import { isNonReasoningModel, modelDisplayMetadata } from "../modelMetadata";
 import { discountPercentageFromCosts } from "../plotData";
+import aliasFile from "../../collectors/openrouter/openrouter-aliases.json";
+import curatedModelFile from "../../collectors/openrouter/curated-models.json";
 import {
   AA_DEFAULT_CACHE_HIT_RATE,
   listedCostUsd,
@@ -27,46 +29,12 @@ type AaScoreSource = "aa" | "deepswe";
  * plus the explicitly curated DeepSeek identity. Effort variants share the
  * OpenRouter base page; unknown identities deliberately have no link.
  */
-const CONFIRMED_OPENROUTER_MODEL_IDS: Readonly<Record<string, string>> = {
-  "claude-opus-5": "anthropic/claude-opus-5",
-  "claude-opus-5-high": "anthropic/claude-opus-5",
-  "claude-opus-5-medium": "anthropic/claude-opus-5",
-  "claude-opus-5-xhigh": "anthropic/claude-opus-5",
-  "claude-sonnet-5": "anthropic/claude-sonnet-5",
-  "deepseek-v4-flash-0731": "deepseek/deepseek-v4-flash-0731",
-  "deepseek-v4-flash": "deepseek/deepseek-v4-flash-0731",
-  "deepseek-v4-flash-0420": "deepseek/deepseek-v4-flash",
-  "deepseek-v4-pro": "deepseek/deepseek-v4-pro-0813",
-  "deepseek-v4-pro-0424": "deepseek/deepseek-v4-pro",
-  "gemini-3-7-flash": "google/gemini-3.7-flash",
-  "gemini-3-7-flash-low": "google/gemini-3.7-flash",
-  "gemini-3-7-flash-medium": "google/gemini-3.7-flash",
-  "glm-5-3": "z-ai/glm-5.3",
-  "glm-5-3-flash": "z-ai/glm-5.3-flash",
-  "gpt-5-6-luna": "openai/gpt-5.6-luna",
-  "gpt-5-6-luna-high": "openai/gpt-5.6-luna",
-  "gpt-5-6-luna-low": "openai/gpt-5.6-luna",
-  "gpt-5-6-luna-medium": "openai/gpt-5.6-luna",
-  "gpt-5-6-luna-non-reasoning": "openai/gpt-5.6-luna",
-  "gpt-5-6-luna-xhigh": "openai/gpt-5.6-luna",
-  "gpt-5-6-sol": "openai/gpt-5.6-sol",
-  "gpt-5-6-sol-low": "openai/gpt-5.6-sol",
-  "gpt-5-6-sol-medium": "openai/gpt-5.6-sol",
-  "gpt-5-6-sol-high": "openai/gpt-5.6-sol",
-  "gpt-5-6-sol-xhigh": "openai/gpt-5.6-sol",
-  "glm-5-2": "z-ai/glm-5.2",
-  "hy3": "tencent/hy3",
-  "grok-4-6": "x-ai/grok-4.6",
-  "grok-4-6-high": "x-ai/grok-4.6",
-  "grok-4-6-medium": "x-ai/grok-4.6",
-  "kimi-k3": "moonshotai/kimi-k3",
-  "mimo-v2-5": "xiaomi/mimo-v2.5",
-  "mimo-v2-5-0424": "xiaomi/mimo-v2.5",
-  "muse-spark-1-2": "meta/muse-spark-1.2-contributor",
-  "nvidia-nemotron-3-super-120b-a12b": "nvidia/nemotron-3-super-120b-a12b",
-  "qwen3-8-max": "qwen/qwen3.8-max",
-  "qwen3-8-flash-next": "qwen/qwen3.8-flash",
-};
+const CONFIRMED_OPENROUTER_MODEL_IDS: Readonly<Record<string, string>> = Object.fromEntries([
+  ...curatedModelFile.models.map((entry) => [entry.aaModelSlug, entry.openrouterId] as const),
+  ...aliasFile.entries
+    .filter((entry) => entry.status === "confirmed")
+    .map((entry) => [entry.aaModelSlug, entry.openrouterId] as const),
+]);
 
 export function openRouterUrlForAaModel(
   record: Pick<DerivedAaChartRecord, "slug">,

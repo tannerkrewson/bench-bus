@@ -63,6 +63,26 @@ describe("cursorBenchAdapter identity + axes", () => {
     ];
     expect(cursorDefaultVisibleIds(records)).toEqual(["composer-2", "new-model"]);
   });
+
+  it("automatically removes older releases from the implicit selection", () => {
+    const records = [
+      { ...byId("composer-2"), modelId: "muse-spark-1-2", modelName: "Muse Spark 1.2" },
+      { ...byId("composer-2"), modelId: "muse-spark-1-3", modelName: "Muse Spark 1.3" },
+    ];
+    expect(cursorDefaultVisibleIds(records)).toEqual(["muse-spark-1-3"]);
+  });
+
+  it("does not let an unpriced newer release hide an older priced model", () => {
+    const priced = { ...byId("composer-2"), modelId: "muse-spark-1-2", modelName: "Muse Spark 1.2" };
+    const unpriced = {
+      ...priced,
+      modelId: "muse-spark-1-3",
+      modelName: "Muse Spark 1.3",
+      publishedCostUsd: undefined,
+    };
+    const point = cursorBenchAdapter.computePoint(priced, OFF)!;
+    expect(cursorDefaultVisibleIds([priced, unpriced], [point])).toEqual(["muse-spark-1-2"]);
+  });
 });
 
 describe("effectiveCursorCostUsd (surcharge math)", () => {

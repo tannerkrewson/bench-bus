@@ -12,6 +12,7 @@ import { DataBranchStore } from "../snapshots/store";
 import { validAaModel, validAaModel2 } from "../schemas/fixtures/aa";
 import { validCursorRecord, validCursorRecord2, validOpenRouterPricing, validOpenRouterPricing2 } from "../schemas/fixtures/openrouter-cursor";
 import { parseAliasFile } from "../collectors/openrouter/mapping";
+import aliasSeed from "../collectors/openrouter/openrouter-aliases.json";
 import {
   compileBundle,
   joinAaWithPricing,
@@ -333,6 +334,34 @@ describe("compileBundle", () => {
     const joined = joinAaWithPricing([model], [pricing], aliases, [model.slug]);
     expect(joined.records).toHaveLength(1);
     expect(joined.records[0]?.slug).toBe("gpt-5-6-sol-medium");
+    expect(joined.records[0]?.providers).toEqual(pricing.providerSummaries);
+    expect(joined.unmatchedAa).toBe(0);
+    expect(joined.unmatchedOr).toBe(0);
+  });
+
+  it("reconciles the DeepSeek V4 Flash high-effort row with its shared pricing identity", () => {
+    const high = {
+      ...withSlug(
+        validAaModel,
+        "deepseek-v4-flash-0420-high",
+        "89a2c945-1fab-4ee4-9f45-83a9f46cb221",
+      ),
+      name: "DeepSeek V4 Flash (Reasoning, High Effort)",
+      shortName: "DeepSeek V4 Flash (high)",
+    };
+    const pricing: OpenRouterModelPricing = {
+      ...validOpenRouterPricing,
+      permaslug: "deepseek/deepseek-v4-flash",
+      aaModelSlug: "deepseek-v4-flash-0420",
+    };
+    const joined = joinAaWithPricing(
+      [high],
+      [pricing],
+      parseAliasFile(JSON.stringify(aliasSeed), "seed aliases"),
+    );
+
+    expect(joined.records).toHaveLength(1);
+    expect(joined.records[0]?.slug).toBe("deepseek-v4-flash-0420-high");
     expect(joined.records[0]?.providers).toEqual(pricing.providerSummaries);
     expect(joined.unmatchedAa).toBe(0);
     expect(joined.unmatchedOr).toBe(0);

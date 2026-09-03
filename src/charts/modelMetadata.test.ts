@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   isNonReasoningModel,
+  expandedModelName,
+  latestModelVersionIds,
+  modelVersionIdentity,
   modelDisplayMetadata,
   modelGroupKey,
   preferredFamilyLabel,
@@ -27,6 +30,11 @@ describe("modelDisplayMetadata", () => {
       label: "DeepSeek v4 Flash 0731 max",
       groupKey: "deepseek-v4-flash-0731",
       effort: "max",
+    });
+    expect(modelDisplayMetadata("Claude Fable 5.1 (Adaptive Reasoning, High Effort, Default Fallback)")).toEqual({
+      label: "Fable 5.1 high",
+      groupKey: "fable-5-1",
+      effort: "high",
     });
   });
 
@@ -80,5 +88,46 @@ describe("modelDisplayMetadata", () => {
       { label: "Luna low", effort: "low" },
       { label: "Luna xhigh", effort: "xhigh" },
     ], "Luna")).toBe("Luna xhigh");
+  });
+
+  it("extracts release versions without treating date markers as releases", () => {
+    expect(modelVersionIdentity("GLM 5.2 High")).toEqual({ familyKey: "glm", version: [5, 2] });
+    expect(modelVersionIdentity("DeepSeek v4 Flash 0423 max")).toEqual({
+      familyKey: "deepseek-flash",
+      version: [4],
+    });
+  });
+
+  it("keeps only the newest release in an implicit selection", () => {
+    const models = [
+      { id: "glm-5-2", label: "GLM 5.2" },
+      { id: "glm-5-3", label: "GLM 5.3" },
+      { id: "muse-spark-1-2", label: "Muse Spark 1.2" },
+      { id: "muse-spark-1-3", label: "Muse Spark 1.3" },
+    ];
+    expect(latestModelVersionIds(models, models.map((model) => model.id))).toEqual([
+      "glm-5-3",
+      "muse-spark-1-3",
+    ]);
+  });
+
+  it("falls back to numeric releases in ids when source labels omit them", () => {
+    expect(modelVersionIdentity("Muse Spark", "muse-spark-1-2")).toEqual({
+      familyKey: "muse-spark",
+      version: [1, 2],
+    });
+    expect(modelVersionIdentity("DeepSeek Flash", "deepseek-v4-flash-0731")).toEqual({
+      familyKey: "deepseek-flash",
+      version: [4],
+    });
+    expect(latestModelVersionIds([
+      { id: "muse-spark-1-2", label: "Muse Spark" },
+      { id: "muse-spark-1-3", label: "Muse Spark" },
+    ], ["muse-spark-1-2", "muse-spark-1-3"])).toEqual(["muse-spark-1-3"]);
+  });
+
+  it("expands provider names for detail views while leaving chart labels concise", () => {
+    expect(expandedModelName("Opus 5", "claude-opus-5")).toBe("Anthropic Claude Opus 5");
+    expect(expandedModelName("GPT-5.6 Sol", "gpt-5-6-sol")).toBe("OpenAI GPT-5.6 Sol");
   });
 });

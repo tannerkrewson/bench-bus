@@ -18,7 +18,7 @@ type ModelEffort = (typeof EFFORT_NAMES)[number];
 
 // Source feeds use all of these forms, including AA's verbose reasoning
 // spellings and Cursor's concise bare suffix.
-const EFFORT_PATTERN = /^(.*?)(?:\s*\(\s*(?:(?:adaptive\s+)?reasoning\s*,\s*)?(extra\s+high|xhigh|low|medium|high|max)(?:\s+effort)?\s*\)|\s+(extra\s+high|xhigh|low|medium|high|max)(?:\s+effort)?)\s*$/i;
+const EFFORT_PATTERN = /^(.*?)(?:\s*\(\s*(?:(?:adaptive\s+)?reasoning\s*,\s*)?(extra\s+high|xhigh|low|medium|high|max)(?:\s+effort)?(?:\s*,[^)]*)*\s*\)|\s+(extra\s+high|xhigh|low|medium|high|max)(?:\s+effort)?)\s*$/i;
 const NON_REASONING_PATTERN = /\bnon[\s-]*reasoning\b/i;
 
 /** Source feeds may publish a non-reasoning base beside reasoning variants. */
@@ -85,6 +85,26 @@ function effortFromId(id: string | undefined): ModelEffort | undefined {
   return EFFORT_NAMES.includes(effort) ? effort : undefined;
 }
 
+function versionFromModelId(id: string | undefined): readonly number[] | null {
+  const base = id?.split("/").pop()?.replace(/-(?:extra-high|xhigh|low|medium|high|max)$/i, "")
+    .replace(/-non-reasoning$/i, "");
+  if (!base) return null;
+  const version: number[] = [];
+  let started = false;
+  for (const part of base.split("-")) {
+    const match = part.match(/^v?(\d+(?:\.\d+)?)$/i);
+    if (!match) {
+      if (started) break;
+      continue;
+    }
+    // Four-digit segments are release dates, not product versions.
+    if (match[1]!.length === 4) continue;
+    started = true;
+    version.push(...match[1]!.split(".").map(Number));
+  }
+  return version.length > 0 && version.every(Number.isFinite) ? version : null;
+}
+
 /** Stable URL-safe family key, independent of effort and source benchmark. */
 export function modelGroupKey(label: string, id?: string): string {
   const parsed = splitModelName(label);
@@ -110,6 +130,96 @@ export function modelDisplayMetadata(label: string, id?: string): ModelDisplayMe
     groupKey: modelGroupKey(base, id),
     ...(effort ? { effort } : {}),
   };
+}
+
+export interface ModelVersionIdentity {
+  /** Family key with the first numeric release removed, e.g. `glm`. */
+  familyKey: string;
+  /** Numeric release components, compared left-to-right. */
+  version: readonly number[];
+}
+
+/**
+ * Extract the product family and release from a source label. This deliberately
+ * ignores four-digit release markers such as DeepSeek's 0423 after using the
+ * first product version, so only actual newer product releases supersede one
+ * another in the default view.
+ */
+export function modelVersionIdentity(label: string, id?: string): ModelVersionIdentity | null {
+  const base = splitModelName(label).base;
+  const match = /(?<!\d)(?:v)?(\d+(?:\.\d+)+|\d+)(?!\d)/i.exec(base);
+  const fallbackVersion = match ? null : versionFromModelId(id);
+  if (!match && fallbackVersion === null) return null;
+  const version = match ? match[1]!.split(".").map(Number) : fallbackVersion!;
+  if (version.length === 0 || version.some((part) => !Number.isFinite(part))) return null;
+  const familyKey = normalizeWhitespace(
+    match && match.index !== undefined
+      ? `${base.slice(0, match.index)} ${base.slice(match.index + match[0].length)}`
+      : base,
+  )
+    .replace(/\b\d{4}\b/g, "")
+    .toLocaleLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (!familyKey) {
+    // A bare numeric label is not enough evidence to infer a family. The id is
+    // only a fallback for source rows whose display label omitted its version.
+    const idBase = id?.split("/").pop()?.replace(/-(?:low|medium|high|xhigh|max)$/i, "");
+    if (!idBase) return null;
+    return modelVersionIdentity(idBase.replace(/-/g, " "), undefined);
+  }
+  return { familyKey, version };
+}
+
+function compareModelVersions(first: readonly number[], second: readonly number[]): number {
+  const length = Math.max(first.length, second.length);
+  for (let index = 0; index < length; index += 1) {
+    const difference = (first[index] ?? 0) - (second[index] ?? 0);
+    if (difference !== 0) return difference;
+  }
+  return 0;
+}
+
+/** Remove superseded releases from an implicit/default model selection. */
+export function latestModelVersionIds<T extends { id: string; label: string }>(
+  models: readonly T[],
+  candidateIds: readonly string[],
+): string[] {
+  const latestByFamily = new Map<string, readonly number[]>();
+  for (const model of models) {
+    const identity = modelVersionIdentity(model.label, model.id);
+    if (!identity) continue;
+    const latest = latestByFamily.get(identity.familyKey);
+    if (!latest || compareModelVersions(identity.version, latest) > 0) {
+      latestByFamily.set(identity.familyKey, identity.version);
+    }
+  }
+
+  return [...new Set(candidateIds)].filter((id) => {
+    const model = models.find((candidate) => candidate.id === id);
+    if (!model) return true;
+    const identity = modelVersionIdentity(model.label, model.id);
+    const latest = identity ? latestByFamily.get(identity.familyKey) : undefined;
+    return !identity || !latest || compareModelVersions(identity.version, latest) === 0;
+  });
+}
+
+/**
+ * Use a provider-qualified canonical name in detail views while keeping chart
+ * labels concise. Effort and source-only parenthetical annotations are omitted.
+ */
+export function expandedModelName(label: string, id?: string): string {
+  const base = splitModelName(label).base || normalizeDisplayName(label);
+  const haystack = `${label} ${id ?? ""}`.toLocaleLowerCase();
+  if (/(?:claude|anthropic|opus|sonnet|fable)/.test(haystack)) {
+    return `Anthropic ${/^claude\b/i.test(base) ? base : `Claude ${base}`}`;
+  }
+  if (/(?:gpt|openai)/.test(haystack)) return `OpenAI ${base}`;
+  if (/(?:gemini|google)/.test(haystack)) return `Google ${base}`;
+  if (/(?:glm|z-ai)/.test(haystack)) return `Z.ai ${base}`;
+  if (/(?:muse|meta)/.test(haystack)) return `Meta ${base}`;
+  if (/(?:kimi|moonshot)/.test(haystack)) return `MoonshotAI ${base}`;
+  return base;
 }
 
 export function formatEffort(effort: string): string {

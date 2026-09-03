@@ -39,7 +39,21 @@ function routerFetch(routes: Record<string, unknown | (() => Response)>): typeof
       url.includes("glm-5.2-20260616") ||
       url.includes("deepseek-v4-flash-20260423") ||
       url.includes("deepseek-v4-pro-20260423") ||
-      url.includes("hy3-20260706")
+      url.includes("hy3-20260706") ||
+      url.includes("claude-4.7-opus-20260416") ||
+      url.includes("claude-4.8-opus-20260528") ||
+      url.includes("gemini-3.1-pro-preview-20260219") ||
+      url.includes("gemini-3.5-flash-20260519") ||
+      url.includes("glm-5.1-20260406") ||
+      url.includes("gpt-5.4-20260305") ||
+      url.includes("gpt-5.4-mini-20260317") ||
+      url.includes("gpt-5.5-20260423") ||
+      url.includes("kimi-k2.6-20260420") ||
+      url.includes("mimo-v2.5-pro-20260422") ||
+      url.includes("minimax-m2.7-20260318") ||
+      url.includes("minimax-m3-20260531") ||
+      url.includes("qwen3.6-plus-04-02") ||
+      url.includes("qwen3.7-max-20260520")
     ) {
       return Promise.resolve(jsonResponse(fullPricing));
     }
@@ -401,9 +415,12 @@ describe("collectOpenRouterPricing", () => {
     await collectOpenRouterPricing(baseOptions({ fetchImpl, retries: 1 }));
     const pricingCalls = fetchImpl.mock.calls.map((c) => String(c[0])).filter((u) => u.includes("effective-pricing"));
     expect(pricingCalls.length).toBe(aliasSeed.entries.length);
-    // The short-slug trap: every pricing call must use a date-suffixed canonical slug.
+    // The short-slug trap: every pricing call must use a canonical release
+    // suffix, never the stable id without its upstream-resolved suffix.
     for (const url of pricingCalls) {
-      expect(url).toMatch(/permaslug=[^&]*-\d{8}&shape=v7&variant=standard/);
+      // OpenRouter normally uses YYYYMMDD, but some canonical slugs use the
+      // model's MM-DD release form (for example qwen3.6-plus-04-02).
+      expect(url).toMatch(/permaslug=[^&]*(?:-\d{8}|-\d{2}-\d{2})&shape=v7&variant=standard/);
     }
   });
 

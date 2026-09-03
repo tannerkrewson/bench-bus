@@ -67,7 +67,6 @@ const DISCOUNT_HIT_RADIUS = 8;
 const DISCOUNT_ENDPOINT_GAP = MODEL_DOT_RADIUS + 2;
 const PLOT_ANIMATION_DURATION = 180;
 const EMPHASIS_TRANSITION_DURATION = 140;
-const DISCOUNT_EXIT_DURATION = PLOT_ANIMATION_DURATION;
 const TOUCH_TAP_MOVE_TOLERANCE = 10;
 // Keep leaders visually attached to the real dot edge; the layout collision
 // pass, not a large decorative gap, keeps them out of nearby dots.
@@ -85,18 +84,6 @@ function motionDuration(duration: number): number {
 function motionTransition(property: string, duration: number): string {
   const effectiveDuration = motionDuration(duration);
   return effectiveDuration === 0 ? "none" : `${property} ${effectiveDuration}ms ease-out`;
-}
-
-function discountRevealTransition(): string {
-  const duration = motionDuration(PLOT_ANIMATION_DURATION);
-  return duration === 0
-    ? "none"
-    : `stroke-dashoffset ${duration}ms ease-out, opacity 0ms linear ${duration}ms`;
-}
-
-function discountRevealVisibilityTransition(): string {
-  const duration = motionDuration(PLOT_ANIMATION_DURATION);
-  return duration === 0 ? "none" : `opacity 0ms linear ${duration}ms`;
 }
 
 function isTouchLikePointer(pointerType: string | undefined): boolean {
@@ -202,22 +189,18 @@ export function trimDiscountSegment(
   };
 }
 
-/** Keep the connector's endpoint runs stable as the chart scale changes. */
-export const DISCOUNT_SEGMENT_LENGTH = 28;
 const DISCOUNT_ARROWHEAD_SIZE = 4;
-const DISCOUNT_TICK_HALF_HEIGHT = 4;
 const DISCOUNT_DOT_PATTERN = "0.1 5";
 
 export interface DiscountConnectorGeometry {
   segments: { x1: number; y1: number; x2: number; y2: number }[];
   arrowhead: { tipX: number; wingX: number } | null;
-  tick: { x: number; halfHeight: number } | null;
 }
 
 /**
- * Build fixed-length endpoint runs and their center markers. The segment
- * array follows the input direction for compatibility; marker positions are
- * always expressed in screen-left-to-screen-right coordinates.
+ * Build the on-hover dotted connector and the original-price left chevron.
+ * The connector is trimmed clear of the plotted dot; the chevron remains at
+ * the undiscounted price and points toward the cheaper price on the left.
  */
 export function discountConnectorGeometry(
   preLeft: number,
@@ -225,39 +208,11 @@ export function discountConnectorGeometry(
   gap = 0,
 ): DiscountConnectorGeometry {
   const trimmed = trimDiscountSegment(preLeft, effectiveLeft, gap);
-  if (!trimmed) return { segments: [], arrowhead: null, tick: null };
-  const { x1, x2 } = trimmed;
-  const span = Math.abs(x2 - x1);
-  const direction = x2 > x1 ? 1 : -1;
-  const left = Math.min(x1, x2);
-  const right = Math.max(x1, x2);
-  if (span <= DISCOUNT_SEGMENT_LENGTH * 2) {
-    return {
-      segments: [{ x1, y1: 0, x2, y2: 0 }],
-      arrowhead: null,
-      tick: null,
-    };
-  }
-  const leftSegment = { x1: left, y1: 0, x2: left + DISCOUNT_SEGMENT_LENGTH, y2: 0 };
-  const rightSegment = { x1: right - DISCOUNT_SEGMENT_LENGTH, y1: 0, x2: right, y2: 0 };
-  const reverse = (segment: typeof leftSegment) => ({
-    x1: segment.x2,
-    y1: segment.y2,
-    x2: segment.x1,
-    y2: segment.y1,
-  });
   return {
-    segments: direction === 1
-      ? [leftSegment, rightSegment]
-      : [reverse(rightSegment), reverse(leftSegment)],
-    arrowhead: {
-      tipX: leftSegment.x2,
-      wingX: leftSegment.x2 + DISCOUNT_ARROWHEAD_SIZE,
-    },
-    tick: {
-      x: rightSegment.x1,
-      halfHeight: DISCOUNT_TICK_HALF_HEIGHT,
-    },
+    segments: trimmed ? [{ x1: trimmed.x1, y1: 0, x2: trimmed.x2, y2: 0 }] : [],
+    arrowhead: Number.isFinite(preLeft)
+      ? { tipX: preLeft, wingX: preLeft + DISCOUNT_ARROWHEAD_SIZE }
+      : null,
   };
 }
 
@@ -267,33 +222,6 @@ export function discountLineSegments(
   gap = 0,
 ): DiscountConnectorGeometry["segments"] {
   return discountConnectorGeometry(preLeft, effectiveLeft, gap).segments;
-}
-
-export interface DiscountBridgeGeometry {
-  /** Sweep origin sits at the tick so the bridge grows out of the source run. */
-  x1: number;
-  x2: number;
-  length: number;
-}
-
-/**
- * The open middle between the two fixed endpoint runs. Revealed through a
- * stroke-dasharray transition while the discount's model group is emphasized;
- * null for short spans that already render as one contiguous run.
- */
-export function discountBridgeGeometry(
-  preLeft: number,
-  effectiveLeft: number,
-): DiscountBridgeGeometry | null {
-  const connector = discountConnectorGeometry(preLeft, effectiveLeft, 0);
-  if (!connector.arrowhead || !connector.tick) return null;
-  const length = Math.abs(connector.tick.x - connector.arrowhead.tipX);
-  if (!(length > 0)) return null;
-  return {
-    x1: connector.tick.x,
-    x2: connector.arrowhead.tipX,
-    length,
-  };
 }
 
 /** Build the literal left-pointing angle bracket used at the left run's end. */
@@ -490,8 +418,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     modelLabel: string;
   }[]>([]);
   const [discountDecorations, setDiscountDecorations] = createSignal<DiscountDecoration[]>([]);
-  const [discountExitIds, setDiscountExitIds] = createSignal<ReadonlySet<string>>(new Set());
-  const [discountDrawnIds, setDiscountDrawnIds] = createSignal<ReadonlySet<string>>(new Set());
+  const [hoveredDiscountId, setHoveredDiscountId] = createSignal<string | null>(null);
   const [plotXSnapshot, setPlotXSnapshot] = createSignal("");
   // currentSeries and plot are intentionally kept outside Solid because uPlot
   // owns their lifecycle. Publish a revision after each completed plot render
@@ -513,9 +440,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     | { kind: "crown"; id: string };
   let persistentInteraction: PersistentInteraction | null = null;
   let touchCandidate: { left: number; top: number } | null = null;
-  let discountDrawTimer: ReturnType<typeof setTimeout> | null = null;
-  let discountDrawFrame: number | null = null;
-  let discountExitTimer: ReturnType<typeof setTimeout> | null = null;
 
   const clonePlotData = (data: uPlot.AlignedData): uPlot.AlignedData =>
     data.map((series) => Array.from(series as ArrayLike<number | null>)) as unknown as uPlot.AlignedData;
@@ -550,94 +474,18 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     plotUpdateFrame = null;
   };
 
-  const cancelDiscountDraw = () => {
-    if (discountDrawTimer !== null) {
-      clearTimeout(discountDrawTimer);
-    }
-    discountDrawTimer = null;
-    if (discountDrawFrame !== null && typeof window !== "undefined") {
-      window.cancelAnimationFrame(discountDrawFrame);
-    }
-    discountDrawFrame = null;
-  };
-
   const beginPlotLifecycle = () => {
     lifecycleGeneration += 1;
     cancelPlotAnimation();
     cancelEmphasisAnimation();
     cancelLabelUpdate();
     cancelPlotUpdate();
-    cancelDiscountDraw();
   };
 
-  const scheduleDiscountDraw = () => {
-    if (discountDrawTimer !== null || discountDrawFrame !== null) return;
-    if (prefersReducedMotion()) {
-      setDiscountDrawnIds(new Set(discountDecorations().map((discount) => discount.id)));
-      return;
-    }
-    const generation = lifecycleGeneration;
-    const publish = () => {
-      if (disposed || generation !== lifecycleGeneration) return;
-      setDiscountDrawnIds(new Set(
-        discountDecorations()
-          .filter((discount) => !discountExitIds().has(discount.id))
-          .map((discount) => discount.id),
-      ));
-    };
-    // Give the hidden stroke one painted frame before revealing it. A zero-delay
-    // timer can run before the browser paints the newly mounted SVG, which
-    // turns the intended draw animation into an opacity swap.
-    if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
-      discountDrawFrame = window.requestAnimationFrame(() => {
-        discountDrawFrame = null;
-        publish();
-      });
-    } else {
-      discountDrawTimer = setTimeout(() => {
-        discountDrawTimer = null;
-        publish();
-      }, 0);
-    }
-  };
-
-  /** Keep removed discount geometry mounted long enough for its arrow to fade. */
   const publishDiscountDecorations = (next: DiscountDecoration[]) => {
-    const previous = discountDecorations();
-    const nextIds = new Set(next.map((discount) => discount.id));
-    const previousIds = new Set(previous.map((discount) => discount.id));
-    const effectiveExitDuration = motionDuration(DISCOUNT_EXIT_DURATION);
-    if (effectiveExitDuration === 0) {
-      if (discountExitTimer !== null) clearTimeout(discountExitTimer);
-      discountExitTimer = null;
-      setDiscountDecorations(next);
-      setDiscountExitIds(new Set<string>());
-      setDiscountDrawnIds(new Set(next.map((discount) => discount.id)));
-      return;
-    }
-    const oldExitIds = discountExitIds();
-    const exitingIds = new Set([...oldExitIds].filter((id) => !nextIds.has(id)));
-    const newlyExiting = previous.filter((discount) => !nextIds.has(discount.id));
-    newlyExiting.forEach((discount) => exitingIds.add(discount.id));
-    const merged = [
-      ...next,
-      ...previous.filter((discount) => !nextIds.has(discount.id)),
-    ];
-    setDiscountDecorations(merged);
-    setDiscountExitIds(exitingIds);
-
-    const drawnIds = new Set([...discountDrawnIds()].filter((id) => nextIds.has(id)));
-    const hasNewDiscount = next.some((discount) => !previousIds.has(discount.id) || oldExitIds.has(discount.id));
-    setDiscountDrawnIds(drawnIds);
-    if (hasNewDiscount) scheduleDiscountDraw();
-
-    if (newlyExiting.length > 0 && discountExitTimer === null) {
-      discountExitTimer = setTimeout(() => {
-        discountExitTimer = null;
-        const activeExitIds = discountExitIds();
-        setDiscountDecorations((items) => items.filter((discount) => !activeExitIds.has(discount.id)));
-        setDiscountExitIds(new Set<string>());
-      }, effectiveExitDuration);
+    setDiscountDecorations(next);
+    if (hoveredDiscountId() !== null && !next.some((discount) => discount.id === hoveredDiscountId())) {
+      setHoveredDiscountId(null);
     }
   };
 
@@ -1095,6 +943,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   const setModelLabelHover = (id: string | null) => {
     setLabelHover(id);
+    setHoveredDiscountId(null);
     // A dot tooltip may already be open when the pointer enters the label.
     // Labels intentionally own only emphasis, never tooltip content.
     props.onHover?.(null);
@@ -1103,6 +952,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   const setConnectorHover = (id: string) => {
     if (persistentInteraction !== null) return;
     hoveredConnectorId = id;
+    setHoveredDiscountId(null);
     hoveredIndex = null;
     clearHoveredPoint();
     setModelLabelHover(id);
@@ -1116,6 +966,18 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     props.onHover?.(null);
   };
 
+  const setDiscountConnectorHover = (discountId: string, pointId: string) => {
+    if (persistentInteraction !== null) return;
+    setConnectorHover(pointId);
+    setHoveredDiscountId(discountId);
+  };
+
+  const clearDiscountConnectorHover = (discountId: string, pointId: string) => {
+    if (persistentInteraction !== null || hoveredDiscountId() !== discountId) return;
+    setHoveredDiscountId(null);
+    clearConnectorHover(pointId);
+  };
+
   const setDiscountEndpointHover = (discount: DiscountDecoration) => {
     if (!plot) return;
     const pointIndex = currentSeries.ids.indexOf(discount.pointId);
@@ -1125,6 +987,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     if (!Number.isFinite(plotLeft) || !Number.isFinite(plotTop)) return;
     hoveredDiscountEndpointId = `${discount.id}:pre`;
     hoveredConnectorId = null;
+    setHoveredDiscountId(discount.id);
     hoveredIndex = pointIndex;
     hoveredLabelBounds = null;
     setHoveredLabelId(null);
@@ -1148,6 +1011,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     if (persistentInteraction !== null) return;
     if (hoveredDiscountEndpointId !== id) return;
     hoveredDiscountEndpointId = null;
+    setHoveredDiscountId(null);
     hoveredIndex = null;
     clearHoveredPoint();
     props.onHover?.(null);
@@ -1163,6 +1027,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     hoveredIndex = null;
     hoveredConnectorId = null;
     hoveredDiscountEndpointId = null;
+    setHoveredDiscountId(null);
     hoveredLabelBounds = null;
     setHoveredLabelId(null);
     clearHoveredPoint();
@@ -1509,6 +1374,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
               }
               applyCrosshairDirections(u, { left: null, top: null });
               hoveredIndex = null;
+              setHoveredDiscountId(null);
               clearHoveredPoint();
               props.onHover?.(null);
               return;
@@ -1525,6 +1391,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 u.setCursor(rawPlotPointer, false);
               }
               applyCrosshairDirections(u, { left: null, top: null });
+              setHoveredDiscountId(null);
               clearHoveredPoint();
               props.onHover?.(null);
             } else {
@@ -1538,7 +1405,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 u.setCursor({ left: target.plotLeft, top: target.plotTop }, false);
                 applyCrosshairDirections(u);
               }
-               props.onHover?.(
+              setHoveredDiscountId(target.discount ? target.id : null);
+              props.onHover?.(
                  target.id,
                  rawPointer ?? dot,
                  target.discount ? { kind: "point", discount: target.discount } : undefined,
@@ -1889,9 +1757,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     cancelPlotAnimation();
     cancelEmphasisAnimation();
     cancelLabelUpdate();
-    cancelDiscountDraw();
-    if (discountExitTimer !== null) clearTimeout(discountExitTimer);
-    discountExitTimer = null;
   });
 
   createEffect(
@@ -2029,6 +1894,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       rawPointer ?? dot,
       target.discount ? { kind: "point", discount: target.discount } : undefined,
     );
+    setHoveredDiscountId(target.discount ? target.id : null);
     persistentInteraction = { kind: "point", id: target.id };
   };
 
@@ -2055,12 +1921,22 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       return;
     }
 
-    const connector = targetElement?.closest("[data-testid='family-connector-hit'], [data-testid='discount-line-hit']");
-    const connectorId = connector?.getAttribute("data-model-id") ?? connector?.getAttribute("data-discount-id");
-    if (connectorId) {
+    const familyConnector = targetElement?.closest("[data-testid='family-connector-hit']");
+    const familyConnectorId = familyConnector?.getAttribute("data-model-id");
+    if (familyConnectorId) {
       clearPointerInteraction(true);
-      setConnectorHover(connectorId);
-      persistentInteraction = { kind: "family", id: connectorId };
+      setConnectorHover(familyConnectorId);
+      persistentInteraction = { kind: "family", id: familyConnectorId };
+      return;
+    }
+
+    const discountConnector = targetElement?.closest("[data-testid='discount-line-hit']");
+    const discountConnectorId = discountConnector?.getAttribute("data-discount-id");
+    if (discountConnectorId) {
+      clearPointerInteraction(true);
+      const discount = discountDecorations().find((candidate) => candidate.id === discountConnectorId);
+      if (discount) setDiscountConnectorHover(discount.id, discount.pointId);
+      persistentInteraction = { kind: "family", id: discount?.pointId ?? discountConnectorId };
       return;
     }
 
@@ -2068,7 +1944,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     const endpointId = endpoint?.getAttribute("data-discount-id");
     if (endpointId) {
       const discount = discountDecorations().find((candidate) => candidate.id === endpointId);
-      if (discount && !discountExitIds().has(discount.id)) {
+      if (discount) {
         clearPointerInteraction(true);
         setDiscountEndpointHover(discount);
         persistentInteraction = { kind: "discount-endpoint", id: endpointId };
@@ -2153,6 +2029,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       plot.setCursor(rawPlotPointer, false);
       applyCrosshairDirections(plot, { left: null, top: null });
       hoveredIndex = null;
+      if (hoveredConnectorId === null) setHoveredDiscountId(null);
       clearHoveredPoint();
       props.onHover?.(null);
       return;
@@ -2162,6 +2039,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       plot.setCursor(rawPlotPointer, false);
       applyCrosshairDirections(plot, { left: null, top: null });
       clearHoveredPoint();
+      setHoveredDiscountId(null);
       props.onHover?.(null);
       return;
     }
@@ -2170,6 +2048,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     applyCrosshairDirections(plot, { left: target.plotLeft, top: target.plotTop });
     publishHoveredPosition(dot ?? null);
     publishHoveredReadout(target, dot);
+    setHoveredDiscountId(target.discount ? target.id : null);
     props.onHover?.(
       target.id,
       rawPointer ?? dot,
@@ -2358,12 +2237,12 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         </Show>
         <For each={discountDecorations()}>
           {(discount) => {
-            // Paint the dotted connector underneath the solid endpoint dot;
-            // a zero gap keeps the fixed outer runs attached to the dot edges.
-            const connector = discountConnectorGeometry(discount.preLeft, discount.effectiveLeft, 0);
-            const bridge = discountBridgeGeometry(discount.preLeft, discount.effectiveLeft);
-            // The same focus state that de-emphasizes every other family.
-            const linked = () => hoveredLabelId() !== null && isFocusedFamilyId(discount.pointId);
+            const connector = discountConnectorGeometry(
+              discount.preLeft,
+              discount.effectiveLeft,
+              DISCOUNT_ENDPOINT_GAP,
+            );
+            const linked = () => hoveredDiscountId() === discount.id;
             return (
               <g
                 fill="none"
@@ -2376,112 +2255,37 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 data-discount-id={discount.id}
                 data-discount-percentage={discount.percentage}
                 data-discount-provider-role={discount.providerRole ?? "plotted"}
-                opacity={discountExitIds().has(discount.id) ? 0 : isFocusedFamilyId(discount.pointId) ? 0.75 : 0.2}
+                opacity={isFocusedFamilyId(discount.pointId) ? 0.75 : 0.2}
                 style={{
-                  "stroke-dashoffset": discountDrawnIds().has(discount.id) ? "0" : "100%",
-                  transition: [
-                    motionTransition("opacity", EMPHASIS_TRANSITION_DURATION),
-                    motionTransition("stroke-dashoffset", PLOT_ANIMATION_DURATION),
-                  ].filter((value) => value !== "none").join(", ") || "none",
+                  transition: motionTransition("opacity", EMPHASIS_TRANSITION_DURATION),
                 }}
               >
-                {/* Fixed endpoint runs leave a scale-independent open middle. */}
-                <For each={connector.segments}>
-                  {(segment) => (
-                    <>
+                <Show when={linked()}>
+                  <For each={connector.segments}>
+                    {(segment) => (
                       <line
                         x1={segment.x1}
                         y1={discount.top}
                         x2={segment.x2}
                         y2={discount.top}
-                        opacity={discountDrawnIds().has(discount.id) ? 1 : 0}
-                        style={{ transition: discountRevealVisibilityTransition() }}
-                        data-testid="discount-line-segment"
-                        data-discount-part="segment"
+                        data-testid="discount-line-connector"
+                        data-discount-part="connector"
                       />
-                      <line
-                        x1={segment.x1}
-                        y1={discount.top}
-                        x2={segment.x2}
-                        y2={discount.top}
-                        pathLength="1"
-                        stroke-dasharray="1"
-                        stroke-dashoffset={discountDrawnIds().has(discount.id) ? "0" : "1"}
-                        opacity={discountDrawnIds().has(discount.id) ? 0 : 1}
-                        style={{ transition: discountRevealTransition() }}
-                        data-testid="discount-line-reveal"
-                        data-discount-part="reveal"
-                      />
-                    </>
-                  )}
-                </For>
-                <Show when={bridge}>
-                  {(geometry) => (
-                    // Hide the bridge rather than using zero-length round caps:
-                    // SVG paints those caps as visible dots in the idle gap.
-                    <line
-                      x1={geometry().x1}
-                      y1={discount.top}
-                      x2={geometry().x2}
-                      y2={discount.top}
-                      stroke-opacity={linked() ? "1" : "0"}
-                      style={{ transition: motionTransition("stroke-opacity", PLOT_ANIMATION_DURATION) }}
-                      data-testid="discount-line-bridge"
-                      data-discount-part="bridge"
+                    )}
+                  </For>
+                </Show>
+                <Show when={connector.arrowhead}>
+                  {(arrowhead) => (
+                    <path
+                      d={discountArrowheadPath(arrowhead().tipX, discount.top, arrowhead().wingX)}
+                      stroke-dasharray="none"
+                      opacity={isFocusedFamilyId(discount.pointId) ? 1 : 0.2}
+                      style={{ transition: motionTransition("opacity", EMPHASIS_TRANSITION_DURATION) }}
+                      data-testid="discount-original-price-arrow"
+                      data-discount-part="original-price-arrow"
                     />
                   )}
                 </Show>
-                {connector.arrowhead && (
-                  <path
-                    d={discountArrowheadPath(
-                      connector.arrowhead.tipX,
-                      discount.top,
-                      connector.arrowhead.wingX,
-                    )}
-                    stroke-dasharray="none"
-                    opacity={linked() ? 0 : 1}
-                    style={{ transition: motionTransition("opacity", EMPHASIS_TRANSITION_DURATION) }}
-                    data-testid="discount-line-arrowhead"
-                    data-discount-part="arrowhead"
-                  />
-                )}
-                {connector.tick && (
-                  <path
-                    d={discountArrowheadPath(
-                      connector.tick.x,
-                      discount.top,
-                      connector.tick.x + connector.tick.halfHeight,
-                    )}
-                    stroke-dasharray="none"
-                    opacity={linked() ? 0 : 1}
-                    style={{ transition: motionTransition("opacity", EMPHASIS_TRANSITION_DURATION) }}
-                    data-testid="discount-line-tick"
-                    data-discount-part="tick"
-                  />
-                )}
-                {/* The pre-discount endpoint is hollow (background-filled,
-                    color-outlined) to contrast with the solid discounted dot
-                    while keeping the family color identity. Explicitly reset
-                    circle dashing so the outline cannot be cut into chunks. */}
-                <circle
-                  cx={discount.preLeft}
-                  cy={discount.top}
-                  r={MODEL_DOT_RADIUS}
-                  fill="var(--color-base-100)"
-                  stroke={discount.color}
-                  stroke-width={POINT_STROKE_WIDTH}
-                  stroke-dasharray="none"
-                  stroke-dashoffset="0"
-                  data-testid="discount-endpoint-dot"
-                  data-discount-endpoint="pre"
-                  style={{
-                    "pointer-events": "none",
-                    transition: [
-                      motionTransition("cx", PLOT_ANIMATION_DURATION),
-                      motionTransition("cy", PLOT_ANIMATION_DURATION),
-                    ].filter((value) => value !== "none").join(", ") || "none",
-                  }}
-                />
               </g>
             );
           }}
@@ -2493,48 +2297,46 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         {(discount) => {
           const segment = trimDiscountSegment(discount.preLeft, discount.effectiveLeft);
           return (
-            <Show when={!discountExitIds().has(discount.id)}>
-              <>
-                {segment && (
-                  <span
-                    class="pointer-events-auto absolute z-2"
-                    style={{
-                      left: `${Math.min(segment.x1, segment.x2)}px`,
-                      top: `${discount.top - DISCOUNT_HIT_RADIUS}px`,
-                      width: `${Math.abs(segment.x2 - segment.x1)}px`,
-                      height: `${DISCOUNT_HIT_RADIUS * 2}px`,
-                      transition: [
-                        motionTransition("left", PLOT_ANIMATION_DURATION),
-                        motionTransition("top", PLOT_ANIMATION_DURATION),
-                        motionTransition("width", PLOT_ANIMATION_DURATION),
-                      ].filter((value) => value !== "none").join(", ") || "none",
-                    }}
-                    data-testid="discount-line-hit"
-                    data-discount-id={discount.id}
-                    onMouseEnter={() => setConnectorHover(discount.pointId)}
-                    onMouseLeave={() => clearConnectorHover(discount.pointId)}
-                  />
-                )}
+            <>
+              {segment && (
                 <span
-                  class="pointer-events-auto absolute z-3"
+                  class="pointer-events-auto absolute z-2"
                   style={{
-                    left: `${discount.preLeft - DOT_HIT_RADIUS}px`,
-                    top: `${discount.top - DOT_HIT_RADIUS}px`,
-                    width: `${DOT_HIT_RADIUS * 2}px`,
-                    height: `${DOT_HIT_RADIUS * 2}px`,
+                    left: `${Math.min(segment.x1, segment.x2)}px`,
+                    top: `${discount.top - DISCOUNT_HIT_RADIUS}px`,
+                    width: `${Math.abs(segment.x2 - segment.x1)}px`,
+                    height: `${DISCOUNT_HIT_RADIUS * 2}px`,
                     transition: [
                       motionTransition("left", PLOT_ANIMATION_DURATION),
                       motionTransition("top", PLOT_ANIMATION_DURATION),
+                      motionTransition("width", PLOT_ANIMATION_DURATION),
                     ].filter((value) => value !== "none").join(", ") || "none",
                   }}
-                  data-testid="discount-endpoint-hit"
+                  data-testid="discount-line-hit"
                   data-discount-id={discount.id}
-                  data-discount-endpoint="pre"
-                  onMouseEnter={() => setDiscountEndpointHover(discount)}
-                  onMouseLeave={() => clearDiscountEndpointHover(`${discount.id}:pre`)}
+                  onMouseEnter={() => setDiscountConnectorHover(discount.id, discount.pointId)}
+                  onMouseLeave={() => clearDiscountConnectorHover(discount.id, discount.pointId)}
                 />
-              </>
-            </Show>
+              )}
+              <span
+                class="pointer-events-auto absolute z-3"
+                style={{
+                  left: `${discount.preLeft - DOT_HIT_RADIUS}px`,
+                  top: `${discount.top - DOT_HIT_RADIUS}px`,
+                  width: `${DOT_HIT_RADIUS * 2}px`,
+                  height: `${DOT_HIT_RADIUS * 2}px`,
+                  transition: [
+                    motionTransition("left", PLOT_ANIMATION_DURATION),
+                    motionTransition("top", PLOT_ANIMATION_DURATION),
+                  ].filter((value) => value !== "none").join(", ") || "none",
+                }}
+                data-testid="discount-endpoint-hit"
+                data-discount-id={discount.id}
+                data-discount-endpoint="pre"
+                onMouseEnter={() => setDiscountEndpointHover(discount)}
+                onMouseLeave={() => clearDiscountEndpointHover(`${discount.id}:pre`)}
+              />
+            </>
           );
         }}
       </For>
