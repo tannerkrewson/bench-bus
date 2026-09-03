@@ -19,7 +19,7 @@ export interface ChartControlPanelProps {
   /** Optional Pareto crown visibility toggle, enabled by default. */
   showCrowns?: () => boolean;
   onShowCrownsChange?: (show: boolean) => void;
-  /** Optional source-backed discount visibility toggle. */
+  /** Optional price-savings visibility toggle. */
   showDiscounts?: () => boolean;
   onShowDiscountsChange?: (show: boolean) => void;
   /** Optional predicate for controls whose visibility depends on another control. */
@@ -217,12 +217,12 @@ export default function ChartControlPanel(props: ChartControlPanelProps) {
             <Show when={props.showDiscounts && props.onShowDiscountsChange}>
               <div>
                 <label class="label cursor-pointer gap-2 text-base font-medium" for={controlId("show-discounts")}>
-                  <span>Provider discounts</span>
+                  <span>Price savings</span>
                   <input
                     id={controlId("show-discounts")}
                     type="checkbox"
                     class="toggle toggle-sm toggle-primary"
-                    aria-label="Show provider discounts"
+                    aria-label="Show price savings"
                     checked={props.showDiscounts?.() ?? true}
                     onChange={(e) => props.onShowDiscountsChange?.(e.currentTarget.checked)}
                   />

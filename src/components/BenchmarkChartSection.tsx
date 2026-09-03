@@ -9,9 +9,9 @@ import ChartSources from "./ChartSources";
 import {
   buildChartPlot,
   discountDetailLines,
+  discountForPoint,
   discountHoverTitle,
   discountSummaryLines,
-  largestExplicitDiscountForPoint,
 } from "../charts/plotData";
 import type {
   BenchmarkChartAdapter,
@@ -54,7 +54,7 @@ export interface BenchmarkChartSectionProps<TRecord> {
     spec: PricingControlSpec,
     controls: Readonly<PricingControlState>,
   ) => boolean;
-  /** Whether this benchmark supports source-backed provider discounts. */
+  /** Whether this benchmark supports price-savings annotations. */
   showDiscountsControl?: boolean;
   /** Optional graph-specific methodology content for concrete sections. */
   methodology?: ChartMethodology;
@@ -119,7 +119,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
 
   type ChartEntry = ReturnType<typeof build>["entries"][number];
   const discountFor = (entry: ChartEntry) =>
-    showDiscountsControl && showDiscounts() ? largestExplicitDiscountForPoint(entry.point) : null;
+    showDiscountsControl && showDiscounts() ? discountForPoint(entry.point) : null;
   const summaryLinesFor = (
     entry: ChartEntry,
     discount = discountFor(entry),

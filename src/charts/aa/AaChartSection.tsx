@@ -21,9 +21,9 @@ import { AA_SCORE_SOURCE_CONTROL_ID, aaAdapter, aaControlledTooltipLines, aaYAxi
 import { AA_DEFAULT_CACHE_HIT_RATE } from "./pricing";
 import {
   discountDetailLines,
+  discountForPoint,
   discountHoverTitle,
   discountSummaryLines,
-  largestExplicitDiscountForPoint,
   paretoFrontier,
 } from "../plotData";
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
@@ -168,7 +168,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
 
   type ChartEntry = ReturnType<typeof build>["entries"][number];
   const discountFor = (entry: ChartEntry) =>
-    showDiscounts() ? largestExplicitDiscountForPoint(entry.point) : null;
+    showDiscounts() ? discountForPoint(entry.point) : null;
   const summaryLinesFor = (
     entry: ChartEntry,
     discount = discountFor(entry),

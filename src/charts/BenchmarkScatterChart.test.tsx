@@ -483,7 +483,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
     dispose();
   });
 
-  it("uses the plotted dot as the endpoint for an alternative-provider discount", async () => {
+  it("uses the plotted dot as the only effective savings endpoint", async () => {
     const { container, dispose } = mountSizedChart(() => (
       <BenchmarkScatterChart
         points={() => [{
@@ -491,7 +491,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
           label: "DeepSeek alternative",
           x: 6,
           y: 70,
-          discount: { percentage: 60, preDiscountX: 10, effectiveX: 4 },
+           discount: { percentage: 40, preDiscountX: 10, effectiveX: 6 },
         }]}
         scale={() => "log"}
         xAxisLabel={() => "Cost"}
@@ -501,8 +501,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
     ));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     const discount = container.querySelector("[data-testid='discount-line']")!;
-    expect(discount.getAttribute("data-discount-provider-role")).toBe("alternative");
-    expect(discount.querySelectorAll("[data-testid='discount-original-price-arrow']")).toHaveLength(1);
+     expect(discount.querySelectorAll("[data-testid='discount-original-price-arrow']")).toHaveLength(1);
     expect(discount.querySelector("[data-discount-endpoint='effective']")).toBeNull();
     expect(container.querySelectorAll("[data-testid='discount-endpoint-hit'][data-discount-endpoint='effective']")).toHaveLength(0);
     const endpointHit = container.querySelector<HTMLElement>("[data-testid='discount-endpoint-hit']")!;
@@ -780,8 +779,8 @@ describe("BenchmarkScatterChart discount annotations", () => {
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     const label = container.querySelector("[data-testid='model-label']") as HTMLElement;
     const discount = container.querySelector("[data-testid='model-label-discount']") as HTMLElement;
-    expect(label?.textContent).toBe("Model (43% off)");
-    expect(label?.getAttribute("aria-label")).toBe("Model (43% off)");
+     expect(label?.textContent).toBe("Model (43% below AA listed)");
+     expect(label?.getAttribute("aria-label")).toBe("Model (43% below AA listed)");
     expect(label?.getAttribute("role")).toBe("img");
     expect(discount).not.toBeNull();
     expect(Number.parseFloat(getComputedStyle(discount).fontSize)).toBeLessThan(13);
@@ -1165,7 +1164,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
     dispose();
   });
 
-  it("renders only the largest provider discount for one model and can hide it", async () => {
+  it("renders one savings annotation for a model and can hide it", async () => {
     const [showDiscounts, setShowDiscounts] = createSignal(true);
     const { container, dispose } = mount(() => (
       <BenchmarkScatterChart
@@ -1174,10 +1173,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
           label: "Multi discount",
           x: 6,
           y: 70,
-          discounts: [
-            { percentage: 40, preDiscountX: 10, effectiveX: 6, providerName: "Provider A" },
-            { percentage: 37.5, preDiscountX: 8, effectiveX: 5, providerName: "Provider B" },
-          ],
+           discount: { percentage: 40, preDiscountX: 10, effectiveX: 6, providerName: "Provider A" },
         }]}
         scale={() => "log"}
         showDiscounts={showDiscounts}

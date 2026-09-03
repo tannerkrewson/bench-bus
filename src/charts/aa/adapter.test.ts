@@ -156,160 +156,110 @@ describe("aaAdapter.computePoint", () => {
     });
   });
 
-  it("uses the documented DeepSeek V4 Pro 0813 peak rates as raw listed prices", () => {
-    const record = {
-      ...AA_RECORD_PLOTTABLE_CHEAPEST,
-      slug: "deepseek-v4-pro",
-      name: "DeepSeek V4 Pro 0813 (Reasoning, Max Effort)",
-      shortName: "DeepSeek V4 Pro 0813 (max)",
-      canonicalTokens: { input: 918_390_769, output: 127_918_722 },
-      providers: [{
-        providerName: "StreamLake",
-        providerSlug: "streamlake",
-        effectiveInputPrice: 0.5795,
-        effectiveOutputPrice: 1.738,
-        listedInputPrice: 1.32,
-        listedOutputPrice: 3.96,
-        discountPercentage: 56,
-      }],
-      listed: { price1mInputTokens: 1.32, price1mOutputTokens: 3.96, cacheHitPrice: 0.044 },
-    };
-    const point = aaAdapter.computePoint(record, controls)!;
-    const rawCost = (918_390_769 / 1e6) * 1.32 + (127_918_722 / 1e6) * 3.96;
-    expect(point.discount?.preDiscountX).toBeCloseTo(rawCost, 10);
-    expect(point.discount?.percentage).toBeCloseTo(
-      (1 - point.x / rawCost) * 100,
-      10,
-    );
-  });
-
-  it("annotates only a cheapest provider with explicit listed-price discount metadata", () => {
+  it("compares the cheapest provider against AA listed workload pricing", () => {
     const record = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
       canonicalTokens: { input: 1_000_000, output: 1_000_000 },
       providers: [{
-        providerName: "Discounted Provider",
-        providerSlug: "discounted",
+        providerName: "Cheapest Provider",
+        providerSlug: "cheapest",
         effectiveInputPrice: 6,
         effectiveOutputPrice: 12,
         listedInputPrice: 10,
         listedOutputPrice: 20,
         discountPercentage: 40,
       }],
+      listed: { price1mInputTokens: 10, price1mOutputTokens: 20, cacheHitPrice: 10 },
     };
     const point = aaAdapter.computePoint(record, controls)!;
     expect(point.x).toBe(18);
     expect(point.discount).toEqual({
       percentage: 40,
       preDiscountX: 30,
-      providerName: "Discounted Provider",
+      effectiveX: 18,
+      providerName: "Cheapest Provider",
     });
   });
 
-  it("uses the workload ratio instead of an inconsistent provider percentage", () => {
+  it("uses the active cache-hit rate for the AA listed comparison", () => {
     const record = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
       canonicalTokens: { input: 1_000_000, output: 1_000_000 },
       providers: [{
-        providerName: "Free input provider",
-        providerSlug: "free-input",
-        effectiveInputPrice: 0,
-        effectiveOutputPrice: 12,
-        listedInputPrice: 10,
-        listedOutputPrice: 20,
-        discountPercentage: 100,
-      }],
-    };
-    const point = aaAdapter.computePoint(record, controls)!;
-    expect(point.x).toBe(12);
-    expect(point.discount).toEqual({
-      percentage: 60,
-      preDiscountX: 30,
-      providerName: "Free input provider",
-    });
-  });
-
-  it("derives a metadata-only discount from its effective workload cost", () => {
-    const record = {
-      ...AA_RECORD_PLOTTABLE_CHEAPEST,
-      canonicalTokens: { input: 1_000_000, output: 1_000_000 },
-      providers: [{
-        providerName: "Metadata Provider",
-        providerSlug: "metadata",
+        providerName: "Cheapest Provider",
+        providerSlug: "cheapest",
         effectiveInputPrice: 6,
         effectiveOutputPrice: 12,
-        discountPercentage: 40,
       }],
+      listed: { price1mInputTokens: 10, price1mOutputTokens: 20, cacheHitPrice: 0 },
     };
-    const point = aaAdapter.computePoint(record, controls)!;
-    expect(point.discount).toMatchObject({ percentage: 40, preDiscountX: 30 });
+    const point = aaAdapter.computePoint(record, { ...controls, cacheHitRate: 0.5 })!;
+    expect(point.discount).toMatchObject({
+      preDiscountX: 25,
+      effectiveX: 18,
+      providerName: "Cheapest Provider",
+    });
+    expect(point.discount?.percentage).toBeCloseTo(28, 10);
   });
 
-  it("renders every explicit provider discount as a separate annotation", () => {
+  it("uses the cheapest provider and ignores source promotion percentages", () => {
     const record = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
       canonicalTokens: { input: 1_000_000, output: 1_000_000 },
       providers: [
         {
-          providerName: "Discount A",
-          providerSlug: "discount-a",
+          providerName: "Cheapest Provider",
+          providerSlug: "cheapest",
           effectiveInputPrice: 1,
           effectiveOutputPrice: 2,
-          listedInputPrice: 2,
-          listedOutputPrice: 4,
-          discountPercentage: 50,
+          listedInputPrice: 100,
+          listedOutputPrice: 200,
+          discountPercentage: 1,
         },
         {
-          providerName: "Discount B",
-          providerSlug: "discount-b",
+          providerName: "Promoted Provider",
+          providerSlug: "promoted",
           effectiveInputPrice: 3,
           effectiveOutputPrice: 4,
           listedInputPrice: 4,
           listedOutputPrice: 6,
-          discountPercentage: 25,
+          discountPercentage: 99,
         },
       ],
+      listed: { price1mInputTokens: 10, price1mOutputTokens: 20, cacheHitPrice: 10 },
     };
     const point = aaAdapter.computePoint(record, controls)!;
-    expect(point.discounts?.map((discount) => discount.providerName)).toEqual([
-      "Discount A",
-      "Discount B",
-    ]);
-    expect(point.discounts?.map((discount) => discount.providerRole)).toEqual([
-      "plotted",
-      "alternative",
-    ]);
-    expect(point.discounts?.[1]?.effectiveX).toBe(7);
-    expect(point.discounts?.[1]?.plottedProviderName).toBe("Discount A");
+    expect(point.x).toBe(3);
+    expect(point.discount).toEqual({
+      percentage: 90,
+      preDiscountX: 30,
+      effectiveX: 3,
+      providerName: "Cheapest Provider",
+    });
   });
 
-  it("draws a model-linked discount against its explicit undiscounted OpenRouter model", () => {
+  it("suppresses savings at the one-percent tolerance boundary", () => {
     const record = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
       canonicalTokens: { input: 1_000_000, output: 1_000_000 },
       providers: [{
-        providerName: "Meta",
-        providerSlug: "meta",
-        effectiveInputPrice: 0.1,
-        effectiveOutputPrice: 0.2,
-        listedInputPrice: 1.25,
-        listedOutputPrice: 4.25,
-        undiscountedModelId: "meta/muse-spark-1.2",
+        providerName: "Nearly Equal Provider",
+        providerSlug: "nearly-equal",
+        effectiveInputPrice: 9.9,
+        effectiveOutputPrice: 19.8,
+        listedInputPrice: 10,
+        listedOutputPrice: 20,
+        discountPercentage: 50,
       }],
+      listed: { price1mInputTokens: 10, price1mOutputTokens: 20, cacheHitPrice: 10 },
     };
     const point = aaAdapter.computePoint(record, controls)!;
-    expect(point.discounts?.[0]).toMatchObject({
-      preDiscountX: 5.5,
-      undiscountedModelId: "meta/muse-spark-1.2",
-    });
-    expect(point.discounts?.[0]?.effectiveX).toBeCloseTo(0.3, 10);
-    expect(point.discounts?.[0]?.percentage).toBeCloseTo(94.54545, 4);
+    expect(point.discount).toBeUndefined();
   });
 
-  it("does not infer a discount when source metadata is absent", () => {
-    const point = aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, controls)!;
+  it("does not infer savings when AA listed pricing is absent", () => {
+    const point = aaAdapter.computePoint(AA_RECORD_NO_LISTING, controls)!;
     expect(point.discount).toBeUndefined();
-    expect(point.discounts).toEqual([]);
   });
 
   it("weighted mode uses the record's weighted prices", () => {
@@ -429,7 +379,7 @@ describe("aa tooltips and metadata", () => {
 describe("aaAdapter subtitle", () => {
   it("uses the requested concise methodology copy", () => {
     expect(aaAdapter.subtitle).toBe(
-      "This chart uses the latest prices and discounts from OpenRouter to find the real models on the Pareto frontier, updated multiple times per day, as some prices change around weekends and Chinese working hours",
+      "This chart compares AA listed prices with the cheapest effective OpenRouter provider for the real benchmark workload, updated multiple times per day as prices change",
     );
   });
 

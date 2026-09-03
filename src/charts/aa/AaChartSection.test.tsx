@@ -8,7 +8,7 @@ import { chartStateFromParams, chartStateToParams } from "../urlState";
 import { aaAdapter } from "./adapter";
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
 
-const AA_SUBTITLE = "This chart uses the latest prices and discounts from OpenRouter to find the real models on the Pareto frontier, updated multiple times per day, as some prices change around weekends and Chinese working hours";
+const AA_SUBTITLE = "This chart compares AA listed prices with the cheapest effective OpenRouter provider for the real benchmark workload, updated multiple times per day as prices change";
 
 function mount(ui: () => JSX.Element) {
   const container = document.createElement("div");
@@ -116,7 +116,7 @@ describe("AaChartSection", () => {
     dispose();
   });
 
-  it("emphasizes the model family when its pre-discount endpoint is hovered", async () => {
+  it("emphasizes the model family when its AA-baseline endpoint is hovered", async () => {
     const discounted = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
       slug: "gpt-5.6-sol-high",
@@ -132,6 +132,7 @@ describe("AaChartSection", () => {
         listedOutputPrice: 104.93,
         discountPercentage: 50,
       }],
+      listed: { price1mInputTokens: 80, price1mOutputTokens: 104.93, cacheHitPrice: 80 },
     };
     const { container, dispose } = mount(() => (
       <AaChartSection
@@ -167,6 +168,7 @@ describe("AaChartSection", () => {
         listedOutputPrice: 104.93,
         discountPercentage: 50,
       }],
+      listed: { price1mInputTokens: 80, price1mOutputTokens: 104.93, cacheHitPrice: 80 },
     };
     const { container, dispose } = mount(() => (
       <AaChartSection
@@ -198,6 +200,7 @@ describe("AaChartSection", () => {
         listedOutputPrice: 104.93,
         discountPercentage: 50,
       }],
+      listed: { price1mInputTokens: 80, price1mOutputTokens: 104.93, cacheHitPrice: 80 },
     };
     const { container, dispose } = mount(() => (
       <AaChartSection
@@ -213,7 +216,7 @@ describe("AaChartSection", () => {
     const dialog = container.querySelector<HTMLDialogElement>("[data-testid='chart-detail-modal']")!;
     expect(dialog.open).toBe(true);
     expect(dialog.querySelector("[data-testid='chart-detail-discount-note']")?.textContent).toBe(
-      "Off-peak discounts change by the hour. They often end during working hours in China and on weekends.",
+      "Effective provider prices change by the hour. Off-peak rates often end during working hours in China and on weekends.",
     );
     dispose();
   });
@@ -234,6 +237,7 @@ describe("AaChartSection", () => {
         listedOutputPrice: 104.93,
         discountPercentage: 50,
       }],
+      listed: { price1mInputTokens: 80, price1mOutputTokens: 104.93, cacheHitPrice: 80 },
     };
     const { container, dispose } = mount(() => (
       <AaChartSection
@@ -248,7 +252,7 @@ describe("AaChartSection", () => {
     endpoint?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     const dialog = container.querySelector<HTMLDialogElement>("[data-testid='chart-detail-modal']")!;
     expect(dialog.open).toBe(true);
-    expect(dialog.textContent).toContain("Discount");
+    expect(dialog.textContent).toContain("Savings vs AA listed");
     expect(dialog.querySelector("[data-testid='chart-detail-discount-note']")).toBeNull();
     dispose();
   });
@@ -299,6 +303,7 @@ describe("AaChartSection", () => {
       listed: { price1mInputTokens: 2, price1mOutputTokens: 8, cacheHitPrice: 0.2 },
     };
     const { container, dispose } = mount(() => <AaChartSection records={() => [listedOnly]} />);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     expect(container.querySelector("[data-testid='aa-unplottable-count']")).toBeNull();
     const pricingMode = container.querySelector("#chart-aa-control-pricingMode") as HTMLSelectElement;

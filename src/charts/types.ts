@@ -26,20 +26,14 @@ export type ModelBrand =
 
 /** One plottable model point. x is estimated cost in USD, y is the score. */
 export interface PriceDiscountAnnotation {
-  /** Percentage implied by the source-backed pre/effective workload costs (0–100). */
+  /** Percentage by which the cheapest OpenRouter cost beats AA listed pricing. */
   percentage: number;
-  /** Undiscounted workload cost in USD, from the same provider price. */
+  /** AA listed workload cost in USD, used as the comparison baseline. */
   preDiscountX: number;
-  /** Optional effective cost; a zero is source-valid only for a 100% discount and is never plotted on a log scale. */
+  /** Cheapest OpenRouter workload cost in USD, which is the plotted point. */
   effectiveX?: number;
-  /** Provider that supplied both the pre-discount and effective prices. */
+  /** Provider that supplies the plotted effective price. */
   providerName?: string;
-  /** Provider whose effective cost determines the plotted point when this is an alternative discount. */
-  plottedProviderName?: string;
-  /** Explicit model identity used as the undiscounted comparison. */
-  undiscountedModelId?: string;
-  /** Whether this provider is the plotted winner or an alternative discounted provider. */
-  providerRole?: "plotted" | "alternative";
 }
 
 export interface PlottablePoint {
@@ -53,10 +47,8 @@ export interface PlottablePoint {
   brand?: ModelBrand;
   /** Estimated benchmark workload cost, USD. Must be > 0 for log scale. */
   x: number;
-  /** Optional explicit source-backed discount annotation; never inferred by the chart. */
+  /** Optional AA-relative savings annotation. */
   discount?: PriceDiscountAnnotation;
-  /** Source-backed provider discount candidates; the chart displays the largest one. */
-  discounts?: readonly PriceDiscountAnnotation[];
   /** Stable model-family key shared by all effort variants and both charts. */
   effortGroup?: string;
   /** Normalized reasoning effort, when this point is an effort variant. */
@@ -204,7 +196,7 @@ export interface ChartViewState {
   showFrontier?: boolean;
   /** Whether Pareto crown decorations are visible. Defaults to true. */
   showCrowns?: boolean;
-  /** Whether the largest source-backed discount annotation is visible. */
+  /** Whether the AA-relative savings annotation is visible. */
   showDiscounts?: boolean;
 }
 

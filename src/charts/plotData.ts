@@ -38,21 +38,22 @@ export function buildChartPlot<TRecord>(
   return { entries, unplottable };
 }
 
-/** Validate one explicit source-backed discount annotation. */
-export function explicitDiscountForAnnotation(
+/** Validate one AA-relative savings annotation. */
+export function validDiscountAnnotation(
   discount: PriceDiscountAnnotation | undefined,
 ): PriceDiscountAnnotation | null {
   if (
     !discount || !Number.isFinite(discount.preDiscountX) || discount.preDiscountX <= 0 ||
     !Number.isFinite(discount.percentage) || discount.percentage <= 0 || discount.percentage > 100 ||
-    (discount.effectiveX !== undefined &&
-      (!Number.isFinite(discount.effectiveX) ||
-        (discount.effectiveX < 0 || (discount.effectiveX === 0 && discount.percentage !== 100))))
+    (discount.effectiveX !== undefined && (
+      !Number.isFinite(discount.effectiveX) ||
+      discount.effectiveX < 0 ||
+      (discount.effectiveX === 0 && discount.percentage !== 100)
+    ))
   ) return null;
-  if (discount.effectiveX !== undefined) {
-    const impliedPercentage = discountPercentageFromCosts(discount.preDiscountX, discount.effectiveX);
-    if (impliedPercentage === undefined || Math.abs(impliedPercentage - discount.percentage) > 0.05) return null;
-  }
+  if (discount.effectiveX === undefined) return discount;
+  const impliedPercentage = discountPercentageFromCosts(discount.preDiscountX, discount.effectiveX);
+  if (impliedPercentage === undefined || Math.abs(impliedPercentage - discount.percentage) > 0.05) return null;
   return discount;
 }
 
@@ -81,22 +82,9 @@ export function discountPercentageFromCosts(
   return (1 - effectiveX / preDiscountX) * 100;
 }
 
-/** Plain-English explanation suitable for the compact hover tooltip. */
-export function discountReason(discount: PriceDiscountAnnotation): string {
-  if (discount.undiscountedModelId) return "Contributor model collects your data";
-  if (discount.providerName) return `Source provider discount from ${discount.providerName}`;
-  return "Source-provided discount";
-}
-
-/** Summarize provider roles without repeating one provider name. */
+/** Name the provider responsible for the plotted savings. */
 export function discountProviderSummary(discount: PriceDiscountAnnotation): string {
-  const provider = discount.providerName ?? "Source provider";
-  const plottedProvider = discount.providerRole === "alternative"
-    ? discount.plottedProviderName
-    : provider;
-  return plottedProvider && plottedProvider !== provider
-    ? `Discounted provider: ${provider}; plotted provider: ${plottedProvider}`
-    : provider;
+  return discount.providerName ?? "Cheapest OpenRouter provider";
 }
 
 /** Format the source price transformation as one compact equation. */
@@ -115,7 +103,7 @@ export function discountHoverTitle(
   point: Pick<PlottablePoint, "label" | "x">,
   discount: PriceDiscountAnnotation,
 ): string {
-  return `${point.label} (${roundDiscountPercent(discount.percentage)}% off)`;
+  return `${point.label} (${roundDiscountPercent(discount.percentage)}% below AA listed)`;
 }
 
 /** Compact discount rows kept understandable at a glance. */
@@ -124,8 +112,8 @@ export function discountSummaryLines(
   discount: PriceDiscountAnnotation,
 ): TooltipLine[] {
   return [
-    { label: "Discount", value: discountMath(point, discount) },
-    { label: "Provider", value: discountProviderSummary(discount) },
+    { label: "Savings vs AA listed", value: discountMath(point, discount) },
+    { label: "Cheapest provider", value: discountProviderSummary(discount) },
   ];
 }
 
@@ -134,22 +122,11 @@ export function discountDetailLines(
   point: PlottablePoint,
   discount: PriceDiscountAnnotation,
 ): TooltipLine[] {
-  const role = discountProviderRole(point, discount);
   return [
-    { label: "Discount", value: `${roundDiscountPercent(discount.percentage)}% off` },
-    { label: "Why discounted", value: discountReason(discount) },
-    {
-      label: "Discount provider",
-      value: `${discount.providerName ?? "Source provider"} (${role === "plotted" ? "plotted provider" : "alternative provider"})`,
-    },
-    ...(discount.undiscountedModelId
-      ? [{ label: "Undiscounted model", value: discount.undiscountedModelId }]
-      : []),
-    { label: "Pre-discount cost", value: `$${discount.preDiscountX.toFixed(2)}` },
-    {
-      label: "Discounted provider cost",
-      value: `$${(discount.effectiveX ?? point.x).toFixed(2)}`,
-    },
+    { label: "Savings vs AA listed", value: `${roundDiscountPercent(discount.percentage)}% below AA listed` },
+    { label: "Cheapest provider", value: discount.providerName ?? "Cheapest OpenRouter provider" },
+    { label: "AA listed cost", value: `$${discount.preDiscountX.toFixed(2)}` },
+    { label: "OpenRouter cost", value: `$${(discount.effectiveX ?? point.x).toFixed(2)}` },
   ];
 }
 
@@ -158,7 +135,7 @@ export function modelLabelParts(
   discount: PriceDiscountAnnotation | null,
 ): ModelLabelParts {
   if (!discount) return { mainLabel: label, accessibleLabel: label };
-  const discountLabel = `(${roundDiscountPercent(discount.percentage)}% off)`;
+  const discountLabel = `(${roundDiscountPercent(discount.percentage)}% below AA listed)`;
   return {
     mainLabel: label,
     discountLabel,
@@ -174,40 +151,8 @@ export function modelLabelWithDiscount(
   return modelLabelParts(label, discount).accessibleLabel;
 }
 
-export function explicitDiscountCandidates(point: PlottablePoint): PriceDiscountAnnotation[] {
-  const candidates = point.discounts ?? (point.discount ? [point.discount] : []);
-  return candidates.flatMap((candidate) => {
-    const discount = explicitDiscountForAnnotation(candidate);
-    return discount ? [discount] : [];
-  });
-}
-
-/** Pick one deterministic largest-percentage annotation for a model. */
-export function largestExplicitDiscountForPoint(
-  point: PlottablePoint,
-): PriceDiscountAnnotation | null {
-  const candidates = explicitDiscountCandidates(point);
-  return candidates.reduce<PriceDiscountAnnotation | null>((largest, candidate) => {
-    if (largest === null || candidate.percentage > largest.percentage) return candidate;
-    if (candidate.percentage < largest.percentage) return largest;
-    const candidateProvider = candidate.providerName ?? "";
-    const largestProvider = largest.providerName ?? "";
-    return candidateProvider.localeCompare(largestProvider) < 0 ? candidate : largest;
-  }, null);
-}
-
-export function discountProviderRole(
-  point: PlottablePoint,
-  discount: PriceDiscountAnnotation,
-): "plotted" | "alternative" {
-  if (discount.providerRole) return discount.providerRole;
-  if (discount.effectiveX === undefined) return "plotted";
-  const tolerance = Math.max(0.005, Math.abs(point.x) * 1e-6);
-  return Math.abs(discount.effectiveX - point.x) <= tolerance ? "plotted" : "alternative";
-}
-
-export function explicitDiscountForPoint(point: PlottablePoint): PriceDiscountAnnotation | null {
-  const discount = largestExplicitDiscountForPoint(point);
+export function discountForPoint(point: PlottablePoint): PriceDiscountAnnotation | null {
+  const discount = validDiscountAnnotation(point.discount);
   return discount && point.x > 0 ? discount : null;
 }
 

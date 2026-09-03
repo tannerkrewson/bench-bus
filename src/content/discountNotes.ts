@@ -1,8 +1,7 @@
 /**
- * Copy for provider discounts that are not constant. Some providers — DeepSeek
- * is the canonical example — price off-peak usage with discount windows that
- * shift by the hour and typically end during Chinese working hours and on
- * weekends, so a collected snapshot may not match what a reader sees later.
+ * Copy for provider prices that are not constant. Some providers — DeepSeek is
+ * the canonical example — change off-peak rates by the hour, so a collected
+ * savings snapshot may not match what a reader sees later.
  */
 
 /** Identity fields of a model entry a note matcher can inspect. */
@@ -22,7 +21,7 @@ interface TimeVaryingDiscountRule {
 }
 
 export const TIME_VARYING_DISCOUNT_NOTE =
-  "Off-peak discounts change by the hour. They often end during working hours in China and on weekends.";
+  "Effective provider prices change by the hour. Off-peak rates often end during working hours in China and on weekends.";
 
 // Add rules here as more providers are confirmed to vary discounts over time.
 const TIME_VARYING_RULES: readonly TimeVaryingDiscountRule[] = [

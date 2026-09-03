@@ -15,8 +15,7 @@ import {
   type ModelVariantMember,
 } from "./labelLayout";
 import {
-  discountProviderRole,
-  largestExplicitDiscountForPoint,
+  discountForPoint,
   modelLabelParts,
   paretoFrontier,
   selectCrownPoints,
@@ -197,9 +196,9 @@ export interface DiscountConnectorGeometry {
 }
 
 /**
- * Build the on-hover dotted connector and the original-price left chevron.
+ * Build the on-hover dotted connector and the AA-baseline left chevron.
  * The connector is trimmed clear of the plotted dot; the chevron remains at
- * the undiscounted price and points toward the cheaper price on the left.
+ * the AA listed price and points toward the cheaper price on the left.
  */
 export function discountConnectorGeometry(
   preLeft: number,
@@ -314,7 +313,6 @@ type DiscountAnnotation = {
   percentage: number;
   groupKey: string;
   providerName?: string;
-  providerRole?: "plotted" | "alternative";
   annotation: PriceDiscountAnnotation;
 };
 
@@ -330,7 +328,6 @@ type DiscountDecoration = {
   percentage: number;
   groupKey: string;
   color: string;
-  providerRole?: "plotted" | "alternative";
   annotation: PriceDiscountAnnotation;
 };
 
@@ -521,7 +518,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     );
     const discounts: DiscountAnnotation[] = (props.showDiscounts?.() ?? true)
       ? orderedPoints.flatMap((point) => {
-          const discount = largestExplicitDiscountForPoint(point);
+          const discount = discountForPoint(point);
           // A valid 100% discount may have a source effective cost of zero.
           // Keep it in labels/tooltips, but do not pass that endpoint to uPlot
           // or a log-scale SVG decoration.
@@ -535,7 +532,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
             percentage: discount.percentage,
             groupKey: groupKeyById.get(point.id) ?? modelGroupKey(point.label, point.id),
             providerName: discount.providerName,
-            providerRole: discountProviderRole(point, discount),
             annotation: discount,
           }];
         })
@@ -543,7 +539,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     const labelParts = orderedIds.map((id) => {
       const point = pointById.get(id);
       if (!point) return modelLabelParts(id, null);
-      const discount = props.showDiscounts?.() ?? true ? largestExplicitDiscountForPoint(point) : null;
+      const discount = props.showDiscounts?.() ?? true ? discountForPoint(point) : null;
       return modelLabelParts(point.label, discount);
     });
     currentSeries = {
@@ -809,9 +805,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       if (!plottedPosition) return [];
       const preLeft = overRect.left - rootRect.left + currentPlot.valToPos(discount.preX, "x");
       // The plotted model dot is the single effective endpoint for the chart.
-      // Alternative provider metadata may have a different effectiveX, but
-      // drawing that second provider endpoint creates a false visual gap from
-      // the model's actual plotted price.
+      // The savings annotation's effective endpoint is the model's actual
+      // plotted price, so never draw a second provider-specific endpoint.
       const effectiveLeft = plottedPosition.left;
       const top = plottedPosition.top;
       if (![preLeft, effectiveLeft, top].every(Number.isFinite)) return [];
@@ -825,10 +820,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         effectiveLeft,
         top,
         percentage: discount.percentage,
-         groupKey: discount.groupKey,
-         color: groupColor(discount.groupKey, dark),
-         providerRole: discount.providerRole,
-         annotation: discount.annotation,
+        groupKey: discount.groupKey,
+        color: groupColor(discount.groupKey, dark),
+        annotation: discount.annotation,
        }];
     });
     publishDiscountDecorations(discountGeometry);
@@ -1346,7 +1340,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
               publishHoveredPosition(dot ?? null);
               publishHoveredReadout(target, dot);
               // Keep guides centered on whichever dot was hit, including the
-              // pre-discount endpoint, while the tooltip stays at the pointer.
+              // AA-baseline endpoint, while the tooltip stays at the pointer.
               if (Math.abs((u.cursor.left ?? target.plotLeft) - target.plotLeft) > 0.5 ||
                   Math.abs((u.cursor.top ?? target.plotTop) - target.plotTop) > 0.5) {
                 u.setCursor({ left: target.plotLeft, top: target.plotTop }, false);
@@ -2195,7 +2189,6 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
                 data-testid="discount-line"
                 data-discount-id={discount.id}
                 data-discount-percentage={discount.percentage}
-                data-discount-provider-role={discount.providerRole ?? "plotted"}
                 opacity={isFocusedFamilyId(discount.pointId) ? 0.75 : 0.2}
                 style={{
                   transition: motionTransition("opacity", EMPHASIS_TRANSITION_DURATION),
@@ -2232,7 +2225,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           }}
         </For>
       </svg>
-      {/* The pre-discount chevron is interactive; dotted connectors are visual
+      {/* The AA-baseline chevron is interactive; dotted connectors are visual
           output of a family hover and must not create a large invisible hit area. */}
       <For each={discountDecorations()}>
         {(discount) => (

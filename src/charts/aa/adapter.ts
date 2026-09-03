@@ -13,6 +13,8 @@ import aliasFile from "../../collectors/openrouter/openrouter-aliases.json";
 import curatedModelFile from "../../collectors/openrouter/curated-models.json";
 import {
   AA_DEFAULT_CACHE_HIT_RATE,
+  AA_SAVINGS_TOLERANCE_RATE,
+  AA_SAVINGS_TOLERANCE_USD,
   listedCostUsd,
   selectCheapestProvider,
   weightedCostUsd,
@@ -99,95 +101,30 @@ export function aaYAxisLabel(controls: Readonly<PricingControlState>): string {
     : "Intelligence Index";
 }
 
-function providerDiscountAnnotation(
-  provider: DerivedAaChartRecord["providers"][number],
-  inputTokens: number,
-  outputTokens: number,
-  plottedCost?: number,
+function aaListedSavingsDiscount(
+  record: DerivedAaChartRecord,
+  winner: ReturnType<typeof selectCheapestProvider>,
+  cacheHitRate: number,
 ): PriceDiscountAnnotation | undefined {
-  const effectiveX =
-    (inputTokens / 1e6) * provider.effectiveInputPrice +
-    (outputTokens / 1e6) * provider.effectiveOutputPrice;
-  const listedInput = provider.listedInputPrice;
-  const listedOutput = provider.listedOutputPrice;
-  const explicitPercentage = provider.discountPercentage;
-  const listedPreDiscountX =
-    listedInput !== undefined && listedOutput !== undefined && listedInput > 0 && listedOutput > 0
-      ? (inputTokens / 1e6) * listedInput + (outputTokens / 1e6) * listedOutput
-      : undefined;
-  // Direct listed prices are authoritative. The explicit percentage is only
-  // a fallback when no listed prices exist; stale metadata must not change
-  // the percentage implied by the displayed workload prices.
-  const preDiscountX = listedPreDiscountX ?? (
-    explicitPercentage !== undefined && explicitPercentage > 0 && explicitPercentage < 100
-      ? effectiveX / (1 - explicitPercentage / 100)
-      : undefined
+  if (!winner) return undefined;
+  const preDiscountX = listedCostUsd(
+    record.listed,
+    record.canonicalTokens.input,
+    record.canonicalTokens.output,
+    cacheHitRate,
   );
-  if (!Number.isFinite(effectiveX) || effectiveX < 0 || preDiscountX === undefined || preDiscountX <= effectiveX) {
-    return undefined;
-  }
-  if (explicitPercentage !== undefined && explicitPercentage <= 0) return undefined;
-  // OpenRouter publishes provider-level discount percentages for some
-  // endpoints. A model-linked tier (such as Contributor) instead declares
-  // its undiscounted model identity in the mapping. In both cases the
-  // displayed percentage is recomputed from the source-backed workload costs.
-  if (explicitPercentage === undefined && provider.undiscountedModelId === undefined) return undefined;
-  const percentage = discountPercentageFromCosts(preDiscountX, effectiveX);
-  if (percentage === undefined || !Number.isFinite(percentage) || percentage <= 0 || percentage > 100) return undefined;
-  const tolerance = plottedCost === undefined ? 0 : Math.max(0.005, Math.abs(plottedCost) * 1e-6);
+  if (preDiscountX === null || winner.totalCostUsd >= preDiscountX) return undefined;
+  const savingsUsd = preDiscountX - winner.totalCostUsd;
+  const tolerance = Math.max(AA_SAVINGS_TOLERANCE_USD, preDiscountX * AA_SAVINGS_TOLERANCE_RATE);
+  if (savingsUsd <= tolerance) return undefined;
+  const percentage = discountPercentageFromCosts(preDiscountX, winner.totalCostUsd);
+  if (percentage === undefined) return undefined;
   return {
     percentage,
     preDiscountX,
-    effectiveX,
-    providerName: provider.providerName,
-    ...(provider.undiscountedModelId ? { undiscountedModelId: provider.undiscountedModelId } : {}),
-    ...(plottedCost === undefined
-      ? {}
-      : { providerRole: Math.abs(effectiveX - plottedCost) <= tolerance ? "plotted" : "alternative" }),
+    effectiveX: winner.totalCostUsd,
+    providerName: winner.providerName,
   };
-}
-
-function explicitProviderDiscount(
-  record: DerivedAaChartRecord,
-  winner: ReturnType<typeof selectCheapestProvider>,
-): PriceDiscountAnnotation | undefined {
-  if (!winner) return undefined;
-  const annotation = providerDiscountAnnotation(
-    winner,
-    record.canonicalTokens.input,
-    record.canonicalTokens.output,
-  );
-  if (!annotation) return undefined;
-  return {
-    percentage: annotation.percentage,
-    preDiscountX: annotation.preDiscountX,
-    ...(annotation.providerName ? { providerName: annotation.providerName } : {}),
-    ...(annotation.undiscountedModelId
-      ? { undiscountedModelId: annotation.undiscountedModelId }
-      : {}),
-  };
-}
-
-function explicitProviderDiscounts(
-  record: DerivedAaChartRecord,
-  plottedCost: number,
-  plottedProviderName?: string,
-): PriceDiscountAnnotation[] {
-  return record.providers.flatMap((provider) => {
-    const annotation = providerDiscountAnnotation(
-      provider,
-      record.canonicalTokens.input,
-      record.canonicalTokens.output,
-      plottedCost,
-    );
-    if (!annotation) return [];
-    return [{
-      ...annotation,
-      ...(plottedProviderName && annotation.providerName !== plottedProviderName && annotation.providerRole === "alternative"
-        ? { plottedProviderName }
-        : {}),
-    }];
-  });
 }
 
 /**
@@ -197,7 +134,7 @@ function explicitProviderDiscounts(
 export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
   benchmarkId: AA_BENCHMARK_ID,
   title: "Best value models on OpenRouter",
-  subtitle: "This chart uses the latest prices and discounts from OpenRouter to find the real models on the Pareto frontier, updated multiple times per day, as some prices change around weekends and Chinese working hours",
+  subtitle: "This chart compares AA listed prices with the cheapest effective OpenRouter provider for the real benchmark workload, updated multiple times per day as prices change",
   sourceLinks: [
     { label: "Artificial Analysis", href: "https://artificialanalysis.ai/" },
     { label: "OpenRouter", href: "https://openrouter.ai/" },
@@ -224,14 +161,12 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
 
     let cost: number | null;
     let discount: PriceDiscountAnnotation | undefined;
-    let plottedProviderName: string | undefined;
     switch (mode) {
       case "cheapest": {
         const winner = selectCheapestProvider(record.providers, input, output);
         if (winner) {
           cost = winner.totalCostUsd;
-          plottedProviderName = winner.providerName;
-          discount = explicitProviderDiscount(record, winner);
+          discount = aaListedSavingsDiscount(record, winner, cacheHitRate);
         } else {
           // AA is the benchmark source of truth for new models. Keep them
           // visible before OpenRouter publishes a provider row, without
@@ -263,9 +198,6 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
       x: cost,
       y: score,
       ...(discount ? { discount } : {}),
-      ...(mode === "cheapest"
-        ? { discounts: explicitProviderDiscounts(record, cost, plottedProviderName) }
-        : {}),
     };
   },
 

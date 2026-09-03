@@ -480,7 +480,7 @@ describe("BenchmarkChartSection (Cursor fixture shape)", () => {
     dispose();
   });
 
-  it("applies the surcharge toggle and reports state changes", () => {
+  it("applies the savings toggle and reports state changes", () => {
     const states: ChartViewState[] = [];
     const { container, dispose } = mount(() => (
       <BenchmarkChartSection
@@ -495,7 +495,7 @@ describe("BenchmarkChartSection (Cursor fixture shape)", () => {
     ) as HTMLInputElement;
     expect(toggle.checked).toBe(false);
     const labels = container.querySelector("input[aria-label='Show model labels']") as HTMLInputElement;
-    const discounts = container.querySelector("input[aria-label='Show provider discounts']") as HTMLInputElement;
+     const discounts = container.querySelector("input[aria-label='Show price savings']") as HTMLInputElement;
     expect(labels.checked).toBe(true);
     expect(discounts.checked).toBe(true);
     labels.click();

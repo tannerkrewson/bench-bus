@@ -8,8 +8,8 @@ import {
   discountMath,
   discountProviderSummary,
   discountSummaryLines,
-  explicitDiscountForAnnotation,
-  explicitDiscountForPoint,
+  discountForPoint,
+  validDiscountAnnotation,
   modelLabelParts,
   modelLabelWithDiscount,
   paretoFrontier,
@@ -40,74 +40,65 @@ describe("buildChartPlot", () => {
 });
 
 describe("modelLabelWithDiscount", () => {
-  it("formats a parenthesized discount rounded to whole percent with an accessible label", () => {
-    expect(modelLabelWithDiscount("Model", { percentage: 43.1, preDiscountX: 10 })).toBe("Model (43% off)");
-    expect(modelLabelWithDiscount("Model", { percentage: 43.5, preDiscountX: 10 })).toBe("Model (44% off)");
-    expect(modelLabelWithDiscount("Model", { percentage: 100, preDiscountX: 10, effectiveX: 0 })).toBe("Model (100% off)");
+  it("formats AA-relative savings rounded to whole percent with an accessible label", () => {
+    expect(modelLabelWithDiscount("Model", { percentage: 43.1, preDiscountX: 10 })).toBe("Model (43% below AA listed)");
+    expect(modelLabelWithDiscount("Model", { percentage: 43.5, preDiscountX: 10 })).toBe("Model (44% below AA listed)");
+    expect(modelLabelWithDiscount("Model", { percentage: 100, preDiscountX: 10, effectiveX: 0 })).toBe("Model (100% below AA listed)");
     expect(modelLabelWithDiscount("Model", null)).toBe("Model");
     expect(modelLabelParts("Model", { percentage: 43.1, preDiscountX: 10 })).toEqual({
       mainLabel: "Model",
-      discountLabel: "(43% off)",
-      accessibleLabel: "Model (43% off)",
+      discountLabel: "(43% below AA listed)",
+      accessibleLabel: "Model (43% below AA listed)",
     });
   });
 });
 
 describe("discount presentation", () => {
-  it("keeps hover discount copy simple and explains contributor pricing", () => {
+  it("keeps hover savings copy simple and names the cheapest provider", () => {
     const point: PlottablePoint = { id: "muse", label: "Muse Spark 1.2", x: 4, y: 70 };
     const discount = {
       percentage: 43.4,
       preDiscountX: 7,
       effectiveX: 4,
       providerName: "OpenRouter",
-      undiscountedModelId: "meta/muse-spark-1.2",
     };
     expect(discountSummaryLines({ x: point.x }, discount)).toEqual([
-      { label: "Discount", value: "$7.00 * (1 - 43.4%) = $4.00" },
-      { label: "Provider", value: "OpenRouter" },
+      { label: "Savings vs AA listed", value: "$7.00 * (1 - 43.4%) = $4.00" },
+      { label: "Cheapest provider", value: "OpenRouter" },
     ]);
-    expect(discountHoverTitle(point, discount)).toBe("Muse Spark 1.2 (43% off)");
+    expect(discountHoverTitle(point, discount)).toBe("Muse Spark 1.2 (43% below AA listed)");
     expect(discountMath(point, discount)).toBe("$7.00 * (1 - 43.4%) = $4.00");
     expect(discountDetailLines(point, discount).map((line) => line.label)).toEqual([
-      "Discount",
-      "Why discounted",
-      "Discount provider",
-      "Undiscounted model",
-      "Pre-discount cost",
-      "Discounted provider cost",
+      "Savings vs AA listed",
+      "Cheapest provider",
+      "AA listed cost",
+      "OpenRouter cost",
     ]);
   });
 
-  it("names both providers when the discount provider is not plotted", () => {
+  it("uses the cheapest provider as the only provider identity", () => {
     const discount = {
       percentage: 50,
       preDiscountX: 10,
       effectiveX: 5,
-      providerName: "Discounted Provider",
-      providerRole: "alternative" as const,
-      plottedProviderName: "Winning Provider",
+      providerName: "Winning Provider",
     };
-    expect(discountProviderSummary(discount)).toBe(
-      "Discounted provider: Discounted Provider; plotted provider: Winning Provider",
-    );
-    expect(discountHoverTitle({ label: "Model", x: 6 }, discount)).toContain(
-      "Model (50% off)",
-    );
+    expect(discountProviderSummary(discount)).toBe("Winning Provider");
+    expect(discountHoverTitle({ label: "Model", x: 6 }, discount)).toContain("Model (50% below AA listed)");
   });
 });
 
-describe("explicitDiscountForAnnotation", () => {
-  it("retains a valid 100% source annotation with a zero effective cost", () => {
+describe("validDiscountAnnotation", () => {
+  it("retains a valid 100% annotation with a zero effective cost", () => {
     const discount = { percentage: 100, preDiscountX: 10, effectiveX: 0 };
-    expect(explicitDiscountForAnnotation(discount)).toEqual(discount);
-    expect(explicitDiscountForAnnotation({ ...discount, percentage: 101 })).toBeNull();
-    expect(explicitDiscountForAnnotation({ ...discount, percentage: 99 })).toBeNull();
+    expect(validDiscountAnnotation(discount)).toEqual(discount);
+    expect(validDiscountAnnotation({ ...discount, percentage: 101 })).toBeNull();
+    expect(validDiscountAnnotation({ ...discount, percentage: 99 })).toBeNull();
   });
 
   it("rejects a percentage that disagrees with its raw/effective costs", () => {
-    expect(explicitDiscountForAnnotation({ percentage: 40, preDiscountX: 10, effectiveX: 5 })).toBeNull();
-    expect(explicitDiscountForAnnotation({ percentage: 50, preDiscountX: 10, effectiveX: 5.001 })).toEqual({
+    expect(validDiscountAnnotation({ percentage: 40, preDiscountX: 10, effectiveX: 5 })).toBeNull();
+    expect(validDiscountAnnotation({ percentage: 50, preDiscountX: 10, effectiveX: 5.001 })).toEqual({
       percentage: 50,
       preDiscountX: 10,
       effectiveX: 5.001,
@@ -115,30 +106,19 @@ describe("explicitDiscountForAnnotation", () => {
   });
 });
 
-describe("explicitDiscountForPoint", () => {
-  it("accepts only explicit positive percentage discounts", () => {
+describe("discountForPoint", () => {
+  it("accepts only valid positive AA-relative savings", () => {
     const point = {
       id: "discounted", label: "Discounted", x: 6, y: 70,
-      discount: { percentage: 40, preDiscountX: 10, providerName: "Provider A" },
+      discount: { percentage: 40, preDiscountX: 10, effectiveX: 6, providerName: "Provider A" },
     };
-    expect(explicitDiscountForPoint(point)).toEqual(point.discount);
-    expect(explicitDiscountForPoint({
+    expect(discountForPoint(point)).toEqual(point.discount);
+    expect(discountForPoint({
       ...point,
       discount: { percentage: 100, preDiscountX: 10, effectiveX: 0 },
     })).toEqual({ percentage: 100, preDiscountX: 10, effectiveX: 0 });
-    expect(explicitDiscountForPoint({ ...point, discount: { percentage: 0, preDiscountX: 10 } })).toBeNull();
-    expect(explicitDiscountForPoint({ ...point, discount: { percentage: 40, preDiscountX: -1 } })).toBeNull();
-  });
-
-  it("selects only the largest explicit percentage", () => {
-    const point = {
-      id: "multi", label: "Multi", x: 6, y: 70,
-      discounts: [
-        { percentage: 25, preDiscountX: 8, providerName: "Provider A" },
-        { percentage: 40, preDiscountX: 10, providerName: "Provider B" },
-      ],
-    };
-    expect(explicitDiscountForPoint(point)?.providerName).toBe("Provider B");
+    expect(discountForPoint({ ...point, discount: { percentage: 0, preDiscountX: 10 } })).toBeNull();
+    expect(discountForPoint({ ...point, discount: { percentage: 40, preDiscountX: -1 } })).toBeNull();
   });
 });
 

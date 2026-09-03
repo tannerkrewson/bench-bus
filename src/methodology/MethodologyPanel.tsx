@@ -32,8 +32,8 @@ export const AaMethodologyContent: Component = () => (
       {AA_DEFAULT_CACHE_HIT_RATE * 100}%). Cache writes are left out because the source hides them.
     </p>
     <p>
-      <strong>Discounts.</strong> Arrows show only discounts found in the data. The largest one wins. The tooltip names
-      the seller. We never guess.
+      <strong>Price savings.</strong> Arrows compare the cheapest effective OpenRouter provider with AA listed
+      pricing for the same workload. Near-equal costs omit the arrow. The tooltip names the winning provider.
     </p>
     <p>
       <strong>Limits.</strong> No score covers every skill. Real costs vary by task. Old views hold only Bench Bus

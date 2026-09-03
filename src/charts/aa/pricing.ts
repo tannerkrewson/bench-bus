@@ -11,6 +11,10 @@ import type { DerivedAaChartRecord } from "../../schemas";
 /** Default share of input tokens assumed served from cache (listed mode). */
 export const AA_DEFAULT_CACHE_HIT_RATE = 0.9;
 
+/** Near-equality buffer before an AA-versus-OpenRouter savings marker is shown. */
+export const AA_SAVINGS_TOLERANCE_RATE = 0.01;
+export const AA_SAVINGS_TOLERANCE_USD = 0.01;
+
 /** One OpenRouter provider's effective prices, as preserved in derived records. */
 export interface ProviderPrices {
   providerName: string;
