@@ -2,9 +2,9 @@
 export const AA_DEFAULT_COST_MODE = "intelligence-vs-cost-per-task" as const;
 
 /**
- * Models selected by Artificial Analysis's requested curated URL. Keep the
- * upstream slugs verbatim so URL/session selections remain stable as the
- * upstream catalog changes.
+ * Legacy curated models that remain visible alongside the data-driven default
+ * families. Keep upstream slugs verbatim so URL/session selections remain
+ * stable as the catalog changes.
  */
 export const AA_DEFAULT_MODEL_SLUGS = [
   "mimo-v2-5-pro",

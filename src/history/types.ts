@@ -17,7 +17,7 @@ export interface BundleIndexEntry {
   asOf: string;
   /** File name relative to the derived output directory. */
   path: string;
-  /** Whether the AA chart dataset exists at this time (requires AA + OpenRouter pricing). */
+  /** Whether the AA chart dataset exists at this time (requires an AA snapshot). */
   aa: boolean;
   /** Whether the Cursor chart dataset exists at this time. */
   cursor: boolean;

@@ -34,8 +34,8 @@ import deepsweFixture from "../collectors/deepswe/fixtures/leaderboard-live.json
  *   t3 = 2026-08-03T12:00:00.000Z  openrouter(2) + cursor  [aa lags at t2]
  *
  * AA slug "gpt-6" first appears in the benchmark snapshot at t2, but only
- * gains OpenRouter pricing at t3 — so at asOf=t2 it must be absent from the
- * AA chart dataset (no pricing known at that time), and present at t3.
+ * gains OpenRouter pricing at t3. It remains in the AA chart dataset at t2
+ * with explicit empty OpenRouter fields so listed AA pricing can still plot it.
  */
 
 const AA_T1: ArtificialAnalysisModel[] = [validAaModel, validAaModel2];
@@ -230,7 +230,7 @@ describe("compileBundle", () => {
     expect(atT1.stats.aaUnmatched).toBe(0);
   });
 
-  it("retains AA listed-frontier records when no OpenRouter snapshot exists", async () => {
+  it("retains AA listed records when no OpenRouter snapshot exists", async () => {
     // asOf before the first openrouter snapshot: AA+cursor exist, pricing does not.
     const beforePricing = "2026-07-15T00:00:00.000Z";
     await store.writeSnapshot(
@@ -437,17 +437,19 @@ describe("compileBundle", () => {
     expect(joined.unmatchedOr).toBe(0);
   });
 
-  it("retains an unmatched listed-frontier model with explicit no-data OpenRouter fields", () => {
+  it("retains every AA model with explicit no-data OpenRouter fields", () => {
     const joined = joinAaWithPricing(
       [validAaModel, validAaModel2],
       [],
       ALIASES,
       ["gpt-6"],
     );
-    expect(joined.records.map((record) => record.slug)).toEqual(["gpt-6"]);
-    expect(joined.records[0]?.providers).toEqual([]);
-    expect(joined.records[0]?.weighted).toEqual({ weightedInputPrice: 0, weightedOutputPrice: 0 });
-    expect(joined.unmatchedAa).toBe(1);
+    expect(joined.records.map((record) => record.slug)).toEqual(["claude-opus-5", "gpt-6"]);
+    expect(joined.records.every((record) => record.providers.length === 0)).toBe(true);
+    expect(joined.records.every((record) =>
+      record.weighted.weightedInputPrice === 0 && record.weighted.weightedOutputPrice === 0,
+    )).toBe(true);
+    expect(joined.unmatchedAa).toBe(2);
     expect(joined.unmatchedOr).toBe(0);
   });
 

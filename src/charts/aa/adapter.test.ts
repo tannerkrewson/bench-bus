@@ -92,6 +92,26 @@ describe("aaAdapter.computePoint", () => {
     );
   });
 
+  it("uses AA listed pricing for a model before OpenRouter publishes a row", () => {
+    const aaOnly = {
+      ...AA_RECORD_UNPLOTTABLE,
+      listed: { price1mInputTokens: 10, price1mOutputTokens: 50, cacheHitPrice: 1 },
+    };
+    const point = aaAdapter.computePoint(aaOnly, controls);
+    expect(point).not.toBeNull();
+    expect(point?.x).toBeCloseTo(
+      (aaOnly.canonicalTokens.input * 0.9 / 1e6) * 1 +
+        (aaOnly.canonicalTokens.input * 0.1 / 1e6) * 10 +
+        (aaOnly.canonicalTokens.output / 1e6) * 50,
+      8,
+    );
+    expect(point?.discount).toBeUndefined();
+    const provider = aaControlledTooltipLines(aaOnly, point!, controls).find(
+      (line) => line.label === "Winning provider",
+    );
+    expect(provider?.value).toBe("AA listed pricing");
+  });
+
   it("plots DeepSWE pass@1 as a percentage when selected", () => {
     const point = aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, {
       scoreSource: "deepswe",
@@ -318,7 +338,7 @@ describe("aaAdapter.computePoint", () => {
     expect(at50?.x).toBeCloseTo(expected, 8);
   });
 
-  it("treats models with no providers as unplottable in every provider-based mode", () => {
+  it("treats models with no providers or listed pricing as unplottable", () => {
     for (const mode of ["cheapest", "weighted", "listed"]) {
       const point = aaAdapter.computePoint(AA_RECORD_UNPLOTTABLE, {
         pricingMode: mode,

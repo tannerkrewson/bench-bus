@@ -32,9 +32,11 @@ Exit code is nonzero and nothing is written when compilation fails
   expected; the bundle reports each source's actual `observedAt`.
 - **No fabricated history.** A source with no snapshot at or before the
   requested time is marked unavailable (`0` in `sources`). The AA chart
-  dataset needs BOTH the AA benchmark snapshot and OpenRouter pricing; when
-  pricing is unavailable, `aa` is `null` — never emitted with empty or
-  invented pricing. The Cursor chart needs only the Cursor snapshot.
+  dataset needs an AA benchmark snapshot; OpenRouter is optional. Complete
+  reasoning AA records remain in the bundle when OpenRouter has no matching
+  row, with empty provider and weighted fields and their source-published
+  listed prices intact. The default chart can use those listed prices until
+  provider pricing arrives. The Cursor chart needs only the Cursor snapshot.
 - **Past views are naturally historical.** Models absent from the historical
   AA snapshot are absent from the compiled view, and pricing comes from the
   snapshot known at that time.

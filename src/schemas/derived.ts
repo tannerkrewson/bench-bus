@@ -54,8 +54,8 @@ export const derivedAaChartRecordSchema = z
     /**
      * Cheapest-single-provider mode: every provider's effective prices.
      * An empty array means no OpenRouter pricing was known for this model at
-     * the compiled point in time — the record is unplottable in cost terms and
-     * charts must surface it as such rather than mispricing it.
+     * the compiled point in time — provider-based modes can be unavailable,
+     * while AA listed pricing may still plot the record.
      */
     providers: z.array(openRouterProviderSummarySchema),
     /** Weighted OpenRouter mode: model-wide weighted effective prices. */

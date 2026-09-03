@@ -16,7 +16,7 @@ import {
   type DeepSweAliasEntry,
 } from "../collectors/deepswe/mapping";
 import { isNonReasoningModel } from "../charts/modelMetadata";
-import { computeAaListedParetoFrontier, aaListedWorkloadCost } from "../collectors/aa/frontier";
+import { computeAaListedParetoFrontier } from "../collectors/aa/frontier";
 import {
   encodeAaDataset,
   encodeCursorDataset,
@@ -36,10 +36,10 @@ import {
  * - A past view naturally excludes models that the historical benchmark
  *   snapshot does not contain, and uses pricing as known at that time.
  * - Nothing is ever fabricated: a source with no snapshot at or before the
- *   requested time is reported unavailable. Source-backed AA frontier models
- *   with valid AA listed prices remain in the AA dataset when OpenRouter
- *   pricing is unavailable; their provider and weighted fields are explicit
- *   no-data values and chart modes that need OpenRouter pricing stay null.
+ *   requested time is reported unavailable.
+ * - Every complete reasoning AA model is retained in the AA dataset. When
+ *   OpenRouter pricing is unavailable, its provider and weighted fields are
+ *   explicit no-data values while AA listed-pricing mode remains available.
  */
 
 /**
@@ -78,9 +78,9 @@ export interface SourceResolution {
 }
 
 export interface CompileStats {
-  /** AA chart records emitted, including listed-frontier and scored DeepSWE records without OpenRouter pricing. */
+  /** Complete reasoning AA records emitted, including records without OpenRouter pricing. */
   aaMatched: number;
-  /** AA benchmark models dropped because they have no OpenRouter pricing. */
+  /** AA benchmark models emitted without a matching OpenRouter pricing row. */
   aaUnmatched: number;
   /** OpenRouter pricing records with no AA benchmark model at this time. */
   openrouterUnmatched: number;
@@ -106,9 +106,10 @@ function toResolution(resolved: ResolvedSnapshot | undefined): SourceResolution 
 
 /**
  * Build typed AA chart records by joining AA models with OpenRouter pricing.
- * Listed-frontier models and verified DeepSWE-scored models are retained from
- * AA even when no OpenRouter row is available; this preserves source-backed
- * listed-pricing views without inventing provider or weighted prices.
+ * Every complete reasoning AA model is retained even when no OpenRouter row is
+ * available; this preserves source-backed listed-pricing views without
+ * inventing provider or weighted prices. The frontier is still used to
+ * authorize pricing rows that are not directly represented in the alias file.
  */
 export function joinAaWithPricing(
   aaModels: ArtificialAnalysisModel[],
@@ -160,7 +161,6 @@ export function joinAaWithPricing(
     // Keep non-reasoning base rows out of the browser-facing AA dataset;
     // reasoning variants remain eligible for matching and plotting.
     if (isNonReasoningModel(model.name, model.slug)) {
-      unmatchedAa += 1;
       continue;
     }
     const aliasOpenRouterId = aliases.entries.find((entry) => entry.aaModelSlug === model.slug)?.openrouterId;
@@ -171,14 +171,10 @@ export function joinAaWithPricing(
       aliasOpenRouterId === undefined ? undefined : pricingByOpenRouterId.get(aliasOpenRouterId)
     );
     const deepSweScore = scoreByAaSlug.get(model.slug);
-    const isValidListedFrontier = frontierSet.has(model.slug) && aaListedWorkloadCost(model) !== null;
-    // A verified DeepSWE score is enough to retain an AA record. It may have
-    // no current OpenRouter pricing, but AA listed pricing still supports the
-    // DeepSWE score view without inventing a provider price.
-    if (!match && !isValidListedFrontier && !deepSweScore) {
-      unmatchedAa += 1;
-      continue;
-    }
+    // Keep the full AA catalog in the derived dataset. A missing OpenRouter
+    // row is a pricing diagnostic, not a reason to hide a source-backed model;
+    // listed AA pricing can still plot it.
+    if (!match) unmatchedAa += 1;
     if (match && provisionalSlugs.has(model.slug)) provisionalUsed += 1;
     if (match) usedPricing.add(match);
     records.push({

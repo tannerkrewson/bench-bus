@@ -49,7 +49,7 @@ const PRICING_MODE_CONTROL = {
   label: "Pricing mode",
   default: "cheapest",
   description:
-    "How model pricing is estimated: one real OpenRouter provider chosen by total benchmark cost, OpenRouter model-wide weighted prices, or AA's listed prices.",
+    "Uses the cheapest OpenRouter provider when available, falls back to AA listed prices for new models, or compares OpenRouter weighted and AA listed pricing.",
   options: [
     { value: "cheapest", label: "Cheapest single provider" },
     { value: "weighted", label: "OpenRouter weighted" },
@@ -228,9 +228,16 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
     switch (mode) {
       case "cheapest": {
         const winner = selectCheapestProvider(record.providers, input, output);
-        cost = winner?.totalCostUsd ?? null;
-        plottedProviderName = winner?.providerName;
-        discount = explicitProviderDiscount(record, winner);
+        if (winner) {
+          cost = winner.totalCostUsd;
+          plottedProviderName = winner.providerName;
+          discount = explicitProviderDiscount(record, winner);
+        } else {
+          // AA is the benchmark source of truth for new models. Keep them
+          // visible before OpenRouter publishes a provider row, without
+          // inventing a provider or a discount annotation.
+          cost = listedCostUsd(record.listed, input, output, cacheHitRate);
+        }
         break;
       }
       case "weighted":
@@ -297,7 +304,11 @@ export function aaControlledTooltipLines(
     );
     lines.push({
       label: "Winning provider",
-      value: winner ? `${winner.providerName} ($${winner.totalCostUsd.toFixed(2)})` : "none",
+      value: winner
+        ? `${winner.providerName} ($${winner.totalCostUsd.toFixed(2)})`
+        : record.providers.length === 0
+          ? "AA listed pricing"
+          : "none",
     });
   }
   if (mode === "listed") {

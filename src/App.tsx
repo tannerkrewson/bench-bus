@@ -90,8 +90,8 @@ async function loadIndex() {
 
 const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
   // "Last updated" reflects the freshest source snapshot actually backing
-  // each chart: AA/DeepSWE scores + OpenRouter pricing for the first, Cursor evals
-  // for the second. Absent sources render no note rather than a fake date.
+  // each chart: AA/DeepSWE scores and optional OpenRouter pricing for the first,
+  // Cursor evals for the second. Absent sources render no note rather than a fake date.
   const aaLastUpdated = () =>
     props.bundle.aa
       ? latestIsoTimestamp([

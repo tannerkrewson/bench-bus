@@ -46,6 +46,9 @@ export interface AaChartSectionProps {
   lastUpdated?: () => string | null;
 }
 
+/** Provider families that should remain visible as new AA models arrive. */
+const DEFAULT_VISIBLE_BRANDS = new Set(["anthropic", "openai", "google"]);
+
 /**
  * Artificial Analysis chart section: Intelligence Index versus estimated
  * canonical-workload cost, with the three pricing modes and cache-hit
@@ -71,7 +74,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
 
   const [scale, setScale] = createSignal(props.initialState?.scale ?? aaAdapter.defaultXScale);
   const [query, setQuery] = createSignal(props.initialState?.query ?? "");
-  // An absent selection is the curated AA view. A non-empty initial
+  // An absent selection is the data-driven AA default view. A non-empty initial
   // selection is explicit URL/session state and must win over the defaults.
   const [selectionSpecified, setSelectionSpecified] = createSignal(
     props.initialState?.selectionSpecified ?? (props.initialState?.selectedIds?.length ?? 0) > 0,
@@ -114,6 +117,9 @@ export default function AaChartSection(props: AaChartSectionProps) {
     const frontierVariantIds = listedBuild.entries
       .filter(({ point }) => point.effortGroup !== undefined && point.effort !== undefined && frontierGroups.has(point.effortGroup))
       .map(({ point }) => point.id);
+    const primaryProviderIds = allBuild().entries
+      .filter(({ point }) => point.brand !== undefined && DEFAULT_VISIBLE_BRANDS.has(point.brand))
+      .map(({ point }) => point.id);
     const deepSweScoreIds = controls()[AA_SCORE_SOURCE_CONTROL_ID] === "deepswe"
       ? visibleRecords()
           .filter((record) => record.scoreSources.deepSwePassAt1 !== undefined)
@@ -121,12 +127,13 @@ export default function AaChartSection(props: AaChartSectionProps) {
       : [];
     const candidateIds = [...new Set([
       ...AA_DEFAULT_MODEL_SLUGS,
+      ...primaryProviderIds,
       ...frontierPoints.map((point) => point.id),
       ...frontierVariantIds,
       ...deepSweScoreIds,
     ])];
     return latestModelVersionIds(
-      allBuild().entries.map(({ point }) => ({ id: point.id, label: point.label })),
+      listedBuild.entries.map(({ point }) => ({ id: point.id, label: point.label })),
       candidateIds,
     );
   });

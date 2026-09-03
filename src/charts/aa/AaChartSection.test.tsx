@@ -316,14 +316,70 @@ describe("AaChartSection", () => {
       <AaChartSection records={() => AA_FIXTURE_RECORDS} onStateChange={(state) => states.push(state)} />
     ));
 
-    expect(states[states.length - 1]?.selectedIds).toEqual([
+    expect(states[states.length - 1]?.selectedIds).toEqual(expect.arrayContaining([
       ...AA_DEFAULT_MODEL_SLUGS,
       "gpt-5.6-sol",
-    ]);
+      "gemini-3.7-flash",
+    ]));
     expect(AA_DEFAULT_MODEL_SLUGS).toContain("deepseek-v4-flash");
     expect(AA_DEFAULT_MODEL_SLUGS).toContain("glm-5-3-flash");
     expect(container.querySelector("[data-testid='aa-no-points']")).toBeNull();
     expect(AA_DEFAULT_COST_MODE).toBe("intelligence-vs-cost-per-task");
+    dispose();
+  });
+
+  it("defaults newly discovered Anthropic, GPT, and Gemini models to visible", () => {
+    const astraLow = {
+      ...AA_RECORD_UNPLOTTABLE,
+      slug: "gpt-6-astra-low",
+      name: "GPT-6 Astra (low)",
+      shortName: "GPT-6 Astra (low)",
+      intelligenceIndex: 56.7,
+      listed: { price1mInputTokens: 10, price1mOutputTokens: 50, cacheHitPrice: 1 },
+    };
+    const astraHigh = {
+      ...astraLow,
+      slug: "gpt-6-astra-high",
+      name: "GPT-6 Astra (high)",
+      shortName: "GPT-6 Astra (high)",
+      intelligenceIndex: 60.3,
+    };
+    const anthropic = {
+      ...astraLow,
+      slug: "claude-new-model",
+      name: "Claude New Model",
+      shortName: "Claude New Model",
+      intelligenceIndex: 55,
+    };
+    const gemini = {
+      ...astraLow,
+      slug: "gemini-new-model",
+      name: "Gemini New Model",
+      shortName: "Gemini New Model",
+      intelligenceIndex: 54,
+    };
+    const unrelated = {
+      ...astraLow,
+      slug: "unrelated-model",
+      name: "Unrelated Model",
+      shortName: "Unrelated Model",
+      intelligenceIndex: 1,
+      listed: { price1mInputTokens: 100, price1mOutputTokens: 100, cacheHitPrice: 10 },
+    };
+    const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
+    const { dispose } = mount(() => (
+      <AaChartSection
+        records={() => [astraLow, astraHigh, anthropic, gemini, unrelated]}
+        onStateChange={(state) => states.push(state)}
+      />
+    ));
+
+    const selected = states[states.length - 1]?.selectedIds ?? [];
+    expect(selected).toContain("gpt-6-astra-low");
+    expect(selected).toContain("gpt-6-astra-high");
+    expect(selected).toContain("claude-new-model");
+    expect(selected).toContain("gemini-new-model");
+    expect(selected).not.toContain("unrelated-model");
     dispose();
   });
 
