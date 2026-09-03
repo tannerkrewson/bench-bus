@@ -173,6 +173,45 @@ describe("frontier and curated aliases", () => {
     expect(result.unmatched).toEqual(["missing"]);
   });
 
+  it("automatically selects a unique contributor tier with its base comparison", () => {
+    const result = frontierAliases(
+      [{ slug: "muse-spark-1-3-xhigh", id: "aa-muse-1-3" }],
+      [
+        {
+          id: "meta/muse-spark-1.3",
+          canonicalSlug: "meta/muse-spark-1.3-20260902",
+          name: "Meta: Muse Spark 1.3",
+          listedInputPrice: 1.25,
+          listedOutputPrice: 4.25,
+        },
+        {
+          id: "meta/muse-spark-1.3-contributor",
+          canonicalSlug: "meta/muse-spark-1.3-contributor-20260902",
+          name: "Meta: Muse Spark 1.3 Contributor",
+          listedInputPrice: 0.1,
+          listedOutputPrice: 0.2,
+        },
+      ],
+    );
+
+    expect(result.entries).toEqual([expect.objectContaining({
+      aaModelSlug: "muse-spark-1-3-xhigh",
+      openrouterId: "meta/muse-spark-1.3-contributor",
+      undiscountedOpenrouterId: "meta/muse-spark-1.3",
+      status: "provisional",
+    })]);
+  });
+
+  it("does not guess when multiple contributor tiers share a base", () => {
+    const result = frontierAliases(
+      [{ slug: "muse-spark-1-3-xhigh", id: "aa-muse-1-3" }],
+      catalog("meta/muse-spark-1.3", "meta/muse-spark-1.3-contributor", "other/muse-spark-1.3-contributor"),
+    );
+
+    expect(result.entries[0]).toMatchObject({ openrouterId: "meta/muse-spark-1.3" });
+    expect(result.entries[0]).not.toHaveProperty("undiscountedOpenrouterId");
+  });
+
   it("preserves explicit forced curated identity and note", () => {
     expect(curatedAliases([{
       aaModelSlug: "deepseek-v4-flash",

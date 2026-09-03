@@ -163,6 +163,52 @@ describe("collectOpenRouterPricing", () => {
     expect(report.unmatchedFrontierModels).not.toContain("claude-opus-5-high");
   });
 
+  it("automatically carries contributor pricing for a newly discovered frontier model", async () => {
+    const catalogWithMuse13 = {
+      ...catalogFixture,
+      data: [
+        ...catalogFixture.data,
+        {
+          id: "meta/muse-spark-1.3",
+          canonical_slug: "meta/muse-spark-1.3-20260902",
+          name: "Meta: Muse Spark 1.3",
+          pricing: {
+            prompt: "0.00000125",
+            completion: "0.00000425",
+            input_cache_read: "0.00000015",
+          },
+        },
+        {
+          id: "meta/muse-spark-1.3-contributor",
+          canonical_slug: "meta/muse-spark-1.3-contributor-20260902",
+          name: "Meta: Muse Spark 1.3 Contributor",
+          pricing: { prompt: "0.0000001", completion: "0.0000002" },
+        },
+      ],
+    };
+    const fallback = baseOptions().fetchImpl!;
+    const fetchImpl = ((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("api/v1/models")) return Promise.resolve(jsonResponse(catalogWithMuse13));
+      if (url.includes("muse-spark-1.3-contributor-20260902")) return Promise.resolve(jsonResponse(fullPricing));
+      return fallback(input, init);
+    }) as typeof fetch;
+
+    const report = await collectOpenRouterPricing(baseOptions({
+      frontierModels: [{ slug: "muse-spark-1-3-xhigh", id: "aa-muse-1-3" }],
+      fetchImpl,
+    }));
+    const muse = report.records.find((record) => record.aaModelSlug === "muse-spark-1-3-xhigh");
+    expect(muse).toMatchObject({
+      permaslug: "meta/muse-spark-1.3-contributor",
+      providerSummaries: expect.arrayContaining([expect.objectContaining({
+        listedInputPrice: 1.25,
+        listedOutputPrice: 4.25,
+        undiscountedModelId: "meta/muse-spark-1.3",
+      })]),
+    });
+  });
+
   it("collects Sol effort variants against the shared base OpenRouter identity", async () => {
     const report = await collectOpenRouterPricing(baseOptions());
     for (const slug of ["gpt-5-6-sol-low", "gpt-5-6-sol-medium"]) {

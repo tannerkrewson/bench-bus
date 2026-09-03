@@ -116,6 +116,7 @@ export interface AmbiguousSuggestion {
  * Nothing here mutates the alias file or feeds the collector directly.
  */
 const REASONING_EFFORT_SUFFIX = /-(?:extra-high|xhigh|low|medium|high|max)$/i;
+const CONTRIBUTOR_SUFFIX = /-contributor$/i;
 
 function normalizedBasename(value: string): string {
   return value.toLocaleLowerCase().replace(/[._]/g, "-").replace(/-+/g, "-");
@@ -125,6 +126,42 @@ function basenameMatchKeys(value: string): string[] {
   const full = normalizedBasename(value);
   const base = full.replace(REASONING_EFFORT_SUFFIX, "");
   return base === full ? [full] : [full, base];
+}
+
+function catalogBasename(modelId: string): string {
+  return modelId.includes("/") ? modelId.split("/")[1]! : modelId;
+}
+
+function catalogNamespace(modelId: string): string {
+  return modelId.includes("/") ? modelId.split("/")[0]!.toLocaleLowerCase() : "";
+}
+
+/**
+ * Prefer OpenRouter's contributor tier for an automatically admitted frontier
+ * model when its ordinary base identity is also present and the pair is
+ * unique. The base identity supplies the undiscounted comparison prices.
+ */
+function contributorPairFor(
+  baseModel: CatalogModel,
+  catalog: readonly CatalogModel[],
+): { contributor: CatalogModel; undiscounted: CatalogModel } | undefined {
+  const baseKey = normalizedBasename(catalogBasename(baseModel.id));
+  const baseNamespace = catalogNamespace(baseModel.id);
+  if (
+    CONTRIBUTOR_SUFFIX.test(baseKey) ||
+    baseModel.listedInputPrice === undefined ||
+    baseModel.listedOutputPrice === undefined
+  ) return undefined;
+  const contributors = catalog.filter((model) => {
+    if (model.id.startsWith("~") || model.id.includes(":")) return false;
+    const key = normalizedBasename(catalogBasename(model.id));
+    return catalogNamespace(model.id) === baseNamespace &&
+      CONTRIBUTOR_SUFFIX.test(key) &&
+      key.replace(CONTRIBUTOR_SUFFIX, "") === baseKey;
+  });
+  return contributors.length === 1
+    ? { contributor: contributors[0]!, undiscounted: baseModel }
+    : undefined;
 }
 
 export function suggestAliases(
@@ -198,12 +235,20 @@ export function frontierAliases(
   const bySlug = new Map(frontier.map((model) => [model.slug, model]));
   const entries = suggestions.obvious.map((match) => {
     const identity = bySlug.get(match.aaModelSlug)!;
+    const baseModel = catalog.find((model) => model.id === match.openrouterId);
+    const contributorPair = baseModel === undefined ? undefined : contributorPairFor(baseModel, catalog);
+    const openrouterId = contributorPair?.contributor.id ?? match.openrouterId;
     return {
       aaModelSlug: identity.slug,
       aaModelId: identity.id,
-      openrouterId: match.openrouterId,
+      openrouterId,
+      ...(contributorPair
+        ? { undiscountedOpenrouterId: contributorPair.undiscounted.id }
+        : {}),
       status: "provisional" as const,
-      note: "Automatically included because this AA-listed model is on the deterministic frontier.",
+      note: contributorPair
+        ? "Automatically included because this AA-listed model is on the deterministic frontier; its unique OpenRouter contributor tier is compared with the base model."
+        : "Automatically included because this AA-listed model is on the deterministic frontier.",
     };
   });
   return { entries, unmatched: suggestions.unmatched, ambiguous: suggestions.ambiguous };
