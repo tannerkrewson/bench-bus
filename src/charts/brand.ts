@@ -125,10 +125,33 @@ const WELL_KNOWN_GROUP_SLOTS: Readonly<Record<string, number>> = {
   "fable-5": 9,
   "composer-2-5": 7,
   "opus-4-8": 8,
-  "deepseek-v4-flash-0731": 9,
   "gemini-3-7-flash": 10,
   // Keep GPT-5.5 on the teal slot now that Fable owns olive.
   "gpt-5-5": 5,
+};
+
+/** Stable slots for every family in the curated AA default view. */
+const STABLE_MODEL_GROUP_SLOTS: Readonly<Record<string, number>> = {
+  "deepseek-v4-flash-0731": 0,
+  "opus-5": 1,
+  "claude-opus-5": 1,
+  "grok-4-6": 2,
+  "gpt-5-6-luna": 3,
+  "glm-5-3-flash": 4,
+  "mimo-v2-5": 5,
+  "gpt-5-6-sol": 6,
+  "qwen3-8-flash-next": 7,
+  "glm-5-3": 8,
+  "fable-5-1": 9,
+  "gemini-3-8-flash": 10,
+  "deepseek-v4-pro-0813": 11,
+  "kimi-k3": 12,
+  "qwen3-8-max": 13,
+  "muse-spark-1-3": 14,
+  "gemini-3-1-pro-preview": 15,
+  "minimax-m3": 16,
+  "gpt-6-astra": 17,
+  sonnet: 8,
 };
 
 function canonicalGroupKey(groupKey: string): string {
@@ -141,31 +164,6 @@ function stableHash(value: string): number {
     hash = (hash * 31 + value.charCodeAt(index)) | 0;
   }
   return Math.abs(hash);
-}
-
-type LabColor = readonly [number, number, number];
-
-/** Convert an sRGB palette entry to CIE Lab for perceptual spacing. */
-function hexToLab(hex: string): LabColor {
-  const channels = [1, 3, 5].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16) / 255);
-  const linear = channels.map((channel) => channel <= 0.04045
-    ? channel / 12.92
-    : ((channel + 0.055) / 1.055) ** 2.4);
-  const [red, green, blue] = linear;
-  const x = (red! * 0.4124 + green! * 0.3576 + blue! * 0.1805) / 0.95047;
-  const y = red! * 0.2126 + green! * 0.7152 + blue! * 0.0722;
-  const z = (red! * 0.0193 + green! * 0.1192 + blue! * 0.9505) / 1.08883;
-  const pivot = (value: number) => value > 0.008856
-    ? value ** (1 / 3)
-    : 7.787 * value + 16 / 116;
-  const fx = pivot(x);
-  const fy = pivot(y);
-  const fz = pivot(z);
-  return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
-}
-
-function perceptualColorDistance(first: LabColor, second: LabColor): number {
-  return Math.hypot(first[0] - second[0], first[1] - second[1], first[2] - second[2]);
 }
 
 // Preferred family rules intentionally match normalized family keys rather
@@ -184,89 +182,34 @@ function preferredModelGroupSlot(key: string): number | undefined {
   return PREFERRED_MODEL_GROUP_SLOTS.find(([pattern]) => pattern.test(key))?.[1];
 }
 
+function stableModelGroupSlot(key: string, paletteLength: number): number {
+  return STABLE_MODEL_GROUP_SLOTS[key] ?? preferredModelGroupSlot(key) ?? WELL_KNOWN_GROUP_SLOTS[key] ??
+    stableHash(key) % paletteLength;
+}
+
 /**
  * Stable family color shared by dots, connectors, arrows, and both charts.
- * The only palette is the color-blind-compliant palette above, so every
- * visual representation of a family remains aligned in either theme.
- */
-/**
- * Allocate colors for all families visible in one chart at once. Preferred
- * slots are honored first, then stable hash slots are linearly probed so a
- * newly added family cannot silently reuse a visible family's color.
+ * Known curated families have fixed slots; other families use a stable hash
+ * slot. A finite palette can still collide, but adding a model cannot recolor
+ * an existing family or send every overflow family to the first slot.
  */
 export function modelGroupColors(
   groupKeys: readonly string[],
   dark: boolean,
 ): ReadonlyMap<string, string> {
   const palette = dark ? COLOR_BLIND_MODEL_GROUP_PALETTE.dark : COLOR_BLIND_MODEL_GROUP_PALETTE.light;
-  const canonicalKeys = [...new Set(groupKeys.map(canonicalGroupKey))].filter(Boolean).sort();
   const assignments = new Map<string, string>();
-  const usedSlots = new Set<number>();
-  const slots = new Map<string, number>();
-
-  const reserve = (key: string, preferred: number | undefined): boolean => {
-    if (preferred === undefined || usedSlots.has(preferred) || preferred >= palette.length) return false;
-    slots.set(key, preferred);
-    usedSlots.add(preferred);
-    return true;
-  };
-
-  canonicalKeys.forEach((key) => {
-    reserve(key, preferredModelGroupSlot(key) ?? WELL_KNOWN_GROUP_SLOTS[key]);
-  });
-  const paletteLab = palette.map(hexToLab);
-  canonicalKeys.forEach((key) => {
-    if (slots.has(key)) return;
-    let bestSlot: number | undefined;
-    let bestDistance = -Infinity;
-    let bestTieBreak = -Infinity;
-    for (let candidate = 0; candidate < palette.length; candidate += 1) {
-      if (usedSlots.has(candidate)) continue;
-      const distance = usedSlots.size === 0
-        ? Infinity
-        : Math.min(...[...usedSlots].map((slot) => perceptualColorDistance(paletteLab[candidate]!, paletteLab[slot]!)));
-      // Maximize the distance from every already-assigned family. Stable hash
-      // tie-breaking keeps equal-distance choices deterministic without
-      // sacrificing the perceptual separation objective.
-      const tieBreak = stableHash(`${key}:${candidate}`);
-      if (distance > bestDistance || (distance === bestDistance && tieBreak > bestTieBreak)) {
-        bestSlot = candidate;
-        bestDistance = distance;
-        bestTieBreak = tieBreak;
-      }
-    }
-    if (bestSlot !== undefined) {
-      slots.set(key, bestSlot);
-      usedSlots.add(bestSlot);
-      return;
-    }
-    // The palette currently has more slots than any supported chart. If a
-    // future feed exceeds that capacity, choose the most separated existing
-    // slot deterministically rather than introducing a non-palette color.
-    let fallbackSlot = 0;
-    let fallbackDistance = -Infinity;
-    for (let candidate = 0; candidate < palette.length; candidate += 1) {
-      const distance = Math.min(...[...usedSlots].map((slot) =>
-        perceptualColorDistance(paletteLab[candidate]!, paletteLab[slot]!)));
-      if (distance > fallbackDistance) {
-        fallbackSlot = candidate;
-        fallbackDistance = distance;
-      }
-    }
-    slots.set(key, fallbackSlot);
-  });
 
   groupKeys.forEach((groupKey) => {
     const key = canonicalGroupKey(groupKey);
-    const slot = slots.get(key);
-    if (slot !== undefined) assignments.set(groupKey, palette[slot]!);
+    assignments.set(groupKey, palette[stableModelGroupSlot(key, palette.length)]!);
   });
   return assignments;
 }
 
 export function modelGroupColor(groupKey: string, dark: boolean): string {
-  return modelGroupColors([groupKey], dark).get(groupKey) ??
-    (dark ? COLOR_BLIND_MODEL_GROUP_PALETTE.dark : COLOR_BLIND_MODEL_GROUP_PALETTE.light)[0]!;
+  const palette = dark ? COLOR_BLIND_MODEL_GROUP_PALETTE.dark : COLOR_BLIND_MODEL_GROUP_PALETTE.light;
+  return palette[stableModelGroupSlot(canonicalGroupKey(groupKey), palette.length)]!;
 }
 
 /** Backwards-compatible name for effort-variant connection colors. */

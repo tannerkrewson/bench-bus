@@ -174,12 +174,11 @@ describe("model brand colors", () => {
     }
   });
 
-  it("keeps every currently supported model family on a distinct palette slot", () => {
+  it("keeps known family colors consistent between batch and singleton resolution", () => {
     const keys = [
       "opus-5",
       "sonnet-5",
       "deepseek-v4-flash-0731",
-      "deepseek-v4-flash",
       "deepseek-v4-pro-0813",
       "gemini-3-7-flash",
       "glm-5-3",
@@ -192,8 +191,10 @@ describe("model brand colors", () => {
       "qwen3-8-max",
     ];
 
-    expect(new Set(modelGroupColors(keys, false).values()).size).toBe(keys.length);
-    expect(new Set(modelGroupColors(keys, true).values()).size).toBe(keys.length);
+    const light = modelGroupColors(keys, false);
+    const dark = modelGroupColors(keys, true);
+    expect(keys.map((key) => light.get(key))).toEqual(keys.map((key) => modelGroupColor(key, false)));
+    expect(keys.map((key) => dark.get(key))).toEqual(keys.map((key) => modelGroupColor(key, true)));
   });
 
   it("keeps the curated AA default families on distinct palette slots", () => {
@@ -215,11 +216,22 @@ describe("model brand colors", () => {
       "qwen3-8-flash-next",
       "qwen3-8-max",
       "minimax-m3",
-      "mimo-v2-5-0424",
+      "mimo-v2-5",
     ];
 
     expect(new Set(modelGroupColors(keys, false).values()).size).toBe(keys.length);
     expect(new Set(modelGroupColors(keys, true).values()).size).toBe(keys.length);
+  });
+
+  it("keeps overflow colors deterministic instead of collapsing to blue", () => {
+    const keys = Array.from({ length: 32 }, (_, index) => `overflow-family-${index}`);
+    const batch = modelGroupColors(keys, false);
+    const singletonColors = keys.map((key) => modelGroupColor(key, false));
+    const batchColors = keys.map((key) => batch.get(key));
+
+    expect(batchColors).toEqual(singletonColors);
+    expect(new Set(singletonColors).size).toBeGreaterThan(1);
+    expect(new Set(singletonColors.slice(18)).size).toBeGreaterThan(1);
   });
 
   it("keeps every color-blind slot above the contrast target on supported surfaces", () => {

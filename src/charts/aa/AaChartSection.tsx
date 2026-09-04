@@ -326,7 +326,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
                 <div class="relative min-w-[720px] sm:min-w-0" data-testid="chart-scroll-content">
                   <BenchmarkScatterChart
                     points={() => build().entries.map((e) => e.point)}
-                    colorGroupKeys={() => allBuild().entries.map(({ point }) =>
+                    colorGroupKeys={() => build().entries.map(({ point }) =>
                       point.effortGroup ?? modelGroupKey(point.label, point.id),
                     )}
                     scale={scale}
