@@ -66,6 +66,7 @@ describe("decodeBundle", () => {
         listedOutputPrice: 20,
         discountPercentage: 40,
         undiscountedModelId: "vendor/model-standard",
+        serviceTier: "flex",
       }],
     };
     const encoded = encodeAaDataset({

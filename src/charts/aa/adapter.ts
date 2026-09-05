@@ -51,7 +51,7 @@ const PRICING_MODE_CONTROL = {
   label: "Pricing mode",
   default: "cheapest",
   description:
-    "Uses the cheapest OpenRouter provider when available, falls back to AA listed prices for new models, or compares OpenRouter weighted and AA listed pricing.",
+    "Uses the cheapest regular OpenRouter provider when available, falls back to AA listed prices for new models, or compares OpenRouter weighted and AA listed pricing.",
   options: [
     { value: "cheapest", label: "Cheapest single provider" },
     { value: "weighted", label: "OpenRouter weighted" },
@@ -84,7 +84,27 @@ const CACHE_HIT_CONTROL = {
   format: (v: number) => `${Math.round(v * 100)}%`,
 } as const;
 
-export const AA_CONTROL_SPECS = [SCORE_SOURCE_CONTROL, PRICING_MODE_CONTROL, CACHE_HIT_CONTROL] as const;
+const INCLUDE_FLEX_CONTROL = {
+  kind: "toggle",
+  id: "includeFlex",
+  label: "Include OpenAI Flex",
+  default: false,
+  description: "Include OpenAI's lower-cost Flex tier, which has higher latency and lower availability.",
+} as const;
+
+export const AA_CONTROL_SPECS = [SCORE_SOURCE_CONTROL, PRICING_MODE_CONTROL, CACHE_HIT_CONTROL, INCLUDE_FLEX_CONTROL] as const;
+
+function includeFlexFromControls(controls: Readonly<PricingControlState>): boolean {
+  return controls[INCLUDE_FLEX_CONTROL.id] === true || controls[INCLUDE_FLEX_CONTROL.id] === "true";
+}
+
+function providerLabel(winner: ReturnType<typeof selectCheapestProvider>): string {
+  if (!winner) return "";
+  const tier = winner.serviceTier && winner.serviceTier.toLowerCase() !== "standard"
+    ? `, ${winner.serviceTier}`
+    : "";
+  return `${winner.providerName}${tier} ($${winner.totalCostUsd.toFixed(2)})`;
+}
 
 function scoreForSource(record: DerivedAaChartRecord, controls: Readonly<PricingControlState>): number | null {
   const source = String(controls[AA_SCORE_SOURCE_CONTROL_ID] ?? SCORE_SOURCE_CONTROL.default) as AaScoreSource;
@@ -123,7 +143,9 @@ function aaListedSavingsDiscount(
     percentage,
     preDiscountX,
     effectiveX: winner.totalCostUsd,
-    providerName: winner.providerName,
+    providerName: winner.serviceTier?.toLowerCase() === "flex"
+      ? `${winner.providerName} Flex`
+      : winner.providerName,
   };
 }
 
@@ -134,7 +156,7 @@ function aaListedSavingsDiscount(
 export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
   benchmarkId: AA_BENCHMARK_ID,
   title: "Best value models on OpenRouter",
-  subtitle: "This chart compares AA listed prices with the cheapest effective OpenRouter provider for the real benchmark workload, updated multiple times per day as prices change",
+  subtitle: "This chart compares AA listed prices with the cheapest regular effective OpenRouter provider for the real benchmark workload, updated multiple times per day as prices change",
   sourceLinks: [
     { label: "Artificial Analysis", href: "https://artificialanalysis.ai/" },
     { label: "OpenRouter", href: "https://openrouter.ai/" },
@@ -163,7 +185,9 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
     let discount: PriceDiscountAnnotation | undefined;
     switch (mode) {
       case "cheapest": {
-        const winner = selectCheapestProvider(record.providers, input, output);
+        const winner = selectCheapestProvider(record.providers, input, output, {
+          includeFlex: includeFlexFromControls(controls),
+        });
         if (winner) {
           cost = winner.totalCostUsd;
           discount = aaListedSavingsDiscount(record, winner, cacheHitRate);
@@ -235,11 +259,12 @@ export function aaControlledTooltipLines(
       record.providers,
       record.canonicalTokens.input,
       record.canonicalTokens.output,
+      { includeFlex: includeFlexFromControls(controls) },
     );
     lines.push({
       label: "Winning provider",
       value: winner
-        ? `${winner.providerName} ($${winner.totalCostUsd.toFixed(2)})`
+        ? providerLabel(winner)
         : record.providers.length === 0
           ? "AA listed pricing"
           : "none",

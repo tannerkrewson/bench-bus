@@ -27,6 +27,13 @@ export interface ProviderPrices {
   discountPercentage?: number;
   /** Explicit cross-model relation for a discounted model tier. */
   undiscountedModelId?: string;
+  /** OpenRouter service tier, such as `flex` or `priority`. */
+  serviceTier?: string;
+}
+
+export interface CheapestProviderOptions {
+  /** Include OpenAI Flex's lower-cost, lower-availability tier. */
+  includeFlex?: boolean;
 }
 
 /** Winning provider of the cheapest-effective selection, with its combined cost. */
@@ -46,16 +53,19 @@ function usablePrice(value: number): boolean {
  * Providers are never mixed: the winner is a single provider chosen by the
  * combined benchmark workload cost, so a provider that is not independently
  * cheapest on both dimensions can (and should) win. Rare/low-volume providers
- * are never excluded. Ties break deterministically by providerSlug then
- * providerName. Returns null when there is no usable provider.
+ * are never excluded; Flex is excluded unless explicitly included. Ties break
+ * deterministically by providerSlug then providerName. Returns null when there
+ * is no usable provider.
  */
 export function selectCheapestProvider(
   providers: readonly ProviderPrices[],
   inputTokens: number,
   outputTokens: number,
+  options: CheapestProviderOptions = {},
 ): CheapestProvider | null {
   let best: CheapestProvider | null = null;
   for (const p of providers) {
+    if (!options.includeFlex && p.serviceTier?.toLowerCase() === "flex") continue;
     if (!usablePrice(p.effectiveInputPrice) || !usablePrice(p.effectiveOutputPrice)) continue;
     const totalCostUsd =
       (inputTokens / 1e6) * p.effectiveInputPrice + (outputTokens / 1e6) * p.effectiveOutputPrice;

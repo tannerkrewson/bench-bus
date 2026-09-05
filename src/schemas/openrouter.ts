@@ -22,6 +22,8 @@ export const openRouterProviderSummarySchema = z
     }).optional(),
     /** Explicit cross-model relation for a discounted OpenRouter model tier. */
     undiscountedModelId: nonEmptyString.optional(),
+    /** OpenRouter service tier for this endpoint, e.g. `flex` or `priority`. */
+    serviceTier: nonEmptyString.optional(),
   })
   .strict();
 

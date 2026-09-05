@@ -93,7 +93,7 @@ type CompactAaRecord = [
   [number, number], // canonicalTokens [input, output]
   Array<
     | [string, string, number, number]
-    | [string, string, number, number, number | null, number | null, number | null, string | null]
+    | [string, string, number, number, number | null, number | null, number | null, string | null, string | null]
   >, // providers
   [number, number], // weighted
   [number, number, number], // listed
@@ -135,7 +135,8 @@ export function encodeAaDataset(
             p.listedInputPrice !== undefined ||
             p.listedOutputPrice !== undefined ||
             p.discountPercentage !== undefined ||
-            p.undiscountedModelId !== undefined;
+            p.undiscountedModelId !== undefined ||
+            p.serviceTier !== undefined;
           return hasDiscountMetadata
             ? [
                 p.providerName,
@@ -146,6 +147,7 @@ export function encodeAaDataset(
                 p.listedOutputPrice ?? null,
                 p.discountPercentage ?? null,
                 p.undiscountedModelId ?? null,
+                p.serviceTier ?? null,
               ]
             : [p.providerName, p.providerSlug, p.effectiveInputPrice, p.effectiveOutputPrice];
         }),
@@ -282,6 +284,7 @@ export function decodeBundle(raw: unknown): DecodedBundle {
           ...(p.length >= 7 && p[5] !== null ? { listedOutputPrice: p[5] } : {}),
           ...(p.length >= 7 && p[6] !== null ? { discountPercentage: p[6] } : {}),
           ...(p.length >= 8 && p[7] !== null ? { undiscountedModelId: p[7] } : {}),
+          ...(p.length >= 9 && p[8] !== null ? { serviceTier: p[8] } : {}),
         })),
         weighted: { weightedInputPrice: weighted[0], weightedOutputPrice: weighted[1] },
         listed: {

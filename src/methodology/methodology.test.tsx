@@ -47,7 +47,8 @@ describe("graph methodology content", () => {
     expect(text).toContain("real test runs");
     expect(text).toContain("over 30 days");
     expect(text).toContain("Cache writes are left out");
-    expect(text).toContain("Cheapest mode picks one provider");
+    expect(text).toContain("Cheapest mode picks one regular provider");
+    expect(text).toContain("OpenAI Flex is excluded by default");
     expect(text).toContain("Price source");
     expect(text).toContain("DeepSWE pass@1");
     expect(text).toContain("models without a score in the selected source are omitted");

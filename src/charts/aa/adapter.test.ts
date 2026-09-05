@@ -259,6 +259,35 @@ describe("aaAdapter.computePoint", () => {
     });
   });
 
+  it("keeps Flex out of the default discount and allows an explicit opt-in", () => {
+    const record = {
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      canonicalTokens: { input: 1_000_000, output: 1_000_000 },
+      providers: [
+        {
+          providerName: "OpenAI (1)",
+          providerSlug: "openai",
+          serviceTier: "flex",
+          effectiveInputPrice: 1,
+          effectiveOutputPrice: 2,
+        },
+        {
+          providerName: "OpenAI",
+          providerSlug: "openai",
+          effectiveInputPrice: 4,
+          effectiveOutputPrice: 8,
+        },
+      ],
+      listed: { price1mInputTokens: 10, price1mOutputTokens: 20, cacheHitPrice: 10 },
+    };
+    const regular = aaAdapter.computePoint(record, controls)!;
+    expect(regular.x).toBe(12);
+    expect(regular.discount?.providerName).toBe("OpenAI");
+    const withFlex = aaAdapter.computePoint(record, { ...controls, includeFlex: true })!;
+    expect(withFlex.x).toBe(3);
+    expect(withFlex.discount?.providerName).toBe("OpenAI (1) Flex");
+  });
+
   it("suppresses savings at the one-percent tolerance boundary", () => {
     const record = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
@@ -350,9 +379,9 @@ describe("aaAdapter.computePoint", () => {
     expect(aaAdapter.unplottableDescription).toBeUndefined();
   });
 
-  it("exposes no normalized-workload control", () => {
+  it("exposes the service-tier control alongside pricing controls", () => {
     const ids = aaAdapter.controlSpecs.map((s) => s.id);
-    expect(ids).toEqual(["scoreSource", "pricingMode", "cacheHitRate"]);
+    expect(ids).toEqual(["scoreSource", "pricingMode", "cacheHitRate", "includeFlex"]);
   });
 });
 
@@ -400,7 +429,7 @@ describe("aa tooltips and metadata", () => {
 describe("aaAdapter subtitle", () => {
   it("uses the requested concise methodology copy", () => {
     expect(aaAdapter.subtitle).toBe(
-      "This chart compares AA listed prices with the cheapest effective OpenRouter provider for the real benchmark workload, updated multiple times per day as prices change",
+      "This chart compares AA listed prices with the cheapest regular effective OpenRouter provider for the real benchmark workload, updated multiple times per day as prices change",
     );
   });
 

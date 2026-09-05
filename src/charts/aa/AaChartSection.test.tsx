@@ -8,7 +8,7 @@ import { chartStateFromParams, chartStateToParams } from "../urlState";
 import { aaAdapter } from "./adapter";
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
 
-const AA_SUBTITLE = "This chart compares AA listed prices with the cheapest effective OpenRouter provider for the real benchmark workload, updated multiple times per day as prices change";
+const AA_SUBTITLE = "This chart compares AA listed prices with the cheapest regular effective OpenRouter provider for the real benchmark workload, updated multiple times per day as prices change";
 
 function mount(ui: () => JSX.Element) {
   const container = document.createElement("div");
@@ -340,6 +340,11 @@ describe("AaChartSection", () => {
       "gpt-5-6-sol-high",
       "gpt-5-6-sol-xhigh",
       "gpt-5-6-sol",
+      "gpt-6-astra-low",
+      "gpt-6-astra-medium",
+      "gpt-6-astra-high",
+      "gpt-6-astra-xhigh",
+      "gpt-6-astra",
       "mimo-v2-5-0424",
     ]));
     expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("gpt-5-6-luna-non-reasoning");
@@ -408,8 +413,8 @@ describe("AaChartSection", () => {
 
     const selected = states[states.length - 1]?.selectedIds ?? [];
     expect(selected).toContain("gpt-6-astra");
-    expect(selected).not.toContain("gpt-6-astra-low");
-    expect(selected).not.toContain("gpt-6-astra-high");
+    expect(selected).toContain("gpt-6-astra-low");
+    expect(selected).toContain("gpt-6-astra-high");
     expect(selected).not.toContain("claude-new-model");
     expect(selected).not.toContain("gemini-new-model");
     expect(selected).not.toContain("unrelated-model");

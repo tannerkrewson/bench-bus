@@ -84,6 +84,15 @@ describe("selectCheapestProvider (cheapest-effective mode)", () => {
     );
     expect(winner?.providerSlug).toBe("tiny");
   });
+
+  it("excludes Flex service-tier pricing unless explicitly included", () => {
+    const providers = [
+      { providerName: "OpenAI Flex", providerSlug: "openai", serviceTier: "flex", effectiveInputPrice: 1, effectiveOutputPrice: 1 },
+      { providerName: "OpenAI", providerSlug: "openai", effectiveInputPrice: 2, effectiveOutputPrice: 2 },
+    ];
+    expect(selectCheapestProvider(providers, 1_000_000, 1_000_000)?.serviceTier).toBeUndefined();
+    expect(selectCheapestProvider(providers, 1_000_000, 1_000_000, { includeFlex: true })?.serviceTier).toBe("flex");
+  });
 });
 
 describe("weightedCostUsd (weighted mode)", () => {

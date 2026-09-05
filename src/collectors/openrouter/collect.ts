@@ -28,8 +28,9 @@ import {
   type OpenRouterSnapshotPayload,
 } from "../../schemas/openrouter";
 import {
-  fetchOpenRouterProviderDiscounts,
+  fetchOpenRouterProviderMetadata,
   type OpenRouterProviderDiscount,
+  type OpenRouterProviderEndpoint,
 } from "./discounts";
 
 export const OPENROUTER_SOURCE_METADATA = {
@@ -181,15 +182,15 @@ export async function collectOpenRouterPricing(
   const entries: AliasEntry[] = [...aliasFile.entries, ...uniqueAdditions];
   const effectiveAliasFile = { ...aliasFile, entries };
   const effectiveProvisionalUsed = provisionalAliases(effectiveAliasFile).map((e) => e.aaModelSlug);
-  const providerDiscountCache = new Map<string, Promise<OpenRouterProviderDiscount[]>>();
-  const providerDiscountsFor = (openrouterId: string): Promise<OpenRouterProviderDiscount[]> => {
-    const cached = providerDiscountCache.get(openrouterId);
+  const providerMetadataCache = new Map<string, ReturnType<typeof fetchOpenRouterProviderMetadata>>();
+  const providerMetadataFor = (openrouterId: string) => {
+    const cached = providerMetadataCache.get(openrouterId);
     if (cached) return cached;
-    const request = fetchOpenRouterProviderDiscounts(openrouterId, fetchImpl, timeoutMs).catch((error: unknown) => {
+    const request = fetchOpenRouterProviderMetadata(openrouterId, fetchImpl, timeoutMs).catch((error: unknown) => {
       log(`discount metadata unavailable for ${openrouterId}: ${String(error)}`);
-      return [];
+      return { endpoints: [] as OpenRouterProviderEndpoint[], discounts: [] as OpenRouterProviderDiscount[] };
     });
-    providerDiscountCache.set(openrouterId, request);
+    providerMetadataCache.set(openrouterId, request);
     return request;
   };
 
@@ -228,9 +229,11 @@ export async function collectOpenRouterPricing(
         });
         return;
       }
-      const pageDiscounts = options.collectProviderDiscounts
-        ? await providerDiscountsFor(entry.openrouterId)
-        : [];
+      const pageMetadata = options.collectProviderDiscounts
+        ? await providerMetadataFor(entry.openrouterId)
+        : { endpoints: [] as OpenRouterProviderEndpoint[], discounts: [] as OpenRouterProviderDiscount[] };
+      const pageDiscounts = pageMetadata.discounts;
+      const endpointsById = new Map(pageMetadata.endpoints.map((endpoint) => [endpoint.endpointId, endpoint]));
       const discountsByProvider = new Map(
         pageDiscounts.map((discount) => [discount.providerSlug, discount]),
       );
@@ -253,6 +256,7 @@ export async function collectOpenRouterPricing(
         return;
       }
       const providerSummaries = response.data.providerSummaries.map((p) => {
+        const endpoint = endpointsById.get(p.endpointId);
         const pageDiscount = discountsByProvider.get(p.providerSlug);
         // Precedence is explicit: fields from the effective-pricing provider
         // row, then the model-page provider listing, then the mapped
@@ -275,6 +279,7 @@ export async function collectOpenRouterPricing(
           ...(entry.undiscountedOpenrouterId
             ? { undiscountedModelId: entry.undiscountedOpenrouterId }
             : {}),
+          ...(endpoint?.serviceTier !== undefined ? { serviceTier: endpoint.serviceTier } : {}),
         };
       });
       const listed = catalogById.get(entry.openrouterId);

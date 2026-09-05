@@ -273,7 +273,8 @@ export default function AaChartSection(props: AaChartSectionProps) {
               showDiscounts={showDiscounts}
               onShowDiscountsChange={setShowDiscounts}
               isControlVisible={(spec) =>
-                spec.id !== "cacheHitRate" || controls().pricingMode === "listed"
+                (spec.id !== "cacheHitRate" || controls().pricingMode === "listed") &&
+                (spec.id !== "includeFlex" || controls().pricingMode === "cheapest")
               }
             />
             <Show when={visibleRecords().length > 0}>

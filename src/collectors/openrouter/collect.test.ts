@@ -400,6 +400,22 @@ describe("collectOpenRouterPricing", () => {
     });
   });
 
+  it("joins page service tiers to effective providers by endpoint id", async () => {
+    const endpointId = fullPricing.data.providerSummaries[0]!.endpointId;
+    const page = `<script>self.__next_f.push([1,"4:{\\"id\\":\\"${endpointId}\\",\\"name\\":\\"Provider | anthropic/model-20260723\\",\\"provider_name\\":\\"Claude Platform on AWS\\",\\"provider_slug\\":\\"claude-on-aws\\",\\"service_tier\\":\\"flex\\",\\"pricing\\":{\\"prompt\\":\\"0.000001\\",\\"completion\\":\\"0.00001\\",\\"discount\\":0}}"])</script>`;
+    const fallback = baseOptions().fetchImpl!;
+    const fetchImpl = ((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input);
+      if (url === "https://openrouter.ai/anthropic/claude-opus-5") {
+        return Promise.resolve(new Response(page, { status: 200, headers: { "content-type": "text/html" } }));
+      }
+      return fallback(input, init);
+    }) as typeof fetch;
+    const report = await collectOpenRouterPricing(baseOptions({ collectProviderDiscounts: true, fetchImpl }));
+    const claude = report.records.find((record) => record.aaModelSlug === "claude-opus-5")!;
+    expect(claude.providerSummaries[0]?.serviceTier).toBe("flex");
+  });
+
   it("resolves canonical date-suffixed slugs before querying effective pricing", async () => {
     const fetchImpl = vi.fn(routerFetch({
       "api/v1/models": catalogFixture,
