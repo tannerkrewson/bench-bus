@@ -149,12 +149,41 @@ export function isEmptySkeleton(data: RawEffectivePricingData): boolean {
   );
 }
 
-/** Resolve the canonical date-suffixed permaslug for a stable OpenRouter id. */
+/**
+ * Resolve the canonical date-suffixed permaslug for a stable OpenRouter id.
+ *
+ * OpenRouter occasionally retires a stable id and replaces it with a release
+ * suffixed id (for example, `qwen3.8-max` became `qwen3.8-max-0902`). Keep the
+ * mapping stable while accepting that catalog migration when there is exactly
+ * one date-like replacement. Variants such as `:batch` are deliberately not
+ * eligible.
+ */
 export function resolveCanonicalSlug(
   catalog: readonly { id: string; canonical_slug: string }[],
   id: string,
 ): string | undefined {
-  return catalog.find((m) => m.id === id)?.canonical_slug;
+  const exact = catalog.find((m) => m.id === id);
+  if (exact !== undefined) return exact.canonical_slug;
+
+  const separator = id.indexOf("/");
+  if (separator <= 0 || separator === id.length - 1) return undefined;
+  const namespace = id.slice(0, separator);
+  const basename = id.slice(separator + 1);
+  const escapedBasename = basename.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // OpenRouter uses both MMDD and YYYYMMDD release suffixes (and a small
+  // number of IDs use MM-DD), so accept only those explicit date forms.
+  const releaseVariant = new RegExp(`^${escapedBasename}-(?:\\d{4}|\\d{8}|\\d{2}-\\d{2})$`);
+  const replacements = catalog.filter((model) => {
+    if (model.id.startsWith("~") || model.id.includes(":")) return false;
+    const modelSeparator = model.id.indexOf("/");
+    return (
+      modelSeparator > 0 &&
+      model.id.slice(0, modelSeparator) === namespace &&
+      releaseVariant.test(model.id.slice(modelSeparator + 1))
+    );
+  });
+  if (replacements.length !== 1) return undefined;
+  return replacements[0]!.canonical_slug;
 }
 
 /** Run `fn` over `items` with at most `limit` concurrent executions, preserving input order in results. */

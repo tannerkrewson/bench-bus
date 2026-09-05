@@ -84,6 +84,30 @@ describe("raw response parsing", () => {
     expect(resolveCanonicalSlug(parsed.data, "not/in-catalog")).toBeUndefined();
   });
 
+  it("follows a unique release-suffixed replacement for a retired stable id", () => {
+    expect(
+      resolveCanonicalSlug(
+        [
+          { id: "qwen/qwen3.8-max-0902", canonical_slug: "qwen/qwen3.8-max-20260902" },
+          { id: "qwen/qwen3.8-max-0902:batch", canonical_slug: "qwen/qwen3.8-max-20260902" },
+        ],
+        "qwen/qwen3.8-max",
+      ),
+    ).toBe("qwen/qwen3.8-max-20260902");
+  });
+
+  it("does not guess when multiple release replacements are listed", () => {
+    expect(
+      resolveCanonicalSlug(
+        [
+          { id: "vendor/model-0901", canonical_slug: "vendor/model-20260901" },
+          { id: "vendor/model-0902", canonical_slug: "vendor/model-20260902" },
+        ],
+        "vendor/model",
+      ),
+    ).toBeUndefined();
+  });
+
   it("detects the empty-skeleton response (short permaslug trap)", () => {
     const parsed = rawEffectivePricingResponseSchema.parse(emptyPricing);
     expect(isEmptySkeleton(parsed.data)).toBe(true);

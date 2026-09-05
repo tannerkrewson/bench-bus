@@ -124,6 +124,7 @@ function routesFor(_fetchImpl: unknown): Record<string, unknown> {
     "claude-opus-5-20260723": fullPricing,
     "claude-sonnet-5-20260630": fullPricing,
     "gpt-5.6-sol-20260709": fullPricing,
+    "gemini-3.7-flash-20260813": fullPricing,
     "glm-5.3-20260816": fullPricing,
     "kimi-k3-20260715": fullPricing,
     "grok-4.6-20260810": fullPricing,
@@ -423,6 +424,28 @@ describe("collectOpenRouterPricing", () => {
       // model's MM-DD release form (for example qwen3.6-plus-04-02).
       expect(url).toMatch(/permaslug=[^&]*(?:-\d{8}|-\d{2}-\d{2})&shape=v7&variant=standard/);
     }
+  });
+
+  it("follows a release-suffixed replacement when OpenRouter retires a stable id", async () => {
+    const catalogWithReplacement = {
+      ...catalogFixture,
+      data: catalogFixture.data.map((model) =>
+        model.id === "qwen/qwen3.8-max"
+          ? { ...model, id: "qwen/qwen3.8-max-0902", canonical_slug: "qwen/qwen3.8-max-20260902" }
+          : model,
+      ),
+    };
+    const report = await collectOpenRouterPricing(
+      baseOptions({
+        fetchImpl: routerFetch({
+          ...routesFor(baseOptions().fetchImpl),
+          "api/v1/models": catalogWithReplacement,
+          "qwen3.8-max-20260902": fullPricing,
+        }),
+      }),
+    );
+    expect(report.records.find((record) => record.aaModelSlug === "qwen3-8-max")?.permaslug)
+      .toBe("qwen/qwen3.8-max");
   });
 
   it("fails closed on an empty-skeleton response: no records persisted, error thrown", async () => {
