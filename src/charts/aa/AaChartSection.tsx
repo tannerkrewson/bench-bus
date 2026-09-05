@@ -108,11 +108,12 @@ export default function AaChartSection(props: AaChartSectionProps) {
     const curatedIds: ReadonlySet<string> = new Set<string>(
       AA_DEFAULT_MODEL_SLUGS.filter((id) => !isNonReasoningModel("", id)),
     );
-    const curatedFamilies = new Set(
-      visibleRecords()
+    const curatedFamilies = new Set([
+      ...AA_DEFAULT_MODEL_SLUGS.map((id) => modelDisplayMetadata("", id).groupKey),
+      ...visibleRecords()
         .filter((record) => curatedIds.has(record.slug))
         .map((record) => modelDisplayMetadata(record.name, record.slug).groupKey),
-    );
+    ]);
     // Keep the curated seed stable, then include any effort variants that
     // arrive for one of those families. New model families remain opt-in.
     const discoveredVariants = visibleRecords()
