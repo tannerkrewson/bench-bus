@@ -26,7 +26,7 @@ import {
   discountSummaryLines,
 } from "../plotData";
 import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
-import { expandedModelName, isNonReasoningModel, latestModelVersionIds, modelGroupKey } from "../modelMetadata";
+import { expandedModelName, isNonReasoningModel, latestModelVersionIds, modelDisplayMetadata, modelGroupKey } from "../modelMetadata";
 import MethodologyModal from "../../methodology/MethodologyModal";
 import { AaMethodologyContent } from "../../methodology/MethodologyPanel";
 import RelativeLastUpdated from "../../components/RelativeLastUpdated";
@@ -105,7 +105,23 @@ export default function AaChartSection(props: AaChartSectionProps) {
     // Keep the initial graph intentionally curated. Newer releases still
     // replace older selected releases through latestModelVersionIds, while
     // unrelated discoveries remain available in the selector only.
-    const candidateIds = AA_DEFAULT_MODEL_SLUGS.filter((id) => !isNonReasoningModel("", id));
+    const curatedIds: ReadonlySet<string> = new Set<string>(
+      AA_DEFAULT_MODEL_SLUGS.filter((id) => !isNonReasoningModel("", id)),
+    );
+    const curatedFamilies = new Set(
+      visibleRecords()
+        .filter((record) => curatedIds.has(record.slug))
+        .map((record) => modelDisplayMetadata(record.name, record.slug).groupKey),
+    );
+    // Keep the curated seed stable, then include any effort variants that
+    // arrive for one of those families. New model families remain opt-in.
+    const discoveredVariants = visibleRecords()
+      .filter((record) => {
+        const metadata = modelDisplayMetadata(record.name, record.slug);
+        return !curatedIds.has(record.slug) && metadata.effort !== undefined && curatedFamilies.has(metadata.groupKey);
+      })
+      .map((record) => record.slug);
+    const candidateIds = [...curatedIds, ...discoveredVariants];
     return latestModelVersionIds(
       listedBuild.entries.map(({ point }) => ({ id: point.id, label: point.label })),
       candidateIds,

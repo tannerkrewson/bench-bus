@@ -340,10 +340,6 @@ describe("AaChartSection", () => {
       "gpt-5-6-sol-high",
       "gpt-5-6-sol-xhigh",
       "gpt-5-6-sol",
-      "gpt-6-astra-low",
-      "gpt-6-astra-medium",
-      "gpt-6-astra-high",
-      "gpt-6-astra-xhigh",
       "gpt-6-astra",
       "mimo-v2-5-0424",
     ]));
