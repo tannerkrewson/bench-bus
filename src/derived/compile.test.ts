@@ -16,6 +16,7 @@ import aliasSeed from "../collectors/openrouter/openrouter-aliases.json";
 import {
   compileBundle,
   joinAaWithPricing,
+  mergeAaReasoningHistory,
   LATEST_AS_OF,
   NoDataAtTimeError,
   parseDerivedIndex,
@@ -266,6 +267,45 @@ describe("compileBundle", () => {
     expect(latest.asOf).toBe(T3);
   });
 
+  it("keeps earlier effort rows when the newest AA snapshot is partial", async () => {
+    const effort = (slug: string, label: string): ArtificialAnalysisModel => ({
+      ...validAaModel,
+      id: `openai/${slug}`,
+      slug,
+      name: `GPT-5.6 Luna (${label})`,
+      shortName: `GPT-5.6 Luna (${label})`,
+    });
+    await store.writeSnapshot(makeSnapshotEnvelope({
+      source: "aa",
+      observedAt: T3,
+      records: [
+        effort("gpt-5-6-luna", "max"),
+        effort("gpt-5-6-luna-low", "low"),
+        effort("gpt-5-6-luna-medium", "medium"),
+        effort("gpt-5-6-luna-high", "high"),
+        effort("gpt-5-6-luna-xhigh", "xhigh"),
+      ],
+    }));
+    const later = "2026-08-04T00:00:00.000Z";
+    await store.writeSnapshot(makeSnapshotEnvelope({
+      source: "aa",
+      observedAt: later,
+      records: [effort("gpt-5-6-luna", "max"), effort("gpt-5-6-luna-xhigh", "xhigh")],
+    }));
+
+    const compiled = await compileBundle(store, { asOf: later, aliases: ALIASES });
+    const lunaSlugs = (decodeBundle(JSON.parse(compiled.json)).aa?.records ?? [])
+      .map((record) => record.slug)
+      .filter((slug) => slug.startsWith("gpt-5-6-luna"));
+    expect(lunaSlugs).toEqual([
+      "gpt-5-6-luna",
+      "gpt-5-6-luna-high",
+      "gpt-5-6-luna-low",
+      "gpt-5-6-luna-medium",
+      "gpt-5-6-luna-xhigh",
+    ]);
+  });
+
   it("is deterministic: identical inputs produce byte-identical output", async () => {
     const a = await compileBundle(store, { asOf: T3, aliases: ALIASES });
     const b = await compileBundle(store, { asOf: T3, aliases: ALIASES });
@@ -509,6 +549,57 @@ describe("compileBundle", () => {
     );
     const compiled = await compileBundle(store, { asOf: T1, aliases: provisionalAliases });
     expect(compiled.stats.provisionalAliasesUsed).toBe(1);
+  });
+});
+
+describe("mergeAaReasoningHistory", () => {
+  it("fills a partially refreshed effort family from the newest earlier snapshot", () => {
+    const effort = (slug: string, label: string, score: number): ArtificialAnalysisModel => ({
+      ...validAaModel,
+      id: `openai/${slug}`,
+      slug,
+      name: `GPT-5.6 Luna (${label})`,
+      shortName: `GPT-5.6 Luna (${label})`,
+      intelligenceIndex: score,
+    });
+    const current = [effort("gpt-5-6-luna", "max", 50), effort("gpt-5-6-luna-xhigh", "xhigh", 48)];
+    const newestEarlier = [
+      effort("gpt-5-6-luna", "max", 49),
+      effort("gpt-5-6-luna-low", "low", 34),
+      effort("gpt-5-6-luna-medium", "medium", 39),
+      effort("gpt-5-6-luna-high", "high", 46),
+      effort("gpt-5-6-luna-xhigh", "xhigh", 47),
+    ];
+    const older = [effort("gpt-5-6-luna-low", "low", 33)];
+
+    const merged = mergeAaReasoningHistory(current, [newestEarlier, older]);
+    expect(merged.map((model) => model.slug)).toEqual([
+      "gpt-5-6-luna",
+      "gpt-5-6-luna-high",
+      "gpt-5-6-luna-low",
+      "gpt-5-6-luna-medium",
+      "gpt-5-6-luna-xhigh",
+    ]);
+    expect(merged.find((model) => model.slug === "gpt-5-6-luna")?.intelligenceIndex).toBe(50);
+    expect(merged.find((model) => model.slug === "gpt-5-6-luna-low")?.intelligenceIndex).toBe(34);
+  });
+
+  it("does not revive a family absent from the current snapshot", () => {
+    const current = [{
+      ...validAaModel,
+      id: "openai/gpt-6-astra",
+      slug: "gpt-6-astra",
+      name: "GPT-6 Astra (max)",
+      shortName: "GPT-6 Astra (max)",
+    }];
+    const history = [{
+      ...validAaModel,
+      id: "vendor/retired-model-low",
+      slug: "retired-model-low",
+      name: "Retired Model (low)",
+      shortName: "Retired Model (low)",
+    }];
+    expect(mergeAaReasoningHistory(current, [history]).map((model) => model.slug)).toEqual(["gpt-6-astra"]);
   });
 });
 

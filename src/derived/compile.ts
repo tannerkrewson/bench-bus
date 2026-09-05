@@ -15,7 +15,7 @@ import {
   deepSweScoreIdentity,
   type DeepSweAliasEntry,
 } from "../collectors/deepswe/mapping";
-import { isNonReasoningModel } from "../charts/modelMetadata";
+import { isNonReasoningModel, modelDisplayMetadata } from "../charts/modelMetadata";
 import { computeAaListedParetoFrontier } from "../collectors/aa/frontier";
 import {
   encodeAaDataset,
@@ -98,6 +98,42 @@ export interface CompiledBundle {
   requestedAsOf: string;
   sources: { aa: SourceResolution; openrouter: SourceResolution; deepswe: SourceResolution; cursor: SourceResolution };
   stats: CompileStats;
+}
+
+/**
+ * Recover reasoning rows omitted by a partial upstream catalog refresh.
+ * Artificial Analysis occasionally publishes only some efforts for a model
+ * family for a run; the latest snapshot should supply every row it has, while
+ * the newest earlier snapshot supplies missing effort rows for families that
+ * are still represented. This keeps the graph stable without reviving an
+ * entire model family that the source has removed.
+ */
+export function mergeAaReasoningHistory(
+  current: readonly ArtificialAnalysisModel[],
+  history: readonly (readonly ArtificialAnalysisModel[])[],
+): ArtificialAnalysisModel[] {
+  const merged = new Map(current.map((model) => [model.slug, model] as const));
+  const activeFamilies = new Set(
+    current
+      .filter((model) => !isNonReasoningModel(model.name, model.slug))
+      .map((model) => modelDisplayMetadata(model.name, model.slug))
+      .filter((metadata) => metadata.effort !== undefined)
+      .map((metadata) => metadata.groupKey),
+  );
+  if (activeFamilies.size === 0) return [...current];
+
+  // `history` is newest-first, so the first recovered row is the freshest
+  // one available for that effort while the current snapshot always wins.
+  for (const snapshot of history) {
+    for (const model of snapshot) {
+      if (merged.has(model.slug) || isNonReasoningModel(model.name, model.slug)) continue;
+      const metadata = modelDisplayMetadata(model.name, model.slug);
+      if (metadata.effort !== undefined && activeFamilies.has(metadata.groupKey)) {
+        merged.set(model.slug, model);
+      }
+    }
+  }
+  return [...merged.values()].sort((a, b) => a.slug.localeCompare(b.slug));
 }
 
 function toResolution(resolved: ResolvedSnapshot | undefined): SourceResolution {
@@ -234,12 +270,13 @@ export async function compileBundle(
   const requestedAsOf = options.asOf ?? LATEST_AS_OF;
 
   // Independent per-source point-in-time resolution.
-  const [aa, openrouter, deepswe, cursor] = await Promise.all([
-    store.resolveSnapshot("aa", requestedAsOf),
+  const [aaHistory, openrouter, deepswe, cursor] = await Promise.all([
+    store.resolveSnapshotHistory("aa", requestedAsOf),
     store.resolveSnapshot("openrouter", requestedAsOf),
     store.resolveSnapshot("deepswe", requestedAsOf),
     store.resolveSnapshot("cursor", requestedAsOf),
   ]);
+  const aa = aaHistory[0];
 
   const resolutions = {
     aa: toResolution(aa),
@@ -270,8 +307,16 @@ export async function compileBundle(
   };
 
   if (aa) {
-    const aaModels = aa.envelope.records as ArtificialAnalysisModel[];
-    const frontierSlugs = options.frontierSlugs ?? computeAaListedParetoFrontier(aaModels).map((model) => model.slug);
+    const aaModels = mergeAaReasoningHistory(
+      aa.envelope.records as ArtificialAnalysisModel[],
+      aaHistory.slice(1).map((snapshot) => snapshot.envelope.records as ArtificialAnalysisModel[]),
+    );
+    // Frontier authorization must reflect the current AA snapshot. Recovered
+    // historical rows are chart continuity data and must not change which
+    // OpenRouter identities are allowed into this point-in-time build.
+    const frontierSlugs = options.frontierSlugs ?? computeAaListedParetoFrontier(
+      aa.envelope.records as ArtificialAnalysisModel[],
+    ).map((model) => model.slug);
     const joined = joinAaWithPricing(
       aaModels,
       openrouter ? (openrouter.envelope.records as OpenRouterModelPricing[]) : [],

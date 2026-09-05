@@ -269,6 +269,18 @@ export function aaControlledTooltipLines(
           ? "AA listed pricing"
           : "none",
     });
+    if (winner) {
+      lines.push(
+        {
+          label: "Effective input rate",
+          value: `$${winner.effectiveInputPrice.toFixed(4)} / 1M tokens`,
+        },
+        {
+          label: "Effective output rate",
+          value: `$${winner.effectiveOutputPrice.toFixed(4)} / 1M tokens`,
+        },
+      );
+    }
   }
   if (mode === "listed") {
     lines.push({

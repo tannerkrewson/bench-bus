@@ -401,6 +401,8 @@ describe("aa tooltips and metadata", () => {
     expect(labels).toContain("Workload tokens");
     const provider = lines.find((l) => l.label === "Winning provider");
     expect(provider?.value).toContain("Bedrock");
+    expect(lines.find((l) => l.label === "Effective input rate")?.value).toContain("/ 1M tokens");
+    expect(lines.find((l) => l.label === "Effective output rate")?.value).toContain("/ 1M tokens");
     const tokens = lines.find((l) => l.label === "Workload tokens");
     expect(tokens?.value).toContain("810.1M in");
   });

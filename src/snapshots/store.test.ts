@@ -193,6 +193,17 @@ describe("DataBranchStore.writeSnapshot", () => {
 });
 
 describe("point-in-time resolution", () => {
+  it("returns valid source history newest-first for bounded recovery", async () => {
+    const store = new DataBranchStore(root);
+    await store.init();
+    await store.writeSnapshot(aaEnvelope(T1));
+    await store.writeSnapshot(aaEnvelope(T2));
+    await store.writeSnapshot(aaEnvelope(T3));
+
+    const history = await store.resolveSnapshotHistory("aa", T2);
+    expect(history.map((snapshot) => snapshot.entry.observedAt)).toEqual([T2, T1]);
+  });
+
   it("resolves each source independently across mismatched timestamps", async () => {
     const store = new DataBranchStore(root);
     await store.init();

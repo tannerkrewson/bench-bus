@@ -33,6 +33,26 @@ describe("selectCheapestProvider (cheapest-effective mode)", () => {
     expect(winner?.totalCostUsd).toBeCloseTo(expected, 10);
   });
 
+  it("chooses Baidu for DeepSeek Flash when its lower output rate outweighs StreamLake's input lead", () => {
+    const providers = [
+      {
+        providerName: "Baidu Qianfan",
+        providerSlug: "baidu",
+        effectiveInputPrice: 0.014711781027623737,
+        effectiveOutputPrice: 0.09955832362859102,
+      },
+      {
+        providerName: "StreamLake",
+        providerSlug: "streamlake",
+        effectiveInputPrice: 0.00814960738373603,
+        effectiveOutputPrice: 0.26354946842094745,
+      },
+    ];
+    const winner = selectCheapestProvider(providers, 2_048_018_447, 216_048_809);
+    expect(winner?.providerSlug).toBe("baidu");
+    expect(winner?.totalCostUsd).toBeCloseTo(51.639456178791676, 10);
+  });
+
   it("never mixes providers", () => {
     const winner = selectCheapestProvider(providers, canonicalTokens.input, canonicalTokens.output);
     // The hypothetical best-mix would be 2.2 input + 12.5 output; the winner

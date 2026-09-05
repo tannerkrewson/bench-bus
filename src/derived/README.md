@@ -40,6 +40,11 @@ Exit code is nonzero and nothing is written when compilation fails
 - **Past views are naturally historical.** Models absent from the historical
   AA snapshot are absent from the compiled view, and pricing comes from the
   snapshot known at that time.
+- **Partial AA refreshes preserve effort continuity.** When the newest AA
+  snapshot still contains a reasoning family but omits some of its efforts,
+  the compiler carries forward the newest earlier rows for that same family.
+  It does not revive families absent from the current snapshot, and all
+  recovered rows remain source-backed historical data.
 - **Mapping integrity.** The AA↔OpenRouter join is validated against the
   explicit alias file (`src/collectors/openrouter/openrouter-aliases.json`):
   an OpenRouter record whose `aaModelSlug` is not in the mapping fails the

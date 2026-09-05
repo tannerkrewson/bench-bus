@@ -237,6 +237,36 @@ export class DataBranchStore {
     return { entry, envelope: { ...parsedEnvelope, records } };
   }
 
+  /**
+   * Resolve every valid snapshot for `source` at or before `asOf`, newest
+   * first. Build steps can use this bounded history to recover source rows
+   * that temporarily disappear from an otherwise healthy upstream catalog.
+   * Every file is still validated before it is returned, so history cannot
+   * bypass the same fail-closed checks as the single-snapshot path.
+   */
+  async resolveSnapshotHistory(source: SnapshotSource, asOf: string): Promise<ResolvedSnapshot[]> {
+    const manifest = await this.readManifest(source);
+    if (!manifest) return [];
+    const entries = manifest.entries
+      .filter((entry) => entry.observedAt <= asOf)
+      .sort((a, b) => b.observedAt.localeCompare(a.observedAt));
+    const resolved: ResolvedSnapshot[] = [];
+    for (const [index, entry] of entries.entries()) {
+      try {
+        const raw = JSON.parse(await fs.readFile(this.abs(entry.path), "utf8")) as unknown;
+        const parsedEnvelope = snapshotEnvelopeSchema.parse(raw);
+        const records = validateRecords(parsedEnvelope.source, parsedEnvelope.records);
+        resolved.push({ entry, envelope: { ...parsedEnvelope, records } });
+      } catch (error) {
+        // The newest snapshot must fail closed just like resolveSnapshot;
+        // an older corrupt file is skipped so it cannot hide valid recovery
+        // data from an even older snapshot.
+        if (index === 0) throw error;
+      }
+    }
+    return resolved;
+  }
+
   /** The manifest's newest fully valid snapshot for `source`, if any. */
   async latestKnownGood(source: SnapshotSource): Promise<ManifestEntry | undefined> {
     const manifest = await this.readManifest(source);

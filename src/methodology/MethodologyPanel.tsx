@@ -24,9 +24,11 @@ export const AaMethodologyContent: Component = () => (
       <a class="link link-hover" href="https://openrouter.ai/" target="_blank" rel="noopener noreferrer">
         OpenRouter
       </a>{" "}
-      lists average prices paid over 30 days. Cheapest mode picks one regular provider, never two; OpenAI Flex is
-      excluded by default because it trades lower cost for higher latency and lower availability. The Include OpenAI
-      Flex setting opts into that tier. Weighted mode uses model-wide averages.
+      lists average prices paid over 30 days. Cheapest mode picks one regular provider, never two, by applying both
+      its input and output rates to that model's measured workload. A provider with the lowest input rate can lose
+      when its output rate is higher. OpenAI Flex is excluded by default because it trades lower cost for higher
+      latency and lower availability. The Include OpenAI Flex setting opts into that tier. Weighted mode uses
+      model-wide averages.
     </p>
     <p>
       <strong>Listed prices.</strong> AA costs use listed rates and your cache-hit choice (default{" "}
