@@ -307,6 +307,33 @@ describe("compileBundle", () => {
     expect(joined.unmatchedAa).toBe(1);
   });
 
+  it.each(["gpt-6-astra", "gpt-6-astra-xhigh"])("prices every Astra effort from a snapshot containing only %s", (pricingSlug) => {
+    const slugs = ["gpt-6-astra-low", "gpt-6-astra-medium", "gpt-6-astra-high", "gpt-6-astra-xhigh", "gpt-6-astra"];
+    const models = slugs.map((slug, i) => ({
+      ...withSlug(validAaModel, slug, slug),
+      intelligenceIndex: 50 + i,
+      canonicalIntelligenceIndexTokenCount: {
+        ...validAaModel.canonicalIntelligenceIndexTokenCount,
+        input: 100_000_000 + i * 10_000_000,
+        output: 5_000_000 + i * 1_000_000,
+      },
+    }));
+    const pricing = { ...validOpenRouterPricing, aaModelSlug: pricingSlug, permaslug: "openai/gpt-6-astra" };
+    const joined = joinAaWithPricing(models, [pricing], parseAliasFile(JSON.stringify(aliasSeed)));
+
+    expect(joined.records.map((record) => record.slug)).toEqual(slugs);
+    joined.records.forEach((record, i) => {
+      expect(record.providers).toEqual(pricing.providerSummaries);
+      expect(record.intelligenceIndex).toBe(models[i]!.intelligenceIndex);
+      expect(record.canonicalTokens).toEqual({
+        input: models[i]!.canonicalIntelligenceIndexTokenCount.input,
+        output: models[i]!.canonicalIntelligenceIndexTokenCount.output,
+      });
+    });
+    expect(joined.unmatchedAa).toBe(0);
+    expect(joined.unmatchedOr).toBe(0);
+  });
+
   it("reuses one shared base OpenRouter pricing row for an effort variant", () => {
     const aliases = parseAliasFile(JSON.stringify({
       version: 1,

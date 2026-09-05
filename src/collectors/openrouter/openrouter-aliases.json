@@ -3,6 +3,41 @@
   "description": "Explicit Artificial Analysis -> OpenRouter model identity mapping. Curated by humans: automatic matching must never silently extend this file. `status: confirmed` = identity verified against both live catalogs (AA model objects from the artificialanalysis.ai page payload and OpenRouter ids from /api/v1/models, refreshed 2026-09-03). `provisional` = plausible but unverified, surfaced in every run report. `aaModelId` is the Artificial Analysis model UUID from the AA page payload. `openrouterId` is the stable OpenRouter model id (no date suffix, no :variant, no ~ alias); the collector resolves the canonical date-suffixed slug at runtime via /api/v1/models. `undiscountedOpenrouterId`, when present, explicitly links a discounted tier to the OpenRouter model whose listed prices form the comparison line. NOTE: AA model slugs use dashes where names use dots (e.g. AA slug gpt-5-6-sol for GPT-5.6 Sol).",
   "entries": [
     {
+      "aaModelSlug": "gpt-6-astra",
+      "aaModelId": "2f339a97-9a0d-499a-9cb5-e0db665bfa25",
+      "openrouterId": "openai/gpt-6-astra",
+      "status": "confirmed",
+      "note": "Verified 2026-09-04 against the AA and OpenRouter catalogs. Astra reasoning efforts share base model pricing; benchmark scores and token workloads remain effort-specific."
+    },
+    {
+      "aaModelSlug": "gpt-6-astra-high",
+      "aaModelId": "e05a4828-0536-4876-870d-a235023f992b",
+      "openrouterId": "openai/gpt-6-astra",
+      "status": "confirmed",
+      "note": "Verified 2026-09-04 against the AA and OpenRouter catalogs. Astra reasoning efforts share base model pricing; benchmark scores and token workloads remain effort-specific."
+    },
+    {
+      "aaModelSlug": "gpt-6-astra-low",
+      "aaModelId": "a3f8100d-e38f-408b-b0fa-0085dae18dc1",
+      "openrouterId": "openai/gpt-6-astra",
+      "status": "confirmed",
+      "note": "Verified 2026-09-04 against the AA and OpenRouter catalogs. Astra reasoning efforts share base model pricing; benchmark scores and token workloads remain effort-specific."
+    },
+    {
+      "aaModelSlug": "gpt-6-astra-medium",
+      "aaModelId": "e97a4ef5-e817-480e-9595-12f81dc4974f",
+      "openrouterId": "openai/gpt-6-astra",
+      "status": "confirmed",
+      "note": "Verified 2026-09-04 against the AA and OpenRouter catalogs. Astra reasoning efforts share base model pricing; benchmark scores and token workloads remain effort-specific."
+    },
+    {
+      "aaModelSlug": "gpt-6-astra-xhigh",
+      "aaModelId": "1f541ef3-913f-4eb2-9d07-0e93c7a9a5e3",
+      "openrouterId": "openai/gpt-6-astra",
+      "status": "confirmed",
+      "note": "Verified 2026-09-04 against the AA and OpenRouter catalogs. Astra reasoning efforts share base model pricing; benchmark scores and token workloads remain effort-specific."
+    },
+    {
       "aaModelSlug": "claude-opus-5",
       "aaModelId": "b8fc61f7-5e9a-49e6-8547-6ac56db24627",
       "openrouterId": "anthropic/claude-opus-5",

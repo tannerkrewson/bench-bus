@@ -31,6 +31,7 @@ function routerFetch(routes: Record<string, unknown | (() => Response)>): typeof
       }
     }
     if (
+      url.includes("gpt-6-astra-20260903") ||
       url.includes("gpt-5.6-luna-20260709") ||
       url.includes("muse-spark-1.2-contributor-20260805") ||
       url.includes("glm-5.3-flash-20260826") ||
