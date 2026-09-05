@@ -15,7 +15,11 @@ import {
   deepSweScoreIdentity,
   type DeepSweAliasEntry,
 } from "../collectors/deepswe/mapping";
-import { isNonReasoningModel, modelDisplayMetadata } from "../charts/modelMetadata";
+import {
+  isNonReasoningModel,
+  modelBaseFamilyKey,
+  modelDisplayMetadata,
+} from "../charts/modelMetadata";
 import { computeAaListedParetoFrontier } from "../collectors/aa/frontier";
 import {
   encodeAaDataset,
@@ -105,8 +109,10 @@ export interface CompiledBundle {
  * Artificial Analysis occasionally publishes only some efforts for a model
  * family for a run; the latest snapshot should supply every row it has, while
  * the newest earlier snapshot supplies missing effort rows for families that
- * are still represented. This keeps the graph stable without reviving an
- * entire model family that the source has removed.
+ * are still represented. A base model is also retained when the current
+ * snapshot still has its Pro sibling; this covers catalog refreshes that
+ * temporarily omit one side of a paired base/Pro release without reviving
+ * retired families.
  */
 export function mergeAaReasoningHistory(
   current: readonly ArtificialAnalysisModel[],
@@ -120,7 +126,15 @@ export function mergeAaReasoningHistory(
       .filter((metadata) => metadata.effort !== undefined)
       .map((metadata) => metadata.groupKey),
   );
-  if (activeFamilies.size === 0) return [...current];
+  const activeProBaseFamilies = new Set(
+    current
+      .filter((model) => {
+        const metadata = modelDisplayMetadata(model.name, model.slug);
+        return /(?:^|-|\s)pro(?:-|$|\s)/i.test(metadata.label);
+      })
+      .map((model) => modelBaseFamilyKey(model.name, model.slug)),
+  );
+  if (activeFamilies.size === 0 && activeProBaseFamilies.size === 0) return [...current];
 
   // `history` is newest-first, so the first recovered row is the freshest
   // one available for that effort while the current snapshot always wins.
@@ -128,7 +142,13 @@ export function mergeAaReasoningHistory(
     for (const model of snapshot) {
       if (merged.has(model.slug) || isNonReasoningModel(model.name, model.slug)) continue;
       const metadata = modelDisplayMetadata(model.name, model.slug);
-      if (metadata.effort !== undefined && activeFamilies.has(metadata.groupKey)) {
+      const isProVariant = /(?:^|-|\s)pro(?:-|$|\s)/i.test(metadata.label);
+      const keepsPairedBase =
+        !isProVariant && activeProBaseFamilies.has(modelBaseFamilyKey(model.name, model.slug));
+      if (
+        (metadata.effort !== undefined && activeFamilies.has(metadata.groupKey)) ||
+        keepsPairedBase
+      ) {
         merged.set(model.slug, model);
       }
     }

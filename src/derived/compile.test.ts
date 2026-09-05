@@ -601,6 +601,23 @@ describe("mergeAaReasoningHistory", () => {
     }];
     expect(mergeAaReasoningHistory(current, [history]).map((model) => model.slug)).toEqual(["gpt-6-astra"]);
   });
+
+  it("retains a historical base row when the current snapshot keeps its Pro sibling", () => {
+    const mimo = (slug: string, name: string, score: number): ArtificialAnalysisModel => ({
+      ...validAaModel,
+      id: `xiaomi/${slug}`,
+      slug,
+      name,
+      shortName: name,
+      intelligenceIndex: score,
+    });
+    const current = [mimo("mimo-v2-5-pro", "MiMo-V2.5-Pro", 43)];
+    const history = [mimo("mimo-v2-5-0424", "MiMo-V2.5", 38)];
+    expect(mergeAaReasoningHistory(current, [history]).map((model) => model.slug)).toEqual([
+      "mimo-v2-5-0424",
+      "mimo-v2-5-pro",
+    ]);
+  });
 });
 
 describe("size discipline", () => {

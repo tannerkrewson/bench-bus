@@ -6,7 +6,11 @@ import AaChartSection from "./AaChartSection";
 import { AA_FIXTURE_RECORDS, AA_RECORD_PLOTTABLE_CHEAPEST, AA_RECORD_UNPLOTTABLE } from "./fixtures";
 import { chartStateFromParams, chartStateToParams } from "../urlState";
 import { aaAdapter } from "./adapter";
-import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
+import {
+  AA_DEFAULT_AUTO_RELEASE_FAMILY_POLICIES,
+  AA_DEFAULT_COST_MODE,
+  AA_DEFAULT_MODEL_SLUGS,
+} from "./constants";
 
 const AA_SUBTITLE = "This chart compares AA listed prices with the cheapest regular effective OpenRouter provider for the real benchmark workload, updated multiple times per day as prices change";
 
@@ -347,8 +351,44 @@ describe("AaChartSection", () => {
     expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("mistral-medium-3-5");
     expect(AA_DEFAULT_MODEL_SLUGS).toContain("deepseek-v4-flash");
     expect(AA_DEFAULT_MODEL_SLUGS).toContain("glm-5-3-flash");
+    expect(AA_DEFAULT_MODEL_SLUGS).toContain("mimo-v2-5-pro");
+    expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("gemini-3-1-pro-preview");
+    expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("minimax-m3");
     expect(container.querySelector("[data-testid='aa-no-points']")).toBeNull();
     expect(AA_DEFAULT_COST_MODE).toBe("intelligence-vs-cost-per-task");
+    dispose();
+  });
+
+  it("hides current Gemini Pro and MiniMax releases while following future family releases", () => {
+    const release = (slug: string, name: string) => ({
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      id: `vendor/${slug}`,
+      slug,
+      name,
+      shortName: name,
+    });
+    const records = [
+      release("gemini-3-1-pro-preview", "Gemini 3.1 Pro Preview"),
+      release("gemini-3-2-pro", "Gemini 3.2 Pro"),
+      release("minimax-m3", "MiniMax-M3"),
+      release("minimax-m4", "MiniMax-M4"),
+      release("mimo-v2-5-0424", "MiMo-V2.5"),
+      release("mimo-v2-5-pro", "MiMo-V2.5-Pro"),
+    ];
+    const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
+    const { dispose } = mount(() => (
+      <AaChartSection records={() => records} onStateChange={(state) => states.push(state)} />
+    ));
+    const selected = states[states.length - 1]?.selectedIds ?? [];
+    expect(selected).not.toContain("gemini-3-1-pro-preview");
+    expect(selected).toContain("gemini-3-2-pro");
+    expect(selected).not.toContain("minimax-m3");
+    expect(selected).toContain("minimax-m4");
+    expect(selected).toEqual(expect.arrayContaining(["mimo-v2-5-0424", "mimo-v2-5-pro"]));
+    expect(AA_DEFAULT_AUTO_RELEASE_FAMILY_POLICIES).toEqual([
+      { seedSlug: "gemini-3-1-pro-preview", hiddenSlugs: ["gemini-3-1-pro-preview"] },
+      { seedSlug: "minimax-m3", hiddenSlugs: ["minimax-m3"] },
+    ]);
     dispose();
   });
 

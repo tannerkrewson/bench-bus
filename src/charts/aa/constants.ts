@@ -2,9 +2,9 @@
 export const AA_DEFAULT_COST_MODE = "intelligence-vs-cost-per-task" as const;
 
 /**
- * Reasoning models shown in the initial AA/OpenRouter chart view. Keep
- * upstream AA slugs verbatim so URL/session selections remain stable as the
- * catalog changes. Non-reasoning rows are excluded by the chart section.
+ * Models shown in the initial AA/OpenRouter chart view. Keep upstream AA
+ * slugs verbatim so URL/session selections remain stable as the catalog
+ * changes. Non-reasoning rows are excluded by the chart section.
  */
 export const AA_DEFAULT_MODEL_SLUGS = [
   "gpt-5-6-luna-low",
@@ -26,7 +26,6 @@ export const AA_DEFAULT_MODEL_SLUGS = [
   "claude-fable-5-1",
   "gpt-6-astra",
   "gemini-3-8-flash",
-  "gemini-3-1-pro-preview",
   // These AA slugs map to deepseek/deepseek-v4-flash-0731 and
   // deepseek/deepseek-v4-pro-0813 respectively.
   "deepseek-v4-flash",
@@ -37,6 +36,16 @@ export const AA_DEFAULT_MODEL_SLUGS = [
   "kimi-k3",
   "qwen3-8-flash-next",
   "qwen3-8-max",
-  "minimax-m3",
   "mimo-v2-5-0424",
+  "mimo-v2-5-pro",
+] as const;
+
+/**
+ * Current releases intentionally omitted from the default view while their
+ * normalized family remains eligible for automatic future-release discovery.
+ * The policy is family-based; these IDs only identify the release to hide.
+ */
+export const AA_DEFAULT_AUTO_RELEASE_FAMILY_POLICIES = [
+  { seedSlug: "gemini-3-1-pro-preview", hiddenSlugs: ["gemini-3-1-pro-preview"] },
+  { seedSlug: "minimax-m3", hiddenSlugs: ["minimax-m3"] },
 ] as const;

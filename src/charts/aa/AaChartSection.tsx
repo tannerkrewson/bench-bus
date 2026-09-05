@@ -25,8 +25,19 @@ import {
   discountHoverTitle,
   discountSummaryLines,
 } from "../plotData";
-import { AA_DEFAULT_COST_MODE, AA_DEFAULT_MODEL_SLUGS } from "./constants";
-import { expandedModelName, isNonReasoningModel, latestModelVersionIds, modelDisplayMetadata, modelGroupKey } from "../modelMetadata";
+import {
+  AA_DEFAULT_AUTO_RELEASE_FAMILY_POLICIES,
+  AA_DEFAULT_COST_MODE,
+  AA_DEFAULT_MODEL_SLUGS,
+} from "./constants";
+import {
+  expandedModelName,
+  isNonReasoningModel,
+  latestModelVersionIds,
+  modelDisplayMetadata,
+  modelGroupKey,
+  modelReleaseFamilyKey,
+} from "../modelMetadata";
 import MethodologyModal from "../../methodology/MethodologyModal";
 import { AaMethodologyContent } from "../../methodology/MethodologyPanel";
 import RelativeLastUpdated from "../../components/RelativeLastUpdated";
@@ -108,6 +119,15 @@ export default function AaChartSection(props: AaChartSectionProps) {
     const curatedIds: ReadonlySet<string> = new Set<string>(
       AA_DEFAULT_MODEL_SLUGS.filter((id) => !isNonReasoningModel("", id)),
     );
+    const hiddenIds = new Set<string>(
+      AA_DEFAULT_AUTO_RELEASE_FAMILY_POLICIES.flatMap((policy) => policy.hiddenSlugs),
+    );
+    const autoReleaseFamilies = new Set(
+      AA_DEFAULT_AUTO_RELEASE_FAMILY_POLICIES.flatMap((policy) => {
+        const family = modelReleaseFamilyKey("", policy.seedSlug);
+        return family ? [family] : [];
+      }),
+    );
     const curatedFamilies = new Set([
       ...AA_DEFAULT_MODEL_SLUGS.map((id) => modelDisplayMetadata("", id).groupKey),
       ...visibleRecords()
@@ -122,7 +142,21 @@ export default function AaChartSection(props: AaChartSectionProps) {
         return !curatedIds.has(record.slug) && metadata.effort !== undefined && curatedFamilies.has(metadata.groupKey);
       })
       .map((record) => record.slug);
-    const candidateIds = [...curatedIds, ...discoveredVariants];
+    // These families follow newer releases automatically. Known hidden IDs
+    // stay opt-in, while a newer Gemini Pro or MiniMax M release is selected
+    // once it appears in the current source snapshot.
+    const discoveredReleases = visibleRecords()
+      .filter((record) => {
+        const family = modelReleaseFamilyKey(record.name, record.slug);
+        return (
+          family !== null &&
+          autoReleaseFamilies.has(family) &&
+          !hiddenIds.has(record.slug) &&
+          !curatedIds.has(record.slug)
+        );
+      })
+      .map((record) => record.slug);
+    const candidateIds = [...curatedIds, ...discoveredVariants, ...discoveredReleases];
     return latestModelVersionIds(
       listedBuild.entries.map(({ point }) => ({ id: point.id, label: point.label })),
       candidateIds,

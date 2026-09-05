@@ -3,9 +3,11 @@ import {
   isNonReasoningModel,
   expandedModelName,
   latestModelVersionIds,
+  modelBaseFamilyKey,
   modelVersionIdentity,
   modelDisplayMetadata,
   modelGroupKey,
+  modelReleaseFamilyKey,
   preferredFamilyLabel,
 } from "./modelMetadata";
 
@@ -117,6 +119,18 @@ describe("modelDisplayMetadata", () => {
       "glm-5-3",
       "muse-spark-1-3",
     ]);
+  });
+
+  it("normalizes automatic release families across preview markers and model numbers", () => {
+    expect(modelReleaseFamilyKey("Gemini 3.1 Pro Preview", "gemini-3-1-pro-preview")).toBe("gemini-pro");
+    expect(modelReleaseFamilyKey("Gemini 3.2 Pro", "gemini-3-2-pro")).toBe("gemini-pro");
+    expect(modelReleaseFamilyKey("MiniMax-M3", "minimax-m3")).toBe("minimax-m");
+    expect(modelReleaseFamilyKey("MiniMax-M4", "minimax-m4")).toBe("minimax-m");
+  });
+
+  it("pairs MiMo base and Pro rows for catalog continuity", () => {
+    expect(modelBaseFamilyKey("MiMo-V2.5", "mimo-v2-5-0424")).toBe("mimo-v2-5");
+    expect(modelBaseFamilyKey("MiMo-V2.5-Pro", "mimo-v2-5-pro")).toBe("mimo-v2-5");
   });
 
   it("falls back to numeric releases in ids when source labels omit them", () => {

@@ -173,6 +173,35 @@ export function modelVersionIdentity(label: string, id?: string): ModelVersionId
   return { familyKey, version };
 }
 
+/**
+ * Stable family identity for policies that follow future releases. Preview
+ * markers are release metadata, so a preview and its later stable Pro release
+ * belong to the same family for default-view discovery.
+ */
+export function modelReleaseFamilyKey(label: string, id?: string): string | null {
+  // Default-family policy seeds are often IDs without a source label. Turn
+  // separated numeric ID components such as `gemini-3-1` into one release
+  // before asking the shared parser for the family identity.
+  const identityLabel = label.trim()
+    ? label
+    : (id?.split("/").pop() ?? "")
+      .replace(/-(\d+)-(\d+)(?=-|$)/g, " $1.$2 ")
+      .replace(/-/g, " ");
+  const identity = modelVersionIdentity(identityLabel, id);
+  return identity?.familyKey.replace(/-(?:preview|experimental)(?=-|$)/gi, "") || null;
+}
+
+/**
+ * Family identity used to retain a base model when an upstream refresh keeps
+ * its Pro sibling but temporarily drops the base row. Release-date markers
+ * and Pro/preview suffixes do not distinguish those paired variants.
+ */
+export function modelBaseFamilyKey(label: string, id?: string): string {
+  return modelGroupKey(label, id)
+    .replace(/-(?:pro|preview|experimental)(?=-|$)/gi, "")
+    .replace(/-\d{4}(?=-|$)/g, "");
+}
+
 function compareModelVersions(first: readonly number[], second: readonly number[]): number {
   const length = Math.max(first.length, second.length);
   for (let index = 0; index < length; index += 1) {
