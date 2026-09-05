@@ -40,11 +40,13 @@ Exit code is nonzero and nothing is written when compilation fails
 - **Past views are naturally historical.** Models absent from the historical
   AA snapshot are absent from the compiled view, and pricing comes from the
   snapshot known at that time.
-- **Partial AA refreshes preserve effort continuity.** When the newest AA
-  snapshot still contains a reasoning family but omits some of its efforts,
-  the compiler carries forward the newest earlier rows for that same family.
-  It does not revive families absent from the current snapshot, and all
-  recovered rows remain source-backed historical data.
+- **Partial AA refreshes preserve effort continuity within one score
+  generation.** When the newest AA snapshot still contains a reasoning family
+  but omits some of its efforts, the compiler carries forward the newest
+  earlier rows for that same family only when both snapshots identify the same
+  `intelligenceIndexVersion`. It does not revive families absent from the
+  current snapshot, and snapshots with an unknown generation recover nothing;
+  this prevents scores retired by a new AA index from reappearing in the chart.
 - **Mapping integrity.** The AA↔OpenRouter join is validated against the
   explicit alias file (`src/collectors/openrouter/openrouter-aliases.json`):
   an OpenRouter record whose `aaModelSlug` is not in the mapping fails the

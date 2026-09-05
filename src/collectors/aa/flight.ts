@@ -20,6 +20,12 @@
 /** Matches one `self.__next_f.push([1,"..."])` script body's string literal. */
 const FLIGHT_PUSH_PATTERN = /self\.__next_f\.push\(\[1,("(?:[^"\\]|\\.)*")\]\)/g;
 
+const INDEX_VERSION_PATTERNS = [
+  /\bArtificial Analysis Intelligence Index v(\d+(?:\.\d+)*)\s+(?:incorporates|includes)\b/i,
+  /\bUpdated to Intelligence Index v(\d+(?:\.\d+)*)\b/i,
+  /\b(?:Artificial Analysis )?Intelligence Index v(\d+(?:\.\d+)*)\b/i,
+] as const;
+
 /**
  * Extract and concatenate all Flight string fragments from an AA model page.
  * Throws when the page contains no Flight payload (structure changed).
@@ -39,6 +45,20 @@ export function extractFlightText(html: string): string {
     );
   }
   return fragments.join("");
+}
+
+/**
+ * Extract the source-wide Intelligence Index generation from page metadata.
+ * AA currently publishes it in both the index footer and the methodology
+ * changelog. The ordered patterns prefer the footer, then the explicit
+ * changelog marker, while the final fallback tolerates wording changes.
+ */
+export function discoverIntelligenceIndexVersion(flightText: string): string | null {
+  for (const pattern of INDEX_VERSION_PATTERNS) {
+    const match = pattern.exec(flightText);
+    if (match?.[1]) return match[1];
+  }
+  return null;
 }
 
 /**

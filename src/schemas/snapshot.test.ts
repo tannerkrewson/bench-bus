@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   makeSnapshotEnvelope,
+  normalizeSnapshotInput,
   resolveLatestKnownGood,
   resolveManifestEntryAt,
   snapshotEnvelopeSchema,
@@ -21,6 +22,34 @@ describe("snapshotEnvelopeSchema", () => {
       snapshotEnvelopeSchema.parse(JSON.parse(first)),
     );
     expect(second).toBe(first);
+  });
+
+  it("persists AA source metadata needed for generation-aware history", () => {
+    const envelope = makeSnapshotEnvelope({
+      source: "aa",
+      observedAt: OBSERVED_AT,
+      records: [validAaModel],
+      sourceMetadata: { intelligenceIndexVersion: "4.2" },
+    });
+    expect(snapshotEnvelopeSchema.parse(envelope).sourceMetadata).toEqual({
+      intelligenceIndexVersion: "4.2",
+    });
+  });
+
+  it("carries the index generation when normalizing an AA collector payload", () => {
+    const normalized = snapshotEnvelopeSchema.parse(normalizeSnapshotInput({
+      observedAt: OBSERVED_AT,
+      source: {
+        source: "aa",
+        startUrl: "https://artificialanalysis.ai/models/gpt-5-6-luna",
+        rscEndpoint: "https://artificialanalysis.ai/models/gpt-5-6-luna",
+        intelligenceIndexVersion: "4.2",
+      },
+      records: [validAaModel],
+    }));
+    expect(normalized.sourceMetadata).toEqual({
+      intelligenceIndexVersion: "4.2",
+    });
   });
 
   it("rejects a recordSchemaVersion that does not match the source", () => {

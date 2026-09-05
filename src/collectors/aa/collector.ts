@@ -11,6 +11,7 @@ import { aaSnapshotPayloadSchema, type AaSnapshotPayload } from "../../schemas";
 import {
   buildRscEndpoint,
   collectRawModels,
+  discoverIntelligenceIndexVersion,
   discoverRscParam,
   extractFlightText,
   parseFlightRows,
@@ -72,6 +73,7 @@ export function collectFromHtml(
 ): CollectAaResult {
   const rscParam = discoverRscParam(html);
   const flightText = extractFlightText(html);
+  const intelligenceIndexVersion = discoverIntelligenceIndexVersion(flightText);
   const rows = parseFlightRows(flightText);
   const rawModels = rows.flatMap((row) => collectRawModels(row.value));
   const collection = buildAaCollection(rawModels);
@@ -81,6 +83,7 @@ export function collectFromHtml(
       source: "aa" as const,
       startUrl,
       rscEndpoint: buildRscEndpoint(startUrl, rscParam),
+      ...(intelligenceIndexVersion ? { intelligenceIndexVersion } : {}),
     },
     records: collection.records,
   });

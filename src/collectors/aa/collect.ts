@@ -55,6 +55,7 @@ async function main(): Promise<void> {
   process.stderr.write(
     `[aa-collector] startUrl=${source.startUrl}\n` +
       `[aa-collector] rscEndpoint=${source.rscEndpoint}\n` +
+      `[aa-collector] intelligenceIndexVersion=${source.intelligenceIndexVersion ?? "unknown"}\n` +
       `[aa-collector] models=${records.length} ` +
       `raw=${result.stats.rawCount} ` +
       `incompleteDiscarded=${result.stats.incompleteCount} ` +

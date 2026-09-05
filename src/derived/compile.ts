@@ -114,32 +114,46 @@ export interface CompiledBundle {
  * temporarily omit one side of a paired base/Pro release without reviving
  * retired families.
  */
+export interface AaHistorySnapshot {
+  records: readonly ArtificialAnalysisModel[];
+  /** Undefined means the collector could not identify the score generation. */
+  intelligenceIndexVersion?: string;
+}
+
 export function mergeAaReasoningHistory(
-  current: readonly ArtificialAnalysisModel[],
-  history: readonly (readonly ArtificialAnalysisModel[])[],
+  current: AaHistorySnapshot,
+  history: readonly AaHistorySnapshot[],
 ): ArtificialAnalysisModel[] {
-  const merged = new Map(current.map((model) => [model.slug, model] as const));
+  const merged = new Map(current.records.map((model) => [model.slug, model] as const));
+  // History recovery is safe only inside one AA score generation. Unknown
+  // generations intentionally recover nothing, avoiding stale values when AA
+  // changes its index but omits the marker on a page refresh.
+  const compatibleHistory = current.intelligenceIndexVersion === undefined
+    ? []
+    : history.filter(
+        (snapshot) => snapshot.intelligenceIndexVersion === current.intelligenceIndexVersion,
+      );
   const activeFamilies = new Set(
-    current
+    current.records
       .filter((model) => !isNonReasoningModel(model.name, model.slug))
       .map((model) => modelDisplayMetadata(model.name, model.slug))
       .filter((metadata) => metadata.effort !== undefined)
       .map((metadata) => metadata.groupKey),
   );
   const activeProBaseFamilies = new Set(
-    current
+    current.records
       .filter((model) => {
         const metadata = modelDisplayMetadata(model.name, model.slug);
         return /(?:^|-|\s)pro(?:-|$|\s)/i.test(metadata.label);
       })
       .map((model) => modelBaseFamilyKey(model.name, model.slug)),
   );
-  if (activeFamilies.size === 0 && activeProBaseFamilies.size === 0) return [...current];
+  if (activeFamilies.size === 0 && activeProBaseFamilies.size === 0) return [...current.records];
 
   // `history` is newest-first, so the first recovered row is the freshest
   // one available for that effort while the current snapshot always wins.
-  for (const snapshot of history) {
-    for (const model of snapshot) {
+  for (const snapshot of compatibleHistory) {
+    for (const model of snapshot.records) {
       if (merged.has(model.slug) || isNonReasoningModel(model.name, model.slug)) continue;
       const metadata = modelDisplayMetadata(model.name, model.slug);
       const isProVariant = /(?:^|-|\s)pro(?:-|$|\s)/i.test(metadata.label);
@@ -328,8 +342,14 @@ export async function compileBundle(
 
   if (aa) {
     const aaModels = mergeAaReasoningHistory(
-      aa.envelope.records as ArtificialAnalysisModel[],
-      aaHistory.slice(1).map((snapshot) => snapshot.envelope.records as ArtificialAnalysisModel[]),
+      {
+        records: aa.envelope.records as ArtificialAnalysisModel[],
+        intelligenceIndexVersion: aa.envelope.sourceMetadata?.intelligenceIndexVersion,
+      },
+      aaHistory.slice(1).map((snapshot) => ({
+        records: snapshot.envelope.records as ArtificialAnalysisModel[],
+        intelligenceIndexVersion: snapshot.envelope.sourceMetadata?.intelligenceIndexVersion,
+      })),
     );
     // Frontier authorization must reflect the current AA snapshot. Recovered
     // historical rows are chart continuity data and must not change which

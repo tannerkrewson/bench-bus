@@ -25,6 +25,11 @@ export type CanonicalIntelligenceIndexTokenCount = z.infer<
   typeof canonicalIntelligenceIndexTokenCountSchema
 >;
 
+/** Source-wide AA Intelligence Index generation, e.g. `4.2`. */
+export const intelligenceIndexVersionSchema = z
+  .string()
+  .regex(/^\d+(?:\.\d+)*$/, "must be a dotted numeric Intelligence Index version");
+
 /**
  * One canonical Artificial Analysis model record.
  *
@@ -109,6 +114,8 @@ export const aaSourceMetadataSchema = z
     startUrl: z.string().url(),
     /** RSC endpoint the collector dynamically discovered for this run. */
     rscEndpoint: z.string().url(),
+    /** AA score-generation marker used to prevent cross-index history merges. */
+    intelligenceIndexVersion: intelligenceIndexVersionSchema.optional(),
   })
   .strict();
 

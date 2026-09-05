@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isoUtcTimestamp } from "./primitives";
 import { SCHEMA_VERSIONS } from "./version";
-import type { ArtificialAnalysisModel } from "./aa";
+import { intelligenceIndexVersionSchema, type ArtificialAnalysisModel } from "./aa";
 import type { OpenRouterModelPricing } from "./openrouter";
 import type { DeepSweScoreRecord } from "./deepswe";
 import type { CursorEvalRecord } from "./cursor";
@@ -15,6 +15,14 @@ const dataBranchPath = z
   .string()
   .regex(/^[\w./-]+\.json$/, "must be a relative JSON file path (e.g. snapshots/aa/x.json)")
   .refine((v) => !v.startsWith("/"), { message: "path must be relative" });
+
+/** Source metadata persisted alongside records when a collector provides it. */
+export const snapshotSourceMetadataSchema = z
+  .object({
+    intelligenceIndexVersion: intelligenceIndexVersionSchema,
+  })
+  .strict();
+export type SnapshotSourceMetadata = z.infer<typeof snapshotSourceMetadataSchema>;
 
 /**
  * Versioned envelope persisted on the data branch for every successful,
@@ -33,6 +41,8 @@ export const snapshotEnvelopeSchema = z
     recordSchemaVersion: z.number().int().positive(),
     observedAt: isoUtcTimestamp,
     records: z.array(z.unknown()),
+    /** Currently populated for AA; omitted by older snapshots and other sources. */
+    sourceMetadata: snapshotSourceMetadataSchema.optional(),
   })
   .refine(
     (env) =>
@@ -54,6 +64,7 @@ export function makeSnapshotEnvelope(input: {
     | OpenRouterModelPricing[]
     | DeepSweScoreRecord[]
     | CursorEvalRecord[];
+  sourceMetadata?: SnapshotSourceMetadata;
 }): SnapshotEnvelope {
   const recordSchemaVersion =
     input.source === "aa"
@@ -69,6 +80,7 @@ export function makeSnapshotEnvelope(input: {
     recordSchemaVersion,
     observedAt: input.observedAt,
     records: input.records as unknown[],
+    ...(input.sourceMetadata ? { sourceMetadata: input.sourceMetadata } : {}),
   };
 }
 
@@ -100,6 +112,15 @@ export function normalizeSnapshotInput(input: unknown): unknown {
       source: (source as Record<string, unknown>).source as SnapshotSource,
       observedAt: record.observedAt,
       records: record.records as never[],
+      ...((source as Record<string, unknown>).source === "aa" &&
+      ("intelligenceIndexVersion" in (source as Record<string, unknown>))
+        ? {
+            sourceMetadata: {
+              intelligenceIndexVersion: (source as Record<string, unknown>)
+                .intelligenceIndexVersion as string,
+            },
+          }
+        : {}),
     });
   }
   return input;

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { collectAa, collectFromHtml } from "./collector";
-import { buildRscEndpoint, discoverRscParam, extractFlightText } from "./flight";
+import {
+  buildRscEndpoint,
+  discoverIntelligenceIndexVersion,
+  discoverRscParam,
+  extractFlightText,
+} from "./flight";
 import { buildAaCollection } from "./normalize";
 import { parseFlightRows } from "./flight";
 import { realGlm53FlashRawModel } from "./fixtures/aa-glm-5-3-flash";
@@ -48,6 +53,18 @@ describe("discoverRscParam", () => {
   });
 });
 
+describe("discoverIntelligenceIndexVersion", () => {
+  it("prefers the current footer generation and tolerates changelog wording", () => {
+    expect(
+      discoverIntelligenceIndexVersion(
+        "Updated to Intelligence Index v4.1. Artificial Analysis Intelligence Index v4.2 incorporates 10 evaluations",
+      ),
+    ).toBe("4.2");
+    expect(discoverIntelligenceIndexVersion("Updated to Intelligence Index v4.3")).toBe("4.3");
+    expect(discoverIntelligenceIndexVersion("no version marker")).toBeNull();
+  });
+});
+
 describe("parseFlightRows", () => {
   it("parses JSON rows and skips text chunks and module references", () => {
     const rows = parseFlightRows(
@@ -91,6 +108,15 @@ describe("collectFromHtml", () => {
     });
     expect(payload.observedAt).toBe(OBSERVED_AT);
     expect(frontier).toEqual(collectFromHtml(html, START_URL, OBSERVED_AT).frontier);
+  });
+
+  it("persists the detected Intelligence Index generation in source metadata", () => {
+    const versionedHtml = aaPageHtml.replace(
+      "Some descriptive text chunk",
+      "Artificial Analysis Intelligence Index v4.2 incorporates 10 evaluations",
+    );
+    const { payload } = collectFromHtml(versionedHtml, START_URL, OBSERVED_AT);
+    expect(payload.source.intelligenceIndexVersion).toBe("4.2");
   });
 
   it("preserves upstream numeric values exactly (no rounding or recomputation)", async () => {

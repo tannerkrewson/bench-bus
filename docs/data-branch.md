@@ -37,6 +37,7 @@ Each snapshot file contains one `SnapshotEnvelope`
   "source": "aa",
   "recordSchemaVersion": 1,
   "observedAt": "2026-08-21T01:53:42.000Z",
+  "sourceMetadata": { "intelligenceIndexVersion": "4.2" },
   "records": [ ... ]
 }
 ```
@@ -44,7 +45,9 @@ Each snapshot file contains one `SnapshotEnvelope`
 `records` are fully validated with the shared per-source contracts before the
 file is written, and are stored in a deterministic order (AA by `slug`,
 OpenRouter by `aaModelSlug`, Cursor by `modelId`), so identical upstream data
-always serializes to identical bytes.
+always serializes to identical bytes. AA snapshots include the source-wide
+`intelligenceIndexVersion` when the collector discovers it. Older snapshots
+may omit this metadata and are treated as unknown-generation history.
 
 ## Manifest
 

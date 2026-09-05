@@ -278,6 +278,7 @@ describe("compileBundle", () => {
     await store.writeSnapshot(makeSnapshotEnvelope({
       source: "aa",
       observedAt: T3,
+      sourceMetadata: { intelligenceIndexVersion: "4.1" },
       records: [
         effort("gpt-5-6-luna", "max"),
         effort("gpt-5-6-luna-low", "low"),
@@ -290,6 +291,7 @@ describe("compileBundle", () => {
     await store.writeSnapshot(makeSnapshotEnvelope({
       source: "aa",
       observedAt: later,
+      sourceMetadata: { intelligenceIndexVersion: "4.1" },
       records: [effort("gpt-5-6-luna", "max"), effort("gpt-5-6-luna-xhigh", "xhigh")],
     }));
 
@@ -572,7 +574,13 @@ describe("mergeAaReasoningHistory", () => {
     ];
     const older = [effort("gpt-5-6-luna-low", "low", 33)];
 
-    const merged = mergeAaReasoningHistory(current, [newestEarlier, older]);
+    const merged = mergeAaReasoningHistory(
+      { records: current, intelligenceIndexVersion: "4.1" },
+      [
+        { records: newestEarlier, intelligenceIndexVersion: "4.1" },
+        { records: older, intelligenceIndexVersion: "4.1" },
+      ],
+    );
     expect(merged.map((model) => model.slug)).toEqual([
       "gpt-5-6-luna",
       "gpt-5-6-luna-high",
@@ -599,7 +607,12 @@ describe("mergeAaReasoningHistory", () => {
       name: "Retired Model (low)",
       shortName: "Retired Model (low)",
     }];
-    expect(mergeAaReasoningHistory(current, [history]).map((model) => model.slug)).toEqual(["gpt-6-astra"]);
+    expect(
+      mergeAaReasoningHistory(
+        { records: current, intelligenceIndexVersion: "4.1" },
+        [{ records: history, intelligenceIndexVersion: "4.1" }],
+      ).map((model) => model.slug),
+    ).toEqual(["gpt-6-astra"]);
   });
 
   it("retains a historical base row when the current snapshot keeps its Pro sibling", () => {
@@ -613,9 +626,45 @@ describe("mergeAaReasoningHistory", () => {
     });
     const current = [mimo("mimo-v2-5-pro", "MiMo-V2.5-Pro", 43)];
     const history = [mimo("mimo-v2-5-0424", "MiMo-V2.5", 38)];
-    expect(mergeAaReasoningHistory(current, [history]).map((model) => model.slug)).toEqual([
+    expect(mergeAaReasoningHistory(
+      { records: current, intelligenceIndexVersion: "4.2" },
+      [{ records: history, intelligenceIndexVersion: "4.2" }],
+    ).map((model) => model.slug)).toEqual([
       "mimo-v2-5-0424",
       "mimo-v2-5-pro",
+    ]);
+  });
+
+  it("does not carry scores across Intelligence Index generations", () => {
+    const effort = (slug: string, label: string, score: number): ArtificialAnalysisModel => ({
+      ...validAaModel,
+      id: `openai/${slug}`,
+      slug,
+      name: `GPT-5.6 Luna (${label})`,
+      shortName: `GPT-5.6 Luna (${label})`,
+      intelligenceIndex: score,
+    });
+    const current = [effort("gpt-5-6-luna", "max", 43), effort("gpt-5-6-luna-xhigh", "xhigh", 41)];
+    const oldScores = [
+      ...current,
+      effort("gpt-5-6-luna-low", "low", 33),
+      effort("gpt-5-6-luna-medium", "medium", 38),
+      effort("gpt-5-6-luna-high", "high", 47),
+    ];
+    expect(mergeAaReasoningHistory(
+      { records: current, intelligenceIndexVersion: "4.2" },
+      [{ records: oldScores, intelligenceIndexVersion: "4.1" }],
+    ).map((model) => model.slug)).toEqual([
+      "gpt-5-6-luna",
+      "gpt-5-6-luna-xhigh",
+    ]);
+  });
+
+  it("does not recover history when the current index generation is unknown", () => {
+    const current = [{ ...validAaModel, slug: "gpt-5-6-luna", name: "GPT-5.6 Luna (max)" }];
+    const history = [{ ...validAaModel, slug: "gpt-5-6-luna-low", name: "GPT-5.6 Luna (low)" }];
+    expect(mergeAaReasoningHistory({ records: current }, [{ records: history }]).map((model) => model.slug)).toEqual([
+      "gpt-5-6-luna",
     ]);
   });
 });
