@@ -69,6 +69,9 @@ describe("aaAdapter.computePoint", () => {
     expect(openRouterUrlForAaModel({ ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "deepseek-v4-flash" })).toBe(
       "https://openrouter.ai/deepseek/deepseek-v4-flash-0731",
     );
+    expect(openRouterUrlForAaModel({ ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "deepseek-v4-1-flash" })).toBe(
+      "https://openrouter.ai/deepseek/deepseek-v4.1-flash",
+    );
     expect(openRouterUrlForAaModel({ ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "deepseek-v4-pro-0424" })).toBe(
       "https://openrouter.ai/deepseek/deepseek-v4-pro",
     );
@@ -221,6 +224,34 @@ describe("aaAdapter.computePoint", () => {
       providerName: "Cheapest Provider",
     });
     expect(point.discount?.percentage).toBeCloseTo(28, 10);
+  });
+
+  it("applies the shared contributor pricing discount to Muse Spark xhigh", () => {
+    const record = {
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug: "muse-spark-1-3-xhigh",
+      name: "Muse Spark 1.3 (xhigh)",
+      shortName: "Muse Spark 1.3 (xhigh)",
+      canonicalTokens: { input: 1_000_000, output: 1_000_000 },
+      providers: [{
+        providerName: "Meta",
+        providerSlug: "meta",
+        effectiveInputPrice: 0.1,
+        effectiveOutputPrice: 0.2,
+        listedInputPrice: 1.25,
+        listedOutputPrice: 4.25,
+        undiscountedModelId: "meta/muse-spark-1.3",
+      }],
+      listed: { price1mInputTokens: 1.25, price1mOutputTokens: 4.25, cacheHitPrice: 0.15 },
+    };
+    const point = aaAdapter.computePoint(record, controls)!;
+    expect(point.x).toBeCloseTo(0.3, 10);
+    expect(point.discount).toMatchObject({
+      preDiscountX: 4.51,
+      providerName: "Meta",
+    });
+    expect(point.discount?.effectiveX).toBeCloseTo(0.3, 10);
+    expect(point.discount?.percentage).toBeCloseTo((1 - 0.3 / 4.51) * 100, 10);
   });
 
   it("uses the cheapest provider and ignores source promotion percentages", () => {

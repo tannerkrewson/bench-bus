@@ -34,6 +34,7 @@ function routerFetch(routes: Record<string, unknown | (() => Response)>): typeof
       url.includes("gpt-6-astra-20260903") ||
       url.includes("gpt-5.6-luna-20260709") ||
       url.includes("muse-spark-1.2-contributor-20260805") ||
+      url.includes("muse-spark-1.3-contributor-20260902") ||
       url.includes("glm-5.3-flash-20260826") ||
       url.includes("qwen3.8-flash-20260826") ||
       url.includes("mimo-v2.5-20260422") ||
@@ -95,6 +96,7 @@ const baseOptions = (overrides: Partial<Parameters<typeof collectOpenRouterPrici
     "claude-opus-5-20260723": fullPricing,
     "claude-sonnet-5-20260630": fullPricing,
     "gpt-5.6-sol-20260709": fullPricing,
+    "muse-spark-1.3-contributor-20260902": fullPricing,
     "gemini-3.7-flash-20260813": fullPricing,
     "glm-5.3-20260816": fullPricing,
     "kimi-k3-20260715": fullPricing,
@@ -124,6 +126,7 @@ function routesFor(_fetchImpl: unknown): Record<string, unknown> {
     "claude-opus-5-20260723": fullPricing,
     "claude-sonnet-5-20260630": fullPricing,
     "gpt-5.6-sol-20260709": fullPricing,
+    "muse-spark-1.3-contributor-20260902": fullPricing,
     "gemini-3.7-flash-20260813": fullPricing,
     "glm-5.3-20260816": fullPricing,
     "kimi-k3-20260715": fullPricing,

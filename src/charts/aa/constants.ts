@@ -26,10 +26,10 @@ export const AA_DEFAULT_MODEL_SLUGS = [
   "claude-fable-5-1",
   "gpt-6-astra",
   "gemini-3-8-flash",
-  // These AA slugs map to deepseek/deepseek-v4-flash-0731 and
-  // deepseek/deepseek-v4-pro-0813 respectively.
-  "deepseek-v4-flash",
-  "deepseek-v4-pro",
+  // Keep only the current DeepSeek release in the implicit view. Older
+  // DeepSeek rows remain available through the selector when explicitly
+  // requested.
+  "deepseek-v4-1-flash",
   "glm-5-3",
   "glm-5-3-flash",
   "grok-4-6",

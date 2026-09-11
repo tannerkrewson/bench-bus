@@ -408,6 +408,33 @@ describe("compileBundle", () => {
     expect(joined.unmatchedOr).toBe(0);
   });
 
+  it("reuses the Muse Spark contributor row for the non-max effort variant", () => {
+    const pricing: OpenRouterModelPricing = {
+      ...validOpenRouterPricing,
+      permaslug: "meta/muse-spark-1.3-contributor",
+      aaModelSlug: "muse-spark-1-3",
+      providerSummaries: [{
+        providerName: "Meta",
+        providerSlug: "meta",
+        effectiveInputPrice: 0.1,
+        effectiveOutputPrice: 0.2,
+        listedInputPrice: 1.25,
+        listedOutputPrice: 4.25,
+        undiscountedModelId: "meta/muse-spark-1.3",
+      }],
+    };
+    const model = withSlug(validAaModel, "muse-spark-1-3-xhigh", "d5170215-69be-4129-849b-26d8d8825bfc");
+    const joined = joinAaWithPricing(
+      [model],
+      [pricing],
+      parseAliasFile(JSON.stringify(aliasSeed)),
+      [model.slug, "muse-spark-1-3"],
+    );
+    expect(joined.records[0]?.providers).toEqual(pricing.providerSummaries);
+    expect(joined.unmatchedAa).toBe(0);
+    expect(joined.unmatchedOr).toBe(0);
+  });
+
   it("reconciles the DeepSeek V4 Flash high-effort row with its shared pricing identity", () => {
     const high = {
       ...withSlug(

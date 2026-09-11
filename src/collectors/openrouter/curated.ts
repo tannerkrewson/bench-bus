@@ -43,4 +43,10 @@ export const DEFAULT_CURATED_MODELS: readonly CuratedModel[] = [
     openrouterId: "deepseek/deepseek-v4-flash-0731",
     note: "DeepSeek V4 0731 Flash; forced into lookup/default visibility when AA and OpenRouter list it.",
   },
+  {
+    aaModelSlug: "deepseek-v4-1-flash",
+    aaModelId: "dbe7c625-3100-4463-b479-a228c41f75dd",
+    openrouterId: "deepseek/deepseek-v4.1-flash",
+    note: "DeepSeek V4.1 Flash; forced into lookup/default visibility when AA and OpenRouter list it.",
+  },
 ];

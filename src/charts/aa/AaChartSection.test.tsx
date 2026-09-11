@@ -349,7 +349,9 @@ describe("AaChartSection", () => {
     ]));
     expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("gpt-5-6-luna-non-reasoning");
     expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("mistral-medium-3-5");
-    expect(AA_DEFAULT_MODEL_SLUGS).toContain("deepseek-v4-flash");
+    expect(AA_DEFAULT_MODEL_SLUGS).toContain("deepseek-v4-1-flash");
+    expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("deepseek-v4-flash");
+    expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("deepseek-v4-pro");
     expect(AA_DEFAULT_MODEL_SLUGS).toContain("glm-5-3-flash");
     expect(AA_DEFAULT_MODEL_SLUGS).toContain("mimo-v2-5-pro");
     expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("gemini-3-1-pro-preview");
@@ -389,6 +391,38 @@ describe("AaChartSection", () => {
       { seedSlug: "gemini-3-1-pro-preview", hiddenSlugs: ["gemini-3-1-pro-preview"] },
       { seedSlug: "minimax-m3", hiddenSlugs: ["minimax-m3"] },
     ]);
+    dispose();
+  });
+
+  it("shows only DeepSeek V4.1 Flash in the implicit defaults", () => {
+    const records = [
+      {
+        ...AA_RECORD_PLOTTABLE_CHEAPEST,
+        slug: "deepseek-v4-flash",
+        name: "DeepSeek V4 Flash 0731 (Reasoning, Max Effort)",
+        shortName: "DeepSeek V4 Flash 0731 (max)",
+      },
+      {
+        ...AA_RECORD_PLOTTABLE_CHEAPEST,
+        slug: "deepseek-v4-pro",
+        name: "DeepSeek V4 Pro 0813 (Reasoning, Max Effort)",
+        shortName: "DeepSeek V4 Pro 0813 (max)",
+      },
+      {
+        ...AA_RECORD_PLOTTABLE_CHEAPEST,
+        slug: "deepseek-v4-1-flash",
+        name: "DeepSeek V4.1 Flash (Reasoning, Max Effort)",
+        shortName: "DeepSeek V4.1 Flash (max)",
+      },
+    ];
+    const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
+    const { dispose } = mount(() => (
+      <AaChartSection records={() => records} onStateChange={(state) => states.push(state)} />
+    ));
+    const selected = states[states.length - 1]?.selectedIds ?? [];
+    expect(selected).toContain("deepseek-v4-1-flash");
+    expect(selected).not.toContain("deepseek-v4-flash");
+    expect(selected).not.toContain("deepseek-v4-pro");
     dispose();
   });
 
