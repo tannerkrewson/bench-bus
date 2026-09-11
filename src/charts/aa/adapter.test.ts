@@ -170,6 +170,11 @@ describe("aaAdapter.computePoint", () => {
       slug: "deepseek-v4-pro",
       name: "DeepSeek V4 Pro",
     }, controls)!;
+    const flash41 = aaAdapter.computePoint({
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug: "deepseek-v4-1-flash",
+      name: "DeepSeek V4.1 Flash (Reasoning, Max Effort)",
+    }, controls)!;
     expect(flash).toMatchObject({
       label: "DeepSeek v4 Flash 0731",
       selectionLabel: "DeepSeek v4 Flash 0731",
@@ -177,6 +182,10 @@ describe("aaAdapter.computePoint", () => {
     expect(pro).toMatchObject({
       label: "DeepSeek v4 Pro 0813",
       selectionLabel: "DeepSeek v4 Pro 0813",
+    });
+    expect(flash41).toMatchObject({
+      label: "DeepSeek v4.1 Flash max",
+      selectionLabel: "DeepSeek v4.1 Flash max",
     });
   });
 

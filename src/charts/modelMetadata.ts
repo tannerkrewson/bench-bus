@@ -60,6 +60,10 @@ function normalizeDeepSeekRelease(value: string, id?: string): string {
     /\bdeepseek\b.*\bv4\b.*\b(?:flash|pro)\b/i.test(value) ||
     /(?:^|\/)deepseek-v4-(?:flash|pro)(?:-|$)/i.test(id ?? "");
   if (!isDeepSeekV4) return value;
+  // V4.1 is a separate product release, not the legacy V4 Flash 0731 release.
+  if (/\bv4\.1\b/i.test(value) || /(?:^|\/)deepseek-v4-1-(?:flash|pro)(?:-|$)/i.test(id ?? "")) {
+    return value;
+  }
   const product = /\bflash\b/i.test(haystack) ? "flash" : "pro";
   const explicitRelease = haystack.match(/\b(0423|0731|0813)\b/i)?.[1];
   const legacyRelease = /\b(?:0420|0424)\b/i.test(haystack);
