@@ -30,22 +30,22 @@ export const AA_DEFAULT_MODEL_SLUGS = [
   // DeepSeek rows remain available through the selector when explicitly
   // requested.
   "deepseek-v4-1-flash",
-  "glm-5-3",
   "glm-5-3-flash",
-  "grok-4-6",
-  "kimi-k3",
-  "qwen3-8-flash-next",
-  "qwen3-8-max",
-  "mimo-v2-5-0424",
-  "mimo-v2-5-pro",
+  "grok-4-7",
+  "mimo-v2-6-pro",
 ] as const;
 
 /**
- * Current releases intentionally omitted from the default view while their
- * normalized family remains eligible for automatic future-release discovery.
- * The policy is family-based; these IDs only identify the release to hide.
+ * Families whose latest plottable release should follow the source catalog
+ * automatically. Hidden IDs are retained as selector-only rows, while a
+ * newer release in the same normalized family is admitted without another
+ * code change.
  */
 export const AA_DEFAULT_AUTO_RELEASE_FAMILY_POLICIES = [
-  { seedSlug: "gemini-3-1-pro-preview", hiddenSlugs: ["gemini-3-1-pro-preview"] },
+  { seedSlug: "grok-4-7", hiddenSlugs: [] },
+  {
+    seedSlug: "gemini-3-1-pro-preview",
+    hiddenSlugs: ["gemini-2-5-pro", "gemini-3-1-pro-preview"],
+  },
   { seedSlug: "minimax-m3", hiddenSlugs: ["minimax-m3"] },
 ] as const;

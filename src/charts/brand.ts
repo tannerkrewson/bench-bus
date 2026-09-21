@@ -172,6 +172,8 @@ function stableHash(value: string): number {
 const PREFERRED_MODEL_GROUP_SLOTS: readonly [RegExp, number][] = [
   [/^deepseek(?:-|$)/, 0], // blue / sky blue
   [/^opus(?:-|$)/, 1], // orange
+  [/^grok(?:-|$)/, 2], // xAI blue
+  [/^mimo(?:-|$)/, 5], // MiMo teal
   [/(?:^|-)sol(?:-|$)/, 6], // gold; intentionally far from DeepSeek blue
   [/^gemini(?:-|$)/, 10], // violet; intentionally far from Sol teal
   [/^glm-5-3-flash(?:-|$)/, 4], // purple; intentionally far from DeepSeek blue

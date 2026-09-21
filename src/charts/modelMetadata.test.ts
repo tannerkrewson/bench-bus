@@ -134,6 +134,8 @@ describe("modelDisplayMetadata", () => {
     expect(modelReleaseFamilyKey("Gemini 3.2 Pro", "gemini-3-2-pro")).toBe("gemini-pro");
     expect(modelReleaseFamilyKey("MiniMax-M3", "minimax-m3")).toBe("minimax-m");
     expect(modelReleaseFamilyKey("MiniMax-M4", "minimax-m4")).toBe("minimax-m");
+    expect(modelReleaseFamilyKey("Grok 4.7 (xhigh)", "grok-4-7")).toBe("grok");
+    expect(modelReleaseFamilyKey("Grok 4.8 (high)", "grok-4-8-high")).toBe("grok");
   });
 
   it("pairs MiMo base and Pro rows for catalog continuity", () => {

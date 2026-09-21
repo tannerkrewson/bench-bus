@@ -113,9 +113,10 @@ export default function AaChartSection(props: AaChartSectionProps) {
       { ...defaultControls(), pricingMode: "listed", cacheHitRate: AA_DEFAULT_CACHE_HIT_RATE },
       "",
     );
-    // Keep the initial graph intentionally curated. Newer releases still
-    // replace older selected releases through latestModelVersionIds, while
-    // unrelated discoveries remain available in the selector only.
+    // Keep the initial graph intentionally curated. Configured release
+    // families discover all matching source rows, then latestModelVersionIds
+    // keeps only the newest plottable release while unrelated discoveries
+    // remain available in the selector only.
     const curatedIds: ReadonlySet<string> = new Set<string>(
       AA_DEFAULT_MODEL_SLUGS.filter((id) => !isNonReasoningModel("", id)),
     );
@@ -143,8 +144,8 @@ export default function AaChartSection(props: AaChartSectionProps) {
       })
       .map((record) => record.slug);
     // These families follow newer releases automatically. Known hidden IDs
-    // stay opt-in, while a newer Gemini Pro or MiniMax M release is selected
-    // once it appears in the current source snapshot.
+    // stay opt-in, while the newest plottable release is selected once it
+    // appears in the current source snapshot.
     const discoveredReleases = visibleRecords()
       .filter((record) => {
         const family = modelReleaseFamilyKey(record.name, record.slug);

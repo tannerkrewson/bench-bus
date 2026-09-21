@@ -141,6 +141,9 @@ describe("model brand colors", () => {
     expect(modelGroupColor("opus-6-latest", false)).toBe(COLOR_BLIND_MODEL_GROUP_PALETTE.light[1]);
     expect(modelGroupColor("opus-6-latest", true)).toBe(COLOR_BLIND_MODEL_GROUP_PALETTE.dark[1]);
     expect(modelGroupColor("grok-4-6", false)).toBe(COLOR_BLIND_MODEL_GROUP_PALETTE.light[2]);
+    expect(modelGroupColor("grok-4-7", false)).toBe(COLOR_BLIND_MODEL_GROUP_PALETTE.light[2]);
+    expect(modelGroupColor("grok-4-7", true)).toBe(COLOR_BLIND_MODEL_GROUP_PALETTE.dark[2]);
+    expect(modelGroupColor("mimo-v2-6-pro", false)).toBe(COLOR_BLIND_MODEL_GROUP_PALETTE.light[5]);
   });
 
   it("keeps DeepSeek and GLM perceptually separated in the crowded AA set", () => {

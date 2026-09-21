@@ -345,15 +345,29 @@ describe("AaChartSection", () => {
       "gpt-5-6-sol-xhigh",
       "gpt-5-6-sol",
       "gpt-6-astra",
-      "mimo-v2-5-0424",
+      "grok-4-7",
+      "mimo-v2-6-pro",
     ]));
     expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("gpt-5-6-luna-non-reasoning");
     expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("mistral-medium-3-5");
     expect(AA_DEFAULT_MODEL_SLUGS).toContain("deepseek-v4-1-flash");
     expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("deepseek-v4-flash");
     expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("deepseek-v4-pro");
+    expect(AA_DEFAULT_MODEL_SLUGS).toContain("grok-4-7");
+    expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("grok-4-6");
     expect(AA_DEFAULT_MODEL_SLUGS).toContain("glm-5-3-flash");
-    expect(AA_DEFAULT_MODEL_SLUGS).toContain("mimo-v2-5-pro");
+    expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("glm-5-3");
+    expect(AA_DEFAULT_MODEL_SLUGS).toContain("mimo-v2-6-pro");
+    expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("mimo-v2-5-0424");
+    expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("mimo-v2-5-pro");
+    for (const hiddenSlug of [
+      "qwen3-8-flash-next",
+      "qwen3-8-max",
+      "kimi-k3",
+      "gemini-2-5-pro",
+    ]) {
+      expect(AA_DEFAULT_MODEL_SLUGS).not.toContain(hiddenSlug);
+    }
     expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("gemini-3-1-pro-preview");
     expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("minimax-m3");
     expect(container.querySelector("[data-testid='aa-no-points']")).toBeNull();
@@ -361,7 +375,7 @@ describe("AaChartSection", () => {
     dispose();
   });
 
-  it("hides current Gemini Pro and MiniMax releases while following future family releases", () => {
+  it("hides configured current releases while following future family releases", () => {
     const release = (slug: string, name: string) => ({
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
       id: `vendor/${slug}`,
@@ -370,25 +384,34 @@ describe("AaChartSection", () => {
       shortName: name,
     });
     const records = [
+      release("gemini-2-5-pro", "Gemini 2.5 Pro"),
       release("gemini-3-1-pro-preview", "Gemini 3.1 Pro Preview"),
       release("gemini-3-2-pro", "Gemini 3.2 Pro"),
       release("minimax-m3", "MiniMax-M3"),
       release("minimax-m4", "MiniMax-M4"),
       release("mimo-v2-5-0424", "MiMo-V2.5"),
       release("mimo-v2-5-pro", "MiMo-V2.5-Pro"),
+      release("mimo-v2-6-pro", "MiMo-V2.6-Pro"),
     ];
     const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
     const { dispose } = mount(() => (
       <AaChartSection records={() => records} onStateChange={(state) => states.push(state)} />
     ));
     const selected = states[states.length - 1]?.selectedIds ?? [];
+    expect(selected).not.toContain("gemini-2-5-pro");
     expect(selected).not.toContain("gemini-3-1-pro-preview");
     expect(selected).toContain("gemini-3-2-pro");
     expect(selected).not.toContain("minimax-m3");
     expect(selected).toContain("minimax-m4");
-    expect(selected).toEqual(expect.arrayContaining(["mimo-v2-5-0424", "mimo-v2-5-pro"]));
+    expect(selected).not.toContain("mimo-v2-5-0424");
+    expect(selected).not.toContain("mimo-v2-5-pro");
+    expect(selected).toContain("mimo-v2-6-pro");
     expect(AA_DEFAULT_AUTO_RELEASE_FAMILY_POLICIES).toEqual([
-      { seedSlug: "gemini-3-1-pro-preview", hiddenSlugs: ["gemini-3-1-pro-preview"] },
+      { seedSlug: "grok-4-7", hiddenSlugs: [] },
+      {
+        seedSlug: "gemini-3-1-pro-preview",
+        hiddenSlugs: ["gemini-2-5-pro", "gemini-3-1-pro-preview"],
+      },
       { seedSlug: "minimax-m3", hiddenSlugs: ["minimax-m3"] },
     ]);
     dispose();
@@ -491,26 +514,105 @@ describe("AaChartSection", () => {
     dispose();
   });
 
-  it("removes superseded model releases from the implicit defaults", () => {
+  it("removes superseded Grok releases from the implicit defaults", () => {
     const oldRelease = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
-      slug: "glm-5-2",
-      name: "GLM-5.2 (max)",
-      shortName: "GLM-5.2 (max)",
+      slug: "grok-4-6",
+      name: "Grok 4.6 (max)",
+      shortName: "Grok 4.6 (max)",
     };
     const newRelease = {
       ...oldRelease,
-      slug: "glm-5-3",
-      name: "GLM-5.3 (max)",
-      shortName: "GLM-5.3 (max)",
+      slug: "grok-4-7",
+      name: "Grok 4.7 (max)",
+      shortName: "Grok 4.7 (max)",
     };
     const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
     const { dispose } = mount(() => (
       <AaChartSection records={() => [oldRelease, newRelease]} onStateChange={(state) => states.push(state)} />
     ));
     const selected = states[states.length - 1]?.selectedIds ?? [];
-    expect(selected).toContain("glm-5-3");
-    expect(selected).not.toContain("glm-5-2");
+    expect(selected).toContain("grok-4-7");
+    expect(selected).not.toContain("grok-4-6");
+    dispose();
+  });
+
+  it("automatically switches to the newest Grok release and its efforts", () => {
+    const release = (slug: string, name: string) => ({
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug,
+      name,
+      shortName: name,
+    });
+    const [records, setRecords] = createSignal([
+      release("grok-4-5", "Grok 4.5 (high)"),
+      release("grok-4-6", "Grok 4.6 (high)"),
+      release("grok-4-6-low", "Grok 4.6 (low)"),
+      release("grok-4-7", "Grok 4.7 (xhigh)"),
+      release("grok-4-7-high", "Grok 4.7 (high)"),
+    ]);
+    const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
+    const { dispose } = mount(() => (
+      <AaChartSection records={records} onStateChange={(state) => states.push(state)} />
+    ));
+
+    const initial = states[states.length - 1]?.selectedIds ?? [];
+    expect(initial).toEqual(expect.arrayContaining(["grok-4-7", "grok-4-7-high"]));
+    expect(initial).not.toContain("grok-4-5");
+    expect(initial).not.toContain("grok-4-6");
+    expect(initial).not.toContain("grok-4-6-low");
+
+    setRecords([
+      ...records(),
+      release("grok-4-8", "Grok 4.8 (xhigh)"),
+      release("grok-4-8-high", "Grok 4.8 (high)"),
+    ]);
+    const updated = states[states.length - 1]?.selectedIds ?? [];
+    expect(updated).toEqual(expect.arrayContaining(["grok-4-8", "grok-4-8-high"]));
+    expect(updated).not.toContain("grok-4-7");
+    expect(updated).not.toContain("grok-4-7-high");
+    expect(updated).not.toContain("grok-4-6");
+    dispose();
+  });
+
+  it("keeps Qwen, Kimi, and non-Flash GLM rows selector-only", () => {
+    const release = (slug: string, name: string) => ({
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug,
+      name,
+      shortName: name,
+    });
+    const records = [
+      release("qwen3-7-max", "Qwen3.7 Max"),
+      release("qwen3-8-flash-next", "Qwen3.8-Flash-Next"),
+      release("qwen3-8-max", "Qwen3.8 Max"),
+      release("kimi-k2-6", "Kimi K2.6"),
+      release("kimi-k2-7-code", "Kimi K2.7 Code"),
+      release("kimi-k3", "Kimi K3 (max)"),
+      release("glm-5-1", "GLM-5.1 (max)"),
+      release("glm-5-2", "GLM-5.2 (max)"),
+      release("glm-5-3", "GLM-5.3 (max)"),
+      release("glm-5-3-flash", "GLM 5.3 Flash"),
+    ];
+    const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
+    const { dispose } = mount(() => (
+      <AaChartSection records={() => records} onStateChange={(state) => states.push(state)} />
+    ));
+    const selected = states[states.length - 1]?.selectedIds ?? [];
+    expect(selected).toContain("glm-5-3-flash");
+    for (const hiddenSlug of [
+      "qwen3-7-max",
+      "qwen3-8-flash-next",
+      "qwen3-8-max",
+      "kimi-k2-6",
+      "kimi-k2-7-code",
+      "kimi-k3",
+      "glm-5-1",
+      "glm-5-2",
+      "glm-5-3",
+    ]) {
+      expect(selected).not.toContain(hiddenSlug);
+    }
     dispose();
   });
 
