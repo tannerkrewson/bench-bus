@@ -42,6 +42,9 @@ export const AA_DEFAULT_MODEL_SLUGS = [
  * code change.
  */
 export const AA_DEFAULT_AUTO_RELEASE_FAMILY_POLICIES = [
+  { seedSlug: "gpt-5-6-luna", hiddenSlugs: [] },
+  { seedSlug: "gpt-5-6-sol", hiddenSlugs: [] },
+  { seedSlug: "claude-opus-5", hiddenSlugs: [] },
   { seedSlug: "grok-4-7", hiddenSlugs: [] },
   {
     seedSlug: "gemini-3-1-pro-preview",
