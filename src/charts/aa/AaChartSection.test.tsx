@@ -407,6 +407,9 @@ describe("AaChartSection", () => {
     expect(selected).not.toContain("mimo-v2-5-pro");
     expect(selected).toContain("mimo-v2-6-pro");
     expect(AA_DEFAULT_AUTO_RELEASE_FAMILY_POLICIES).toEqual([
+      { seedSlug: "gpt-5-6-luna", hiddenSlugs: [] },
+      { seedSlug: "gpt-5-6-sol", hiddenSlugs: [] },
+      { seedSlug: "claude-opus-5", hiddenSlugs: [] },
       { seedSlug: "grok-4-7", hiddenSlugs: [] },
       {
         seedSlug: "gemini-3-1-pro-preview",
