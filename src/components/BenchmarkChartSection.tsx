@@ -73,6 +73,7 @@ export interface BenchmarkChartSectionProps<TRecord> {
  * Benchmark specifics come exclusively from the adapter.
  */
 export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSectionProps<TRecord>) {
+  let watermarkRegion: HTMLDivElement | undefined;
   const defaultControls = (): PricingControlState =>
     Object.fromEntries(props.adapter.controlSpecs.map((spec) => [spec.id, spec.default]));
 
@@ -324,6 +325,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
                     )}
                     scale={scale}
                     showLabels={showLabels}
+                    labelExclusionElements={() => watermarkRegion ? [watermarkRegion] : []}
                     showFrontier={showFrontier}
                     showCrowns={showCrowns}
                     showDiscounts={showDiscountsControl ? showDiscounts : undefined}
@@ -340,7 +342,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
                     title={() => hoveredInfo()?.title ?? null}
                     lines={() => hoveredInfo()?.lines ?? []}
                   />
-                  <div class="absolute bottom-20 left-32 z-10">
+                  <div ref={watermarkRegion} class="absolute bottom-20 left-32 z-10">
                     <ChartWatermark />
                   </div>
                 </div>

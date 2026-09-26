@@ -34,6 +34,8 @@ export interface BenchmarkScatterChartProps {
   yAxisLabel: () => string;
   /** Model labels are enabled by default and controlled by the section toggle. */
   showLabels?: () => boolean;
+  /** Measured overlay elements whose space model labels must leave clear. */
+  labelExclusionElements?: () => readonly HTMLElement[];
   showFrontier?: () => boolean;
   showCrowns?: () => boolean;
   showDiscounts?: () => boolean;
@@ -763,6 +765,16 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       right: overRect.right - rootRect.left - 4,
       bottom: overRect.bottom - rootRect.top - 4,
     };
+    const excludedRegions = (props.labelExclusionElements?.() ?? []).flatMap((element) => {
+      const rect = element.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return [];
+      return [{
+        left: rect.left - rootRect.left,
+        top: rect.top - rootRect.top,
+        right: rect.right - rootRect.left,
+        bottom: rect.bottom - rootRect.top,
+      }];
+    });
     const styles = themeStyles();
     const dark = styles.dark;
     const representativeById = new Map(
@@ -892,6 +904,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     });
     const baseLabels = layoutModelLabels(anchors, bounds, {
       obstacles: [...obstacles, ...crownObstacles],
+      excludedRegions,
       lines: [...discountLines, ...familyLines],
       leaderObstacles: [...obstacles, ...crownObstacles],
     });

@@ -191,6 +191,20 @@ export function joinAaWithPricing(
   deepsweAliases: readonly DeepSweAliasEntry[] = DEFAULT_DEEPSWE_ALIASES,
 ): { records: DerivedAaChartRecord[]; unmatchedAa: number; unmatchedOr: number; provisionalUsed: number } {
   const aliasSlugs = new Set(aliases.entries.map((e) => e.aaModelSlug));
+  const aliasByAaSlug = new Map(aliases.entries.map((entry) => [entry.aaModelSlug, entry] as const));
+  const effortIdentityByGroup = new Map<string, Set<string>>();
+  // AA has a separate slug per reasoning effort, while OpenRouter usually
+  // publishes pricing for one shared model page. Reuse a family identity only
+  // when every mapped effort in that exact release points to the same page.
+  for (const model of aaModels) {
+    const metadata = modelDisplayMetadata(model.name, model.slug);
+    if (!metadata.effort) continue;
+    const alias = aliasByAaSlug.get(model.slug);
+    if (!alias) continue;
+    const identities = effortIdentityByGroup.get(metadata.groupKey) ?? new Set<string>();
+    identities.add(alias.openrouterId);
+    effortIdentityByGroup.set(metadata.groupKey, identities);
+  }
   const frontierSet = new Set(frontierSlugs);
   const curatedIdentities = new Set(
     curatedModels.map((model) => `${model.aaModelSlug}\u0000${model.openrouterId}`),
@@ -233,7 +247,15 @@ export function joinAaWithPricing(
     if (isNonReasoningModel(model.name, model.slug)) {
       continue;
     }
-    const aliasOpenRouterId = aliases.entries.find((entry) => entry.aaModelSlug === model.slug)?.openrouterId;
+    const metadata = modelDisplayMetadata(model.name, model.slug);
+    const directAlias = aliasByAaSlug.get(model.slug);
+    const sharedEffortIdentities = metadata.effort
+      ? effortIdentityByGroup.get(metadata.groupKey)
+      : undefined;
+    const sharedEffortOpenRouterId = sharedEffortIdentities?.size === 1
+      ? [...sharedEffortIdentities][0]
+      : undefined;
+    const aliasOpenRouterId = directAlias?.openrouterId ?? sharedEffortOpenRouterId;
     // Effort rows in AA share the base OpenRouter model page. Prefer a direct
     // row, then use the mapped base identity when a snapshot only contains
     // that one shared pricing record.

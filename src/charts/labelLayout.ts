@@ -66,6 +66,8 @@ export interface LabelLayoutLine {
 export interface LabelLayoutOptions {
   /** Other plotted dots that labels must not cover. */
   obstacles?: readonly LabelLayoutPoint[];
+  /** Reserved overlay regions, in the same coordinate space as the bounds. */
+  excludedRegions?: readonly LabelLayoutBounds[];
   /** Discount/annotation lines that labels should not cover. */
   lines?: readonly LabelLayoutLine[];
   /** Dot/crown obstacles that leader lines must not cross. */
@@ -221,6 +223,15 @@ function overlaps(a: PositionedLabel, b: PositionedLabel): boolean {
     a.left + a.width + LABEL_GAP > b.left &&
     a.top < b.top + b.height + LABEL_GAP &&
     a.top + a.height + LABEL_GAP > b.top
+  );
+}
+
+function overlapsRegion(label: PositionedLabel, region: LabelLayoutBounds): boolean {
+  return (
+    label.left < region.right + LABEL_GAP &&
+    label.left + label.width + LABEL_GAP > region.left &&
+    label.top < region.bottom + LABEL_GAP &&
+    label.top + label.height + LABEL_GAP > region.top
   );
 }
 
@@ -435,6 +446,7 @@ export function layoutModelLabels(
           width,
           height,
         };
+        if (options.excludedRegions?.some((region) => overlapsRegion(positioned, region))) continue;
         if (placed.some((existing) => overlaps(positioned, existing))) continue;
         if (obstacles.some((point) => point.id !== layoutAnchor.id && coversPoint(positioned, point))) continue;
         if (coversPoint(positioned, { id: layoutAnchor.id, left: layoutAnchor.anchorLeft, top: layoutAnchor.anchorTop })) continue;

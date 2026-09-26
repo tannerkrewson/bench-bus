@@ -63,6 +63,7 @@ export interface AaChartSectionProps {
  * can include control-dependent rows (pricing mode, winning provider).
  */
 export default function AaChartSection(props: AaChartSectionProps) {
+  let watermarkRegion: HTMLDivElement | undefined;
   const defaultControls = (): PricingControlState =>
     Object.fromEntries(aaAdapter.controlSpecs.map((spec) => [spec.id, spec.default]));
   const initialControls = {
@@ -392,6 +393,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
                     )}
                     scale={scale}
                     showLabels={showLabels}
+                    labelExclusionElements={() => watermarkRegion ? [watermarkRegion] : []}
                     showFrontier={showFrontier}
                     showCrowns={showCrowns}
                     showDiscounts={showDiscounts}
@@ -408,7 +410,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
                     title={() => hoveredInfo()?.title ?? null}
                     lines={() => hoveredInfo()?.lines ?? []}
                   />
-                  <div class="absolute bottom-20 left-32 z-10">
+                  <div ref={watermarkRegion} class="absolute bottom-20 left-32 z-10">
                     <ChartWatermark />
                   </div>
                 </div>

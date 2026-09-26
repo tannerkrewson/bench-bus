@@ -241,20 +241,23 @@ export function latestModelVersionIds<T extends { id: string; label: string }>(
 
 /**
  * Use a provider-qualified canonical name in detail views while keeping chart
- * labels concise. Effort and source-only parenthetical annotations are omitted.
+ * labels concise. Preserve the selected reasoning effort and omit source-only
+ * parenthetical annotations.
  */
 export function expandedModelName(label: string, id?: string): string {
   const base = normalizeDeepSeekRelease(splitModelName(label).base || normalizeDisplayName(label), id);
+  const effort = modelDisplayMetadata(label, id).effort;
+  const name = effort ? `${base} (${effort})` : base;
   const haystack = `${label} ${id ?? ""}`.toLocaleLowerCase();
   if (/(?:claude|anthropic|opus|sonnet|fable)/.test(haystack)) {
-    return `Anthropic ${/^claude\b/i.test(base) ? base : `Claude ${base}`}`;
+    return `Anthropic ${/^claude\b/i.test(base) ? name : `Claude ${name}`}`;
   }
-  if (/(?:gpt|openai)/.test(haystack)) return `OpenAI ${base}`;
-  if (/(?:gemini|google)/.test(haystack)) return `Google ${base}`;
-  if (/(?:glm|z-ai)/.test(haystack)) return `Z.ai ${base}`;
-  if (/(?:muse|meta)/.test(haystack)) return `Meta ${base}`;
-  if (/(?:kimi|moonshot)/.test(haystack)) return `MoonshotAI ${base}`;
-  return base;
+  if (/(?:gpt|openai)/.test(haystack)) return `OpenAI ${name}`;
+  if (/(?:gemini|google)/.test(haystack)) return `Google ${name}`;
+  if (/(?:glm|z-ai)/.test(haystack)) return `Z.ai ${name}`;
+  if (/(?:muse|meta)/.test(haystack)) return `Meta ${name}`;
+  if (/(?:kimi|moonshot)/.test(haystack)) return `MoonshotAI ${name}`;
+  return name;
 }
 
 export function formatEffort(effort: string): string {
