@@ -5,7 +5,7 @@ import ChartDetailModal from "../ChartDetailModal";
 import ChartTooltip from "../ChartTooltip";
 import ChartWatermark from "../../components/ChartWatermark";
 import ChartSources from "../../components/ChartSources";
-import { buildChartPlot } from "../plotData";
+import { buildChartPlot, paretoFrontier } from "../plotData";
 import type {
   ChartViewState,
   PlottablePoint,
@@ -113,6 +113,9 @@ export default function AaChartSection(props: AaChartSectionProps) {
       { ...defaultControls(), pricingMode: "listed", cacheHitRate: AA_DEFAULT_CACHE_HIT_RATE },
       "",
     );
+    const openRouterBuild = buildChartPlot(visibleRecords(), aaAdapter, defaultControls(), "");
+    const frontierIds = paretoFrontier(openRouterBuild.entries.map(({ point }) => point))
+      .map((point) => point.id);
     // Keep the initial graph intentionally curated. Configured release
     // families discover all matching source rows, then latestModelVersionIds
     // keeps only the newest plottable release while unrelated discoveries
@@ -158,10 +161,15 @@ export default function AaChartSection(props: AaChartSectionProps) {
       })
       .map((record) => record.slug);
     const candidateIds = [...curatedIds, ...discoveredVariants, ...discoveredReleases];
-    return latestModelVersionIds(
+    const policyDefaultIds = latestModelVersionIds(
       listedBuild.entries.map(({ point }) => ({ id: point.id, label: point.label })),
       candidateIds,
     );
+    // Frontier membership takes precedence over release-family hiding: the
+    // cheapest OpenRouter frontier can include an older release that current
+    // default-version rules otherwise suppress. Recompute from every loaded
+    // record so defaults follow changing prices and scores automatically.
+    return [...new Set([...policyDefaultIds, ...frontierIds])];
   });
   const [selectedIds, setSelectedIds] = createSignal<string[]>(
     selectionSpecified()
