@@ -376,12 +376,26 @@ describe("AaChartSection", () => {
   });
 
   it("hides configured current releases while following future family releases", () => {
+    const releaseScores: Record<string, number> = {
+      "gemini-2-5-pro": 50,
+      "gemini-3-1-pro-preview": 55,
+      "gemini-3-2-pro": 60,
+      "minimax-m3": 50,
+      "minimax-m4": 60,
+      "mimo-v2-5-0424": 50,
+      "mimo-v2-5-pro": 55,
+      "mimo-v2-6-pro": 60,
+    };
     const release = (slug: string, name: string) => ({
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
       id: `vendor/${slug}`,
       slug,
       name,
       shortName: name,
+      scoreSources: {
+        ...AA_RECORD_PLOTTABLE_CHEAPEST.scoreSources,
+        artificialAnalysis: releaseScores[slug] ?? 50,
+      },
     });
     const records = [
       release("gemini-2-5-pro", "Gemini 2.5 Pro"),
@@ -420,25 +434,40 @@ describe("AaChartSection", () => {
     dispose();
   });
 
-  it("shows only DeepSeek V4.1 Flash in the implicit defaults", () => {
+  it("keeps a cheaper older DeepSeek frontier model despite newer releases", () => {
     const records = [
       {
         ...AA_RECORD_PLOTTABLE_CHEAPEST,
         slug: "deepseek-v4-flash",
         name: "DeepSeek V4 Flash 0731 (Reasoning, Max Effort)",
         shortName: "DeepSeek V4 Flash 0731 (max)",
+        scoreSources: { ...AA_RECORD_PLOTTABLE_CHEAPEST.scoreSources, artificialAnalysis: 70 },
+        providers: [{
+          providerName: "Low-cost provider",
+          providerSlug: "low-cost",
+          effectiveInputPrice: 0.5,
+          effectiveOutputPrice: 0.5,
+        }],
       },
       {
         ...AA_RECORD_PLOTTABLE_CHEAPEST,
         slug: "deepseek-v4-pro",
         name: "DeepSeek V4 Pro 0813 (Reasoning, Max Effort)",
         shortName: "DeepSeek V4 Pro 0813 (max)",
+        scoreSources: { ...AA_RECORD_PLOTTABLE_CHEAPEST.scoreSources, artificialAnalysis: 80 },
+        providers: [{
+          providerName: "Higher-cost provider",
+          providerSlug: "higher-cost",
+          effectiveInputPrice: 3,
+          effectiveOutputPrice: 15,
+        }],
       },
       {
         ...AA_RECORD_PLOTTABLE_CHEAPEST,
         slug: "deepseek-v4-1-flash",
         name: "DeepSeek V4.1 Flash (Reasoning, Max Effort)",
         shortName: "DeepSeek V4.1 Flash (max)",
+        scoreSources: { ...AA_RECORD_PLOTTABLE_CHEAPEST.scoreSources, artificialAnalysis: 90 },
       },
     ];
     const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
@@ -446,8 +475,8 @@ describe("AaChartSection", () => {
       <AaChartSection records={() => records} onStateChange={(state) => states.push(state)} />
     ));
     const selected = states[states.length - 1]?.selectedIds ?? [];
+    expect(selected).toContain("deepseek-v4-flash");
     expect(selected).toContain("deepseek-v4-1-flash");
-    expect(selected).not.toContain("deepseek-v4-flash");
     expect(selected).not.toContain("deepseek-v4-pro");
     dispose();
   });
@@ -523,12 +552,14 @@ describe("AaChartSection", () => {
       slug: "grok-4-6",
       name: "Grok 4.6 (max)",
       shortName: "Grok 4.6 (max)",
+      scoreSources: { ...AA_RECORD_PLOTTABLE_CHEAPEST.scoreSources, artificialAnalysis: 46 },
     };
     const newRelease = {
       ...oldRelease,
       slug: "grok-4-7",
       name: "Grok 4.7 (max)",
       shortName: "Grok 4.7 (max)",
+      scoreSources: { ...AA_RECORD_PLOTTABLE_CHEAPEST.scoreSources, artificialAnalysis: 47 },
     };
     const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
     const { dispose } = mount(() => (
@@ -546,6 +577,10 @@ describe("AaChartSection", () => {
       slug,
       name,
       shortName: name,
+      scoreSources: {
+        ...AA_RECORD_PLOTTABLE_CHEAPEST.scoreSources,
+        artificialAnalysis: Number(slug.match(/grok-(\d+)-(\d+)/)?.slice(1).join(".") ?? 0),
+      },
     });
     const [records, setRecords] = createSignal([
       release("grok-4-5", "Grok 4.5 (high)"),
@@ -584,6 +619,10 @@ describe("AaChartSection", () => {
       slug,
       name,
       shortName: name,
+      scoreSources: {
+        ...AA_RECORD_PLOTTABLE_CHEAPEST.scoreSources,
+        artificialAnalysis: slug === "glm-5-3-flash" ? 90 : 50,
+      },
     });
     const records = [
       release("qwen3-7-max", "Qwen3.7 Max"),
@@ -683,7 +722,7 @@ describe("AaChartSection", () => {
     dispose();
   });
 
-  it("keeps uncurated frontier discoveries selector-only and preserves explicit selections", () => {
+  it("automatically shows frontier discoveries and preserves explicit selections", () => {
     const frontierRecord = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
       slug: "frontier-not-curated",
@@ -709,21 +748,21 @@ describe("AaChartSection", () => {
     ));
 
     expect(container.querySelectorAll("[data-testid='model-list'] input[type='checkbox']")).toHaveLength(4);
-    expect(states[states.length - 1]?.selectedIds).not.toContain("frontier-not-curated");
+    expect(states[states.length - 1]?.selectedIds).toContain("frontier-not-curated");
     expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("frontier-not-curated");
     setRecords([...AA_FIXTURE_RECORDS, replacementFrontierRecord]);
-    expect(states[states.length - 1]?.selectedIds).not.toContain("frontier-from-new-snapshot");
+    expect(states[states.length - 1]?.selectedIds).toContain("frontier-from-new-snapshot");
     expect(states[states.length - 1]?.selectedIds).not.toContain("frontier-not-curated");
     const frontierCheckbox = container.querySelector(
       "input[aria-label='Show Frontier From New Snapshot']",
     ) as HTMLInputElement;
     frontierCheckbox.click();
-    expect(states[states.length - 1]?.selectedIds).toContain("frontier-from-new-snapshot");
+    expect(states[states.length - 1]?.selectedIds).not.toContain("frontier-from-new-snapshot");
     const reset = [...container.querySelectorAll("[data-testid='model-list'] button")].find(
       (button) => button.textContent === "Reset to default",
     );
     reset?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    expect(states[states.length - 1]?.selectedIds).not.toContain("frontier-from-new-snapshot");
+    expect(states[states.length - 1]?.selectedIds).toContain("frontier-from-new-snapshot");
     dispose();
 
     const explicitStates: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
