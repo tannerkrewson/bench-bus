@@ -1,0 +1,5621 @@
+{
+  "schemaVersion": 1,
+  "source": "openrouter",
+  "recordSchemaVersion": 1,
+  "observedAt": "2026-10-14T00:09:38.750Z",
+  "records": [
+    {
+      "permaslug": "anthropic/claude-haiku-5.5",
+      "aaModelSlug": "claude-haiku-5-5-high",
+      "aaModelId": "20829974-af06-497e-9f42-77fb958d43b9",
+      "weightedInputPrice": 0.07458889554093684,
+      "weightedOutputPrice": 0.5973924732050212,
+      "providerSummaries": [
+        {
+          "providerName": "Anthropic",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 0.059360073915843706,
+          "effectiveOutputPrice": 0.6361673146616715
+        },
+        {
+          "providerName": "Claude Platform on AWS",
+          "providerSlug": "claude-on-aws",
+          "effectiveInputPrice": 0.09792449979644562,
+          "effectiveOutputPrice": 0.5624511068853668
+        },
+        {
+          "providerName": "Google Vertex (1)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.08403346689257012,
+          "effectiveOutputPrice": 0.6671511216429531
+        },
+        {
+          "providerName": "Amazon Bedrock (1)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.051193365715630074,
+          "effectiveOutputPrice": 0.795449890621402
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.09231472272580675,
+          "effectiveOutputPrice": 0.5312574414095125
+        },
+        {
+          "providerName": "Google Vertex (3)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.07491366163887794,
+          "effectiveOutputPrice": 0.6848998283178627
+        },
+        {
+          "providerName": "Google Vertex (2)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.05772251062902194,
+          "effectiveOutputPrice": 0.6628467211686361
+        },
+        {
+          "providerName": "Amazon Bedrock (3)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.06462901916703442,
+          "effectiveOutputPrice": 1.5158202827377076
+        },
+        {
+          "providerName": "Amazon Bedrock (2)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.14501781719662651,
+          "effectiveOutputPrice": 0.9657296163666558
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.053361649035527696,
+          "effectiveOutputPrice": 0.5453521298297963
+        }
+      ],
+      "listedInputPrice": 0.09999999999999999,
+      "listedOutputPrice": 0.5,
+      "listedCacheReadPrice": 0.01,
+      "listedCacheWritePrice": 0.125
+    },
+    {
+      "permaslug": "anthropic/claude-haiku-5.5",
+      "aaModelSlug": "claude-haiku-5-5-medium",
+      "aaModelId": "af26fff4-8120-41be-a5f0-86aaea023f20",
+      "weightedInputPrice": 0.07458889554093684,
+      "weightedOutputPrice": 0.5973924732050212,
+      "providerSummaries": [
+        {
+          "providerName": "Anthropic",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 0.059360073915843706,
+          "effectiveOutputPrice": 0.6361673146616715
+        },
+        {
+          "providerName": "Claude Platform on AWS",
+          "providerSlug": "claude-on-aws",
+          "effectiveInputPrice": 0.09792449979644562,
+          "effectiveOutputPrice": 0.5624511068853668
+        },
+        {
+          "providerName": "Google Vertex (1)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.08403346689257012,
+          "effectiveOutputPrice": 0.6671511216429531
+        },
+        {
+          "providerName": "Amazon Bedrock (1)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.051193365715630074,
+          "effectiveOutputPrice": 0.795449890621402
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.09231472272580675,
+          "effectiveOutputPrice": 0.5312574414095125
+        },
+        {
+          "providerName": "Google Vertex (3)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.07491366163887794,
+          "effectiveOutputPrice": 0.6848998283178627
+        },
+        {
+          "providerName": "Google Vertex (2)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.05772251062902194,
+          "effectiveOutputPrice": 0.6628467211686361
+        },
+        {
+          "providerName": "Amazon Bedrock (3)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.06462901916703442,
+          "effectiveOutputPrice": 1.5158202827377076
+        },
+        {
+          "providerName": "Amazon Bedrock (2)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.14501781719662651,
+          "effectiveOutputPrice": 0.9657296163666558
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.053361649035527696,
+          "effectiveOutputPrice": 0.5453521298297963
+        }
+      ],
+      "listedInputPrice": 0.09999999999999999,
+      "listedOutputPrice": 0.5,
+      "listedCacheReadPrice": 0.01,
+      "listedCacheWritePrice": 0.125
+    },
+    {
+      "permaslug": "anthropic/claude-haiku-5.5",
+      "aaModelSlug": "claude-haiku-5-5-xhigh",
+      "aaModelId": "41b5bf5e-daf6-42d9-b8d1-60e340a3028d",
+      "weightedInputPrice": 0.07458889554093684,
+      "weightedOutputPrice": 0.5973924732050212,
+      "providerSummaries": [
+        {
+          "providerName": "Anthropic",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 0.059360073915843706,
+          "effectiveOutputPrice": 0.6361673146616715
+        },
+        {
+          "providerName": "Claude Platform on AWS",
+          "providerSlug": "claude-on-aws",
+          "effectiveInputPrice": 0.09792449979644562,
+          "effectiveOutputPrice": 0.5624511068853668
+        },
+        {
+          "providerName": "Google Vertex (1)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.08403346689257012,
+          "effectiveOutputPrice": 0.6671511216429531
+        },
+        {
+          "providerName": "Amazon Bedrock (1)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.051193365715630074,
+          "effectiveOutputPrice": 0.795449890621402
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.09231472272580675,
+          "effectiveOutputPrice": 0.5312574414095125
+        },
+        {
+          "providerName": "Google Vertex (3)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.07491366163887794,
+          "effectiveOutputPrice": 0.6848998283178627
+        },
+        {
+          "providerName": "Google Vertex (2)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.05772251062902194,
+          "effectiveOutputPrice": 0.6628467211686361
+        },
+        {
+          "providerName": "Amazon Bedrock (3)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.06462901916703442,
+          "effectiveOutputPrice": 1.5158202827377076
+        },
+        {
+          "providerName": "Amazon Bedrock (2)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.14501781719662651,
+          "effectiveOutputPrice": 0.9657296163666558
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.053361649035527696,
+          "effectiveOutputPrice": 0.5453521298297963
+        }
+      ],
+      "listedInputPrice": 0.09999999999999999,
+      "listedOutputPrice": 0.5,
+      "listedCacheReadPrice": 0.01,
+      "listedCacheWritePrice": 0.125
+    },
+    {
+      "permaslug": "anthropic/claude-opus-4.7",
+      "aaModelSlug": "claude-opus-4-7",
+      "aaModelId": "e9a09db3-8fd6-41dd-ba2f-20e0a2bff7f2",
+      "weightedInputPrice": 3.366547019834021,
+      "weightedOutputPrice": 24.999999999999996,
+      "providerSummaries": [
+        {
+          "providerName": "Amazon Bedrock (1)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 3.8244815179778633,
+          "effectiveOutputPrice": 25
+        },
+        {
+          "providerName": "Claude Platform on AWS (2)",
+          "providerSlug": "claude-on-aws",
+          "effectiveInputPrice": 1.8984649524472992,
+          "effectiveOutputPrice": 24.999999999999996
+        },
+        {
+          "providerName": "Google Vertex (1)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 4.298415886572443,
+          "effectiveOutputPrice": 25
+        },
+        {
+          "providerName": "Anthropic (2)",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 5.432068241871214,
+          "effectiveOutputPrice": 25
+        }
+      ],
+      "listedInputPrice": 5,
+      "listedOutputPrice": 25,
+      "listedCacheReadPrice": 0.5,
+      "listedCacheWritePrice": 6.25
+    },
+    {
+      "permaslug": "anthropic/claude-opus-4.8",
+      "aaModelSlug": "claude-opus-4-8",
+      "aaModelId": "992b7b84-5069-4c6a-9295-834252553d50",
+      "weightedInputPrice": 1.1735618935973526,
+      "weightedOutputPrice": 25.79278288282858,
+      "providerSummaries": [
+        {
+          "providerName": "Claude Platform on AWS",
+          "providerSlug": "claude-on-aws",
+          "effectiveInputPrice": 0.9910388196734898,
+          "effectiveOutputPrice": 24.999999999999996
+        },
+        {
+          "providerName": "Google Vertex (2)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 1.5540360569258527,
+          "effectiveOutputPrice": 25
+        },
+        {
+          "providerName": "Anthropic (1)",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 1.8369437244661546,
+          "effectiveOutputPrice": 50,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Amazon Bedrock (3)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 2.002058547612089,
+          "effectiveOutputPrice": 25
+        },
+        {
+          "providerName": "Anthropic (2)",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 3.8137538877578736,
+          "effectiveOutputPrice": 24.999999999999996
+        },
+        {
+          "providerName": "Amazon Bedrock (1)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 1.8871193229585779,
+          "effectiveOutputPrice": 27.499688084840923
+        }
+      ],
+      "listedInputPrice": 5,
+      "listedOutputPrice": 25,
+      "listedCacheReadPrice": 0.5,
+      "listedCacheWritePrice": 6.25
+    },
+    {
+      "permaslug": "anthropic/claude-opus-5",
+      "aaModelSlug": "claude-opus-5",
+      "aaModelId": "b8fc61f7-5e9a-49e6-8547-6ac56db24627",
+      "weightedInputPrice": 1.1103900944947114,
+      "weightedOutputPrice": 25.064522479189854,
+      "providerSummaries": [
+        {
+          "providerName": "Amazon Bedrock (3)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.9502592142064241,
+          "effectiveOutputPrice": 25
+        },
+        {
+          "providerName": "Claude Platform on AWS",
+          "providerSlug": "claude-on-aws",
+          "effectiveInputPrice": 1.1932845155285507,
+          "effectiveOutputPrice": 25
+        },
+        {
+          "providerName": "Anthropic (3)",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 1.197261356981362,
+          "effectiveOutputPrice": 24.999999999999996
+        },
+        {
+          "providerName": "Google Vertex (4)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 2.6545262638521736,
+          "effectiveOutputPrice": 24.999999999999996
+        },
+        {
+          "providerName": "Google Vertex (2)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 3.14550177651464,
+          "effectiveOutputPrice": 27.499683469015913
+        },
+        {
+          "providerName": "Anthropic (2)",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 3.069623410144909,
+          "effectiveOutputPrice": 49.99999999999999,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Amazon Bedrock (4)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 1.4479338671686781,
+          "effectiveOutputPrice": 27.499722505068295
+        },
+        {
+          "providerName": "Amazon Bedrock (2)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.8457621540044461,
+          "effectiveOutputPrice": 27.49984363989643
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 5.073373818227645,
+          "effectiveOutputPrice": 25
+        },
+        {
+          "providerName": "Google Vertex (1)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.9636444962641807,
+          "effectiveOutputPrice": 27.499625561657513
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 3.2617720144500826,
+          "effectiveOutputPrice": 27.499458288190684
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0,
+          "effectiveOutputPrice": 0
+        }
+      ],
+      "listedInputPrice": 5,
+      "listedOutputPrice": 25,
+      "listedCacheReadPrice": 0.5,
+      "listedCacheWritePrice": 6.25
+    },
+    {
+      "permaslug": "anthropic/claude-opus-5.5",
+      "aaModelSlug": "claude-opus-5-5",
+      "aaModelId": "2f3c4dc9-a450-4303-8697-0237257cf08f",
+      "weightedInputPrice": 0.6769291799077642,
+      "weightedOutputPrice": 20.300635829103488,
+      "providerSummaries": [
+        {
+          "providerName": "Claude Platform on AWS",
+          "providerSlug": "claude-on-aws",
+          "effectiveInputPrice": 0.584810922133028,
+          "effectiveOutputPrice": 19.999999968755844
+        },
+        {
+          "providerName": "Amazon Bedrock (2)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.7214777796469992,
+          "effectiveOutputPrice": 19.999733484160057
+        },
+        {
+          "providerName": "Anthropic (1)",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 0.7546771419098988,
+          "effectiveOutputPrice": 20
+        },
+        {
+          "providerName": "Google Vertex (3)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 1.031538831245678,
+          "effectiveOutputPrice": 20
+        },
+        {
+          "providerName": "Anthropic (2)",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 0.9855761955645618,
+          "effectiveOutputPrice": 40,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Amazon Bedrock (3)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 1.061847804280378,
+          "effectiveOutputPrice": 22
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.8939942245834345,
+          "effectiveOutputPrice": 20
+        },
+        {
+          "providerName": "Amazon Bedrock (1)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 1.0526746318473132,
+          "effectiveOutputPrice": 21.99979829231364
+        },
+        {
+          "providerName": "Google Vertex (1)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 1.4942776777849214,
+          "effectiveOutputPrice": 22
+        },
+        {
+          "providerName": "Google Vertex (2)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 2.6106958207791866,
+          "effectiveOutputPrice": 22
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 2.2759139472345375,
+          "effectiveOutputPrice": 22
+        }
+      ],
+      "listedInputPrice": 4,
+      "listedOutputPrice": 20,
+      "listedCacheReadPrice": 0.19999999999999998,
+      "listedCacheWritePrice": 5
+    },
+    {
+      "permaslug": "anthropic/claude-opus-5.5",
+      "aaModelSlug": "claude-opus-5-5-high",
+      "aaModelId": "f314eade-2232-44bf-a3ab-9b326bc67de6",
+      "weightedInputPrice": 0.6769291799077642,
+      "weightedOutputPrice": 20.300635829103488,
+      "providerSummaries": [
+        {
+          "providerName": "Claude Platform on AWS",
+          "providerSlug": "claude-on-aws",
+          "effectiveInputPrice": 0.584810922133028,
+          "effectiveOutputPrice": 19.999999968755844
+        },
+        {
+          "providerName": "Amazon Bedrock (2)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.7214777796469992,
+          "effectiveOutputPrice": 19.999733484160057
+        },
+        {
+          "providerName": "Anthropic (1)",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 0.7546771419098988,
+          "effectiveOutputPrice": 20
+        },
+        {
+          "providerName": "Google Vertex (3)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 1.031538831245678,
+          "effectiveOutputPrice": 20
+        },
+        {
+          "providerName": "Anthropic (2)",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 0.9855761955645618,
+          "effectiveOutputPrice": 40,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Amazon Bedrock (3)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 1.061847804280378,
+          "effectiveOutputPrice": 22
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.8939942245834345,
+          "effectiveOutputPrice": 20
+        },
+        {
+          "providerName": "Amazon Bedrock (1)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 1.0526746318473132,
+          "effectiveOutputPrice": 21.99979829231364
+        },
+        {
+          "providerName": "Google Vertex (1)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 1.4942776777849214,
+          "effectiveOutputPrice": 22
+        },
+        {
+          "providerName": "Google Vertex (2)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 2.6106958207791866,
+          "effectiveOutputPrice": 22
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 2.2759139472345375,
+          "effectiveOutputPrice": 22
+        }
+      ],
+      "listedInputPrice": 4,
+      "listedOutputPrice": 20,
+      "listedCacheReadPrice": 0.19999999999999998,
+      "listedCacheWritePrice": 5
+    },
+    {
+      "permaslug": "anthropic/claude-opus-5.5",
+      "aaModelSlug": "claude-opus-5-5-xhigh",
+      "aaModelId": "df5bf99d-d228-4715-b41b-19ca86118777",
+      "weightedInputPrice": 0.6769291799077642,
+      "weightedOutputPrice": 20.300635829103488,
+      "providerSummaries": [
+        {
+          "providerName": "Claude Platform on AWS",
+          "providerSlug": "claude-on-aws",
+          "effectiveInputPrice": 0.584810922133028,
+          "effectiveOutputPrice": 19.999999968755844
+        },
+        {
+          "providerName": "Amazon Bedrock (2)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.7214777796469992,
+          "effectiveOutputPrice": 19.999733484160057
+        },
+        {
+          "providerName": "Anthropic (1)",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 0.7546771419098988,
+          "effectiveOutputPrice": 20
+        },
+        {
+          "providerName": "Google Vertex (3)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 1.031538831245678,
+          "effectiveOutputPrice": 20
+        },
+        {
+          "providerName": "Anthropic (2)",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 0.9855761955645618,
+          "effectiveOutputPrice": 40,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Amazon Bedrock (3)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 1.061847804280378,
+          "effectiveOutputPrice": 22
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.8939942245834345,
+          "effectiveOutputPrice": 20
+        },
+        {
+          "providerName": "Amazon Bedrock (1)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 1.0526746318473132,
+          "effectiveOutputPrice": 21.99979829231364
+        },
+        {
+          "providerName": "Google Vertex (1)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 1.4942776777849214,
+          "effectiveOutputPrice": 22
+        },
+        {
+          "providerName": "Google Vertex (2)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 2.6106958207791866,
+          "effectiveOutputPrice": 22
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 2.2759139472345375,
+          "effectiveOutputPrice": 22
+        }
+      ],
+      "listedInputPrice": 4,
+      "listedOutputPrice": 20,
+      "listedCacheReadPrice": 0.19999999999999998,
+      "listedCacheWritePrice": 5
+    },
+    {
+      "permaslug": "anthropic/claude-opus-5",
+      "aaModelSlug": "claude-opus-5-high",
+      "aaModelId": "712be54a-77ae-41b2-9a58-21181479d6ee",
+      "weightedInputPrice": 1.1103900944947114,
+      "weightedOutputPrice": 25.064522479189854,
+      "providerSummaries": [
+        {
+          "providerName": "Amazon Bedrock (3)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.9502592142064241,
+          "effectiveOutputPrice": 25
+        },
+        {
+          "providerName": "Claude Platform on AWS",
+          "providerSlug": "claude-on-aws",
+          "effectiveInputPrice": 1.1932845155285507,
+          "effectiveOutputPrice": 25
+        },
+        {
+          "providerName": "Anthropic (3)",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 1.197261356981362,
+          "effectiveOutputPrice": 24.999999999999996
+        },
+        {
+          "providerName": "Google Vertex (4)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 2.6545262638521736,
+          "effectiveOutputPrice": 24.999999999999996
+        },
+        {
+          "providerName": "Google Vertex (2)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 3.14550177651464,
+          "effectiveOutputPrice": 27.499683469015913
+        },
+        {
+          "providerName": "Anthropic (2)",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 3.069623410144909,
+          "effectiveOutputPrice": 49.99999999999999,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Amazon Bedrock (4)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 1.4479338671686781,
+          "effectiveOutputPrice": 27.499722505068295
+        },
+        {
+          "providerName": "Amazon Bedrock (2)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.8457621540044461,
+          "effectiveOutputPrice": 27.49984363989643
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 5.073373818227645,
+          "effectiveOutputPrice": 25
+        },
+        {
+          "providerName": "Google Vertex (1)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.9636444962641807,
+          "effectiveOutputPrice": 27.499625561657513
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 3.2617720144500826,
+          "effectiveOutputPrice": 27.499458288190684
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0,
+          "effectiveOutputPrice": 0
+        }
+      ],
+      "listedInputPrice": 5,
+      "listedOutputPrice": 25,
+      "listedCacheReadPrice": 0.5,
+      "listedCacheWritePrice": 6.25
+    },
+    {
+      "permaslug": "anthropic/claude-opus-5",
+      "aaModelSlug": "claude-opus-5-medium",
+      "aaModelId": "ff51be8f-e362-4a7e-9043-687ba15de207",
+      "weightedInputPrice": 1.1103900944947114,
+      "weightedOutputPrice": 25.064522479189854,
+      "providerSummaries": [
+        {
+          "providerName": "Amazon Bedrock (3)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.9502592142064241,
+          "effectiveOutputPrice": 25
+        },
+        {
+          "providerName": "Claude Platform on AWS",
+          "providerSlug": "claude-on-aws",
+          "effectiveInputPrice": 1.1932845155285507,
+          "effectiveOutputPrice": 25
+        },
+        {
+          "providerName": "Anthropic (3)",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 1.197261356981362,
+          "effectiveOutputPrice": 24.999999999999996
+        },
+        {
+          "providerName": "Google Vertex (4)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 2.6545262638521736,
+          "effectiveOutputPrice": 24.999999999999996
+        },
+        {
+          "providerName": "Google Vertex (2)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 3.14550177651464,
+          "effectiveOutputPrice": 27.499683469015913
+        },
+        {
+          "providerName": "Anthropic (2)",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 3.069623410144909,
+          "effectiveOutputPrice": 49.99999999999999,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Amazon Bedrock (4)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 1.4479338671686781,
+          "effectiveOutputPrice": 27.499722505068295
+        },
+        {
+          "providerName": "Amazon Bedrock (2)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.8457621540044461,
+          "effectiveOutputPrice": 27.49984363989643
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 5.073373818227645,
+          "effectiveOutputPrice": 25
+        },
+        {
+          "providerName": "Google Vertex (1)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.9636444962641807,
+          "effectiveOutputPrice": 27.499625561657513
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 3.2617720144500826,
+          "effectiveOutputPrice": 27.499458288190684
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0,
+          "effectiveOutputPrice": 0
+        }
+      ],
+      "listedInputPrice": 5,
+      "listedOutputPrice": 25,
+      "listedCacheReadPrice": 0.5,
+      "listedCacheWritePrice": 6.25
+    },
+    {
+      "permaslug": "anthropic/claude-opus-5",
+      "aaModelSlug": "claude-opus-5-xhigh",
+      "aaModelId": "1305c921-7aaa-4d6d-99b5-99b3acf15e19",
+      "weightedInputPrice": 1.1103900944947114,
+      "weightedOutputPrice": 25.064522479189854,
+      "providerSummaries": [
+        {
+          "providerName": "Amazon Bedrock (3)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.9502592142064241,
+          "effectiveOutputPrice": 25
+        },
+        {
+          "providerName": "Claude Platform on AWS",
+          "providerSlug": "claude-on-aws",
+          "effectiveInputPrice": 1.1932845155285507,
+          "effectiveOutputPrice": 25
+        },
+        {
+          "providerName": "Anthropic (3)",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 1.197261356981362,
+          "effectiveOutputPrice": 24.999999999999996
+        },
+        {
+          "providerName": "Google Vertex (4)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 2.6545262638521736,
+          "effectiveOutputPrice": 24.999999999999996
+        },
+        {
+          "providerName": "Google Vertex (2)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 3.14550177651464,
+          "effectiveOutputPrice": 27.499683469015913
+        },
+        {
+          "providerName": "Anthropic (2)",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 3.069623410144909,
+          "effectiveOutputPrice": 49.99999999999999,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Amazon Bedrock (4)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 1.4479338671686781,
+          "effectiveOutputPrice": 27.499722505068295
+        },
+        {
+          "providerName": "Amazon Bedrock (2)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.8457621540044461,
+          "effectiveOutputPrice": 27.49984363989643
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 5.073373818227645,
+          "effectiveOutputPrice": 25
+        },
+        {
+          "providerName": "Google Vertex (1)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.9636444962641807,
+          "effectiveOutputPrice": 27.499625561657513
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 3.2617720144500826,
+          "effectiveOutputPrice": 27.499458288190684
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0,
+          "effectiveOutputPrice": 0
+        }
+      ],
+      "listedInputPrice": 5,
+      "listedOutputPrice": 25,
+      "listedCacheReadPrice": 0.5,
+      "listedCacheWritePrice": 6.25
+    },
+    {
+      "permaslug": "anthropic/claude-sonnet-5",
+      "aaModelSlug": "claude-sonnet-5",
+      "aaModelId": "23c86e4a-c769-43c0-a056-79e3cd15834f",
+      "weightedInputPrice": 0.6868561576866421,
+      "weightedOutputPrice": 10.01546522372611,
+      "providerSummaries": [
+        {
+          "providerName": "Claude Platform on AWS",
+          "providerSlug": "claude-on-aws",
+          "effectiveInputPrice": 0.7174855084122432,
+          "effectiveOutputPrice": 10
+        },
+        {
+          "providerName": "Anthropic",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 0.5560003512632572,
+          "effectiveOutputPrice": 10
+        },
+        {
+          "providerName": "Amazon Bedrock (3)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.6433077770364105,
+          "effectiveOutputPrice": 10
+        },
+        {
+          "providerName": "Google Vertex (2)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 1.1064924899199415,
+          "effectiveOutputPrice": 10
+        },
+        {
+          "providerName": "Google Vertex (3)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.8267801336100339,
+          "effectiveOutputPrice": 11
+        },
+        {
+          "providerName": "Amazon Bedrock (2)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.3756580034419621,
+          "effectiveOutputPrice": 11
+        },
+        {
+          "providerName": "Amazon Bedrock (1)",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.9758655306746471,
+          "effectiveOutputPrice": 11.000000000000002
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.953818355746015,
+          "effectiveOutputPrice": 10
+        },
+        {
+          "providerName": "Google Vertex (1)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.6464796588677785,
+          "effectiveOutputPrice": 11
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.305796080842946,
+          "effectiveOutputPrice": 11
+        }
+      ],
+      "listedInputPrice": 2,
+      "listedOutputPrice": 10,
+      "listedCacheReadPrice": 0.19999999999999998,
+      "listedCacheWritePrice": 2.5
+    },
+    {
+      "permaslug": "anthropic/claude-sonnet-5.5",
+      "aaModelSlug": "claude-sonnet-5-5",
+      "aaModelId": "b171d979-5ec1-45de-b8b9-db1ee65e77ec",
+      "weightedInputPrice": 0.471798615588842,
+      "weightedOutputPrice": 10.00751748549946,
+      "providerSummaries": [
+        {
+          "providerName": "Claude Platform on AWS",
+          "providerSlug": "claude-on-aws",
+          "effectiveInputPrice": 0.6224574691061372,
+          "effectiveOutputPrice": 9.999999980951998
+        },
+        {
+          "providerName": "Google Vertex (1)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.26526351167044726,
+          "effectiveOutputPrice": 10
+        },
+        {
+          "providerName": "Anthropic",
+          "providerSlug": "anthropic",
+          "effectiveInputPrice": 0.3797375899955569,
+          "effectiveOutputPrice": 10
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.0305680893431186,
+          "effectiveOutputPrice": 10
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.44452233240936767,
+          "effectiveOutputPrice": 10
+        },
+        {
+          "providerName": "Google Vertex (2)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.4922747322691131,
+          "effectiveOutputPrice": 11
+        },
+        {
+          "providerName": "Google Vertex (3)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.8559760640717149,
+          "effectiveOutputPrice": 11
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.7709816048592066,
+          "effectiveOutputPrice": 11
+        }
+      ],
+      "listedInputPrice": 2,
+      "listedOutputPrice": 10,
+      "listedCacheReadPrice": 0.09999999999999999,
+      "listedCacheWritePrice": 2.5
+    },
+    {
+      "permaslug": "deepseek/deepseek-v4.1-flash",
+      "aaModelSlug": "deepseek-v4-1-flash",
+      "aaModelId": "dbe7c625-3100-4463-b479-a228c41f75dd",
+      "weightedInputPrice": 0.020014705869409826,
+      "weightedOutputPrice": 0.730654990283885,
+      "providerSummaries": [
+        {
+          "providerName": "DeepSeek",
+          "providerSlug": "deepseek",
+          "effectiveInputPrice": 0.011315457865322861,
+          "effectiveOutputPrice": 0.6831989561004739
+        },
+        {
+          "providerName": "DeepInfra",
+          "providerSlug": "deepinfra",
+          "effectiveInputPrice": 0.010704939829091584,
+          "effectiveOutputPrice": 0.42219776100304984,
+          "listedInputPrice": 0.20000000000000004,
+          "listedOutputPrice": 0.6,
+          "discountPercentage": 30
+        },
+        {
+          "providerName": "Together",
+          "providerSlug": "together",
+          "effectiveInputPrice": 0.026856272929509494,
+          "effectiveOutputPrice": 1.1995348200734335
+        },
+        {
+          "providerName": "DigitalOcean",
+          "providerSlug": "digitalocean",
+          "effectiveInputPrice": 0.013249320854773703,
+          "effectiveOutputPrice": 0.6596070418402856
+        },
+        {
+          "providerName": "inference.net",
+          "providerSlug": "inference-net",
+          "effectiveInputPrice": 0.015652150329506072,
+          "effectiveOutputPrice": 0.5573511467285672
+        },
+        {
+          "providerName": "Morph",
+          "providerSlug": "morph",
+          "effectiveInputPrice": 0.014225908433420711,
+          "effectiveOutputPrice": 0.6671594576002099
+        },
+        {
+          "providerName": "NovitaAI",
+          "providerSlug": "novita",
+          "effectiveInputPrice": 0.0326231508802267,
+          "effectiveOutputPrice": 0.8230573295718736,
+          "listedInputPrice": 0.3,
+          "listedOutputPrice": 1.2,
+          "discountPercentage": 35
+        },
+        {
+          "providerName": "CoreWeave",
+          "providerSlug": "coreweave",
+          "effectiveInputPrice": 0.055534032538588025,
+          "effectiveOutputPrice": 0.6495657130841093
+        },
+        {
+          "providerName": "Fireworks (1)",
+          "providerSlug": "fireworks",
+          "effectiveInputPrice": 0.08422789263199781,
+          "effectiveOutputPrice": 1.1998752344797166
+        },
+        {
+          "providerName": "StreamLake",
+          "providerSlug": "streamlake",
+          "effectiveInputPrice": 0.023136393703579755,
+          "effectiveOutputPrice": 0.5874323622053599,
+          "listedInputPrice": 0.30000000000000004,
+          "listedOutputPrice": 1.2000000000000002,
+          "discountPercentage": 51
+        },
+        {
+          "providerName": "Open Inference",
+          "providerSlug": "open-inference",
+          "effectiveInputPrice": 0.008701115653764897,
+          "effectiveOutputPrice": 0.7486371287743683
+        },
+        {
+          "providerName": "Crusoe",
+          "providerSlug": "crusoe",
+          "effectiveInputPrice": 0.024085123016778995,
+          "effectiveOutputPrice": 1.1997042642318958
+        },
+        {
+          "providerName": "Wafer",
+          "providerSlug": "wafer",
+          "effectiveInputPrice": 0.0236181662929739,
+          "effectiveOutputPrice": 0.7945360635418411
+        },
+        {
+          "providerName": "Relace",
+          "providerSlug": "relace",
+          "effectiveInputPrice": 0.012703653880225006,
+          "effectiveOutputPrice": 0.5997848747516413
+        },
+        {
+          "providerName": "Alibaba Cloud Int.",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 0.05009691113863042,
+          "effectiveOutputPrice": 0.967742830961218
+        },
+        {
+          "providerName": "Baidu Qianfan",
+          "providerSlug": "baidu",
+          "effectiveInputPrice": 0.014160875376275868,
+          "effectiveOutputPrice": 0.4049412578485324
+        },
+        {
+          "providerName": "Parasail",
+          "providerSlug": "parasail",
+          "effectiveInputPrice": 0.02957461017502733,
+          "effectiveOutputPrice": 1.1997415571060097
+        },
+        {
+          "providerName": "Baseten (2)",
+          "providerSlug": "baseten",
+          "effectiveInputPrice": 0.03298861196970137,
+          "effectiveOutputPrice": 1.1995733015812013
+        },
+        {
+          "providerName": "GMICloud",
+          "providerSlug": "gmicloud",
+          "effectiveInputPrice": 0.018748587278178314,
+          "effectiveOutputPrice": 0.7201188029034865,
+          "listedInputPrice": 0.3,
+          "listedOutputPrice": 1.2,
+          "discountPercentage": 40
+        },
+        {
+          "providerName": "Modal",
+          "providerSlug": "modal",
+          "effectiveInputPrice": 0.05329802987913415,
+          "effectiveOutputPrice": 1.199752136511387
+        },
+        {
+          "providerName": "Makora",
+          "providerSlug": "makora",
+          "effectiveInputPrice": 0.04687701092598283,
+          "effectiveOutputPrice": 1.1496835727252905
+        },
+        {
+          "providerName": "Decart",
+          "providerSlug": "decart",
+          "effectiveInputPrice": 0.04556264400616036,
+          "effectiveOutputPrice": 0.17963331538591504
+        },
+        {
+          "providerName": "Ionstream",
+          "providerSlug": "ionstream",
+          "effectiveInputPrice": 0.02426025208114389,
+          "effectiveOutputPrice": 0.9140092652964449
+        },
+        {
+          "providerName": "Venice",
+          "providerSlug": "venice",
+          "effectiveInputPrice": 0.040909380765316646,
+          "effectiveOutputPrice": 1.1997105419972052
+        },
+        {
+          "providerName": "Sail Research",
+          "providerSlug": "sail-research",
+          "effectiveInputPrice": 0.01883642335376021,
+          "effectiveOutputPrice": 0.299657548385286
+        },
+        {
+          "providerName": "Fireworks (2)",
+          "providerSlug": "fireworks",
+          "effectiveInputPrice": 0.033734424138679275,
+          "effectiveOutputPrice": 1.7993280686596909
+        },
+        {
+          "providerName": "AtlasCloud",
+          "providerSlug": "atlas-cloud",
+          "effectiveInputPrice": 0.09862238398948155,
+          "effectiveOutputPrice": 0.9565465926055736
+        },
+        {
+          "providerName": "Baseten (1)",
+          "providerSlug": "baseten",
+          "effectiveInputPrice": 0.062477257752989915,
+          "effectiveOutputPrice": 1.1991699432024883
+        },
+        {
+          "providerName": "Phala",
+          "providerSlug": "phala",
+          "effectiveInputPrice": 0.04821112093041531,
+          "effectiveOutputPrice": 0.8395491817939099,
+          "listedInputPrice": 0.3,
+          "listedOutputPrice": 1.2,
+          "discountPercentage": 30
+        },
+        {
+          "providerName": "SiliconFlow",
+          "providerSlug": "siliconflow",
+          "effectiveInputPrice": 0.056668637239791174,
+          "effectiveOutputPrice": 1.1996560097509485
+        },
+        {
+          "providerName": "Baseten Fast",
+          "providerSlug": "baseten",
+          "effectiveInputPrice": 0.30368162464432324,
+          "effectiveOutputPrice": 2.398910285747178
+        },
+        {
+          "providerName": "Cloudflare",
+          "providerSlug": "cloudflare",
+          "effectiveInputPrice": 0.02886096008750302,
+          "effectiveOutputPrice": 1.1845663970042841
+        }
+      ],
+      "listedInputPrice": 0.15,
+      "listedOutputPrice": 0.6,
+      "listedCacheReadPrice": 0.003
+    },
+    {
+      "permaslug": "deepseek/deepseek-v4-flash-0731",
+      "aaModelSlug": "deepseek-v4-flash",
+      "aaModelId": "fe4c0848-e284-4e52-a79d-cdc28392f1a9",
+      "weightedInputPrice": 0.05633189938545657,
+      "weightedOutputPrice": 0.41942581939042034,
+      "providerSummaries": [
+        {
+          "providerName": "Relace",
+          "providerSlug": "relace",
+          "effectiveInputPrice": 0.016147798698683085,
+          "effectiveOutputPrice": 0.6284443845784108
+        },
+        {
+          "providerName": "CoreWeave",
+          "providerSlug": "coreweave",
+          "effectiveInputPrice": 0.08963690052696247,
+          "effectiveOutputPrice": 0.2794701372428865
+        },
+        {
+          "providerName": "Wafer",
+          "providerSlug": "wafer",
+          "effectiveInputPrice": 0.10643663108427236,
+          "effectiveOutputPrice": 0.2293822394969001
+        },
+        {
+          "providerName": "Sail Research (2)",
+          "providerSlug": "sail-research",
+          "effectiveInputPrice": 0.013019932723713448,
+          "effectiveOutputPrice": 0.418924697514878
+        },
+        {
+          "providerName": "Cohere",
+          "providerSlug": "cohere",
+          "effectiveInputPrice": 0.11664620373461851,
+          "effectiveOutputPrice": 0.27960865994976275
+        },
+        {
+          "providerName": "StreamLake",
+          "providerSlug": "streamlake",
+          "effectiveInputPrice": 0.035338049648390345,
+          "effectiveOutputPrice": 0.39704712204250886,
+          "listedInputPrice": 0.43999999999999984,
+          "listedOutputPrice": 1.3199999999999998,
+          "discountPercentage": 70
+        },
+        {
+          "providerName": "DeepInfra",
+          "providerSlug": "deepinfra",
+          "effectiveInputPrice": 0.03564806712506182,
+          "effectiveOutputPrice": 0.17847339163565876
+        },
+        {
+          "providerName": "NovitaAI",
+          "providerSlug": "novita",
+          "effectiveInputPrice": 0.058827301160816234,
+          "effectiveOutputPrice": 1.2279982762136878,
+          "listedInputPrice": 0.44000000000000006,
+          "listedOutputPrice": 1.3199999999999998,
+          "discountPercentage": 7.000000000000001
+        },
+        {
+          "providerName": "GMICloud",
+          "providerSlug": "gmicloud",
+          "effectiveInputPrice": 0.061681671458574935,
+          "effectiveOutputPrice": 0.8572594648594032,
+          "listedInputPrice": 0.43999999999999995,
+          "listedOutputPrice": 1.3199999999999998,
+          "discountPercentage": 35
+        },
+        {
+          "providerName": "Phala",
+          "providerSlug": "phala",
+          "effectiveInputPrice": 0.06032712531627933,
+          "effectiveOutputPrice": 1.133388969138441,
+          "listedInputPrice": 0.44,
+          "listedOutputPrice": 1.32,
+          "discountPercentage": 30
+        },
+        {
+          "providerName": "Reka AI",
+          "providerSlug": "reka",
+          "effectiveInputPrice": 0.011233050532742546,
+          "effectiveOutputPrice": 0.5272470476388376
+        },
+        {
+          "providerName": "Baidu Qianfan",
+          "providerSlug": "baidu",
+          "effectiveInputPrice": 0.08544081094498496,
+          "effectiveOutputPrice": 1.2996993234240157
+        },
+        {
+          "providerName": "DigitalOcean",
+          "providerSlug": "digitalocean",
+          "effectiveInputPrice": 0.0447951470669736,
+          "effectiveOutputPrice": 0.23734827294840935
+        },
+        {
+          "providerName": "Inceptron",
+          "providerSlug": "inceptron",
+          "effectiveInputPrice": 0.037728685288702504,
+          "effectiveOutputPrice": 0.5994337581979899
+        },
+        {
+          "providerName": "Parasail",
+          "providerSlug": "parasail",
+          "effectiveInputPrice": 0.10036368778071644,
+          "effectiveOutputPrice": 0.27937761328987454
+        },
+        {
+          "providerName": "Together",
+          "providerSlug": "together",
+          "effectiveInputPrice": 0.07680576142885569,
+          "effectiveOutputPrice": 0.27855087035217474
+        },
+        {
+          "providerName": "Open Inference",
+          "providerSlug": "open-inference",
+          "effectiveInputPrice": 0.011099421141966815,
+          "effectiveOutputPrice": 0.5750391150696778
+        },
+        {
+          "providerName": "Venice",
+          "providerSlug": "venice",
+          "effectiveInputPrice": 0.05684468845392173,
+          "effectiveOutputPrice": 0.2594410169950064
+        },
+        {
+          "providerName": "Sail Research (1)",
+          "providerSlug": "sail-research",
+          "effectiveInputPrice": 0.044857898474048134,
+          "effectiveOutputPrice": 0.29869630419447973
+        },
+        {
+          "providerName": "Baseten (1)",
+          "providerSlug": "baseten",
+          "effectiveInputPrice": 0.06996378566866425,
+          "effectiveOutputPrice": 0.2592596138108833
+        },
+        {
+          "providerName": "Alibaba Cloud Int. (2)",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 0.08197411230344011,
+          "effectiveOutputPrice": 0.9746278593621234
+        },
+        {
+          "providerName": "SiliconFlow",
+          "providerSlug": "siliconflow",
+          "effectiveInputPrice": 0.07818128540415352,
+          "effectiveOutputPrice": 0.6593321606695464
+        },
+        {
+          "providerName": "Baseten (2)",
+          "providerSlug": "baseten",
+          "effectiveInputPrice": 0.07215800519370799,
+          "effectiveOutputPrice": 0.2589967264434167
+        },
+        {
+          "providerName": "Alibaba Cloud Int. (1)",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 0.08237460416079556,
+          "effectiveOutputPrice": 0.9378183184397072
+        },
+        {
+          "providerName": "AtlasCloud",
+          "providerSlug": "atlas-cloud",
+          "effectiveInputPrice": 0.14763924220526933,
+          "effectiveOutputPrice": 1.317836919768401
+        },
+        {
+          "providerName": "Mancer",
+          "providerSlug": "mancer",
+          "effectiveInputPrice": 0.19979864277619877,
+          "effectiveOutputPrice": 0.5988130620923968
+        },
+        {
+          "providerName": "Cloudflare",
+          "providerSlug": "cloudflare",
+          "effectiveInputPrice": 0.1284155746484398,
+          "effectiveOutputPrice": 1.3192118590278297
+        }
+      ],
+      "listedInputPrice": 0.016,
+      "listedOutputPrice": 0.64,
+      "listedCacheReadPrice": 0.016
+    },
+    {
+      "permaslug": "deepseek/deepseek-v4-flash",
+      "aaModelSlug": "deepseek-v4-flash-0420",
+      "aaModelId": "d8ddb241-b3e4-4c25-a6a3-72eb1b30c541",
+      "weightedInputPrice": 0.04928134754789142,
+      "weightedOutputPrice": 0.3185781786745846,
+      "providerSummaries": [
+        {
+          "providerName": "GMICloud",
+          "providerSlug": "gmicloud",
+          "effectiveInputPrice": 0.04139504765083969,
+          "effectiveOutputPrice": 0.18109408211009403
+        },
+        {
+          "providerName": "StreamLake",
+          "providerSlug": "streamlake",
+          "effectiveInputPrice": 0.04008948809960652,
+          "effectiveOutputPrice": 0.16034565065412915
+        },
+        {
+          "providerName": "Relace (2)",
+          "providerSlug": "relace",
+          "effectiveInputPrice": 0.03753174921993842,
+          "effectiveOutputPrice": 1.2793673462311075
+        },
+        {
+          "providerName": "Baidu Qianfan",
+          "providerSlug": "baidu",
+          "effectiveInputPrice": 0.03975120484155404,
+          "effectiveOutputPrice": 0.11729335137269464
+        },
+        {
+          "providerName": "SiliconFlow",
+          "providerSlug": "siliconflow",
+          "effectiveInputPrice": 0.06887730166267579,
+          "effectiveOutputPrice": 0.2789912115024678
+        },
+        {
+          "providerName": "Parasail",
+          "providerSlug": "parasail",
+          "effectiveInputPrice": 0.1177746376827472,
+          "effectiveOutputPrice": 0.2791910895657947
+        },
+        {
+          "providerName": "AtlasCloud",
+          "providerSlug": "atlas-cloud",
+          "effectiveInputPrice": 0.08683009063876494,
+          "effectiveOutputPrice": 0.27981672465506124
+        },
+        {
+          "providerName": "DeepInfra",
+          "providerSlug": "deepinfra",
+          "effectiveInputPrice": 0.05199028746432134,
+          "effectiveOutputPrice": 0.17829806822775737
+        },
+        {
+          "providerName": "Venice",
+          "providerSlug": "venice",
+          "effectiveInputPrice": 0.06145322464535674,
+          "effectiveOutputPrice": 0.19145652576094138
+        },
+        {
+          "providerName": "Open Inference",
+          "providerSlug": "open-inference",
+          "effectiveInputPrice": 0.01404516438693036,
+          "effectiveOutputPrice": 1.1559866843122248
+        },
+        {
+          "providerName": "DigitalOcean",
+          "providerSlug": "digitalocean",
+          "effectiveInputPrice": 0.07637436758647458,
+          "effectiveOutputPrice": 0.19494906349365804
+        },
+        {
+          "providerName": "Azure",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.1338850524500118,
+          "effectiveOutputPrice": 0.558543340330133
+        },
+        {
+          "providerName": "Wafer",
+          "providerSlug": "wafer",
+          "effectiveInputPrice": 0.23633044296626346,
+          "effectiveOutputPrice": 0.16986317047303898
+        },
+        {
+          "providerName": "Alibaba Cloud Int.",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 0.09165271476349,
+          "effectiveOutputPrice": 0.2996556871023388
+        },
+        {
+          "providerName": "Cloudflare",
+          "providerSlug": "cloudflare",
+          "effectiveInputPrice": 0.20139143225003595,
+          "effectiveOutputPrice": 1.3199038896296964
+        },
+        {
+          "providerName": "Mancer",
+          "providerSlug": "mancer",
+          "effectiveInputPrice": 0.18982278139256303,
+          "effectiveOutputPrice": 0.49890163276370186
+        }
+      ],
+      "listedInputPrice": 0.091,
+      "listedOutputPrice": 0.182,
+      "listedCacheReadPrice": 0.0182
+    },
+    {
+      "permaslug": "deepseek/deepseek-v4-flash",
+      "aaModelSlug": "deepseek-v4-flash-0420-high",
+      "aaModelId": "89a2c945-1fab-4ee4-9f45-83a9f46cb221",
+      "weightedInputPrice": 0.04928134754789142,
+      "weightedOutputPrice": 0.3185781786745846,
+      "providerSummaries": [
+        {
+          "providerName": "GMICloud",
+          "providerSlug": "gmicloud",
+          "effectiveInputPrice": 0.04139504765083969,
+          "effectiveOutputPrice": 0.18109408211009403
+        },
+        {
+          "providerName": "StreamLake",
+          "providerSlug": "streamlake",
+          "effectiveInputPrice": 0.04008948809960652,
+          "effectiveOutputPrice": 0.16034565065412915
+        },
+        {
+          "providerName": "Relace (2)",
+          "providerSlug": "relace",
+          "effectiveInputPrice": 0.03753174921993842,
+          "effectiveOutputPrice": 1.2793673462311075
+        },
+        {
+          "providerName": "Baidu Qianfan",
+          "providerSlug": "baidu",
+          "effectiveInputPrice": 0.03975120484155404,
+          "effectiveOutputPrice": 0.11729335137269464
+        },
+        {
+          "providerName": "SiliconFlow",
+          "providerSlug": "siliconflow",
+          "effectiveInputPrice": 0.06887730166267579,
+          "effectiveOutputPrice": 0.2789912115024678
+        },
+        {
+          "providerName": "Parasail",
+          "providerSlug": "parasail",
+          "effectiveInputPrice": 0.1177746376827472,
+          "effectiveOutputPrice": 0.2791910895657947
+        },
+        {
+          "providerName": "AtlasCloud",
+          "providerSlug": "atlas-cloud",
+          "effectiveInputPrice": 0.08683009063876494,
+          "effectiveOutputPrice": 0.27981672465506124
+        },
+        {
+          "providerName": "DeepInfra",
+          "providerSlug": "deepinfra",
+          "effectiveInputPrice": 0.05199028746432134,
+          "effectiveOutputPrice": 0.17829806822775737
+        },
+        {
+          "providerName": "Venice",
+          "providerSlug": "venice",
+          "effectiveInputPrice": 0.06145322464535674,
+          "effectiveOutputPrice": 0.19145652576094138
+        },
+        {
+          "providerName": "Open Inference",
+          "providerSlug": "open-inference",
+          "effectiveInputPrice": 0.01404516438693036,
+          "effectiveOutputPrice": 1.1559866843122248
+        },
+        {
+          "providerName": "DigitalOcean",
+          "providerSlug": "digitalocean",
+          "effectiveInputPrice": 0.07637436758647458,
+          "effectiveOutputPrice": 0.19494906349365804
+        },
+        {
+          "providerName": "Azure",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.1338850524500118,
+          "effectiveOutputPrice": 0.558543340330133
+        },
+        {
+          "providerName": "Wafer",
+          "providerSlug": "wafer",
+          "effectiveInputPrice": 0.23633044296626346,
+          "effectiveOutputPrice": 0.16986317047303898
+        },
+        {
+          "providerName": "Alibaba Cloud Int.",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 0.09165271476349,
+          "effectiveOutputPrice": 0.2996556871023388
+        },
+        {
+          "providerName": "Cloudflare",
+          "providerSlug": "cloudflare",
+          "effectiveInputPrice": 0.20139143225003595,
+          "effectiveOutputPrice": 1.3199038896296964
+        },
+        {
+          "providerName": "Mancer",
+          "providerSlug": "mancer",
+          "effectiveInputPrice": 0.18982278139256303,
+          "effectiveOutputPrice": 0.49890163276370186
+        }
+      ],
+      "listedInputPrice": 0.091,
+      "listedOutputPrice": 0.182,
+      "listedCacheReadPrice": 0.0182
+    },
+    {
+      "permaslug": "deepseek/deepseek-v4-pro-0813",
+      "aaModelSlug": "deepseek-v4-pro",
+      "aaModelId": "83173329-c09a-41f1-a028-a282a5f908d7",
+      "weightedInputPrice": 0.1852130372924789,
+      "weightedOutputPrice": 2.7971824432551338,
+      "providerSummaries": [
+        {
+          "providerName": "Wafer",
+          "providerSlug": "wafer",
+          "effectiveInputPrice": 0.20967182430788117,
+          "effectiveOutputPrice": 5
+        },
+        {
+          "providerName": "DeepSeek",
+          "providerSlug": "deepseek",
+          "effectiveInputPrice": 0.13169707825951105,
+          "effectiveOutputPrice": 2.4766205858879946
+        },
+        {
+          "providerName": "StreamLake",
+          "providerSlug": "streamlake",
+          "effectiveInputPrice": 0.10873609970698495,
+          "effectiveOutputPrice": 1.979051805281975,
+          "listedInputPrice": 1.32,
+          "listedOutputPrice": 3.9600000000000004,
+          "discountPercentage": 50
+        },
+        {
+          "providerName": "Baidu Qianfan",
+          "providerSlug": "baidu",
+          "effectiveInputPrice": 0.11549945597149848,
+          "effectiveOutputPrice": 0.9040004428471317
+        },
+        {
+          "providerName": "Sail Research (2)",
+          "providerSlug": "sail-research",
+          "effectiveInputPrice": 0.20897336542393075,
+          "effectiveOutputPrice": 1.9787886742630734
+        },
+        {
+          "providerName": "Ionstream",
+          "providerSlug": "ionstream",
+          "effectiveInputPrice": 0.15417729139290795,
+          "effectiveOutputPrice": 2.9277369341302255
+        },
+        {
+          "providerName": "CoreWeave",
+          "providerSlug": "coreweave",
+          "effectiveInputPrice": 0.36775197134943005,
+          "effectiveOutputPrice": 3.9583506882231085
+        },
+        {
+          "providerName": "Phala",
+          "providerSlug": "phala",
+          "effectiveInputPrice": 0.20671869225652179,
+          "effectiveOutputPrice": 3.2930369141170517,
+          "listedInputPrice": 1.45,
+          "listedOutputPrice": 4.360000000000001,
+          "discountPercentage": 34
+        },
+        {
+          "providerName": "NovitaAI",
+          "providerSlug": "novita",
+          "effectiveInputPrice": 0.15807267648200002,
+          "effectiveOutputPrice": 2.968948411415911,
+          "listedInputPrice": 1.32,
+          "listedOutputPrice": 3.9599999999999995,
+          "discountPercentage": 25
+        },
+        {
+          "providerName": "GMICloud",
+          "providerSlug": "gmicloud",
+          "effectiveInputPrice": 0.13568986498259902,
+          "effectiveOutputPrice": 3.1674561919463664,
+          "listedInputPrice": 1.3199999999999996,
+          "listedOutputPrice": 3.96,
+          "discountPercentage": 20
+        },
+        {
+          "providerName": "Together",
+          "providerSlug": "together",
+          "effectiveInputPrice": 0.38038739715201464,
+          "effectiveOutputPrice": 3.9585717447435895
+        },
+        {
+          "providerName": "Sail Research (1)",
+          "providerSlug": "sail-research",
+          "effectiveInputPrice": 0.1825015972956271,
+          "effectiveOutputPrice": 1.977585941504304
+        },
+        {
+          "providerName": "Alibaba Cloud Int. (2)",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 0.23514585762380547,
+          "effectiveOutputPrice": 2.200880651265743
+        },
+        {
+          "providerName": "Parasail",
+          "providerSlug": "parasail",
+          "effectiveInputPrice": 0.3917500084249882,
+          "effectiveOutputPrice": 3.9581020665527236
+        },
+        {
+          "providerName": "Alibaba Cloud Int. (1)",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 0.24637637550813735,
+          "effectiveOutputPrice": 2.8354796961273294
+        },
+        {
+          "providerName": "Reka AI",
+          "providerSlug": "reka",
+          "effectiveInputPrice": 0.22982374771412856,
+          "effectiveOutputPrice": 1.850729693483407,
+          "listedInputPrice": 1.2,
+          "listedOutputPrice": 3.1999999999999997,
+          "discountPercentage": 60
+        },
+        {
+          "providerName": "DeepInfra",
+          "providerSlug": "deepinfra",
+          "effectiveInputPrice": 0.45292905944775563,
+          "effectiveOutputPrice": 2.5995839173419166
+        },
+        {
+          "providerName": "SiliconFlow",
+          "providerSlug": "siliconflow",
+          "effectiveInputPrice": 0.3113139355256058,
+          "effectiveOutputPrice": 3.958141231933127
+        },
+        {
+          "providerName": "Cloudflare",
+          "providerSlug": "cloudflare",
+          "effectiveInputPrice": 0.4423690987664346,
+          "effectiveOutputPrice": 3.959544970025516
+        },
+        {
+          "providerName": "Relace",
+          "providerSlug": "relace",
+          "effectiveInputPrice": 0.19758158295417158,
+          "effectiveOutputPrice": 8
+        },
+        {
+          "providerName": "DigitalOcean",
+          "providerSlug": "digitalocean",
+          "effectiveInputPrice": 0.4164743806895022,
+          "effectiveOutputPrice": 3.956430976712367
+        },
+        {
+          "providerName": "AtlasCloud",
+          "providerSlug": "atlas-cloud",
+          "effectiveInputPrice": 0.5920236637289253,
+          "effectiveOutputPrice": 3.9584181686714905
+        },
+        {
+          "providerName": "Venice",
+          "providerSlug": "venice",
+          "effectiveInputPrice": 0.5213298818131863,
+          "effectiveOutputPrice": 4.948474013811657
+        }
+      ],
+      "listedInputPrice": 0.66,
+      "listedOutputPrice": 1.9800000000000002,
+      "listedCacheReadPrice": 0.022
+    },
+    {
+      "permaslug": "deepseek/deepseek-v4-pro",
+      "aaModelSlug": "deepseek-v4-pro-0424",
+      "aaModelId": "bf220674-68bd-43cc-a1b8-ce5ed4d2f18d",
+      "weightedInputPrice": 0.2600326481336477,
+      "weightedOutputPrice": 2.278520369759467,
+      "providerSummaries": [
+        {
+          "providerName": "StreamLake",
+          "providerSlug": "streamlake",
+          "effectiveInputPrice": 0.1308474894501433,
+          "effectiveOutputPrice": 1.2524633498457143,
+          "listedInputPrice": 1.74,
+          "listedOutputPrice": 3.48,
+          "discountPercentage": 45.1
+        },
+        {
+          "providerName": "NovitaAI",
+          "providerSlug": "novita",
+          "effectiveInputPrice": 0.2985454103163739,
+          "effectiveOutputPrice": 3.1997200572595257
+        },
+        {
+          "providerName": "Baidu Qianfan",
+          "providerSlug": "baidu",
+          "effectiveInputPrice": 0.20159514828442832,
+          "effectiveOutputPrice": 1.064653061453505
+        },
+        {
+          "providerName": "Alibaba Cloud Int. (2)",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 0.2722873876940882,
+          "effectiveOutputPrice": 2.831419220508319
+        },
+        {
+          "providerName": "GMICloud",
+          "providerSlug": "gmicloud",
+          "effectiveInputPrice": 0.23325900647126874,
+          "effectiveOutputPrice": 1.913383216639955,
+          "listedInputPrice": 1.7399999999999995,
+          "listedOutputPrice": 3.479999999999999,
+          "discountPercentage": 45
+        },
+        {
+          "providerName": "SiliconFlow",
+          "providerSlug": "siliconflow",
+          "effectiveInputPrice": 0.4636187257200951,
+          "effectiveOutputPrice": 3.1346169941820117
+        },
+        {
+          "providerName": "Azure",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.47288269505286856,
+          "effectiveOutputPrice": 3.829226542951237
+        },
+        {
+          "providerName": "DigitalOcean",
+          "providerSlug": "digitalocean",
+          "effectiveInputPrice": 0.6752760566813708,
+          "effectiveOutputPrice": 2.08685210576389
+        },
+        {
+          "providerName": "DeepInfra",
+          "providerSlug": "deepinfra",
+          "effectiveInputPrice": 0.4407644121735249,
+          "effectiveOutputPrice": 2.599210775595527
+        },
+        {
+          "providerName": "Reka AI",
+          "providerSlug": "reka",
+          "effectiveInputPrice": 0.4403457813788868,
+          "effectiveOutputPrice": 10.499731942618844,
+          "listedInputPrice": 1.4999999999999998,
+          "listedOutputPrice": 15.000000000000002,
+          "discountPercentage": 30
+        },
+        {
+          "providerName": "Alibaba Cloud Int. (1)",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 0.35704561540955476,
+          "effectiveOutputPrice": 3.1194799300838083
+        },
+        {
+          "providerName": "Parasail",
+          "providerSlug": "parasail",
+          "effectiveInputPrice": 0.2806301220148774,
+          "effectiveOutputPrice": 3.4795024616909638
+        },
+        {
+          "providerName": "Cloudflare",
+          "providerSlug": "cloudflare",
+          "effectiveInputPrice": 0.830096506141686,
+          "effectiveOutputPrice": 2.5497034051711385
+        },
+        {
+          "providerName": "AtlasCloud",
+          "providerSlug": "atlas-cloud",
+          "effectiveInputPrice": 0.5244275169796541,
+          "effectiveOutputPrice": 3.379508528003635
+        },
+        {
+          "providerName": "Venice",
+          "providerSlug": "venice",
+          "effectiveInputPrice": 0.9771213571985593,
+          "effectiveOutputPrice": 3.3005477655076265
+        }
+      ],
+      "listedInputPrice": 0.9552599999999999,
+      "listedOutputPrice": 1.9105199999999998,
+      "listedCacheReadPrice": 0.07960500000000001
+    },
+    {
+      "permaslug": "google/gemini-3.1-pro-preview",
+      "aaModelSlug": "gemini-3-1-pro-preview",
+      "aaModelId": "bbd93ebe-80da-4594-bb19-61e69d0331df",
+      "weightedInputPrice": 1.756058211128697,
+      "weightedOutputPrice": 11.941418048029755,
+      "providerSummaries": [
+        {
+          "providerName": "Google Vertex (2)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 1.7872821376793868,
+          "effectiveOutputPrice": 12.00988620044249
+        },
+        {
+          "providerName": "Google AI Studio (1)",
+          "providerSlug": "google-ai-studio",
+          "effectiveInputPrice": 1.4993824221027492,
+          "effectiveOutputPrice": 11.999999999999998
+        },
+        {
+          "providerName": "Google AI Studio (2)",
+          "providerSlug": "google-ai-studio",
+          "effectiveInputPrice": 0.347861915462087,
+          "effectiveOutputPrice": 6,
+          "serviceTier": "flex"
+        }
+      ],
+      "listedInputPrice": 2,
+      "listedOutputPrice": 12,
+      "listedCacheReadPrice": 0.19999999999999998,
+      "listedCacheWritePrice": 0.375
+    },
+    {
+      "permaslug": "google/gemini-3.5-flash",
+      "aaModelSlug": "gemini-3-5-flash",
+      "aaModelId": "0097ebf5-124f-42f6-9463-33b00e711f03",
+      "weightedInputPrice": 0.9624134908038517,
+      "weightedOutputPrice": 8.983922265079782,
+      "providerSummaries": [
+        {
+          "providerName": "Google Vertex (4)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.951929730783067,
+          "effectiveOutputPrice": 9
+        },
+        {
+          "providerName": "Google AI Studio (2)",
+          "providerSlug": "google-ai-studio",
+          "effectiveInputPrice": 1.0755721644484604,
+          "effectiveOutputPrice": 9
+        },
+        {
+          "providerName": "Google Vertex (1)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.46915544029732603,
+          "effectiveOutputPrice": 4.4997392473856115,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Google AI Studio (3)",
+          "providerSlug": "google-ai-studio",
+          "effectiveInputPrice": 0.553884799708105,
+          "effectiveOutputPrice": 4.499299018626076,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Google Vertex (2)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 1.6480234260614934,
+          "effectiveOutputPrice": 9.899429115128449
+        },
+        {
+          "providerName": "Google AI Studio (1)",
+          "providerSlug": "google-ai-studio",
+          "effectiveInputPrice": 2.6996952627204727,
+          "effectiveOutputPrice": 16.19731318219983,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Google Vertex (3)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 2.699617834394904,
+          "effectiveOutputPrice": 16.197382769901854,
+          "serviceTier": "priority"
+        }
+      ],
+      "listedInputPrice": 1.5,
+      "listedOutputPrice": 9,
+      "listedCacheReadPrice": 0.15,
+      "listedCacheWritePrice": 0.0833333333333333
+    },
+    {
+      "permaslug": "google/gemini-3.7-flash",
+      "aaModelSlug": "gemini-3-7-flash",
+      "aaModelId": "b2331108-72ed-415a-82d1-188633875bbc",
+      "weightedInputPrice": 0.3643499863339074,
+      "weightedOutputPrice": 3.8151384270967275,
+      "providerSummaries": [
+        {
+          "providerName": "Google Vertex (3)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.4394496934708631,
+          "effectiveOutputPrice": 4.262726348804076,
+          "listedInputPrice": 0.75,
+          "listedOutputPrice": 3.75,
+          "discountPercentage": 50
+        },
+        {
+          "providerName": "Google AI Studio (1)",
+          "providerSlug": "google-ai-studio",
+          "effectiveInputPrice": 0.14783676806672072,
+          "effectiveOutputPrice": 1.8742086598502599,
+          "listedInputPrice": 0.75,
+          "listedOutputPrice": 3.75,
+          "discountPercentage": 50,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Google AI Studio (3)",
+          "providerSlug": "google-ai-studio",
+          "effectiveInputPrice": 0.4018200600103548,
+          "effectiveOutputPrice": 3.9019731515718674,
+          "listedInputPrice": 0.75,
+          "listedOutputPrice": 3.75,
+          "discountPercentage": 50
+        },
+        {
+          "providerName": "Google Vertex (1)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.40498498845807007,
+          "effectiveOutputPrice": 1.9106487513302237,
+          "listedInputPrice": 0.75,
+          "listedOutputPrice": 3.75,
+          "discountPercentage": 50,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Google AI Studio (2)",
+          "providerSlug": "google-ai-studio",
+          "effectiveInputPrice": 0.5812140168735519,
+          "effectiveOutputPrice": 7.3171657528469005,
+          "listedInputPrice": 0.75,
+          "listedOutputPrice": 3.75,
+          "discountPercentage": 50,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Google Vertex (2)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 1.9010224672927005,
+          "effectiveOutputPrice": 12.321262570776641,
+          "listedInputPrice": 0.75,
+          "listedOutputPrice": 3.75,
+          "discountPercentage": 50,
+          "serviceTier": "priority"
+        }
+      ],
+      "listedInputPrice": 0.75,
+      "listedOutputPrice": 3.75,
+      "listedCacheReadPrice": 0.075,
+      "listedCacheWritePrice": 0.0416666666666667
+    },
+    {
+      "permaslug": "google/gemini-3.7-flash",
+      "aaModelSlug": "gemini-3-7-flash-low",
+      "aaModelId": "ddfdaf64-3f8e-40a6-a492-608ee83a1351",
+      "weightedInputPrice": 0.3643499863339074,
+      "weightedOutputPrice": 3.8151384270967275,
+      "providerSummaries": [
+        {
+          "providerName": "Google Vertex (3)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.4394496934708631,
+          "effectiveOutputPrice": 4.262726348804076,
+          "listedInputPrice": 0.75,
+          "listedOutputPrice": 3.75,
+          "discountPercentage": 50
+        },
+        {
+          "providerName": "Google AI Studio (1)",
+          "providerSlug": "google-ai-studio",
+          "effectiveInputPrice": 0.14783676806672072,
+          "effectiveOutputPrice": 1.8742086598502599,
+          "listedInputPrice": 0.75,
+          "listedOutputPrice": 3.75,
+          "discountPercentage": 50,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Google AI Studio (3)",
+          "providerSlug": "google-ai-studio",
+          "effectiveInputPrice": 0.4018200600103548,
+          "effectiveOutputPrice": 3.9019731515718674,
+          "listedInputPrice": 0.75,
+          "listedOutputPrice": 3.75,
+          "discountPercentage": 50
+        },
+        {
+          "providerName": "Google Vertex (1)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.40498498845807007,
+          "effectiveOutputPrice": 1.9106487513302237,
+          "listedInputPrice": 0.75,
+          "listedOutputPrice": 3.75,
+          "discountPercentage": 50,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Google AI Studio (2)",
+          "providerSlug": "google-ai-studio",
+          "effectiveInputPrice": 0.5812140168735519,
+          "effectiveOutputPrice": 7.3171657528469005,
+          "listedInputPrice": 0.75,
+          "listedOutputPrice": 3.75,
+          "discountPercentage": 50,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Google Vertex (2)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 1.9010224672927005,
+          "effectiveOutputPrice": 12.321262570776641,
+          "listedInputPrice": 0.75,
+          "listedOutputPrice": 3.75,
+          "discountPercentage": 50,
+          "serviceTier": "priority"
+        }
+      ],
+      "listedInputPrice": 0.75,
+      "listedOutputPrice": 3.75,
+      "listedCacheReadPrice": 0.075,
+      "listedCacheWritePrice": 0.0416666666666667
+    },
+    {
+      "permaslug": "google/gemini-3.7-flash",
+      "aaModelSlug": "gemini-3-7-flash-medium",
+      "aaModelId": "eb0d4272-7204-42b9-b875-8866fed58548",
+      "weightedInputPrice": 0.3643499863339074,
+      "weightedOutputPrice": 3.8151384270967275,
+      "providerSummaries": [
+        {
+          "providerName": "Google Vertex (3)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.4394496934708631,
+          "effectiveOutputPrice": 4.262726348804076,
+          "listedInputPrice": 0.75,
+          "listedOutputPrice": 3.75,
+          "discountPercentage": 50
+        },
+        {
+          "providerName": "Google AI Studio (1)",
+          "providerSlug": "google-ai-studio",
+          "effectiveInputPrice": 0.14783676806672072,
+          "effectiveOutputPrice": 1.8742086598502599,
+          "listedInputPrice": 0.75,
+          "listedOutputPrice": 3.75,
+          "discountPercentage": 50,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Google AI Studio (3)",
+          "providerSlug": "google-ai-studio",
+          "effectiveInputPrice": 0.4018200600103548,
+          "effectiveOutputPrice": 3.9019731515718674,
+          "listedInputPrice": 0.75,
+          "listedOutputPrice": 3.75,
+          "discountPercentage": 50
+        },
+        {
+          "providerName": "Google Vertex (1)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.40498498845807007,
+          "effectiveOutputPrice": 1.9106487513302237,
+          "listedInputPrice": 0.75,
+          "listedOutputPrice": 3.75,
+          "discountPercentage": 50,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Google AI Studio (2)",
+          "providerSlug": "google-ai-studio",
+          "effectiveInputPrice": 0.5812140168735519,
+          "effectiveOutputPrice": 7.3171657528469005,
+          "listedInputPrice": 0.75,
+          "listedOutputPrice": 3.75,
+          "discountPercentage": 50,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Google Vertex (2)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 1.9010224672927005,
+          "effectiveOutputPrice": 12.321262570776641,
+          "listedInputPrice": 0.75,
+          "listedOutputPrice": 3.75,
+          "discountPercentage": 50,
+          "serviceTier": "priority"
+        }
+      ],
+      "listedInputPrice": 0.75,
+      "listedOutputPrice": 3.75,
+      "listedCacheReadPrice": 0.075,
+      "listedCacheWritePrice": 0.0416666666666667
+    },
+    {
+      "permaslug": "google/gemini-4-argon",
+      "aaModelSlug": "gemini-4-argon",
+      "aaModelId": "d366dfa1-d940-4788-aa73-d298c45699b3",
+      "weightedInputPrice": 0.5539663772513013,
+      "weightedOutputPrice": 10.219974742896353,
+      "providerSummaries": [
+        {
+          "providerName": "Google Vertex (1)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.5995417527494912,
+          "effectiveOutputPrice": 10.601332101895146,
+          "listedInputPrice": 4,
+          "listedOutputPrice": 20,
+          "discountPercentage": 50
+        },
+        {
+          "providerName": "Google AI Studio (1)",
+          "providerSlug": "google-ai-studio",
+          "effectiveInputPrice": 0.3605854665687121,
+          "effectiveOutputPrice": 10.788826909604012,
+          "listedInputPrice": 4,
+          "listedOutputPrice": 20,
+          "discountPercentage": 50
+        },
+        {
+          "providerName": "Google AI Studio (3)",
+          "providerSlug": "google-ai-studio",
+          "effectiveInputPrice": 0.33995259962643415,
+          "effectiveOutputPrice": 5.008598543218095,
+          "listedInputPrice": 4,
+          "listedOutputPrice": 20,
+          "discountPercentage": 50,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Google Vertex (2)",
+          "providerSlug": "google-vertex",
+          "effectiveInputPrice": 0.8735757506400234,
+          "effectiveOutputPrice": 19.216417574327778,
+          "listedInputPrice": 4,
+          "listedOutputPrice": 20,
+          "discountPercentage": 50,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Google AI Studio (2)",
+          "providerSlug": "google-ai-studio",
+          "effectiveInputPrice": 0.49677272732986544,
+          "effectiveOutputPrice": 18,
+          "listedInputPrice": 4,
+          "listedOutputPrice": 20,
+          "discountPercentage": 50,
+          "serviceTier": "priority"
+        }
+      ],
+      "listedInputPrice": 2,
+      "listedOutputPrice": 10,
+      "listedCacheReadPrice": 0.09999999999999999,
+      "listedCacheWritePrice": 0.1875
+    },
+    {
+      "permaslug": "z-ai/glm-5.1",
+      "aaModelSlug": "glm-5-1",
+      "aaModelId": "5aa1c578-af76-4b91-8699-cdd43582b3af",
+      "weightedInputPrice": 0.667386016960597,
+      "weightedOutputPrice": 3.943239366138448,
+      "providerSummaries": [
+        {
+          "providerName": "SiliconFlow",
+          "providerSlug": "siliconflow",
+          "effectiveInputPrice": 0.7641355618045673,
+          "effectiveOutputPrice": 3.7393777224642184
+        },
+        {
+          "providerName": "Z.ai",
+          "providerSlug": "z-ai",
+          "effectiveInputPrice": 0.5487611167780132,
+          "effectiveOutputPrice": 4.3994050225759205
+        },
+        {
+          "providerName": "StreamLake",
+          "providerSlug": "streamlake",
+          "effectiveInputPrice": 0.2379831252082807,
+          "effectiveOutputPrice": 3.035082464757797,
+          "listedInputPrice": 1.4000000000000001,
+          "listedOutputPrice": 4.4,
+          "discountPercentage": 31
+        },
+        {
+          "providerName": "Alibaba Cloud Int.",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 0.6404594430724793,
+          "effectiveOutputPrice": 4.179172453890629
+        },
+        {
+          "providerName": "Friendli",
+          "providerSlug": "friendli",
+          "effectiveInputPrice": 0.682951850834935,
+          "effectiveOutputPrice": 4.397536852715131
+        },
+        {
+          "providerName": "Nebius Token Factory",
+          "providerSlug": "nebius",
+          "effectiveInputPrice": 1.3999435911695264,
+          "effectiveOutputPrice": 4.397393233499722
+        },
+        {
+          "providerName": "Baidu Qianfan",
+          "providerSlug": "baidu",
+          "effectiveInputPrice": 0.6552017514387594,
+          "effectiveOutputPrice": 4.399335139816186
+        },
+        {
+          "providerName": "AtlasCloud",
+          "providerSlug": "atlas-cloud",
+          "effectiveInputPrice": 0.47535395819987464,
+          "effectiveOutputPrice": 3.9595602552197224
+        },
+        {
+          "providerName": "GMICloud",
+          "providerSlug": "gmicloud",
+          "effectiveInputPrice": 0.987231611206339,
+          "effectiveOutputPrice": 4.399410405545375
+        },
+        {
+          "providerName": "Chutes",
+          "providerSlug": "chutes",
+          "effectiveInputPrice": 0.9539715612955018,
+          "effectiveOutputPrice": 3.0793743604736155
+        },
+        {
+          "providerName": "Venice",
+          "providerSlug": "venice",
+          "effectiveInputPrice": 1.4007935033768473,
+          "effectiveOutputPrice": 4.403415526705585,
+          "listedInputPrice": 1.5399999999999998,
+          "listedOutputPrice": 4.84,
+          "discountPercentage": 9
+        },
+        {
+          "providerName": "NovitaAI",
+          "providerSlug": "novita",
+          "effectiveInputPrice": 0.8037796683964652,
+          "effectiveOutputPrice": 4.39978808378841
+        },
+        {
+          "providerName": "Phala",
+          "providerSlug": "phala",
+          "effectiveInputPrice": 1.2099330639050265,
+          "effectiveOutputPrice": 4.198850574712644
+        }
+      ],
+      "listedInputPrice": 1.33,
+      "listedOutputPrice": 4.18,
+      "listedCacheReadPrice": 0.24699999999999997
+    },
+    {
+      "permaslug": "z-ai/glm-5.2",
+      "aaModelSlug": "glm-5-2",
+      "aaModelId": "f7a4ea75-e548-4069-80d4-9be8bc7c009b",
+      "weightedInputPrice": 0.22505297806557129,
+      "weightedOutputPrice": 4.322947113780985,
+      "providerSummaries": [
+        {
+          "providerName": "Wafer (1)",
+          "providerSlug": "wafer",
+          "effectiveInputPrice": 0.059518763276830054,
+          "effectiveOutputPrice": 6.915153528276223
+        },
+        {
+          "providerName": "CoreWeave",
+          "providerSlug": "coreweave",
+          "effectiveInputPrice": 0.21108101706263566,
+          "effectiveOutputPrice": 2.4193696800292055
+        },
+        {
+          "providerName": "inference.net",
+          "providerSlug": "inference-net",
+          "effectiveInputPrice": 0.1442350503136546,
+          "effectiveOutputPrice": 3.4934394301183884
+        },
+        {
+          "providerName": "StreamLake",
+          "providerSlug": "streamlake",
+          "effectiveInputPrice": 0.19524285730819904,
+          "effectiveOutputPrice": 2.0613632108644686,
+          "listedInputPrice": 1.4,
+          "listedOutputPrice": 4.4,
+          "discountPercentage": 54.1
+        },
+        {
+          "providerName": "Decart",
+          "providerSlug": "decart",
+          "effectiveInputPrice": 0.15324964909716848,
+          "effectiveOutputPrice": 1.6805994853235569,
+          "listedInputPrice": 0.65,
+          "listedOutputPrice": 3.9999999999999996,
+          "discountPercentage": 57.99999999999999
+        },
+        {
+          "providerName": "Decart Fast",
+          "providerSlug": "decart",
+          "effectiveInputPrice": 0.7995967096899468,
+          "effectiveOutputPrice": 9,
+          "listedInputPrice": 0.65,
+          "listedOutputPrice": 3.9999999999999996,
+          "discountPercentage": 57.99999999999999
+        },
+        {
+          "providerName": "Together",
+          "providerSlug": "together",
+          "effectiveInputPrice": 0.47141560058698845,
+          "effectiveOutputPrice": 4.398462176767232
+        },
+        {
+          "providerName": "DeepInfra",
+          "providerSlug": "deepinfra",
+          "effectiveInputPrice": 0.2589616861608788,
+          "effectiveOutputPrice": 1.804615275357031,
+          "listedInputPrice": 0.75,
+          "listedOutputPrice": 2.4,
+          "discountPercentage": 25
+        },
+        {
+          "providerName": "Baseten (1)",
+          "providerSlug": "baseten",
+          "effectiveInputPrice": 0.3312177309371777,
+          "effectiveOutputPrice": 4.39951744158417
+        },
+        {
+          "providerName": "Mistral (1)",
+          "providerSlug": "mistral",
+          "effectiveInputPrice": 0.633402892297984,
+          "effectiveOutputPrice": 4.3988007648026795
+        },
+        {
+          "providerName": "Z.ai",
+          "providerSlug": "z-ai",
+          "effectiveInputPrice": 0.3982749470979256,
+          "effectiveOutputPrice": 4.399384589234629
+        },
+        {
+          "providerName": "NovitaAI",
+          "providerSlug": "novita",
+          "effectiveInputPrice": 0.3819829173155735,
+          "effectiveOutputPrice": 2.0429221350421725,
+          "listedInputPrice": 1.4,
+          "listedOutputPrice": 4.4,
+          "discountPercentage": 53.6
+        },
+        {
+          "providerName": "Alibaba Cloud Int. (1)",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 0.7427736013520739,
+          "effectiveOutputPrice": 3.0358534327355464
+        },
+        {
+          "providerName": "Inceptron",
+          "providerSlug": "inceptron",
+          "effectiveInputPrice": 0.2906445433499107,
+          "effectiveOutputPrice": 2.833884767812117
+        },
+        {
+          "providerName": "Relace",
+          "providerSlug": "relace",
+          "effectiveInputPrice": 0.06041955143127742,
+          "effectiveOutputPrice": 4.317105154738005
+        },
+        {
+          "providerName": "Friendli",
+          "providerSlug": "friendli",
+          "effectiveInputPrice": 0.5990769365522169,
+          "effectiveOutputPrice": 4.398127211709018
+        },
+        {
+          "providerName": "DigitalOcean",
+          "providerSlug": "digitalocean",
+          "effectiveInputPrice": 0.24816020434742572,
+          "effectiveOutputPrice": 2.197752043458348
+        },
+        {
+          "providerName": "Wafer (2)",
+          "providerSlug": "wafer",
+          "effectiveInputPrice": 0.1826346943687277,
+          "effectiveOutputPrice": 8
+        },
+        {
+          "providerName": "Baidu Qianfan (1)",
+          "providerSlug": "baidu",
+          "effectiveInputPrice": 0.3008285953774934,
+          "effectiveOutputPrice": 3.1864638385872133
+        },
+        {
+          "providerName": "Cloudflare",
+          "providerSlug": "cloudflare",
+          "effectiveInputPrice": 0.18997434785939316,
+          "effectiveOutputPrice": 8
+        },
+        {
+          "providerName": "Parasail",
+          "providerSlug": "parasail",
+          "effectiveInputPrice": 0.6383301902305286,
+          "effectiveOutputPrice": 4.3987648265822825
+        },
+        {
+          "providerName": "Baseten (2)",
+          "providerSlug": "baseten",
+          "effectiveInputPrice": 0.41283060734391525,
+          "effectiveOutputPrice": 4.3994076396447515
+        },
+        {
+          "providerName": "Mistral (2)",
+          "providerSlug": "mistral",
+          "effectiveInputPrice": 0.1883943823933186,
+          "effectiveOutputPrice": 4.839207820649635
+        },
+        {
+          "providerName": "SiliconFlow",
+          "providerSlug": "siliconflow",
+          "effectiveInputPrice": 0.3138892251327085,
+          "effectiveOutputPrice": 2.348652592036817,
+          "listedInputPrice": 1.4,
+          "listedOutputPrice": 4.4,
+          "discountPercentage": 50
+        },
+        {
+          "providerName": "Morph",
+          "providerSlug": "morph",
+          "effectiveInputPrice": 0.15777115844412462,
+          "effectiveOutputPrice": 6
+        },
+        {
+          "providerName": "Alibaba Fast",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 1.5626004185733218,
+          "effectiveOutputPrice": 7.259847492442873
+        },
+        {
+          "providerName": "Baseten Fast (1)",
+          "providerSlug": "baseten",
+          "effectiveInputPrice": 0.9076280127092626,
+          "effectiveOutputPrice": 6.599385182736098
+        },
+        {
+          "providerName": "Baseten Fast (2)",
+          "providerSlug": "baseten",
+          "effectiveInputPrice": 0.8144024406509527,
+          "effectiveOutputPrice": 6.599443450184644
+        },
+        {
+          "providerName": "Phala",
+          "providerSlug": "phala",
+          "effectiveInputPrice": 0.5305766775879194,
+          "effectiveOutputPrice": 3
+        },
+        {
+          "providerName": "Baidu Qianfan (2)",
+          "providerSlug": "baidu",
+          "effectiveInputPrice": 1.0013682784452136,
+          "effectiveOutputPrice": 7.130435953028097
+        },
+        {
+          "providerName": "Venice",
+          "providerSlug": "venice",
+          "effectiveInputPrice": 0.7349176773875977,
+          "effectiveOutputPrice": 4.398967006770941
+        },
+        {
+          "providerName": "AtlasCloud",
+          "providerSlug": "atlas-cloud",
+          "effectiveInputPrice": 0.6338017152677548,
+          "effectiveOutputPrice": 2.947228905256937,
+          "listedInputPrice": 1.4000000000000001,
+          "listedOutputPrice": 4.4,
+          "discountPercentage": 33
+        },
+        {
+          "providerName": "Alibaba Cloud Int. (2)",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 0.6306266345212306,
+          "effectiveOutputPrice": 3.519762104388199
+        },
+        {
+          "providerName": "GMICloud",
+          "providerSlug": "gmicloud",
+          "effectiveInputPrice": 1.1120060744870108,
+          "effectiveOutputPrice": 4.399374262092582
+        },
+        {
+          "providerName": "Nebius Token Factory",
+          "providerSlug": "nebius",
+          "effectiveInputPrice": 1.3997979769348672,
+          "effectiveOutputPrice": 4.3984858804067795
+        }
+      ],
+      "listedInputPrice": 0.06,
+      "listedOutputPrice": 7,
+      "listedCacheReadPrice": 0.059
+    },
+    {
+      "permaslug": "z-ai/glm-5.3",
+      "aaModelSlug": "glm-5-3",
+      "aaModelId": "cd684ea4-b475-4269-b001-d469d06d8a7a",
+      "weightedInputPrice": 0.25583983190099285,
+      "weightedOutputPrice": 4.209022851731327,
+      "providerSummaries": [
+        {
+          "providerName": "SiliconFlow",
+          "providerSlug": "siliconflow",
+          "effectiveInputPrice": 0.3783357318815283,
+          "effectiveOutputPrice": 4.295123373864422,
+          "listedInputPrice": 1.4,
+          "listedOutputPrice": 4.4,
+          "discountPercentage": 50
+        },
+        {
+          "providerName": "Wafer (1)",
+          "providerSlug": "wafer",
+          "effectiveInputPrice": 0.06120993490936969,
+          "effectiveOutputPrice": 4.799540504957553
+        },
+        {
+          "providerName": "inference.net",
+          "providerSlug": "inference-net",
+          "effectiveInputPrice": 0.058926218351332875,
+          "effectiveOutputPrice": 4.3996501826691805
+        },
+        {
+          "providerName": "Z.ai",
+          "providerSlug": "z-ai",
+          "effectiveInputPrice": 0.31735897607265656,
+          "effectiveOutputPrice": 4.399592880401523
+        },
+        {
+          "providerName": "Fireworks Fast",
+          "providerSlug": "fireworks",
+          "effectiveInputPrice": 0.4853311843920713,
+          "effectiveOutputPrice": 6.5997386997288165
+        },
+        {
+          "providerName": "Mistral (1)",
+          "providerSlug": "mistral",
+          "effectiveInputPrice": 0.217929395442703,
+          "effectiveOutputPrice": 4.399832789098677
+        },
+        {
+          "providerName": "Decart",
+          "providerSlug": "decart",
+          "effectiveInputPrice": 0.24693530897569216,
+          "effectiveOutputPrice": 2.8523833361126796
+        },
+        {
+          "providerName": "Fireworks",
+          "providerSlug": "fireworks",
+          "effectiveInputPrice": 0.30082412295862004,
+          "effectiveOutputPrice": 4.399636310310022
+        },
+        {
+          "providerName": "Wafer (2)",
+          "providerSlug": "wafer",
+          "effectiveInputPrice": 0.1613616832022236,
+          "effectiveOutputPrice": 4.799554934455652
+        },
+        {
+          "providerName": "Crusoe",
+          "providerSlug": "crusoe",
+          "effectiveInputPrice": 0.4062992935852405,
+          "effectiveOutputPrice": 4.399714458155357
+        },
+        {
+          "providerName": "Together",
+          "providerSlug": "together",
+          "effectiveInputPrice": 0.3581904854925386,
+          "effectiveOutputPrice": 4.399603561311852
+        },
+        {
+          "providerName": "Prime Intellect",
+          "providerSlug": "primeintellect",
+          "effectiveInputPrice": 0.33359632933449,
+          "effectiveOutputPrice": 4.3996259092926815
+        },
+        {
+          "providerName": "NovitaAI",
+          "providerSlug": "novita",
+          "effectiveInputPrice": 0.24892891760976343,
+          "effectiveOutputPrice": 2.20564301309404,
+          "listedInputPrice": 1.4,
+          "listedOutputPrice": 4.4,
+          "discountPercentage": 50
+        },
+        {
+          "providerName": "Sail Research (1)",
+          "providerSlug": "sail-research",
+          "effectiveInputPrice": 0.15315569994167774,
+          "effectiveOutputPrice": 3.3995022658134473
+        },
+        {
+          "providerName": "Morph",
+          "providerSlug": "morph",
+          "effectiveInputPrice": 0.06239122310012518,
+          "effectiveOutputPrice": 5
+        },
+        {
+          "providerName": "Baseten (1)",
+          "providerSlug": "baseten",
+          "effectiveInputPrice": 0.23572664599992083,
+          "effectiveOutputPrice": 4.399503892042815
+        },
+        {
+          "providerName": "Sail Research (2)",
+          "providerSlug": "sail-research",
+          "effectiveInputPrice": 0.15231966047526438,
+          "effectiveOutputPrice": 3.3996292313767977
+        },
+        {
+          "providerName": "Alibaba Cloud Int.",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 1.0187694682946882,
+          "effectiveOutputPrice": 3.7396502253663515
+        },
+        {
+          "providerName": "Inceptron",
+          "providerSlug": "inceptron",
+          "effectiveInputPrice": 0.23447464418176564,
+          "effectiveOutputPrice": 2.057441617268295
+        },
+        {
+          "providerName": "Parasail",
+          "providerSlug": "parasail",
+          "effectiveInputPrice": 0.4141702227069145,
+          "effectiveOutputPrice": 4.399574695639984
+        },
+        {
+          "providerName": "Makora",
+          "providerSlug": "makora",
+          "effectiveInputPrice": 0.10917724828136069,
+          "effectiveOutputPrice": 4.3997294693183875
+        },
+        {
+          "providerName": "DeepInfra",
+          "providerSlug": "deepinfra",
+          "effectiveInputPrice": 0.1748548620798806,
+          "effectiveOutputPrice": 2.5335896027916323,
+          "listedInputPrice": 0.72,
+          "listedOutputPrice": 3.2,
+          "discountPercentage": 37.5
+        },
+        {
+          "providerName": "io.net",
+          "providerSlug": "io-net",
+          "effectiveInputPrice": 0.21329328828120822,
+          "effectiveOutputPrice": 2.8992952838386787
+        },
+        {
+          "providerName": "Mistral (2)",
+          "providerSlug": "mistral",
+          "effectiveInputPrice": 0.3368354192919827,
+          "effectiveOutputPrice": 4.399500873963168
+        },
+        {
+          "providerName": "Baseten (2)",
+          "providerSlug": "baseten",
+          "effectiveInputPrice": 0.22460692706955504,
+          "effectiveOutputPrice": 4.399551750315365
+        },
+        {
+          "providerName": "Baseten Fast (2)",
+          "providerSlug": "baseten",
+          "effectiveInputPrice": 0.5802839128204138,
+          "effectiveOutputPrice": 6.599675329329025
+        },
+        {
+          "providerName": "Modal",
+          "providerSlug": "modal",
+          "effectiveInputPrice": 0.47473992252067104,
+          "effectiveOutputPrice": 4.399641744501292
+        },
+        {
+          "providerName": "Baseten Fast (1)",
+          "providerSlug": "baseten",
+          "effectiveInputPrice": 0.5919484179721486,
+          "effectiveOutputPrice": 6.599669352821233
+        },
+        {
+          "providerName": "Friendli",
+          "providerSlug": "friendli",
+          "effectiveInputPrice": 0.3290621161137432,
+          "effectiveOutputPrice": 3.9780405283542404,
+          "listedInputPrice": 1.4,
+          "listedOutputPrice": 4.4,
+          "discountPercentage": 10
+        },
+        {
+          "providerName": "Baidu Qianfan",
+          "providerSlug": "baidu",
+          "effectiveInputPrice": 0.29880966039317636,
+          "effectiveOutputPrice": 2.860432836405525
+        },
+        {
+          "providerName": "AkashML",
+          "providerSlug": "akashml",
+          "effectiveInputPrice": 0.18999010478301975,
+          "effectiveOutputPrice": 4.3997960154233065
+        },
+        {
+          "providerName": "Relace",
+          "providerSlug": "relace",
+          "effectiveInputPrice": 0.059060845169829033,
+          "effectiveOutputPrice": 4.399533023356332
+        },
+        {
+          "providerName": "Phala",
+          "providerSlug": "phala",
+          "effectiveInputPrice": 0.1839407636877884,
+          "effectiveOutputPrice": 2.6396258848480945,
+          "listedInputPrice": 1.4,
+          "listedOutputPrice": 4.4,
+          "discountPercentage": 40
+        },
+        {
+          "providerName": "DigitalOcean",
+          "providerSlug": "digitalocean",
+          "effectiveInputPrice": 0.22606111357187844,
+          "effectiveOutputPrice": 2.8594033041254034
+        },
+        {
+          "providerName": "Reka AI",
+          "providerSlug": "reka",
+          "effectiveInputPrice": 0.11568230761330374,
+          "effectiveOutputPrice": 4.199730565071745,
+          "listedInputPrice": 0.20000000000000004,
+          "listedOutputPrice": 5.999999999999999,
+          "discountPercentage": 30
+        },
+        {
+          "providerName": "Alibaba Prime",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 1.7751144632129614,
+          "effectiveOutputPrice": 8.799601085592395
+        },
+        {
+          "providerName": "Venice",
+          "providerSlug": "venice",
+          "effectiveInputPrice": 0.6547064148087232,
+          "effectiveOutputPrice": 4.4330073475978615,
+          "listedInputPrice": 1.7499999999999998,
+          "listedOutputPrice": 5.5,
+          "discountPercentage": 20
+        },
+        {
+          "providerName": "AtlasCloud",
+          "providerSlug": "atlas-cloud",
+          "effectiveInputPrice": 1.1684080564257897,
+          "effectiveOutputPrice": 4.399344626038019
+        },
+        {
+          "providerName": "Mistral (3)",
+          "providerSlug": "mistral",
+          "effectiveInputPrice": 0.4289909331010659,
+          "effectiveOutputPrice": 4.839257750292763
+        },
+        {
+          "providerName": "Cloudflare",
+          "providerSlug": "cloudflare",
+          "effectiveInputPrice": 0.41260541016413416,
+          "effectiveOutputPrice": 4.399776860038118
+        },
+        {
+          "providerName": "ModelRun [by Modular]",
+          "providerSlug": "modelrun",
+          "effectiveInputPrice": 0.7580716531040514,
+          "effectiveOutputPrice": 6.59930340263537
+        },
+        {
+          "providerName": "GMICloud",
+          "providerSlug": "gmicloud",
+          "effectiveInputPrice": 0.2949467350517704,
+          "effectiveOutputPrice": 3.0797073197849794,
+          "listedInputPrice": 1.4000000000000001,
+          "listedOutputPrice": 4.4,
+          "discountPercentage": 30
+        }
+      ],
+      "listedInputPrice": 0.079,
+      "listedOutputPrice": 4.8,
+      "listedCacheReadPrice": 0.059
+    },
+    {
+      "permaslug": "z-ai/glm-5.3-flash",
+      "aaModelSlug": "glm-5-3-flash",
+      "aaModelId": "19496b81-9f41-4214-a77a-1df803b3c5ae",
+      "weightedInputPrice": 0.04219505105298335,
+      "weightedOutputPrice": 0.4782181315597821,
+      "providerSummaries": [
+        {
+          "providerName": "Together",
+          "providerSlug": "together",
+          "effectiveInputPrice": 0.05257245642904927,
+          "effectiveOutputPrice": 0.49989314635591675
+        },
+        {
+          "providerName": "inference.net",
+          "providerSlug": "inference-net",
+          "effectiveInputPrice": 0.03488257574490049,
+          "effectiveOutputPrice": 0.07873254859671694
+        },
+        {
+          "providerName": "Parasail",
+          "providerSlug": "parasail",
+          "effectiveInputPrice": 0.048302526624104315,
+          "effectiveOutputPrice": 0.4995012880294913
+        },
+        {
+          "providerName": "Wafer",
+          "providerSlug": "wafer",
+          "effectiveInputPrice": 0.016662702688604057,
+          "effectiveOutputPrice": 0.4998111165997449
+        },
+        {
+          "providerName": "CoreWeave",
+          "providerSlug": "coreweave",
+          "effectiveInputPrice": 0.07237800257355191,
+          "effectiveOutputPrice": 0.49992031780257756
+        },
+        {
+          "providerName": "Open Inference",
+          "providerSlug": "open-inference",
+          "effectiveInputPrice": 0.011530615041395246,
+          "effectiveOutputPrice": 0.9036173992549016
+        },
+        {
+          "providerName": "Relace",
+          "providerSlug": "relace",
+          "effectiveInputPrice": 0.016447398968350686,
+          "effectiveOutputPrice": 0.499452114942706
+        },
+        {
+          "providerName": "Crusoe",
+          "providerSlug": "crusoe",
+          "effectiveInputPrice": 0.046271705166601895,
+          "effectiveOutputPrice": 0.4995380326828571
+        },
+        {
+          "providerName": "Z.ai",
+          "providerSlug": "z-ai",
+          "effectiveInputPrice": 0.05962547661772638,
+          "effectiveOutputPrice": 0.49977789937793426
+        },
+        {
+          "providerName": "NovitaAI",
+          "providerSlug": "novita",
+          "effectiveInputPrice": 0.035929652223603774,
+          "effectiveOutputPrice": 0.2921778160082485,
+          "listedInputPrice": 0.14999999999999997,
+          "listedOutputPrice": 0.5,
+          "discountPercentage": 44
+        },
+        {
+          "providerName": "Friendli",
+          "providerSlug": "friendli",
+          "effectiveInputPrice": 0.05808750461587536,
+          "effectiveOutputPrice": 0.4996563373007391
+        },
+        {
+          "providerName": "Baseten (1)",
+          "providerSlug": "baseten",
+          "effectiveInputPrice": 0.07343775436097917,
+          "effectiveOutputPrice": 0.4994671359077447
+        },
+        {
+          "providerName": "Decart",
+          "providerSlug": "decart",
+          "effectiveInputPrice": 0.028518113883204216,
+          "effectiveOutputPrice": 0.30938016384983,
+          "listedInputPrice": 0.15,
+          "listedOutputPrice": 0.5,
+          "discountPercentage": 38
+        },
+        {
+          "providerName": "StreamLake",
+          "providerSlug": "streamlake",
+          "effectiveInputPrice": 0.01658638686709174,
+          "effectiveOutputPrice": 0.14494397840933057,
+          "listedInputPrice": 0.14999999999999997,
+          "listedOutputPrice": 0.4999999999999999,
+          "discountPercentage": 71
+        },
+        {
+          "providerName": "Morph",
+          "providerSlug": "morph",
+          "effectiveInputPrice": 0.01714759803435485,
+          "effectiveOutputPrice": 1
+        },
+        {
+          "providerName": "Reka AI",
+          "providerSlug": "reka",
+          "effectiveInputPrice": 0.0417470145053046,
+          "effectiveOutputPrice": 1.5117263404053307
+        },
+        {
+          "providerName": "Fireworks (1)",
+          "providerSlug": "fireworks",
+          "effectiveInputPrice": 0.07623790793113032,
+          "effectiveOutputPrice": 0.4999131913585181
+        },
+        {
+          "providerName": "Sail Research (1)",
+          "providerSlug": "sail-research",
+          "effectiveInputPrice": 0.03004916024551257,
+          "effectiveOutputPrice": 0.5992850919956887
+        },
+        {
+          "providerName": "Sail Research (2)",
+          "providerSlug": "sail-research",
+          "effectiveInputPrice": 0.0303226582823642,
+          "effectiveOutputPrice": 0.5993970545416067
+        },
+        {
+          "providerName": "Venice",
+          "providerSlug": "venice",
+          "effectiveInputPrice": 0.06111528874226541,
+          "effectiveOutputPrice": 0.49962756098321814
+        },
+        {
+          "providerName": "DigitalOcean (1)",
+          "providerSlug": "digitalocean",
+          "effectiveInputPrice": 0.03632856732684005,
+          "effectiveOutputPrice": 0.4391835619316184
+        },
+        {
+          "providerName": "Modal",
+          "providerSlug": "modal",
+          "effectiveInputPrice": 0.07504337295745078,
+          "effectiveOutputPrice": 0.4999007644612411
+        },
+        {
+          "providerName": "Parasail Fast",
+          "providerSlug": "parasail",
+          "effectiveInputPrice": 0.08195241953015567,
+          "effectiveOutputPrice": 0.6243722677282253
+        },
+        {
+          "providerName": "NEAR AI",
+          "providerSlug": "near-ai",
+          "effectiveInputPrice": 0.0309667587728741,
+          "effectiveOutputPrice": 0.44391858451596644
+        },
+        {
+          "providerName": "SiliconFlow",
+          "providerSlug": "siliconflow",
+          "effectiveInputPrice": 0.05387362055319355,
+          "effectiveOutputPrice": 0.49949702194599405
+        },
+        {
+          "providerName": "Inceptron",
+          "providerSlug": "inceptron",
+          "effectiveInputPrice": 0.09186400481975233,
+          "effectiveOutputPrice": 0.5493535983512371
+        },
+        {
+          "providerName": "Baseten (2)",
+          "providerSlug": "baseten",
+          "effectiveInputPrice": 0.06373446850230152,
+          "effectiveOutputPrice": 0.4995361657049971
+        },
+        {
+          "providerName": "GMICloud",
+          "providerSlug": "gmicloud",
+          "effectiveInputPrice": 0.03932631011316732,
+          "effectiveOutputPrice": 0.2996672847537215,
+          "listedInputPrice": 0.15,
+          "listedOutputPrice": 0.5,
+          "discountPercentage": 40
+        },
+        {
+          "providerName": "Phala",
+          "providerSlug": "phala",
+          "effectiveInputPrice": 0.03934965824680545,
+          "effectiveOutputPrice": 0.37427479891989446,
+          "listedInputPrice": 0.15,
+          "listedOutputPrice": 0.5,
+          "discountPercentage": 25
+        },
+        {
+          "providerName": "AtlasCloud",
+          "providerSlug": "atlas-cloud",
+          "effectiveInputPrice": 0.07033766797514922,
+          "effectiveOutputPrice": 0.4996127132679772
+        },
+        {
+          "providerName": "Fireworks (2)",
+          "providerSlug": "fireworks",
+          "effectiveInputPrice": 0.07032914018589399,
+          "effectiveOutputPrice": 0.7488614559176862
+        },
+        {
+          "providerName": "DeepInfra",
+          "providerSlug": "deepinfra",
+          "effectiveInputPrice": 0.07336414976785731,
+          "effectiveOutputPrice": 0.48407876088026575,
+          "listedInputPrice": 0.15,
+          "listedOutputPrice": 0.5,
+          "discountPercentage": 50
+        },
+        {
+          "providerName": "Makora",
+          "providerSlug": "makora",
+          "effectiveInputPrice": 0.054891660876870724,
+          "effectiveOutputPrice": 0.46804774086598794
+        }
+      ],
+      "listedInputPrice": 0.036,
+      "listedOutputPrice": 0.8999999999999999,
+      "listedCacheReadPrice": 0.0108
+    },
+    {
+      "permaslug": "openai/gpt-5.4",
+      "aaModelSlug": "gpt-5-4",
+      "aaModelId": "a89c4b28-2d8c-456e-88ea-255fb51fd2b6",
+      "weightedInputPrice": 1.2280304710625956,
+      "weightedOutputPrice": 15.013694982310648,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 1.1144864850436125,
+          "effectiveOutputPrice": 14.999999999999998
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.6990299679848027,
+          "effectiveOutputPrice": 14.999999999999998
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 2.7499513031282867,
+          "effectiveOutputPrice": 16.496551724137934
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 2.7142857142857144,
+          "effectiveOutputPrice": 16.46041055718475
+        }
+      ],
+      "listedInputPrice": 2.5,
+      "listedOutputPrice": 15,
+      "listedCacheReadPrice": 0.25
+    },
+    {
+      "permaslug": "openai/gpt-5.4-mini",
+      "aaModelSlug": "gpt-5-4-mini",
+      "aaModelId": "ba242e40-83b7-4cd3-a0e0-b56237984914",
+      "weightedInputPrice": 0.28879064336791005,
+      "weightedOutputPrice": 4.500802793205051,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.28597485659421695,
+          "effectiveOutputPrice": 4.498953632803981
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.3279803783962866,
+          "effectiveOutputPrice": 4.498748685074983
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 1.1012673597935796,
+          "effectiveOutputPrice": 9,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.37469317962436915,
+          "effectiveOutputPrice": 2.2453379953379957,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.7999999999999999,
+          "effectiveOutputPrice": 4.8
+        }
+      ],
+      "listedInputPrice": 0.75,
+      "listedOutputPrice": 4.5,
+      "listedCacheReadPrice": 0.075
+    },
+    {
+      "permaslug": "openai/gpt-5.5",
+      "aaModelSlug": "gpt-5-5",
+      "aaModelId": "1f054429-397e-4fdb-9e71-67bc92c1735e",
+      "weightedInputPrice": 1.0347681634192767,
+      "weightedOutputPrice": 29.999999999999996,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (4)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 1.0089128274792494,
+          "effectiveOutputPrice": 29.999999999999996
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.8729197483779518,
+          "effectiveOutputPrice": 30
+        }
+      ],
+      "listedInputPrice": 5,
+      "listedOutputPrice": 30,
+      "listedCacheReadPrice": 0.5
+    },
+    {
+      "permaslug": "openai/gpt-5.5",
+      "aaModelSlug": "gpt-5-5-high",
+      "aaModelId": "b13c1257-d746-4027-8fc8-4892dc14701c",
+      "weightedInputPrice": 1.0347681634192767,
+      "weightedOutputPrice": 29.999999999999996,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (4)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 1.0089128274792494,
+          "effectiveOutputPrice": 29.999999999999996
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.8729197483779518,
+          "effectiveOutputPrice": 30
+        }
+      ],
+      "listedInputPrice": 5,
+      "listedOutputPrice": 30,
+      "listedCacheReadPrice": 0.5
+    },
+    {
+      "permaslug": "openai/gpt-5.5",
+      "aaModelSlug": "gpt-5-5-medium",
+      "aaModelId": "6b79f899-e3c0-45f6-923c-243faccdb2fc",
+      "weightedInputPrice": 1.0347681634192767,
+      "weightedOutputPrice": 29.999999999999996,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (4)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 1.0089128274792494,
+          "effectiveOutputPrice": 29.999999999999996
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.8729197483779518,
+          "effectiveOutputPrice": 30
+        }
+      ],
+      "listedInputPrice": 5,
+      "listedOutputPrice": 30,
+      "listedCacheReadPrice": 0.5
+    },
+    {
+      "permaslug": "openai/gpt-5.6-luna",
+      "aaModelSlug": "gpt-5-6-luna",
+      "aaModelId": "426d24c8-49ae-482a-b4a8-20f1c53f21c1",
+      "weightedInputPrice": 0.12156935292923109,
+      "weightedOutputPrice": 1.04718022153239,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.11478780663875568,
+          "effectiveOutputPrice": 1.2024342246440425
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.09618339689704061,
+          "effectiveOutputPrice": 1.201211925693475
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.23554565750992823,
+          "effectiveOutputPrice": 1.3172834634693549
+        },
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.06869102293120137,
+          "effectiveOutputPrice": 0.5991773855472536,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.22808467084058517,
+          "effectiveOutputPrice": 1.3630458497454176
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.19284756449714285,
+          "effectiveOutputPrice": 2.400625232389714,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.11110010935911635,
+          "effectiveOutputPrice": 1.3191070494730883
+        }
+      ],
+      "listedInputPrice": 0.19999999999999998,
+      "listedOutputPrice": 1.2,
+      "listedCacheReadPrice": 0.02,
+      "listedCacheWritePrice": 0.25
+    },
+    {
+      "permaslug": "openai/gpt-5.6-luna",
+      "aaModelSlug": "gpt-5-6-luna-high",
+      "aaModelId": "aa55297e-8fbf-4372-b4ab-9b068dc6396c",
+      "weightedInputPrice": 0.12156935292923109,
+      "weightedOutputPrice": 1.04718022153239,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.11478780663875568,
+          "effectiveOutputPrice": 1.2024342246440425
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.09618339689704061,
+          "effectiveOutputPrice": 1.201211925693475
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.23554565750992823,
+          "effectiveOutputPrice": 1.3172834634693549
+        },
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.06869102293120137,
+          "effectiveOutputPrice": 0.5991773855472536,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.22808467084058517,
+          "effectiveOutputPrice": 1.3630458497454176
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.19284756449714285,
+          "effectiveOutputPrice": 2.400625232389714,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.11110010935911635,
+          "effectiveOutputPrice": 1.3191070494730883
+        }
+      ],
+      "listedInputPrice": 0.19999999999999998,
+      "listedOutputPrice": 1.2,
+      "listedCacheReadPrice": 0.02,
+      "listedCacheWritePrice": 0.25
+    },
+    {
+      "permaslug": "openai/gpt-5.6-luna",
+      "aaModelSlug": "gpt-5-6-luna-low",
+      "aaModelId": "050c61cd-cddc-463a-a30a-a82aaa37be59",
+      "weightedInputPrice": 0.12156935292923109,
+      "weightedOutputPrice": 1.04718022153239,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.11478780663875568,
+          "effectiveOutputPrice": 1.2024342246440425
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.09618339689704061,
+          "effectiveOutputPrice": 1.201211925693475
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.23554565750992823,
+          "effectiveOutputPrice": 1.3172834634693549
+        },
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.06869102293120137,
+          "effectiveOutputPrice": 0.5991773855472536,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.22808467084058517,
+          "effectiveOutputPrice": 1.3630458497454176
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.19284756449714285,
+          "effectiveOutputPrice": 2.400625232389714,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.11110010935911635,
+          "effectiveOutputPrice": 1.3191070494730883
+        }
+      ],
+      "listedInputPrice": 0.19999999999999998,
+      "listedOutputPrice": 1.2,
+      "listedCacheReadPrice": 0.02,
+      "listedCacheWritePrice": 0.25
+    },
+    {
+      "permaslug": "openai/gpt-5.6-luna",
+      "aaModelSlug": "gpt-5-6-luna-medium",
+      "aaModelId": "58b812bf-8498-46db-b834-f43ccc614b61",
+      "weightedInputPrice": 0.12156935292923109,
+      "weightedOutputPrice": 1.04718022153239,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.11478780663875568,
+          "effectiveOutputPrice": 1.2024342246440425
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.09618339689704061,
+          "effectiveOutputPrice": 1.201211925693475
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.23554565750992823,
+          "effectiveOutputPrice": 1.3172834634693549
+        },
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.06869102293120137,
+          "effectiveOutputPrice": 0.5991773855472536,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.22808467084058517,
+          "effectiveOutputPrice": 1.3630458497454176
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.19284756449714285,
+          "effectiveOutputPrice": 2.400625232389714,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.11110010935911635,
+          "effectiveOutputPrice": 1.3191070494730883
+        }
+      ],
+      "listedInputPrice": 0.19999999999999998,
+      "listedOutputPrice": 1.2,
+      "listedCacheReadPrice": 0.02,
+      "listedCacheWritePrice": 0.25
+    },
+    {
+      "permaslug": "openai/gpt-5.6-luna",
+      "aaModelSlug": "gpt-5-6-luna-non-reasoning",
+      "aaModelId": "dc64f856-3ded-497d-9527-d41d31267ed5",
+      "weightedInputPrice": 0.12156935292923109,
+      "weightedOutputPrice": 1.04718022153239,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.11478780663875568,
+          "effectiveOutputPrice": 1.2024342246440425
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.09618339689704061,
+          "effectiveOutputPrice": 1.201211925693475
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.23554565750992823,
+          "effectiveOutputPrice": 1.3172834634693549
+        },
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.06869102293120137,
+          "effectiveOutputPrice": 0.5991773855472536,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.22808467084058517,
+          "effectiveOutputPrice": 1.3630458497454176
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.19284756449714285,
+          "effectiveOutputPrice": 2.400625232389714,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.11110010935911635,
+          "effectiveOutputPrice": 1.3191070494730883
+        }
+      ],
+      "listedInputPrice": 0.19999999999999998,
+      "listedOutputPrice": 1.2,
+      "listedCacheReadPrice": 0.02,
+      "listedCacheWritePrice": 0.25
+    },
+    {
+      "permaslug": "openai/gpt-5.6-luna",
+      "aaModelSlug": "gpt-5-6-luna-xhigh",
+      "aaModelId": "87110ff0-1f79-41b4-9976-eda250597317",
+      "weightedInputPrice": 0.12156935292923109,
+      "weightedOutputPrice": 1.04718022153239,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.11478780663875568,
+          "effectiveOutputPrice": 1.2024342246440425
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.09618339689704061,
+          "effectiveOutputPrice": 1.201211925693475
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.23554565750992823,
+          "effectiveOutputPrice": 1.3172834634693549
+        },
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.06869102293120137,
+          "effectiveOutputPrice": 0.5991773855472536,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.22808467084058517,
+          "effectiveOutputPrice": 1.3630458497454176
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.19284756449714285,
+          "effectiveOutputPrice": 2.400625232389714,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.11110010935911635,
+          "effectiveOutputPrice": 1.3191070494730883
+        }
+      ],
+      "listedInputPrice": 0.19999999999999998,
+      "listedOutputPrice": 1.2,
+      "listedCacheReadPrice": 0.02,
+      "listedCacheWritePrice": 0.25
+    },
+    {
+      "permaslug": "openai/gpt-5.6-sol",
+      "aaModelSlug": "gpt-5-6-sol",
+      "aaModelId": "d93edfe8-bf35-49ad-b56e-b18116142a1c",
+      "weightedInputPrice": 0.8282362148830297,
+      "weightedOutputPrice": 13.659769621394704,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.5080297884824012,
+          "effectiveOutputPrice": 10.165396889106862,
+          "listedInputPrice": 2,
+          "listedOutputPrice": 10,
+          "discountPercentage": 50
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.3251134732870842,
+          "effectiveOutputPrice": 20.013234332580335
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 1.8300200704801504,
+          "effectiveOutputPrice": 22.47495775205619
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.4148608857348022,
+          "effectiveOutputPrice": 5.51868462315606,
+          "listedInputPrice": 2,
+          "listedOutputPrice": 10,
+          "discountPercentage": 50,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 1.8684993188679209,
+          "effectiveOutputPrice": 22.59437807317666,
+          "listedInputPrice": 2,
+          "listedOutputPrice": 10,
+          "discountPercentage": 50,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.960628672818889,
+          "effectiveOutputPrice": 22
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.0376198010231177,
+          "effectiveOutputPrice": 22.206156447508313
+        }
+      ],
+      "listedInputPrice": 2,
+      "listedOutputPrice": 10,
+      "listedCacheReadPrice": 0.19999999999999998,
+      "listedCacheWritePrice": 2.5
+    },
+    {
+      "permaslug": "openai/gpt-5.6-sol",
+      "aaModelSlug": "gpt-5-6-sol-high",
+      "aaModelId": "8afc250d-b538-45a2-812a-4605f4ffd87e",
+      "weightedInputPrice": 0.8282362148830297,
+      "weightedOutputPrice": 13.659769621394704,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.5080297884824012,
+          "effectiveOutputPrice": 10.165396889106862,
+          "listedInputPrice": 2,
+          "listedOutputPrice": 10,
+          "discountPercentage": 50
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.3251134732870842,
+          "effectiveOutputPrice": 20.013234332580335
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 1.8300200704801504,
+          "effectiveOutputPrice": 22.47495775205619
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.4148608857348022,
+          "effectiveOutputPrice": 5.51868462315606,
+          "listedInputPrice": 2,
+          "listedOutputPrice": 10,
+          "discountPercentage": 50,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 1.8684993188679209,
+          "effectiveOutputPrice": 22.59437807317666,
+          "listedInputPrice": 2,
+          "listedOutputPrice": 10,
+          "discountPercentage": 50,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.960628672818889,
+          "effectiveOutputPrice": 22
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.0376198010231177,
+          "effectiveOutputPrice": 22.206156447508313
+        }
+      ],
+      "listedInputPrice": 2,
+      "listedOutputPrice": 10,
+      "listedCacheReadPrice": 0.19999999999999998,
+      "listedCacheWritePrice": 2.5
+    },
+    {
+      "permaslug": "openai/gpt-5.6-sol",
+      "aaModelSlug": "gpt-5-6-sol-low",
+      "aaModelId": "0904b596-8932-43bd-9b21-324f128e1723",
+      "weightedInputPrice": 0.8282362148830297,
+      "weightedOutputPrice": 13.659769621394704,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.5080297884824012,
+          "effectiveOutputPrice": 10.165396889106862,
+          "listedInputPrice": 2,
+          "listedOutputPrice": 10,
+          "discountPercentage": 50
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.3251134732870842,
+          "effectiveOutputPrice": 20.013234332580335
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 1.8300200704801504,
+          "effectiveOutputPrice": 22.47495775205619
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.4148608857348022,
+          "effectiveOutputPrice": 5.51868462315606,
+          "listedInputPrice": 2,
+          "listedOutputPrice": 10,
+          "discountPercentage": 50,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 1.8684993188679209,
+          "effectiveOutputPrice": 22.59437807317666,
+          "listedInputPrice": 2,
+          "listedOutputPrice": 10,
+          "discountPercentage": 50,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.960628672818889,
+          "effectiveOutputPrice": 22
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.0376198010231177,
+          "effectiveOutputPrice": 22.206156447508313
+        }
+      ],
+      "listedInputPrice": 2,
+      "listedOutputPrice": 10,
+      "listedCacheReadPrice": 0.19999999999999998,
+      "listedCacheWritePrice": 2.5
+    },
+    {
+      "permaslug": "openai/gpt-5.6-sol",
+      "aaModelSlug": "gpt-5-6-sol-medium",
+      "aaModelId": "6f174934-5b7d-4333-86cb-f5ebf4a862e3",
+      "weightedInputPrice": 0.8282362148830297,
+      "weightedOutputPrice": 13.659769621394704,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.5080297884824012,
+          "effectiveOutputPrice": 10.165396889106862,
+          "listedInputPrice": 2,
+          "listedOutputPrice": 10,
+          "discountPercentage": 50
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.3251134732870842,
+          "effectiveOutputPrice": 20.013234332580335
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 1.8300200704801504,
+          "effectiveOutputPrice": 22.47495775205619
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.4148608857348022,
+          "effectiveOutputPrice": 5.51868462315606,
+          "listedInputPrice": 2,
+          "listedOutputPrice": 10,
+          "discountPercentage": 50,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 1.8684993188679209,
+          "effectiveOutputPrice": 22.59437807317666,
+          "listedInputPrice": 2,
+          "listedOutputPrice": 10,
+          "discountPercentage": 50,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.960628672818889,
+          "effectiveOutputPrice": 22
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.0376198010231177,
+          "effectiveOutputPrice": 22.206156447508313
+        }
+      ],
+      "listedInputPrice": 2,
+      "listedOutputPrice": 10,
+      "listedCacheReadPrice": 0.19999999999999998,
+      "listedCacheWritePrice": 2.5
+    },
+    {
+      "permaslug": "openai/gpt-5.6-sol",
+      "aaModelSlug": "gpt-5-6-sol-xhigh",
+      "aaModelId": "d998db47-9b67-4727-a2bb-2e1261020ac0",
+      "weightedInputPrice": 0.8282362148830297,
+      "weightedOutputPrice": 13.659769621394704,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.5080297884824012,
+          "effectiveOutputPrice": 10.165396889106862,
+          "listedInputPrice": 2,
+          "listedOutputPrice": 10,
+          "discountPercentage": 50
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.3251134732870842,
+          "effectiveOutputPrice": 20.013234332580335
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 1.8300200704801504,
+          "effectiveOutputPrice": 22.47495775205619
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.4148608857348022,
+          "effectiveOutputPrice": 5.51868462315606,
+          "listedInputPrice": 2,
+          "listedOutputPrice": 10,
+          "discountPercentage": 50,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 1.8684993188679209,
+          "effectiveOutputPrice": 22.59437807317666,
+          "listedInputPrice": 2,
+          "listedOutputPrice": 10,
+          "discountPercentage": 50,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.960628672818889,
+          "effectiveOutputPrice": 22
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.0376198010231177,
+          "effectiveOutputPrice": 22.206156447508313
+        }
+      ],
+      "listedInputPrice": 2,
+      "listedOutputPrice": 10,
+      "listedCacheReadPrice": 0.19999999999999998,
+      "listedCacheWritePrice": 2.5
+    },
+    {
+      "permaslug": "openai/gpt-6.1-sol",
+      "aaModelSlug": "gpt-6-1-sol",
+      "aaModelId": "b25ac058-1e33-4c31-bbc9-a20c3ad0717a",
+      "weightedInputPrice": 0.5951083829985779,
+      "weightedOutputPrice": 9.990195447035967,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (4)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.41742602649081945,
+          "effectiveOutputPrice": 10.096737116064467
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.1762623994330688,
+          "effectiveOutputPrice": 10.035917195785364
+        },
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.18607940964964442,
+          "effectiveOutputPrice": 5.024459534473463,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.8399388182639901,
+          "effectiveOutputPrice": 11.051573515792763
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.38542321597910284,
+          "effectiveOutputPrice": 11.065793147005067
+        },
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.8226170647537335,
+          "effectiveOutputPrice": 20.540792605423473,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.48804929445503364,
+          "effectiveOutputPrice": 11.179152810213765
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 3.9564819804980575,
+          "effectiveOutputPrice": 61.26489451385524,
+          "serviceTier": "ultrafast"
+        }
+      ],
+      "listedInputPrice": 2,
+      "listedOutputPrice": 10,
+      "listedCacheReadPrice": 0.09999999999999999,
+      "listedCacheWritePrice": 2.5
+    },
+    {
+      "permaslug": "openai/gpt-6.1-sol",
+      "aaModelSlug": "gpt-6-1-sol-high",
+      "aaModelId": "3b84fee3-b70a-41bc-819e-5fbdef9a0042",
+      "weightedInputPrice": 0.5951083829985779,
+      "weightedOutputPrice": 9.990195447035967,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (4)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.41742602649081945,
+          "effectiveOutputPrice": 10.096737116064467
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.1762623994330688,
+          "effectiveOutputPrice": 10.035917195785364
+        },
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.18607940964964442,
+          "effectiveOutputPrice": 5.024459534473463,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.8399388182639901,
+          "effectiveOutputPrice": 11.051573515792763
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.38542321597910284,
+          "effectiveOutputPrice": 11.065793147005067
+        },
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.8226170647537335,
+          "effectiveOutputPrice": 20.540792605423473,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.48804929445503364,
+          "effectiveOutputPrice": 11.179152810213765
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 3.9564819804980575,
+          "effectiveOutputPrice": 61.26489451385524,
+          "serviceTier": "ultrafast"
+        }
+      ],
+      "listedInputPrice": 2,
+      "listedOutputPrice": 10,
+      "listedCacheReadPrice": 0.09999999999999999,
+      "listedCacheWritePrice": 2.5
+    },
+    {
+      "permaslug": "openai/gpt-6.1-sol",
+      "aaModelSlug": "gpt-6-1-sol-low",
+      "aaModelId": "e76e0fe5-93ca-4272-9359-2eb1740467d1",
+      "weightedInputPrice": 0.5951083829985779,
+      "weightedOutputPrice": 9.990195447035967,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (4)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.41742602649081945,
+          "effectiveOutputPrice": 10.096737116064467
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.1762623994330688,
+          "effectiveOutputPrice": 10.035917195785364
+        },
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.18607940964964442,
+          "effectiveOutputPrice": 5.024459534473463,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.8399388182639901,
+          "effectiveOutputPrice": 11.051573515792763
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.38542321597910284,
+          "effectiveOutputPrice": 11.065793147005067
+        },
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.8226170647537335,
+          "effectiveOutputPrice": 20.540792605423473,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.48804929445503364,
+          "effectiveOutputPrice": 11.179152810213765
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 3.9564819804980575,
+          "effectiveOutputPrice": 61.26489451385524,
+          "serviceTier": "ultrafast"
+        }
+      ],
+      "listedInputPrice": 2,
+      "listedOutputPrice": 10,
+      "listedCacheReadPrice": 0.09999999999999999,
+      "listedCacheWritePrice": 2.5
+    },
+    {
+      "permaslug": "openai/gpt-6.1-sol",
+      "aaModelSlug": "gpt-6-1-sol-medium",
+      "aaModelId": "a2e51d62-ea4e-4f15-8be0-be9dc1fb489d",
+      "weightedInputPrice": 0.5951083829985779,
+      "weightedOutputPrice": 9.990195447035967,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (4)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.41742602649081945,
+          "effectiveOutputPrice": 10.096737116064467
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.1762623994330688,
+          "effectiveOutputPrice": 10.035917195785364
+        },
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.18607940964964442,
+          "effectiveOutputPrice": 5.024459534473463,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.8399388182639901,
+          "effectiveOutputPrice": 11.051573515792763
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.38542321597910284,
+          "effectiveOutputPrice": 11.065793147005067
+        },
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.8226170647537335,
+          "effectiveOutputPrice": 20.540792605423473,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.48804929445503364,
+          "effectiveOutputPrice": 11.179152810213765
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 3.9564819804980575,
+          "effectiveOutputPrice": 61.26489451385524,
+          "serviceTier": "ultrafast"
+        }
+      ],
+      "listedInputPrice": 2,
+      "listedOutputPrice": 10,
+      "listedCacheReadPrice": 0.09999999999999999,
+      "listedCacheWritePrice": 2.5
+    },
+    {
+      "permaslug": "openai/gpt-6.1-sol",
+      "aaModelSlug": "gpt-6-1-sol-xhigh",
+      "aaModelId": "092a3b0e-c5c8-45dc-bf1b-53673c8ff352",
+      "weightedInputPrice": 0.5951083829985779,
+      "weightedOutputPrice": 9.990195447035967,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (4)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.41742602649081945,
+          "effectiveOutputPrice": 10.096737116064467
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 1.1762623994330688,
+          "effectiveOutputPrice": 10.035917195785364
+        },
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.18607940964964442,
+          "effectiveOutputPrice": 5.024459534473463,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.8399388182639901,
+          "effectiveOutputPrice": 11.051573515792763
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.38542321597910284,
+          "effectiveOutputPrice": 11.065793147005067
+        },
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.8226170647537335,
+          "effectiveOutputPrice": 20.540792605423473,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.48804929445503364,
+          "effectiveOutputPrice": 11.179152810213765
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 3.9564819804980575,
+          "effectiveOutputPrice": 61.26489451385524,
+          "serviceTier": "ultrafast"
+        }
+      ],
+      "listedInputPrice": 2,
+      "listedOutputPrice": 10,
+      "listedCacheReadPrice": 0.09999999999999999,
+      "listedCacheWritePrice": 2.5
+    },
+    {
+      "permaslug": "openai/gpt-6-astra",
+      "aaModelSlug": "gpt-6-astra",
+      "aaModelId": "2f339a97-9a0d-499a-9cb5-e0db665bfa25",
+      "weightedInputPrice": 2.5215363828206976,
+      "weightedOutputPrice": 51.0260118818589,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (4)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 2.357181938022078,
+          "effectiveOutputPrice": 50.51228098372896
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 3.025826079670087,
+          "effectiveOutputPrice": 51.15862306095711
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 4.263558476418799,
+          "effectiveOutputPrice": 112.05871333471644,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 1.1533518111432173,
+          "effectiveOutputPrice": 25.10111833374659,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 2.3981973462858486,
+          "effectiveOutputPrice": 56.5920562072519
+        },
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 14.107478922361055,
+          "effectiveOutputPrice": 300.3170766811772,
+          "serviceTier": "ultrafast"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 3.511589048102565,
+          "effectiveOutputPrice": 55.41856834218599
+        }
+      ],
+      "listedInputPrice": 10,
+      "listedOutputPrice": 50,
+      "listedCacheReadPrice": 1,
+      "listedCacheWritePrice": 12.5
+    },
+    {
+      "permaslug": "openai/gpt-6-astra",
+      "aaModelSlug": "gpt-6-astra-high",
+      "aaModelId": "e05a4828-0536-4876-870d-a235023f992b",
+      "weightedInputPrice": 2.5215363828206976,
+      "weightedOutputPrice": 51.0260118818589,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (4)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 2.357181938022078,
+          "effectiveOutputPrice": 50.51228098372896
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 3.025826079670087,
+          "effectiveOutputPrice": 51.15862306095711
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 4.263558476418799,
+          "effectiveOutputPrice": 112.05871333471644,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 1.1533518111432173,
+          "effectiveOutputPrice": 25.10111833374659,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 2.3981973462858486,
+          "effectiveOutputPrice": 56.5920562072519
+        },
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 14.107478922361055,
+          "effectiveOutputPrice": 300.3170766811772,
+          "serviceTier": "ultrafast"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 3.511589048102565,
+          "effectiveOutputPrice": 55.41856834218599
+        }
+      ],
+      "listedInputPrice": 10,
+      "listedOutputPrice": 50,
+      "listedCacheReadPrice": 1,
+      "listedCacheWritePrice": 12.5
+    },
+    {
+      "permaslug": "openai/gpt-6-astra",
+      "aaModelSlug": "gpt-6-astra-low",
+      "aaModelId": "a3f8100d-e38f-408b-b0fa-0085dae18dc1",
+      "weightedInputPrice": 2.5215363828206976,
+      "weightedOutputPrice": 51.0260118818589,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (4)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 2.357181938022078,
+          "effectiveOutputPrice": 50.51228098372896
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 3.025826079670087,
+          "effectiveOutputPrice": 51.15862306095711
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 4.263558476418799,
+          "effectiveOutputPrice": 112.05871333471644,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 1.1533518111432173,
+          "effectiveOutputPrice": 25.10111833374659,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 2.3981973462858486,
+          "effectiveOutputPrice": 56.5920562072519
+        },
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 14.107478922361055,
+          "effectiveOutputPrice": 300.3170766811772,
+          "serviceTier": "ultrafast"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 3.511589048102565,
+          "effectiveOutputPrice": 55.41856834218599
+        }
+      ],
+      "listedInputPrice": 10,
+      "listedOutputPrice": 50,
+      "listedCacheReadPrice": 1,
+      "listedCacheWritePrice": 12.5
+    },
+    {
+      "permaslug": "openai/gpt-6-astra",
+      "aaModelSlug": "gpt-6-astra-medium",
+      "aaModelId": "e97a4ef5-e817-480e-9595-12f81dc4974f",
+      "weightedInputPrice": 2.5215363828206976,
+      "weightedOutputPrice": 51.0260118818589,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (4)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 2.357181938022078,
+          "effectiveOutputPrice": 50.51228098372896
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 3.025826079670087,
+          "effectiveOutputPrice": 51.15862306095711
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 4.263558476418799,
+          "effectiveOutputPrice": 112.05871333471644,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 1.1533518111432173,
+          "effectiveOutputPrice": 25.10111833374659,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 2.3981973462858486,
+          "effectiveOutputPrice": 56.5920562072519
+        },
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 14.107478922361055,
+          "effectiveOutputPrice": 300.3170766811772,
+          "serviceTier": "ultrafast"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 3.511589048102565,
+          "effectiveOutputPrice": 55.41856834218599
+        }
+      ],
+      "listedInputPrice": 10,
+      "listedOutputPrice": 50,
+      "listedCacheReadPrice": 1,
+      "listedCacheWritePrice": 12.5
+    },
+    {
+      "permaslug": "openai/gpt-6-astra",
+      "aaModelSlug": "gpt-6-astra-xhigh",
+      "aaModelId": "1f541ef3-913f-4eb2-9d07-0e93c7a9a5e3",
+      "weightedInputPrice": 2.5215363828206976,
+      "weightedOutputPrice": 51.0260118818589,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (4)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 2.357181938022078,
+          "effectiveOutputPrice": 50.51228098372896
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 3.025826079670087,
+          "effectiveOutputPrice": 51.15862306095711
+        },
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 4.263558476418799,
+          "effectiveOutputPrice": 112.05871333471644,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 1.1533518111432173,
+          "effectiveOutputPrice": 25.10111833374659,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 2.3981973462858486,
+          "effectiveOutputPrice": 56.5920562072519
+        },
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 14.107478922361055,
+          "effectiveOutputPrice": 300.3170766811772,
+          "serviceTier": "ultrafast"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 3.511589048102565,
+          "effectiveOutputPrice": 55.41856834218599
+        }
+      ],
+      "listedInputPrice": 10,
+      "listedOutputPrice": 50,
+      "listedCacheReadPrice": 1,
+      "listedCacheWritePrice": 12.5
+    },
+    {
+      "permaslug": "openai/gpt-6-luna",
+      "aaModelSlug": "gpt-6-luna",
+      "aaModelId": "6fb13851-40ce-4bda-ad3f-6b38e0c5daa7",
+      "weightedInputPrice": 0.035662260517589146,
+      "weightedOutputPrice": 0.49007819836181643,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.03648888220461567,
+          "effectiveOutputPrice": 0.5031123378856079
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.02777089075935323,
+          "effectiveOutputPrice": 0.501803600074673
+        },
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.02368151989088744,
+          "effectiveOutputPrice": 0.25065900027453714,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.06578277992456,
+          "effectiveOutputPrice": 1.0055801227799763,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.07604018348852991,
+          "effectiveOutputPrice": 0.5463811861899895
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.06741608260616733,
+          "effectiveOutputPrice": 0.5491261057314147
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.06590233128802014,
+          "effectiveOutputPrice": 0.5519246133262203
+        }
+      ],
+      "listedInputPrice": 0.09999999999999999,
+      "listedOutputPrice": 0.5,
+      "listedCacheReadPrice": 0.01,
+      "listedCacheWritePrice": 0.125
+    },
+    {
+      "permaslug": "openai/gpt-6-luna",
+      "aaModelSlug": "gpt-6-luna-high",
+      "aaModelId": "7d1229bc-deea-4717-ba5b-f59a35d991e3",
+      "weightedInputPrice": 0.035662260517589146,
+      "weightedOutputPrice": 0.49007819836181643,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.03648888220461567,
+          "effectiveOutputPrice": 0.5031123378856079
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.02777089075935323,
+          "effectiveOutputPrice": 0.501803600074673
+        },
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.02368151989088744,
+          "effectiveOutputPrice": 0.25065900027453714,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.06578277992456,
+          "effectiveOutputPrice": 1.0055801227799763,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.07604018348852991,
+          "effectiveOutputPrice": 0.5463811861899895
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.06741608260616733,
+          "effectiveOutputPrice": 0.5491261057314147
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.06590233128802014,
+          "effectiveOutputPrice": 0.5519246133262203
+        }
+      ],
+      "listedInputPrice": 0.09999999999999999,
+      "listedOutputPrice": 0.5,
+      "listedCacheReadPrice": 0.01,
+      "listedCacheWritePrice": 0.125
+    },
+    {
+      "permaslug": "openai/gpt-6-luna",
+      "aaModelSlug": "gpt-6-luna-low",
+      "aaModelId": "bf9708d8-933d-44f6-affa-b696a7a650c9",
+      "weightedInputPrice": 0.035662260517589146,
+      "weightedOutputPrice": 0.49007819836181643,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.03648888220461567,
+          "effectiveOutputPrice": 0.5031123378856079
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.02777089075935323,
+          "effectiveOutputPrice": 0.501803600074673
+        },
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.02368151989088744,
+          "effectiveOutputPrice": 0.25065900027453714,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.06578277992456,
+          "effectiveOutputPrice": 1.0055801227799763,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.07604018348852991,
+          "effectiveOutputPrice": 0.5463811861899895
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.06741608260616733,
+          "effectiveOutputPrice": 0.5491261057314147
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.06590233128802014,
+          "effectiveOutputPrice": 0.5519246133262203
+        }
+      ],
+      "listedInputPrice": 0.09999999999999999,
+      "listedOutputPrice": 0.5,
+      "listedCacheReadPrice": 0.01,
+      "listedCacheWritePrice": 0.125
+    },
+    {
+      "permaslug": "openai/gpt-6-luna",
+      "aaModelSlug": "gpt-6-luna-medium",
+      "aaModelId": "36667da0-9222-4967-adbb-f7efa15ad213",
+      "weightedInputPrice": 0.035662260517589146,
+      "weightedOutputPrice": 0.49007819836181643,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.03648888220461567,
+          "effectiveOutputPrice": 0.5031123378856079
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.02777089075935323,
+          "effectiveOutputPrice": 0.501803600074673
+        },
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.02368151989088744,
+          "effectiveOutputPrice": 0.25065900027453714,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.06578277992456,
+          "effectiveOutputPrice": 1.0055801227799763,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.07604018348852991,
+          "effectiveOutputPrice": 0.5463811861899895
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.06741608260616733,
+          "effectiveOutputPrice": 0.5491261057314147
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.06590233128802014,
+          "effectiveOutputPrice": 0.5519246133262203
+        }
+      ],
+      "listedInputPrice": 0.09999999999999999,
+      "listedOutputPrice": 0.5,
+      "listedCacheReadPrice": 0.01,
+      "listedCacheWritePrice": 0.125
+    },
+    {
+      "permaslug": "openai/gpt-6-luna",
+      "aaModelSlug": "gpt-6-luna-xhigh",
+      "aaModelId": "19813eb2-460a-475c-af65-810bb8660fec",
+      "weightedInputPrice": 0.035662260517589146,
+      "weightedOutputPrice": 0.49007819836181643,
+      "providerSummaries": [
+        {
+          "providerName": "OpenAI (1)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.03648888220461567,
+          "effectiveOutputPrice": 0.5031123378856079
+        },
+        {
+          "providerName": "Azure (1)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.02777089075935323,
+          "effectiveOutputPrice": 0.501803600074673
+        },
+        {
+          "providerName": "OpenAI (3)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.02368151989088744,
+          "effectiveOutputPrice": 0.25065900027453714,
+          "serviceTier": "flex"
+        },
+        {
+          "providerName": "OpenAI (2)",
+          "providerSlug": "openai",
+          "effectiveInputPrice": 0.06578277992456,
+          "effectiveOutputPrice": 1.0055801227799763,
+          "serviceTier": "priority"
+        },
+        {
+          "providerName": "Azure (2)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.07604018348852991,
+          "effectiveOutputPrice": 0.5463811861899895
+        },
+        {
+          "providerName": "Azure (3)",
+          "providerSlug": "azure",
+          "effectiveInputPrice": 0.06741608260616733,
+          "effectiveOutputPrice": 0.5491261057314147
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.06590233128802014,
+          "effectiveOutputPrice": 0.5519246133262203
+        }
+      ],
+      "listedInputPrice": 0.09999999999999999,
+      "listedOutputPrice": 0.5,
+      "listedCacheReadPrice": 0.01,
+      "listedCacheWritePrice": 0.125
+    },
+    {
+      "permaslug": "x-ai/grok-4.6",
+      "aaModelSlug": "grok-4-6",
+      "aaModelId": "c8adc5cf-fd5a-407b-af51-dc3bede3e49c",
+      "weightedInputPrice": 1.054982402713724,
+      "weightedOutputPrice": 6.076493421987539,
+      "providerSummaries": [
+        {
+          "providerName": "SpaceXAI (3)",
+          "providerSlug": "xai",
+          "effectiveInputPrice": 0.9259069609109993,
+          "effectiveOutputPrice": 6.007967614464036
+        },
+        {
+          "providerName": "SpaceXAI (1)",
+          "providerSlug": "xai",
+          "effectiveInputPrice": 1.2153358252666773,
+          "effectiveOutputPrice": 6.162860601306482
+        }
+      ],
+      "listedInputPrice": 2,
+      "listedOutputPrice": 6,
+      "listedCacheReadPrice": 0.5
+    },
+    {
+      "permaslug": "x-ai/grok-4.6",
+      "aaModelSlug": "grok-4-6-medium",
+      "aaModelId": "26614164-6840-4e17-a65a-2deb2fe7e87b",
+      "weightedInputPrice": 1.054982402713724,
+      "weightedOutputPrice": 6.076493421987539,
+      "providerSummaries": [
+        {
+          "providerName": "SpaceXAI (3)",
+          "providerSlug": "xai",
+          "effectiveInputPrice": 0.9259069609109993,
+          "effectiveOutputPrice": 6.007967614464036
+        },
+        {
+          "providerName": "SpaceXAI (1)",
+          "providerSlug": "xai",
+          "effectiveInputPrice": 1.2153358252666773,
+          "effectiveOutputPrice": 6.162860601306482
+        }
+      ],
+      "listedInputPrice": 2,
+      "listedOutputPrice": 6,
+      "listedCacheReadPrice": 0.5
+    },
+    {
+      "permaslug": "tencent/hy3",
+      "aaModelSlug": "hy3",
+      "aaModelId": "b23e6c69-96e5-44c9-8f58-4b42e0c399d5",
+      "weightedInputPrice": 0.042939693567237716,
+      "weightedOutputPrice": 0.5346595291954451,
+      "providerSummaries": [
+        {
+          "providerName": "Tencent Cloud",
+          "providerSlug": "tencent",
+          "effectiveInputPrice": 0.04251977260764083,
+          "effectiveOutputPrice": 0.5270392222897723
+        },
+        {
+          "providerName": "NovitaAI",
+          "providerSlug": "novita",
+          "effectiveInputPrice": 0.08154395414558953,
+          "effectiveOutputPrice": 0.5792669608142937
+        },
+        {
+          "providerName": "AtlasCloud",
+          "providerSlug": "atlas-cloud",
+          "effectiveInputPrice": 0.0858315574528735,
+          "effectiveOutputPrice": 0.7987837837837838
+        },
+        {
+          "providerName": "Phala",
+          "providerSlug": "phala",
+          "effectiveInputPrice": 0.11803787168048403,
+          "effectiveOutputPrice": 0.6309523809523809
+        },
+        {
+          "providerName": "GMICloud",
+          "providerSlug": "gmicloud",
+          "effectiveInputPrice": 0.11608517188301694,
+          "effectiveOutputPrice": 0.5785775492716367
+        }
+      ],
+      "listedInputPrice": 0.13199999999999998,
+      "listedOutputPrice": 0.5279999999999999,
+      "listedCacheReadPrice": 0.032999999999999995
+    },
+    {
+      "permaslug": "moonshotai/kimi-k2.6",
+      "aaModelSlug": "kimi-k2-6",
+      "aaModelId": "0de67206-4d36-4d10-b8f6-cf37fa747a03",
+      "weightedInputPrice": 0.31784162611171796,
+      "weightedOutputPrice": 3.331771482836167,
+      "providerSummaries": [
+        {
+          "providerName": "Inceptron",
+          "providerSlug": "inceptron",
+          "effectiveInputPrice": 0.1761161211563575,
+          "effectiveOutputPrice": 2.447994274002017
+        },
+        {
+          "providerName": "Moonshot AI",
+          "providerSlug": "moonshotai",
+          "effectiveInputPrice": 0.4709124381765472,
+          "effectiveOutputPrice": 4
+        },
+        {
+          "providerName": "CoreWeave",
+          "providerSlug": "coreweave",
+          "effectiveInputPrice": 0.326478071103044,
+          "effectiveOutputPrice": 3.409053097823151
+        },
+        {
+          "providerName": "DeepInfra",
+          "providerSlug": "deepinfra",
+          "effectiveInputPrice": 0.23064608589294158,
+          "effectiveOutputPrice": 3.49781181619256
+        },
+        {
+          "providerName": "Parasail",
+          "providerSlug": "parasail",
+          "effectiveInputPrice": 0.32204856153532124,
+          "effectiveOutputPrice": 3.4996366939146233
+        },
+        {
+          "providerName": "Crusoe",
+          "providerSlug": "crusoe",
+          "effectiveInputPrice": 0.470367362436848,
+          "effectiveOutputPrice": 3.4983839015743925
+        },
+        {
+          "providerName": "Baidu Qianfan",
+          "providerSlug": "baidu",
+          "effectiveInputPrice": 0.4294262846884584,
+          "effectiveOutputPrice": 4
+        },
+        {
+          "providerName": "Chutes",
+          "providerSlug": "chutes",
+          "effectiveInputPrice": 0.16163527505264283,
+          "effectiveOutputPrice": 1.9439485897893611
+        },
+        {
+          "providerName": "DigitalOcean",
+          "providerSlug": "digitalocean",
+          "effectiveInputPrice": 0.167478308948622,
+          "effectiveOutputPrice": 2.398293029871977
+        },
+        {
+          "providerName": "Venice",
+          "providerSlug": "venice",
+          "effectiveInputPrice": 0.16050373264494525,
+          "effectiveOutputPrice": 3.495798319327731
+        },
+        {
+          "providerName": "StreamLake",
+          "providerSlug": "streamlake",
+          "effectiveInputPrice": 0.2847094801223241,
+          "effectiveOutputPrice": 2.517885532591415,
+          "listedInputPrice": 0.9499999999999998,
+          "listedOutputPrice": 4,
+          "discountPercentage": 37
+        },
+        {
+          "providerName": "Cloudflare",
+          "providerSlug": "cloudflare",
+          "effectiveInputPrice": 0.33445508672016566,
+          "effectiveOutputPrice": 4.000000000000001
+        },
+        {
+          "providerName": "AtlasCloud",
+          "providerSlug": "atlas-cloud",
+          "effectiveInputPrice": 0.5644035532994923,
+          "effectiveOutputPrice": 4
+        },
+        {
+          "providerName": "Phala",
+          "providerSlug": "phala",
+          "effectiveInputPrice": 0.8779419813902573,
+          "effectiveOutputPrice": 4.588652482269504
+        },
+        {
+          "providerName": "NovitaAI",
+          "providerSlug": "novita",
+          "effectiveInputPrice": 0.5877788554801163,
+          "effectiveOutputPrice": 3.3898809523809526
+        }
+      ],
+      "listedInputPrice": 0.65,
+      "listedOutputPrice": 3.41,
+      "listedCacheReadPrice": 0.15
+    },
+    {
+      "permaslug": "moonshotai/kimi-k3",
+      "aaModelSlug": "kimi-k3",
+      "aaModelId": "f7d2fc3e-1f7b-405f-818c-07952a4af78f",
+      "weightedInputPrice": 0.5402390920299842,
+      "weightedOutputPrice": 15.540455381981214,
+      "providerSummaries": [
+        {
+          "providerName": "inference.net",
+          "providerSlug": "inference-net",
+          "effectiveInputPrice": 0.5616794095834908,
+          "effectiveOutputPrice": 11.573228070789252
+        },
+        {
+          "providerName": "inference.net Fast",
+          "providerSlug": "inference-net",
+          "effectiveInputPrice": 0.6077173840130242,
+          "effectiveOutputPrice": 15
+        },
+        {
+          "providerName": "Alibaba Cloud Int.",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 0.42381273741125186,
+          "effectiveOutputPrice": 17.249706099279905
+        },
+        {
+          "providerName": "Parasail",
+          "providerSlug": "parasail",
+          "effectiveInputPrice": 0.4810365958308054,
+          "effectiveOutputPrice": 13
+        },
+        {
+          "providerName": "Together",
+          "providerSlug": "together",
+          "effectiveInputPrice": 0.5374776693820318,
+          "effectiveOutputPrice": 14.307295964742215
+        },
+        {
+          "providerName": "Moonshot AI",
+          "providerSlug": "moonshotai",
+          "effectiveInputPrice": 0.4828644263040336,
+          "effectiveOutputPrice": 14.999999999999998
+        },
+        {
+          "providerName": "Fireworks Fast",
+          "providerSlug": "fireworks",
+          "effectiveInputPrice": 0.7049880232628439,
+          "effectiveOutputPrice": 22.499756967880572
+        },
+        {
+          "providerName": "Wafer (1)",
+          "providerSlug": "wafer",
+          "effectiveInputPrice": 0.3666357385296946,
+          "effectiveOutputPrice": 24.031292858930183
+        },
+        {
+          "providerName": "DigitalOcean",
+          "providerSlug": "digitalocean",
+          "effectiveInputPrice": 0.37796053613989866,
+          "effectiveOutputPrice": 12.949520494986256
+        },
+        {
+          "providerName": "Sail Research",
+          "providerSlug": "sail-research",
+          "effectiveInputPrice": 0.3749729175032827,
+          "effectiveOutputPrice": 13.499960344934966
+        },
+        {
+          "providerName": "Morph",
+          "providerSlug": "morph",
+          "effectiveInputPrice": 0.3755143970773661,
+          "effectiveOutputPrice": 14.89981121690225
+        },
+        {
+          "providerName": "Modal",
+          "providerSlug": "modal",
+          "effectiveInputPrice": 0.644873068839014,
+          "effectiveOutputPrice": 15
+        },
+        {
+          "providerName": "Phala",
+          "providerSlug": "phala",
+          "effectiveInputPrice": 0.6134077528873902,
+          "effectiveOutputPrice": 12.749916252268369,
+          "listedInputPrice": 3.0000000000000004,
+          "listedOutputPrice": 15,
+          "discountPercentage": 15
+        },
+        {
+          "providerName": "Relace",
+          "providerSlug": "relace",
+          "effectiveInputPrice": 0.648150961155033,
+          "effectiveOutputPrice": 14.000000000000002
+        },
+        {
+          "providerName": "Fireworks (1)",
+          "providerSlug": "fireworks",
+          "effectiveInputPrice": 0.9490177012758829,
+          "effectiveOutputPrice": 22.499636960087372
+        },
+        {
+          "providerName": "Baseten",
+          "providerSlug": "baseten",
+          "effectiveInputPrice": 0.6689882809595598,
+          "effectiveOutputPrice": 15
+        },
+        {
+          "providerName": "Fireworks (2)",
+          "providerSlug": "fireworks",
+          "effectiveInputPrice": 0.7171406499499988,
+          "effectiveOutputPrice": 14.999999999999998
+        },
+        {
+          "providerName": "DeepInfra",
+          "providerSlug": "deepinfra",
+          "effectiveInputPrice": 0.5613519190121345,
+          "effectiveOutputPrice": 14.249883994597523
+        },
+        {
+          "providerName": "Wafer (2)",
+          "providerSlug": "wafer",
+          "effectiveInputPrice": 1.1699321075092077,
+          "effectiveOutputPrice": 15.49998086628747
+        },
+        {
+          "providerName": "Makora",
+          "providerSlug": "makora",
+          "effectiveInputPrice": 0.5817759577883808,
+          "effectiveOutputPrice": 12.74983649785745
+        },
+        {
+          "providerName": "Amazon Bedrock",
+          "providerSlug": "amazon-bedrock",
+          "effectiveInputPrice": 0.7442782767819754,
+          "effectiveOutputPrice": 15
+        },
+        {
+          "providerName": "Decart",
+          "providerSlug": "decart",
+          "effectiveInputPrice": 1.034612946354031,
+          "effectiveOutputPrice": 12.749946101972244,
+          "listedInputPrice": 3.0000000000000004,
+          "listedOutputPrice": 15,
+          "discountPercentage": 15
+        },
+        {
+          "providerName": "AkashML",
+          "providerSlug": "akashml",
+          "effectiveInputPrice": 1.1999845826881375,
+          "effectiveOutputPrice": 14
+        },
+        {
+          "providerName": "Parasail Fast",
+          "providerSlug": "parasail",
+          "effectiveInputPrice": 1.8183068607062098,
+          "effectiveOutputPrice": 15
+        },
+        {
+          "providerName": "Chutes",
+          "providerSlug": "chutes",
+          "effectiveInputPrice": 1.3823610401470445,
+          "effectiveOutputPrice": 9.49981823361361
+        }
+      ],
+      "listedInputPrice": 0.73,
+      "listedOutputPrice": 10,
+      "listedCacheReadPrice": 0.55
+    },
+    {
+      "permaslug": "xiaomi/mimo-v2.5",
+      "aaModelSlug": "mimo-v2-5-0424",
+      "aaModelId": "22d09131-343b-4adf-8760-533e20a2155f",
+      "weightedInputPrice": 0.027338329080647542,
+      "weightedOutputPrice": 0.4271710697282675,
+      "providerSummaries": [
+        {
+          "providerName": "Xiaomi",
+          "providerSlug": "xiaomi",
+          "effectiveInputPrice": 0.01697171255774727,
+          "effectiveOutputPrice": 0.2794796912939856
+        },
+        {
+          "providerName": "Venice",
+          "providerSlug": "venice",
+          "effectiveInputPrice": 0.21666145293659136,
+          "effectiveOutputPrice": 2
+        },
+        {
+          "providerName": "GMICloud",
+          "providerSlug": "gmicloud",
+          "effectiveInputPrice": 0.020612710845916125,
+          "effectiveOutputPrice": 0.2373544321496491,
+          "listedInputPrice": 0.13999999999999999,
+          "listedOutputPrice": 0.27999999999999997,
+          "discountPercentage": 15
+        },
+        {
+          "providerName": "NovitaAI",
+          "providerSlug": "novita",
+          "effectiveInputPrice": 0.04517525493790174,
+          "effectiveOutputPrice": 0.3351435300007986
+        },
+        {
+          "providerName": "StreamLake",
+          "providerSlug": "streamlake",
+          "effectiveInputPrice": 0.07646893264841649,
+          "effectiveOutputPrice": 0.3347505229459163
+        }
+      ],
+      "listedInputPrice": 0.14,
+      "listedOutputPrice": 0.28,
+      "listedCacheReadPrice": 0.0028
+    },
+    {
+      "permaslug": "xiaomi/mimo-v2.5-pro",
+      "aaModelSlug": "mimo-v2-5-pro",
+      "aaModelId": "00f1248e-78e3-4230-8dc8-5e13ba8645e2",
+      "weightedInputPrice": 0.14803556201656642,
+      "weightedOutputPrice": 1.091735272105207,
+      "providerSummaries": [
+        {
+          "providerName": "Xiaomi",
+          "providerSlug": "xiaomi",
+          "effectiveInputPrice": 0.12128114472178503,
+          "effectiveOutputPrice": 0.8677938200898522
+        },
+        {
+          "providerName": "DigitalOcean",
+          "providerSlug": "digitalocean",
+          "effectiveInputPrice": 0.20471067039922652,
+          "effectiveOutputPrice": 1.7992790574995603
+        },
+        {
+          "providerName": "NovitaAI",
+          "providerSlug": "novita",
+          "effectiveInputPrice": 0.3707201578428149,
+          "effectiveOutputPrice": 0.9583854818523154,
+          "listedInputPrice": 0.522,
+          "listedOutputPrice": 1.044,
+          "discountPercentage": 8
+        },
+        {
+          "providerName": "GMICloud",
+          "providerSlug": "gmicloud",
+          "effectiveInputPrice": 0.30192348203723807,
+          "effectiveOutputPrice": 0.6065989847715736,
+          "listedInputPrice": 0.435,
+          "listedOutputPrice": 0.87,
+          "discountPercentage": 30
+        },
+        {
+          "providerName": "AtlasCloud",
+          "providerSlug": "atlas-cloud",
+          "effectiveInputPrice": 0.4349541849541849,
+          "effectiveOutputPrice": 0.8678082191780822
+        }
+      ],
+      "listedInputPrice": 0.435,
+      "listedOutputPrice": 0.87,
+      "listedCacheReadPrice": 0.0036
+    },
+    {
+      "permaslug": "minimax/minimax-m2.7",
+      "aaModelSlug": "minimax-m2-7",
+      "aaModelId": "4bbceacb-cf47-464b-b60f-e1d1fe016d67",
+      "weightedInputPrice": 0.1414191369514052,
+      "weightedOutputPrice": 1.2200568027060963,
+      "providerSummaries": [
+        {
+          "providerName": "MiniMax",
+          "providerSlug": "minimax",
+          "effectiveInputPrice": 0.13055854630373573,
+          "effectiveOutputPrice": 1.1988247698623071
+        },
+        {
+          "providerName": "AtlasCloud",
+          "providerSlug": "atlas-cloud",
+          "effectiveInputPrice": 0.1273446890937696,
+          "effectiveOutputPrice": 1.1986568457538995
+        },
+        {
+          "providerName": "NovitaAI",
+          "providerSlug": "novita",
+          "effectiveInputPrice": 0.1435085597344173,
+          "effectiveOutputPrice": 1.0780604002957042,
+          "listedInputPrice": 0.3,
+          "listedOutputPrice": 1.2,
+          "discountPercentage": 10
+        },
+        {
+          "providerName": "GMICloud",
+          "providerSlug": "gmicloud",
+          "effectiveInputPrice": 0.14120429527956024,
+          "effectiveOutputPrice": 0.8395804446034799,
+          "listedInputPrice": 0.3,
+          "listedOutputPrice": 1.2,
+          "discountPercentage": 30
+        },
+        {
+          "providerName": "Groq",
+          "providerSlug": "groq",
+          "effectiveInputPrice": 0.5999630081594646,
+          "effectiveOutputPrice": 1.7998234467667136
+        },
+        {
+          "providerName": "MiniMax Highspeed",
+          "providerSlug": "minimax",
+          "effectiveInputPrice": 0.5737736934043638,
+          "effectiveOutputPrice": 2.399250234301781
+        }
+      ],
+      "listedInputPrice": 0.3,
+      "listedOutputPrice": 1.2,
+      "listedCacheReadPrice": 0.06
+    },
+    {
+      "permaslug": "minimax/minimax-m3",
+      "aaModelSlug": "minimax-m3",
+      "aaModelId": "277f939a-985b-4b37-859d-b3eabc7c0b26",
+      "weightedInputPrice": 0.07912643505974326,
+      "weightedOutputPrice": 1.1765062766771086,
+      "providerSummaries": [
+        {
+          "providerName": "MiniMax",
+          "providerSlug": "minimax",
+          "effectiveInputPrice": 0.07872123691504393,
+          "effectiveOutputPrice": 1.1995963159042067
+        },
+        {
+          "providerName": "GMICloud",
+          "providerSlug": "gmicloud",
+          "effectiveInputPrice": 0.0594369520906681,
+          "effectiveOutputPrice": 0.9595599646612483,
+          "listedInputPrice": 0.3,
+          "listedOutputPrice": 1.2,
+          "discountPercentage": 20
+        },
+        {
+          "providerName": "CoreWeave",
+          "providerSlug": "coreweave",
+          "effectiveInputPrice": 0.08614898435233259,
+          "effectiveOutputPrice": 0.9592939206246293
+        },
+        {
+          "providerName": "Together",
+          "providerSlug": "together",
+          "effectiveInputPrice": 0.10614517941420337,
+          "effectiveOutputPrice": 1.1994744410634224
+        },
+        {
+          "providerName": "AtlasCloud",
+          "providerSlug": "atlas-cloud",
+          "effectiveInputPrice": 0.09075772277218197,
+          "effectiveOutputPrice": 1.1996356103999142
+        },
+        {
+          "providerName": "NovitaAI",
+          "providerSlug": "novita",
+          "effectiveInputPrice": 0.09784754871121287,
+          "effectiveOutputPrice": 1.1996915627651108
+        },
+        {
+          "providerName": "Parasail",
+          "providerSlug": "parasail",
+          "effectiveInputPrice": 0.10174912830633011,
+          "effectiveOutputPrice": 1.199683617984367
+        },
+        {
+          "providerName": "Venice",
+          "providerSlug": "venice",
+          "effectiveInputPrice": 0.13056741253488355,
+          "effectiveOutputPrice": 1.1995918034573236
+        },
+        {
+          "providerName": "DeepInfra",
+          "providerSlug": "deepinfra",
+          "effectiveInputPrice": 0.14339700598407343,
+          "effectiveOutputPrice": 1.0993312271957862
+        },
+        {
+          "providerName": "StreamLake",
+          "providerSlug": "streamlake",
+          "effectiveInputPrice": 0.19919151609813482,
+          "effectiveOutputPrice": 1.1996992851328485,
+          "listedInputPrice": 0.6,
+          "listedOutputPrice": 2.4,
+          "discountPercentage": 50
+        },
+        {
+          "providerName": "MARA",
+          "providerSlug": "mara",
+          "effectiveInputPrice": 0.5999738535311283,
+          "effectiveOutputPrice": 2.399795972709412
+        },
+        {
+          "providerName": "SambaNova",
+          "providerSlug": "sambanova",
+          "effectiveInputPrice": 0.2998240011450127,
+          "effectiveOutputPrice": 2.3996086343910275
+        }
+      ],
+      "listedInputPrice": 0.3,
+      "listedOutputPrice": 1.2,
+      "listedCacheReadPrice": 0.06
+    },
+    {
+      "permaslug": "meta/muse-spark-1.2-contributor",
+      "aaModelSlug": "muse-spark-1-2",
+      "aaModelId": "04ee6719-0327-463b-a1a1-70a6a78254f9",
+      "weightedInputPrice": 0.019120605957600588,
+      "weightedOutputPrice": 0.19965375896479454,
+      "providerSummaries": [
+        {
+          "providerName": "Meta",
+          "providerSlug": "meta",
+          "effectiveInputPrice": 0.019120605957600588,
+          "effectiveOutputPrice": 0.19965375896479454,
+          "listedInputPrice": 1.25,
+          "listedOutputPrice": 4.25,
+          "undiscountedModelId": "meta/muse-spark-1.2"
+        }
+      ],
+      "listedInputPrice": 0.09999999999999999,
+      "listedOutputPrice": 0.19999999999999998,
+      "listedCacheReadPrice": 0.002
+    },
+    {
+      "permaslug": "meta/muse-spark-1.3-contributor",
+      "aaModelSlug": "muse-spark-1-3-xhigh",
+      "aaModelId": "d5170215-69be-4129-849b-26d8d8825bfc",
+      "weightedInputPrice": 0.09062461835535063,
+      "weightedOutputPrice": 0.19878735383282806,
+      "providerSummaries": [
+        {
+          "providerName": "Meta",
+          "providerSlug": "meta",
+          "effectiveInputPrice": 0.09062461835535063,
+          "effectiveOutputPrice": 0.19878735383282806,
+          "listedInputPrice": 1.25,
+          "listedOutputPrice": 4.25,
+          "undiscountedModelId": "meta/muse-spark-1.3"
+        }
+      ],
+      "listedInputPrice": 0.09999999999999999,
+      "listedOutputPrice": 0.19999999999999998,
+      "listedCacheReadPrice": 0.002
+    },
+    {
+      "permaslug": "nvidia/nemotron-3-super-120b-a12b",
+      "aaModelSlug": "nvidia-nemotron-3-super-120b-a12b",
+      "aaModelId": "63872e9c-3377-4a6b-b477-7bba244c38e9",
+      "weightedInputPrice": 0.08111342002509721,
+      "weightedOutputPrice": 0.4318525202377665,
+      "providerSummaries": [
+        {
+          "providerName": "DekaLLM",
+          "providerSlug": "dekallm",
+          "effectiveInputPrice": 0.07994903560608684,
+          "effectiveOutputPrice": 0.44924662151005
+        },
+        {
+          "providerName": "DeepInfra",
+          "providerSlug": "deepinfra",
+          "effectiveInputPrice": 0.08491729527772339,
+          "effectiveOutputPrice": 0.3994402801808879
+        }
+      ],
+      "listedInputPrice": 0.08,
+      "listedOutputPrice": 0.44999999999999996
+    },
+    {
+      "permaslug": "qwen/qwen3.6-plus",
+      "aaModelSlug": "qwen3-6-plus",
+      "aaModelId": "f371ad68-6947-4767-a78f-1f6c81f96b93",
+      "weightedInputPrice": 0.30077633944235876,
+      "weightedOutputPrice": 1.948042082000046,
+      "providerSummaries": [
+        {
+          "providerName": "Alibaba Cloud Int.",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 0.30077633944235876,
+          "effectiveOutputPrice": 1.948042082000046
+        }
+      ],
+      "listedInputPrice": 0.325,
+      "listedOutputPrice": 1.95,
+      "listedCacheWritePrice": 0.40625
+    },
+    {
+      "permaslug": "qwen/qwen3.7-max",
+      "aaModelSlug": "qwen3-7-max",
+      "aaModelId": "69534bed-2ffd-4235-832b-e20a810333ab",
+      "weightedInputPrice": 0.7531859820281661,
+      "weightedOutputPrice": 4.903792567858431,
+      "providerSummaries": [
+        {
+          "providerName": "Alibaba Cloud Int. (1)",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 0.6155200712555948,
+          "effectiveOutputPrice": 4.424613500368891
+        },
+        {
+          "providerName": "Alibaba Cloud Int. (2)",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 1.150970618006047,
+          "effectiveOutputPrice": 6
+        }
+      ],
+      "listedInputPrice": 1.475,
+      "listedOutputPrice": 4.425,
+      "listedCacheReadPrice": 0.295,
+      "listedCacheWritePrice": 1.84375
+    },
+    {
+      "permaslug": "qwen/qwen3.8-flash",
+      "aaModelSlug": "qwen3-8-flash-next",
+      "aaModelId": "9ac3908c-9eb2-44db-8c01-3ec7da6fc2ae",
+      "weightedInputPrice": 0.02988121247010432,
+      "weightedOutputPrice": 0.46959698205819805,
+      "providerSummaries": [
+        {
+          "providerName": "Alibaba Cloud Int. (1)",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 0.02879881508360447,
+          "effectiveOutputPrice": 0.46961310062130907
+        },
+        {
+          "providerName": "Alibaba Cloud Int. (2)",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 0.03469526217427531,
+          "effectiveOutputPrice": 0.4695259774716565
+        }
+      ],
+      "listedInputPrice": 0.15,
+      "listedOutputPrice": 0.47,
+      "listedCacheReadPrice": 0.016
+    },
+    {
+      "permaslug": "qwen/qwen3.8-max",
+      "aaModelSlug": "qwen3-8-max",
+      "aaModelId": "5e5b4ce7-bc54-47b2-b911-21b9cad8394c",
+      "weightedInputPrice": 0.3974168438140311,
+      "weightedOutputPrice": 6,
+      "providerSummaries": [
+        {
+          "providerName": "Alibaba Cloud Int. (2)",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 0.3920776224305414,
+          "effectiveOutputPrice": 6
+        },
+        {
+          "providerName": "Alibaba Cloud Int. (1)",
+          "providerSlug": "alibaba",
+          "effectiveInputPrice": 0.4559334351266144,
+          "effectiveOutputPrice": 6
+        }
+      ]
+    }
+  ]
+}
