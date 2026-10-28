@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="135 192 490 350">
+  <!-- transparent background -->
+
+  <!-- body -->
+  <path d="M165 445
+           C151 426 148 397 151 365
+           C155 334 166 311 190 292
+           C246 249 392 212 503 225
+           Q528 228 541 244
+           Q550 256 552 278
+           L559 334
+           Q561 349 573 353
+           Q579 355 586 356
+           Q597 357 603 365
+           Q608 372 608 384
+           V428
+           Q608 445 591 445
+           H165 Z"
+        fill="#F7B53A"
+        stroke="#25272B"
+        stroke-width="14"
+        stroke-linejoin="round"
+        stroke-linecap="round"/>
+
+  <!-- windows: evenly distributed, common bottom y=360,
+       tops follow a consistent offset beneath the roof curve -->
+
+  <path d="M237 306
+           C253 295 271 285 292 278
+           Q302 275 302 286
+           V347
+           Q302 360 289 360
+           H238
+           Q225 360 225 347
+           V320
+           Q225 312 237 306 Z"
+        fill="#C9EDF5"
+        stroke="#25272B"
+        stroke-width="11"
+        stroke-linejoin="round"/>
+
+  <path d="M342 272
+           C360 266 381 262 395 260
+           Q405 258 405 269
+           V347
+           Q405 360 392 360
+           H343
+           Q330 360 330 347
+           V286
+           Q330 277 342 272 Z"
+        fill="#C9EDF5"
+        stroke="#25272B"
+        stroke-width="11"
+        stroke-linejoin="round"/>
+
+  <path d="M445 258
+           C466 256 493 257 511 260
+           Q526 263 530 279
+           L534 337
+           Q536 360 518 360
+           H446
+           Q433 360 433 347
+           V271
+           Q433 261 445 258 Z"
+        fill="#C9EDF5"
+        stroke="#25272B"
+        stroke-width="11"
+        stroke-linejoin="round"/>
+
+  <!-- stripe -->
+  <path d="M188 382 H486"
+        fill="none"
+        stroke="#25272B"
+        stroke-width="12"
+        stroke-linecap="round"/>
+
+  <!-- headlight -->
+  <circle cx="578" cy="391" r="9"
+          fill="#FFF2A8"
+          stroke="#25272B"
+          stroke-width="6"/>
+
+  <!-- equal wheels -->
+  <circle cx="242" cy="465" r="66" fill="#25272B"/>
+  <circle cx="242" cy="465" r="33" fill="#DDE2E7"/>
+  <circle cx="242" cy="465" r="15" fill="#25272B"/>
+
+  <circle cx="538" cy="465" r="66" fill="#25272B"/>
+  <circle cx="538" cy="465" r="33" fill="#DDE2E7"/>
+  <circle cx="538" cy="465" r="15" fill="#25272B"/>
+
+  <!-- roof curve -->
+  <path d="M190 292 C246 249 392 212 503 225"
+        fill="none"
+        stroke="#25272B"
+        stroke-width="13"
+        stroke-linecap="round"/>
+
+  <!-- evenly spaced colorful outlined dots -->
+  <g stroke="#25272B" stroke-width="5">
+    <circle cx="190.0" cy="292.0" r="13" fill="#FF6B6B"/>
+    <circle cx="237.3" cy="265.6" r="13" fill="#FF9F43"/>
+    <circle cx="288.4" cy="247.3" r="13" fill="#FFE066"/>
+    <circle cx="341.0" cy="234.3" r="13" fill="#69DB7C"/>
+    <circle cx="394.7" cy="225.9" r="13" fill="#4DCCF0"/>
+    <circle cx="448.8" cy="222.4" r="13" fill="#7B82FF"/>
+    <circle cx="503.0" cy="225.0" r="13" fill="#E96BCB"/>
+  </g>
+</svg>
