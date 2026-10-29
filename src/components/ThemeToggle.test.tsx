@@ -24,6 +24,8 @@ describe("ThemeToggle", () => {
     const group = container.querySelector("[role='group'][aria-label='Theme controls']");
     expect(group).not.toBeNull();
     expect(group?.querySelectorAll("button")).toHaveLength(2);
+    // Header tooltips must grow inward, not create horizontal page overflow.
+    expect(group?.querySelectorAll(".tooltip-end")).toHaveLength(2);
     dispose();
     container.remove();
   });

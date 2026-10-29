@@ -3,15 +3,13 @@ import curatedConfig from "./curated-models.json";
 import { parseCuratedModelConfig } from "./curated";
 
 describe("curated model config", () => {
-  it("validates the committed forced DeepSeek models", () => {
+  it("validates only the current V5-scored forced DeepSeek release", () => {
     const config = parseCuratedModelConfig(JSON.stringify(curatedConfig));
-    expect(config.models).toEqual(expect.arrayContaining([expect.objectContaining({
-      aaModelSlug: "deepseek-v4-flash",
-      openrouterId: "deepseek/deepseek-v4-flash-0731",
-    }), expect.objectContaining({
-      aaModelSlug: "deepseek-v4-1-flash",
-      openrouterId: "deepseek/deepseek-v4.1-flash",
-    })]));
+    expect(config.models).toHaveLength(1);
+    expect(config.models[0]).toMatchObject({
+      aaModelSlug: "deepseek-v4-1-flash-1017",
+      openrouterId: "deepseek/deepseek-v4.1-flash-1017",
+    });
   });
 
   it("rejects duplicate forced identities", () => {

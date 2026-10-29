@@ -61,7 +61,7 @@ export default function CursorBenchChartSection(props: CursorBenchChartSectionPr
                 id={`chart-${CURSOR_BENCH_ID}-surcharge-help`}
                 class="mt-0.5 text-xs leading-snug text-base-content/70"
               >
-                Teams/Enterprise: +$0.25/M on third-party models; Cursor models exempt.
+                Teams/Enterprise: +$0.25/M on eligible third-party models. Cursor models, Haiku 5.5, Luna, and listed exclusions are exempt.
               </p>
             </div>
             <input

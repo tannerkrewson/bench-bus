@@ -10,7 +10,8 @@ import {
 import catalogFixture from "./fixtures/model-catalog.json";
 import emptyPricing from "./fixtures/effective-pricing-empty.json";
 import fullPricing from "./fixtures/effective-pricing-full.json";
-import aliasSeed from "./openrouter-aliases.json";
+// Freeze historical collector scenarios independently of the evolving live catalog.
+import aliasSeed from "./fixtures/aliases.json";
 
 const OBSERVED_AT = "2026-08-21T12:00:00.000Z";
 

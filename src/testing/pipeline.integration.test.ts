@@ -285,13 +285,13 @@ describe("offline end-to-end pipeline: collect -> store -> resolve -> compile ->
     });
     expect(opusBase?.x).toBe(3.4);
     // Opus's published output rate exceeds the published task cost, so the
-    // inconsistent estimate is unavailable and the published point is kept.
-    expect(opusSurcharged?.x).toBe(3.4);
+    // inconsistent estimate is unavailable, not misrepresented as fee-free.
+    expect(opusSurcharged).toBeNull();
     const composerSurcharged = cursorBenchAdapter.computePoint(decodedComposer!, {
       [SURCHARGE_CONTROL_ID]: true,
     });
     expect(composerSurcharged?.x).toBe(2.81); // first-party: surcharge never applies
-    expect(effectiveCursorCostUsd(decodedOpus!, true)).toBeCloseTo(opusSurcharged!.x!, 10);
+    expect(effectiveCursorCostUsd(decodedOpus!, true)).toBeNull();
   });
 
   it("resolves history: a past view excludes later snapshots instead of failing", async () => {

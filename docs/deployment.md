@@ -1,95 +1,112 @@
-# Deploying Bench Bus to GitHub Pages (benchb.us)
+# Manual deployment to benchb.us
 
-Bench Bus is a fully static Vite application. Deployment uses the official
-GitHub Actions Pages artifact flow (`actions/configure-pages`,
-`actions/upload-pages-artifact`, `actions/deploy-pages`). **No `gh-pages`
-branch exists or is used** — compiled output is never committed to any branch.
+All GitHub Actions workflows **and repository Actions permissions are disabled**.
+Do not enable or dispatch them. Cron triggers have also been removed locally.
 
-## One-time human activation checklist
+Production uses GitHub Pages **Deploy from a branch**, `gh-pages`, `/`.
+Builds run locally; `public/.nojekyll` bypasses GitHub's Jekyll/Actions build.
+The custom domain remains `benchb.us`; HTTPS is served by Cloudflare.
+**Hosting follow-up (`bench-bus-4xi`):** GitHub already reported certificate
+`bad_authz` before this deploy. Switching publishing modes reset its
+`https_enforced` setting, and restoring it currently fails with HTTP 404,
+"The certificate has not finished being issued". HTTP does not redirect yet.
+A Cloudflare administrator should enable Always Use HTTPS and repair origin
+certificate issuance, then restore GitHub Pages HTTPS enforcement.
+GitHub documents this Actions-free path in its
+[Pages worker migration notice](https://github.blog/changelog/2024-07-08-pages-legacy-worker-sunset/).
+The old `deploy.yml` artifact workflow is retained but disabled.
 
-The deployment workflow (`.github/workflows/deploy.yml`) is fully wired, but
-Pages itself must be activated by a human with admin access:
+## Collect and validate locally
 
-1. **Repository visibility.** The repo is currently private. GitHub Pages
-   (including via Actions) requires the repository to be **public** on the
-   free plan (or a paid plan with private Pages). Make the repo public when
-   ready: Settings → General → Danger Zone → Change visibility.
-2. **Enable Pages with the Actions source.** Settings → Pages →
-   "Build and deployment" → Source: **GitHub Actions**. Do NOT choose
-   "Deploy from a branch" — that would require a `gh-pages` branch, which this
-   project intentionally avoids.
-3. **Custom domain.** Settings → Pages → Custom domain: enter `benchb.us` and
-   save. This must match `public/CNAME` (contents: `benchb.us`), which the
-   build gate verifies is present in the deployed artifact.
-4. **DNS records** at the benchb.us DNS provider (apex domain):
-   - `A` records for `benchb.us` → GitHub Pages IPs:
-     `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
-   - (optional but recommended) `AAAA` records for the same names' IPv6
-     equivalents: `2606:50c0:8000::153` … `2606:50c0:8003::153`
-   - If `www.benchb.us` should also resolve, add a `CNAME` record
-     `www` → `benchb.us`.
-   - GitHub verifies domain ownership from Settings → Pages once DNS
-     propagates.
-5. **HTTPS enforcement.** After DNS verification succeeds, tick
-   "Enforce HTTPS" on the Pages settings page (it can take a few minutes for
-   the certificate to provision).
-6. **Run the deploy.** Trigger `.github/workflows/deploy.yml` via
-   `workflow_dispatch` (Actions → Deploy to GitHub Pages → Run) or push to
-   `main`. Confirm the `github-pages` environment URL is `https://benchb.us/`.
+Use Node 24 LTS (`mise install`, then `mise exec node@24 -- npm …` if your
+shell PATH overrides mise). Node 26's native localStorage currently conflicts
+with the jsdom test environment. No dependency upgrade is required.
 
-## How deploys relate to data collection
-
-Collection and deployment remain separate pipelines, but a successful
-collection now hands off to deployment automatically:
-
-| Pipeline | Workflow(s) | Branch | Output |
-| --- | --- | --- | --- |
-| Collection | `collect-*.yml` (cron) | `bench-bus-data` | immutable validated snapshots + manifests |
-| Deployment | `deploy.yml` (push to `main`, successful collector completion, or manual dispatch) | reads `bench-bus-data` | static site artifact on Pages |
-
-`deploy.yml` checks out `main` (app source) plus `bench-bus-data` (last
-known-good data, read-only), runs the derived-data compiler
-(`npm run derive -- --data-dir data-branch --out-dir public/derived-data`),
-builds Vite (`dist/`), verifies `dist/CNAME`, and publishes `dist/` as a
-Pages artifact. Collectors never run during deploy, and deploys never write to
-`bench-bus-data`.
-
-Data freshness: the compiled bundle carries explicit per-source `observedAt`
-metadata which the site displays (freshness chips + time travel), so a delayed
-or missed collection cron shows up as visible staleness, never as breakage.
-
-The collector workflows push with `GITHUB_TOKEN`, and GitHub intentionally does
-not start a second workflow for that token-generated branch push. `deploy.yml`
-therefore listens for the collectors' `workflow_run` completion event and only
-builds for successful collector runs.
-
-## Failure semantics
-
-- **Broken application (typecheck, tests, or build fail):** the `build` gate
-  job fails and the `deploy` job never runs. Bad code cannot deploy.
-- **Failing collectors:** irrelevant to deploys by construction — collectors
-  run in separate workflows on separate schedules and fail closed without
-  touching the data branch. Deploys always use the newest *valid* snapshots.
-- **Stale but valid data:** always deployable. If `bench-bus-data` has no
-  eligible snapshots at all (e.g. first deploy before any collection), the
-  derive step emits a warning and the site ships with its clearly-labelled
-  demo fixture bundle instead of real data.
-- **Deploy concurrency:** the `pages` concurrency group serializes deploys
-  (`cancel-in-progress: false`), so overlapping pushes to `main` queue rather
-  than race.
-- **Rollback:** re-run `deploy.yml` from an earlier `main` commit via
-  `workflow_dispatch` (choose the desired ref in the Actions UI).
-
-## Local rehearsal
+Create a disk-backed scratch directory and check out `origin/bench-bus-data`
+there, **not over the source working tree**. Fetch before collecting and avoid
+force-pushing this branch. Substitute absolute paths below:
 
 ```bash
 npm ci
-npm run derive -- --data-dir <bench-bus-data-checkout> --out-dir public/derived-data
+npm run collect:aa -- --out <scratch>/aa.json
+npm run collect:openrouter -- --frontier-aa <scratch>/aa.json --out <scratch>/openrouter.json
+npm run collect:cursor -- --out <scratch>/cursor.json
+npm run collect:deepswe -- --out <scratch>/deepswe.json
+
+for source in aa openrouter cursor deepswe; do
+  npm run snapshot -- write --dir <data-checkout> --input <scratch>/$source.json
+done
+npm run derive -- --data-dir <data-checkout> --out-dir public/derived-data
+npm run typecheck
+npm test
+node .github/scripts/validate-workflows.mjs
 npm run build
-ls dist/CNAME dist/derived-data/index.json   # when real data exists
-npx vite preview                              # site at http://localhost:4173
 ```
 
-Without a data-branch checkout, skip the derive step — the site falls back to
-its labelled demo fixtures (same behavior as a deploy with an empty data
-branch).
+Collectors and snapshot storage validate and fail closed. Do not publish a
+failed collection or fabricate missing benchmark scores/provider prices.
+AA's index generation is retained in the snapshots and the derived bundle;
+the chart displays it when known. V4 scores and token workloads cannot fill
+missing V5 rows. Current defaults follow relevant releases plus the complete
+cheapest-provider frontier; other currently scored models remain selectable.
+Historical aliases stay in the mapping for archived snapshots.
+
+Cursor's fee policy and standard rate cards were verified October 29, 2026.
+Third-party classification alone does not imply a fee: Haiku 5.5, GPT-5.6 Luna,
+Gemini 3.8 Flash, GLM 5.3 Flash and other explicitly listed releases are exempt,
+as are Cursor models (including Grok 4.7). The shared policy is
+`src/collectors/cursor/policy.ts`; release-specific rate cards are in
+`src/charts/cursor/pricing.ts`. Update both against
+[Cursor's published policy](https://cursor.com/docs/models-and-pricing#cursor-token-rate),
+not inferred family prefixes. Missing estimates are unavailable with the fee
+enabled, never plotted as fee-free. The current default view has eight curated
+families plus verified current value-frontier points (nine families / 33 effort
+variants at the default fee/cache settings); other published rows remain opt-in.
+A frozen 81-row fixture tests complete current pricing coverage.
+
+DeepSWE's upstream leaderboard was last generated 2026-06-20 as of this
+refresh. A fresh fetch is **not** a new evaluation; its current-model coverage
+is limited. Never map its old scores to a similarly named newer release.
+
+## Preserve history
+
+The index must not point an old date at a newly overwritten `latest.json`.
+`upsertDerivedIndexEntry` now replaces reused paths as well as reused dates.
+Before overwriting a latest bundle worth keeping, compile it under a dated
+name (with its original `--as-of`) or archive the original bundle and update
+the index. `20260829T232939Z.json` preserves the previously deployed historical
+view. Old bundles without a known index version are not labeled V5.
+
+## Publish the validated build
+
+1. Save the validated snapshots/manifests in a commit on `bench-bus-data` and
+   push that branch normally (after checking the remote has not advanced).
+2. Preview `dist/` with `npm run preview`; check desktop/mobile, model selection,
+   settings, methodology, time travel, and browser errors.
+3. Copy **only** `dist/` (including `.nojekyll` and `CNAME`) to an isolated
+   `gh-pages` checkout. Commit the static assets there and push normally.
+   Never copy `.git`, source files, credentials, or raw snapshots into it.
+4. For the initial switch from artifact deployment, update Pages without
+   changing the domain. Check HTTPS enforcement separately after switching:
+
+   ```bash
+   gh api -X PUT repos/{owner}/{repo}/pages --input - <<'JSON'
+   {"build_type":"legacy","source":{"branch":"gh-pages","path":"/"}}
+   JSON
+   ```
+
+5. Confirm `https://benchb.us/` serves the new hashed JS/CSS and
+   `derived-data/latest.json` matches the local build. Inspect the live site,
+   not just the preview. Verify Actions remains disabled:
+
+   ```bash
+   gh api repos/{owner}/{repo}/actions/permissions
+   gh api repos/{owner}/{repo}/actions/workflows --jq '.workflows[] | [.name, .state]'
+   ```
+
+Source changes can stay uncommitted locally; publishing assets does not require
+pushing `main`. Keep source/data/asset provenance in the deployment commit
+message. For rollback, revert the last asset commit on `gh-pages` and push;
+no Actions workflow is needed. To restore the old artifact pipeline in the
+future, explicitly approve enabling Actions and switching Pages back to
+`build_type: workflow` first.

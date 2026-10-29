@@ -156,7 +156,7 @@ function aaListedSavingsDiscount(
 export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
   benchmarkId: AA_BENCHMARK_ID,
   title: "Best value models on OpenRouter",
-  subtitle: "This chart compares AA listed prices with the cheapest regular effective OpenRouter provider for the real benchmark workload, updated multiple times per day as prices change",
+  subtitle: "Compare Artificial Analysis scores and measured workload costs using AA listed prices or the cheapest regular OpenRouter provider. Data is refreshed manually; see the update time.",
   sourceLinks: [
     { label: "Artificial Analysis", href: "https://artificialanalysis.ai/" },
     { label: "OpenRouter", href: "https://openrouter.ai/" },

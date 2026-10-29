@@ -18,6 +18,9 @@ export const AaMethodologyContent: Component = () => (
         DeepSWE pass@1
       </a>{" "}
       scores; models without a score in the selected source are omitted. Token counts come from real test runs.
+      The index-version badge identifies the benchmark generation when known. Scores and workloads from earlier
+      index versions are not carried into V5; historical views retain their original benchmark generation. DeepSWE has limited
+      legacy-model coverage and may not score current releases.
     </p>
     <p>
       <strong>Price source.</strong>{" "}
@@ -61,13 +64,21 @@ export const CursorMethodologyContent: Component = () => (
     <p>
       <strong>Cursor Token Rate.</strong> This adds an optional $
       {CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS} per 1M-token fee. It estimates third-party multi-step agent
-      workloads from published output tokens and prices. Raw values stay unchanged. Cursor Models (Grok 4.6, Grok 4.5,
-      and Composer 2.5) pay no fee.
+      workloads from published output tokens and standard model rates. Raw values stay unchanged. Cursor models
+      (including Grok 4.7 and Composer) pay no fee. The{" "}
+      <a class="link link-hover" href="https://cursor.com/docs/models-and-pricing#cursor-token-rate" target="_blank" rel="noopener noreferrer">
+        published Token Rate exclusions
+      </a>{" "}
+      also exempt Haiku 5.5, GPT-5.6 Luna, Gemini 3.8 Flash, and GLM 5.3 Flash, among others.
+      Third-party does not automatically mean fee-eligible. Policy and rate cards were verified October 29, 2026.
     </p>
     <p>
       <strong>Cache-hit setting.</strong> It starts at 90%: the share of non-output prompt tokens assumed to come from
       cache. Higher reuse means a higher fee. That default is not a measured rate. If the math fails or data is missing,
-      we hide the estimate and keep the cost.
+      fee-eligible models are unavailable while the fee is enabled, rather than displaying a fee-free price.
+      Turn the fee off to inspect raw published costs. Rate cards are release-specific; unknown future releases
+      never inherit older rates. Fast, regional, and long-context surcharges cannot be inferred from aggregate evaluations.
+      Fee estimates use this verified policy even in historical views; they are not historical bills.
     </p>
     <p>
       <strong>Limits.</strong> No score covers every skill. Real costs vary by task. Old views hold only Bench Bus

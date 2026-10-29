@@ -62,7 +62,10 @@ describe("graph methodology content", () => {
     expect(text).toContain("cursor.com/evals");
     expect(text).toContain("third-party multi-step agent workloads");
     expect(text).toContain("come from cache");
-    expect(text).toContain("Grok 4.6, Grok 4.5, and Composer 2.5");
+    expect(text).toContain("Grok 4.7 and Composer");
+    expect(text).toContain("Haiku 5.5");
+    expect(text).toContain("Third-party does not automatically mean fee-eligible");
+    expect(text).toContain("unavailable while the fee is enabled");
     expect(text).not.toContain("Price source");
     dispose();
   });
@@ -87,7 +90,7 @@ describe("graph methodology content", () => {
       </>
     ));
     const links = container.querySelectorAll<HTMLAnchorElement>("a");
-    expect(links).toHaveLength(4);
+    expect(links).toHaveLength(5);
     links.forEach((link) => {
       expect(link.target).toBe("_blank");
       expect(link.rel).toBe("noopener noreferrer");

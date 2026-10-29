@@ -121,6 +121,7 @@ const Charts: Component<{ bundle: DecodedBundle }> = (props) => {
       <AaChartSection
         records={() => props.bundle.aa?.records ?? []}
         lastUpdated={aaLastUpdated}
+        intelligenceIndexVersion={() => props.bundle.aa?.intelligenceIndexVersion}
         initialState={initialChartStateFor(
           "aa",
           aaControlSpecs,

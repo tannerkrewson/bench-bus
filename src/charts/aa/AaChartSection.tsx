@@ -54,6 +54,7 @@ export interface AaChartSectionProps {
    * backing this chart, rendered as a relative freshness badge.
    */
   lastUpdated?: () => string | null;
+  intelligenceIndexVersion?: () => string | undefined;
 }
 
 /**
@@ -314,6 +315,9 @@ export default function AaChartSection(props: AaChartSectionProps) {
               <p class="whitespace-pre-line text-sm text-base-content/70" data-testid="chart-subtitle">
                 <ChartSubtitleContent content={aaAdapter.subtitle} />
               </p>
+              <Show when={props.intelligenceIndexVersion?.()}>
+                {(version) => <span class="badge badge-outline badge-sm" data-testid="aa-index-version">AA Index V{version()}</span>}
+              </Show>
               <RelativeLastUpdated timestamp={props.lastUpdated} />
             </div>
           </div>

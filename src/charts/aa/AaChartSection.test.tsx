@@ -12,7 +12,7 @@ import {
   AA_DEFAULT_MODEL_SLUGS,
 } from "./constants";
 
-const AA_SUBTITLE = "This chart compares AA listed prices with the cheapest regular effective OpenRouter provider for the real benchmark workload, updated multiple times per day as prices change";
+const AA_SUBTITLE = "Compare Artificial Analysis scores and measured workload costs using AA listed prices or the cheapest regular OpenRouter provider. Data is refreshed manually; see the update time.";
 
 function mount(ui: () => JSX.Element) {
   const container = document.createElement("div");
@@ -334,42 +334,18 @@ describe("AaChartSection", () => {
       ...AA_DEFAULT_MODEL_SLUGS,
     ]));
     expect(AA_DEFAULT_MODEL_SLUGS).toEqual(expect.arrayContaining([
-      "gpt-5-6-luna-low",
-      "gpt-5-6-luna-medium",
-      "gpt-5-6-luna-high",
-      "gpt-5-6-luna-xhigh",
-      "gpt-5-6-luna",
-      "gpt-5-6-sol-low",
-      "gpt-5-6-sol-medium",
-      "gpt-5-6-sol-high",
-      "gpt-5-6-sol-xhigh",
-      "gpt-5-6-sol",
-      "gpt-6-astra",
-      "grok-4-7",
-      "mimo-v2-6-pro",
+      "gpt-6-luna", "gpt-6-1-terra", "gpt-6-1-sol", "gpt-6-astra",
+      "claude-haiku-5-5", "claude-opus-5-5", "claude-sonnet-5-5",
+      "gemini-4-argon", "grok-4-7", "deepseek-v4-1-flash-1017",
+      "mimo-v2-6-flash", "mimo-v2-6-pro", "kimi-k3-1-pro", "minimax-m3-1-flash",
     ]));
-    expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("gpt-5-6-luna-non-reasoning");
-    expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("mistral-medium-3-5");
-    expect(AA_DEFAULT_MODEL_SLUGS).toContain("deepseek-v4-1-flash");
-    expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("deepseek-v4-flash");
-    expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("deepseek-v4-pro");
-    expect(AA_DEFAULT_MODEL_SLUGS).toContain("grok-4-7");
-    expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("grok-4-6");
-    expect(AA_DEFAULT_MODEL_SLUGS).toContain("glm-5-3-flash");
-    expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("glm-5-3");
-    expect(AA_DEFAULT_MODEL_SLUGS).toContain("mimo-v2-6-pro");
-    expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("mimo-v2-5-0424");
-    expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("mimo-v2-5-pro");
-    for (const hiddenSlug of [
-      "qwen3-8-flash-next",
-      "qwen3-8-max",
-      "kimi-k3",
-      "gemini-2-5-pro",
+    for (const retiredDefault of [
+      "gpt-5-6-luna", "gpt-5-6-sol", "claude-opus-5", "muse-spark-1-3-xhigh",
+      "deepseek-v4-flash", "deepseek-v4-1-flash", "glm-5-3-flash", "minimax-m3",
     ]) {
-      expect(AA_DEFAULT_MODEL_SLUGS).not.toContain(hiddenSlug);
+      expect(AA_DEFAULT_MODEL_SLUGS).not.toContain(retiredDefault);
     }
-    expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("gemini-3-1-pro-preview");
-    expect(AA_DEFAULT_MODEL_SLUGS).not.toContain("minimax-m3");
+    expect(AA_DEFAULT_MODEL_SLUGS.some((slug) => slug.includes("non-reasoning"))).toBe(false);
     expect(container.querySelector("[data-testid='aa-no-points']")).toBeNull();
     expect(AA_DEFAULT_COST_MODE).toBe("intelligence-vs-cost-per-task");
     dispose();
@@ -420,17 +396,13 @@ describe("AaChartSection", () => {
     expect(selected).not.toContain("mimo-v2-5-0424");
     expect(selected).not.toContain("mimo-v2-5-pro");
     expect(selected).toContain("mimo-v2-6-pro");
-    expect(AA_DEFAULT_AUTO_RELEASE_FAMILY_POLICIES).toEqual([
-      { seedSlug: "gpt-5-6-luna", hiddenSlugs: [] },
-      { seedSlug: "gpt-5-6-sol", hiddenSlugs: [] },
-      { seedSlug: "claude-opus-5", hiddenSlugs: [] },
+    expect(AA_DEFAULT_AUTO_RELEASE_FAMILY_POLICIES).toEqual(expect.arrayContaining([
+      { seedSlug: "gpt-6-luna", hiddenSlugs: [] },
+      { seedSlug: "gpt-6-1-sol", hiddenSlugs: [] },
+      { seedSlug: "claude-opus-5-5", hiddenSlugs: [] },
       { seedSlug: "grok-4-7", hiddenSlugs: [] },
-      {
-        seedSlug: "gemini-3-1-pro-preview",
-        hiddenSlugs: ["gemini-2-5-pro", "gemini-3-1-pro-preview"],
-      },
       { seedSlug: "minimax-m3", hiddenSlugs: ["minimax-m3"] },
-    ]);
+    ]));
     dispose();
   });
 

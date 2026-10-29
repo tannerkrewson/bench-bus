@@ -44,6 +44,17 @@ function bundle(overrides: Partial<Record<string, unknown>> = {}) {
 }
 
 describe("decodeBundle", () => {
+  it("preserves the AA index generation without relabeling older bundles", () => {
+    const aa = encodeAaDataset({
+      freshness: { schemaVersion: SCHEMA_VERSIONS.derived, asOf: AT, aaObservedAt: AT },
+      records: [...PLOTTABLE_AA_RECORDS],
+      intelligenceIndexVersion: "5",
+    });
+    expect(decodeBundle(bundle({ aa })).aa?.intelligenceIndexVersion).toBe("5");
+    expect(decodeBundle(bundle()).aa?.intelligenceIndexVersion).toBeUndefined();
+    expect(() => decodeBundle(bundle({ aa: { ...aa, iv: 5 } }))).toThrow(/version/);
+  });
+
   it("round-trips chart fixture records through the compact encoding", () => {
     const decoded = decodeBundle(bundle());
     expect(decoded.asOf).toBe(AT);

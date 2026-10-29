@@ -3,7 +3,12 @@ import { render } from "solid-js/web";
 import type { JSX } from "solid-js";
 import CursorBenchChartSection, { cursorChartStateFromParams, cursorChartStateToParams } from "./CursorBenchChartSection";
 import { CACHE_HIT_RATE_CONTROL_ID, CURSOR_BENCH_ID, SURCHARGE_CONTROL_ID } from "./adapter";
-import { CURSOR_FIXTURE_RECORDS } from "../fixtures";
+import { CURSOR_FIXTURE_RECORDS as RAW_CURSOR_FIXTURES } from "../fixtures";
+// Deliberately inconsistent legacy token totals belong in pricing regressions,
+// not in UI tests which need an actually estimable, fee-eligible point.
+const CURSOR_FIXTURE_RECORDS = RAW_CURSOR_FIXTURES.map((record) =>
+  record.modelId === "opus-5-max" ? { ...record, tokensPerTask: 30_000 } : record,
+);
 import type { ChartViewState } from "../types";
 
 function mount(ui: () => JSX.Element) {
@@ -25,7 +30,7 @@ describe("CursorBenchChartSection", () => {
     const toggle = container.querySelector("[data-testid='cursor-surcharge-toggle'] input") as HTMLInputElement;
     expect(toggle.checked).toBe(true);
     expect(container.querySelector("[data-testid='cursor-surcharge-toggle']")?.textContent).toContain("Include Cursor third-party fee");
-    expect(container.querySelector("[data-testid='cursor-surcharge-toggle']")?.textContent).toContain("Teams/Enterprise: +$0.25/M on third-party models; Cursor models exempt.");
+    expect(container.querySelector("[data-testid='cursor-surcharge-toggle']")?.textContent).toContain("Teams/Enterprise: +$0.25/M on eligible third-party models.");
     expect(toggle.getAttribute("aria-label")).toBe("Include Cursor third-party fee");
     expect(toggle.getAttribute("aria-describedby")).toBe("chart-cursor-surcharge-help");
     expect(container.querySelector("label[for='chart-cursor-visible-surcharge']")?.textContent).toContain("Include Cursor third-party fee");

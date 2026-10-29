@@ -38,6 +38,7 @@ describe("TimeTravelControl", () => {
     expect(trigger).not.toBeNull();
     expect(trigger.getAttribute("aria-label")).toContain("history");
     expect(trigger.getAttribute("data-tip")).toContain("snapshot");
+    expect(trigger.classList.contains("tooltip-end")).toBe(true);
     trigger.click();
 
     const menu = container.querySelector("[data-testid='time-travel-menu']") as HTMLElement;

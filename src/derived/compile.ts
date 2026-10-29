@@ -393,6 +393,7 @@ export async function compileBundle(
     stats.openrouterUnmatched = joined.unmatchedOr;
     stats.provisionalAliasesUsed = joined.provisionalUsed;
     aaDataset = encodeAaDataset({
+      intelligenceIndexVersion: aa.envelope.sourceMetadata?.intelligenceIndexVersion,
       freshness: {
         schemaVersion: SCHEMA_VERSIONS.derived,
         asOf,
@@ -482,7 +483,8 @@ export function parseDerivedIndex(raw: string | undefined): DerivedIndex {
  * (entries sorted by asOf, fixed key order, no indentation).
  */
 export function upsertDerivedIndexEntry(index: DerivedIndex, entry: DerivedIndexEntry): string {
-  const entries = [...index.entries.filter((e) => e.asOf !== entry.asOf), entry].sort((a, b) =>
+  // A mutable path such as latest.json cannot represent two observation times.
+  const entries = [...index.entries.filter((e) => e.asOf !== entry.asOf && e.path !== entry.path), entry].sort((a, b) =>
     a.asOf.localeCompare(b.asOf),
   );
   return `${JSON.stringify({ v: index.v, entries })}\n`;

@@ -3,11 +3,15 @@ import {
   type DerivedCursorChartRecord,
 } from "../../schemas";
 
+import { cursorModelReleaseId, cursorTokenRateExemption } from "../../collectors/cursor/policy";
+export { isCursorFirstPartyModel } from "../../collectors/cursor/policy";
+
 /**
  * Published Cursor model-rate assumptions used only for the optional estimate.
  * CursorBench publishes completion tokens per task, not total processed tokens;
  * hidden non-output volume is inferred from the published task cost and rates.
- * A model without an explicit profile is deliberately left unadjusted.
+ * A fee-eligible model without an explicit profile cannot be fee-adjusted.
+ * The adapter must not present its raw price as a fee-inclusive price.
  *
  * Prices are USD per million tokens. Cache hit rate is a physical ratio of
  * cache-read tokens to all non-output prompt tokens, not a price-mix slider.
@@ -33,37 +37,35 @@ function profile(
   };
 }
 
-// Cursor's Luna card has distinct input, cache-read, and cache-write prices.
-const LUNA_PROFILE = profile(0.2, 0.02, 0.25, 1.2);
-const FABLE_5_PROFILE = profile(10, 1, 12.5, 50);
-
-/**
- * Profiles are keyed by derived model id. These are the current rate-card
- * values used by the estimator; effort variants share their family profile.
- */
-const PROFILE_BY_MODEL_ID: ReadonlyArray<readonly [RegExp, CursorTokenRateProfile]> = [
-  [/^gpt-5-6-luna(?:-|$)/, LUNA_PROFILE],
-  [/^gpt-5-6-sol(?:-|$)/, profile(4, 0.4, 5, 20)],
-  [/^gpt-5-6-terra(?:-|$)/, profile(2, 0.2, 2.5, 12)],
-  [/^opus-5(?:-|$)/, profile(5, 0.5, 6.25, 25)],
-  [/^fable-5(?:-|$)/, FABLE_5_PROFILE],
-  [/^sonnet-5(?:-|$)/, profile(2, 0.2, 2.5, 10)],
-  [/^gemini-3-1-pro(?:-|$)/, profile(2, 0.2, undefined, 12)],
-  [/^gemini-3-7-flash(?:-|$)/, profile(0.75, 0.075, undefined, 3.5)],
-];
-
-/** Cursor Models are first-party and do not incur the third-party fee. */
-export function isCursorFirstPartyModel(modelId: string): boolean {
-  return /^(?:grok-4-6|grok-4-5|composer-2-5)(?:-|$)/.test(modelId);
-}
+// Standard rate cards, verified 2026-10-29 at cursor.com/docs/models-and-pricing.
+// Long-context/fast/regional surcharges cannot be inferred from aggregate evals.
+const PROFILE_BY_MODEL_ID: Readonly<Record<string, CursorTokenRateProfile>> = {
+  "gpt-5-6-luna": profile(0.2, 0.02, 0.25, 1.2),
+  "gpt-5-6-sol": profile(4, 0.4, 5, 20),
+  "gpt-5-6-terra": profile(2, 0.2, 2.5, 12),
+  "opus-5": profile(5, 0.5, 6.25, 25),
+  "opus-5-5": profile(4, 0.2, 5, 20),
+  "sonnet-5": profile(2, 0.2, 2.5, 10),
+  "sonnet-5-5": profile(2, 0.1, 2.5, 10),
+  "fable-5": profile(10, 1, 12.5, 50),
+  "fable-5-1": profile(10, 0.25, 12.5, 50),
+  "haiku-5-5": profile(0.1, 0.01, 0.125, 0.5),
+  "deepseek-v4-1-flash-1017": profile(0.3, 0.006, undefined, 1.2),
+  "gemini-3-1-pro": profile(2, 0.2, undefined, 12),
+  "gemini-3-7-flash": profile(0.75, 0.075, undefined, 3.5),
+  "gemini-3-8-flash": profile(0.75, 0.075, undefined, 3.75),
+  "gemini-4-argon": profile(2, 0.1, undefined, 10),
+  "glm-5-2": profile(1.4, 0.26, undefined, 4.4),
+  "glm-5-3": profile(1.4, 0.26, undefined, 4.4),
+  "glm-5-3-flash": profile(0.15, 0.029, undefined, 0.5),
+  "muse-spark-1-3": profile(1.25, 0.15, undefined, 4.25),
+  "muse-wonder": profile(4, 0.2, undefined, 20),
+};
 
 export function cursorTokenRateProfile(
   record: Pick<DerivedCursorChartRecord, "modelId">,
 ): CursorTokenRateProfile | null {
-  for (const [pattern, rateProfile] of PROFILE_BY_MODEL_ID) {
-    if (pattern.test(record.modelId)) return rateProfile;
-  }
-  return null;
+  return PROFILE_BY_MODEL_ID[cursorModelReleaseId(record.modelId)] ?? null;
 }
 
 /** Valid positive non-output rates published for a model. */
@@ -148,7 +150,7 @@ export function estimateCursorTokenRate(
   record: DerivedCursorChartRecord,
   cacheHitRatePercent: number,
 ): CursorTokenRateEstimate | null {
-  if (!record.isThirdParty || isCursorFirstPartyModel(record.modelId)) return null;
+  if (!record.isThirdParty || cursorTokenRateExemption(record.modelId) !== null) return null;
   const rateProfile = cursorTokenRateProfile(record);
   const completionTokens = cursorCompletionTokens(record);
   const publishedCost = record.publishedCostUsd;

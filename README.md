@@ -3,10 +3,10 @@
 Static AI benchmark comparisons at [benchb.us](https://benchb.us): benchmark
 scores versus estimated benchmark workload cost.
 
-Bench Bus is a fully static site — no runtime server. GitHub Actions collects
-and validates upstream benchmark/pricing data on a schedule, preserves
-timestamped snapshots on a dedicated data branch, and the site is built with
-Vite and deployed to GitHub Pages from a build artifact.
+Bench Bus is a fully static site — no runtime server. All GitHub Actions are
+disabled. Benchmark/pricing data is collected and validated locally, immutable
+snapshots live on `bench-bus-data`, and locally built static assets are
+published from `gh-pages` with `.nojekyll` (no Actions minutes).
 
 ## Tech stack
 
@@ -19,6 +19,7 @@ Vite and deployed to GitHub Pages from a build artifact.
 ## Development
 
 ```bash
+mise install       # Node 24 LTS; Node 26 currently breaks jsdom localStorage tests
 npm install
 npm run dev        # dev server
 npm run build      # production build -> dist/
@@ -30,5 +31,5 @@ npm run typecheck  # tsc --noEmit
 ## Deployment
 
 Production builds target GitHub Pages at the custom domain `benchb.us`
-(see `public/CNAME`). Deployment uses the GitHub Actions artifact flow —
-no `gh-pages` branch is used for compiled output.
+(see `public/CNAME`). See [manual collection and deployment](docs/deployment.md)
+for the local-only workflow. Do not re-enable Actions without approval.

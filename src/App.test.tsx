@@ -23,7 +23,7 @@ describe("App", () => {
     expect(sourceSections).toHaveLength(2);
     expect(sourceSections.map((section) => [...section.querySelectorAll("a")].map((link) => link.textContent))).toEqual([
       ["Artificial Analysis", "OpenRouter", "DeepSWE"],
-      ["CursorBench"],
+      ["CursorBench", "Cursor pricing & fee policy"],
     ]);
     expect(sourceSections.map((section) => [...section.querySelectorAll<HTMLAnchorElement>("a")].map((link) => link.href))).toEqual([
       [
@@ -31,7 +31,7 @@ describe("App", () => {
         "https://openrouter.ai/",
         "https://deepswe.datacurve.ai/artifacts/v1/leaderboard-live.json",
       ],
-      ["https://cursor.com/evals"],
+      ["https://cursor.com/evals", "https://cursor.com/docs/models-and-pricing#cursor-token-rate"],
     ]);
     sourceSections.forEach((section) => {
       expect(section.getAttribute("aria-labelledby")).toBe(section.querySelector("h3")?.id);

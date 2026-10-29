@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Structural smoke test for the collection workflow YAMLs. Deliberately
- * dependency-free: checks the invariants the workflows must keep (schedules,
+ * dependency-free: checks the invariants the workflows must keep (disabled schedules,
  * manual dispatch, concurrency guards, least-privilege permissions, timeouts,
  * composite-action wiring) with targeted line-level assertions instead of a
  * full YAML parser.
@@ -17,26 +17,10 @@ const ghDir = join(dirname(fileURLToPath(import.meta.url)), "..");
 const workflowsDir = join(ghDir, "workflows");
 
 const expectations = [
-  {
-    file: "collect-openrouter.yml",
-    cron: "0 1,5,9,13,17,21 * * *",
-    runsPerDay: 6,
-  },
-  {
-    file: "collect-aa.yml",
-    cron: "17 0,4,8,12,16,20 * * *",
-    runsPerDay: 6,
-  },
-  {
-    file: "collect-cursor.yml",
-    cron: "41 1,5,9,13,17,21 * * *",
-    runsPerDay: 6,
-  },
-  {
-    file: "collect-deepswe.yml",
-    cron: "30 1,5,9,13,17,21 * * *",
-    runsPerDay: 6,
-  },
+  { file: "collect-openrouter.yml" },
+  { file: "collect-aa.yml" },
+  { file: "collect-cursor.yml" },
+  { file: "collect-deepswe.yml" },
 ];
 
 let failures = 0;
@@ -45,17 +29,13 @@ const check = (label, ok) => {
   if (!ok) failures += 1;
 };
 
-function runsPerDay(cron) {
-  const fields = cron.trim().split(/\s+/);
-  if (fields.length !== 5) return 0;
-  const [minute, hour, dayOfMonth, month, dayOfWeek] = fields;
-  if (dayOfMonth !== "*" || month !== "*" || dayOfWeek !== "*") return 0;
-  if (!/^\d+$/.test(minute) || !/^\d+(,\d+)*$/.test(hour)) return 0;
-  return new Set(hour.split(",")).size;
-}
-
 async function main() {
-  const workflowFiles = (await readdir(workflowsDir)).filter((f) => f.endsWith(".yml"));
+  const workflowFiles = (await readdir(workflowsDir)).filter((f) => /\.ya?ml$/.test(f));
+
+  for (const file of workflowFiles) {
+    const text = await readFile(join(workflowsDir, file), "utf8");
+    check(`${file}: cron scheduling is disabled`, !/^\s*(?:schedule\s*:|(?:-\s*)?cron\s*:)/m.test(text));
+  }
 
   // The four collection workflows must exist; other workflows owned by
   // separate issues (ci.yml, deploy.yml) are allowed but not validated here.
@@ -72,16 +52,7 @@ async function main() {
     const text = await readFile(join(workflowsDir, expectation.file), "utf8");
     const name = expectation.file;
 
-    const cronMatches = [...text.matchAll(/^\s*- cron: "([^"]+)"\s*$/gm)].map(
-      (match) => match[1],
-    );
-    check(
-      `${name}: has exactly one expected schedule`,
-      cronMatches.length === 1 &&
-        cronMatches[0] === expectation.cron &&
-        runsPerDay(cronMatches[0]) === expectation.runsPerDay,
-    );
-    check(`${name}: workflow_dispatch trigger present`, text.includes("workflow_dispatch"));
+    check(`${name}: workflow_dispatch trigger present`, /^  workflow_dispatch:/m.test(text));
     check(
       `${name}: concurrency group with cancel-in-progress: false (queue, never race)`,
       /concurrency:\s*\n\s*group: \S+\s*\n\s*cancel-in-progress: false/.test(text),
@@ -108,8 +79,8 @@ async function main() {
       text.includes("persist-credentials: false"),
     );
     check(
-      `${name}: documents best-effort scheduling`,
-      text.includes("best-effort"),
+      `${name}: documents indefinite scheduling disablement`,
+      text.includes("Cron scheduling is disabled indefinitely"),
     );
   }
 

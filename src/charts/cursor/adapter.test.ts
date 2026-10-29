@@ -3,121 +3,92 @@ import type { DerivedCursorChartRecord } from "../../schemas";
 import { CURSOR_FIXTURE_RECORDS } from "../fixtures";
 import { buildChartPlot } from "../plotData";
 import {
-  CACHE_HIT_RATE_CONTROL_ID,
-  CURSOR_BENCH_ID,
-  SURCHARGE_CONTROL_ID,
-  completionTokensForCursorRate,
-  cursorBenchAdapter,
-  cursorDefaultVisibleIds,
-  effectiveCursorCostUsd,
-  formatCursorCostUsd,
-  surchargeApplies,
+  CACHE_HIT_RATE_CONTROL_ID, CURSOR_BENCH_ID, SURCHARGE_CONTROL_ID,
+  completionTokensForCursorRate, cursorBenchAdapter, cursorDefaultVisibleIds,
+  effectiveCursorCostUsd, formatCursorCostUsd, surchargeApplies,
 } from "./adapter";
 
-const OFF = { [SURCHARGE_CONTROL_ID]: false };
-const ON = { [SURCHARGE_CONTROL_ID]: true, [CACHE_HIT_RATE_CONTROL_ID]: 90 };
-const cacheHitRateControls = (rate: number) => ({ [SURCHARGE_CONTROL_ID]: true, [CACHE_HIT_RATE_CONTROL_ID]: rate });
-const byId = (id: string) => {
-  const record = CURSOR_FIXTURE_RECORDS.find((r) => r.modelId === id);
-  if (!record) throw new Error(`fixture missing: ${id}`);
-  return record;
+const OFF = { surcharge: false };
+const ON = { surcharge: true, cacheHitRate: 90 };
+const sol: DerivedCursorChartRecord = {
+  modelId: "gpt-5-6-sol-high", modelName: "GPT-5.6 Sol High", provider: "openai",
+  isThirdParty: true, score: 59, publishedCostUsd: 10, tokensPerTask: 100_000,
 };
+const composer = CURSOR_FIXTURE_RECORDS[0]!;
 
-describe("cursorBenchAdapter identity + axes", () => {
-  it("uses the cursor URL namespace and logarithmic price axis", () => {
+describe("cursorBenchAdapter identity + defaults", () => {
+  it("keeps the cursor namespace, log axis, and fee-on default", () => {
     expect(cursorBenchAdapter.benchmarkId).toBe(CURSOR_BENCH_ID);
     expect(cursorBenchAdapter.defaultXScale).toBe("log");
-  });
-
-  it("enables the third-party fee by default", () => {
-    expect(cursorBenchAdapter.controlSpecs.find((spec) => spec.id === SURCHARGE_CONTROL_ID)).toMatchObject({
-      default: true,
-    });
-  });
-
-  it("does not publish the removed Cursor subtitle", () => {
     expect(cursorBenchAdapter.subtitle).toBe("");
+    expect(cursorBenchAdapter.controlSpecs.find((s) => s.id === SURCHARGE_CONTROL_ID)).toMatchObject({ default: true });
+    expect(cursorBenchAdapter.controlSpecs.find((s) => s.id === CACHE_HIT_RATE_CONTROL_ID)).toMatchObject({ label: "Estimated cache hit rate", default: 90 });
   });
 
-  it("exposes the verified Cursor eval source separately from the subtitle", () => {
+  it("links both benchmark results and the independent billing policy", () => {
     expect(cursorBenchAdapter.sourceLinks).toEqual([
       { label: "CursorBench", href: "https://cursor.com/evals" },
+      { label: "Cursor pricing & fee policy", href: "https://cursor.com/docs/models-and-pricing#cursor-token-rate" },
     ]);
   });
 
-  it("defaults to Gemini 3.7 Flash while excluding GPT 5.5", () => {
-    const records = [
-      { ...byId("composer-2"), modelId: "gpt-5-5", modelName: "GPT 5.5" },
-      byId("gemini-3.7-flash"),
+  it("hides superseded releases, dominated uncurated models, and unverified discoveries", () => {
+    const records = [composer, sol,
+      { ...sol, modelId: "opus-5-high", modelName: "Opus 5 High" },
+      { ...sol, modelId: "opus-5-5-high", modelName: "Opus 5.5 High", publishedCostUsd: 8 },
+      { ...sol, modelId: "muse-wonder-high", modelName: "Muse Wonder High", score: 20 },
+      { ...sol, modelId: "unknown-model", modelName: "Unknown Model", publishedCostUsd: 0.1 },
     ];
-    expect(cursorDefaultVisibleIds(records)).toEqual(["gemini-3.7-flash"]);
+    expect(cursorDefaultVisibleIds(records)).toEqual(["composer-2", "gpt-5-6-sol-high", "opus-5-5-high"]);
   });
 
-  it("hides the current Kimi, Gemini 3.6 Flash, and GLM families by default", () => {
-    const records = [
-      byId("composer-2"),
-      { ...byId("composer-2"), modelId: "kimi-k3-max", modelName: "Kimi K3 Max" },
-      { ...byId("composer-2"), modelId: "gemini-3-6-flash-high", modelName: "Gemini 3.6 Flash High" },
-      { ...byId("composer-2"), modelId: "glm-5-2-high", modelName: "GLM 5.2 High" },
-      { ...byId("composer-2"), modelId: "new-model", modelName: "New Model" },
-    ];
-    expect(cursorDefaultVisibleIds(records)).toEqual(["composer-2", "new-model"]);
-  });
-
-  it("automatically removes older releases from the implicit selection", () => {
-    const records = [
-      { ...byId("composer-2"), modelId: "muse-spark-1-2", modelName: "Muse Spark 1.2" },
-      { ...byId("composer-2"), modelId: "muse-spark-1-3", modelName: "Muse Spark 1.3" },
-    ];
-    expect(cursorDefaultVisibleIds(records)).toEqual(["muse-spark-1-3"]);
+  it("retains verified current value-frontier models outside the curated lineup", () => {
+    const cheap = { ...sol, modelId: "glm-5-3-flash-high", modelName: "GLM 5.3 Flash High", score: 30, publishedCostUsd: 0.1 };
+    expect(cursorDefaultVisibleIds([composer, cheap])).toContain(cheap.modelId);
   });
 
   it("does not let an unpriced newer release hide an older priced model", () => {
-    const priced = { ...byId("composer-2"), modelId: "muse-spark-1-2", modelName: "Muse Spark 1.2" };
-    const unpriced = {
-      ...priced,
-      modelId: "muse-spark-1-3",
-      modelName: "Muse Spark 1.3",
-      publishedCostUsd: undefined,
-    };
-    const point = cursorBenchAdapter.computePoint(priced, OFF)!;
-    expect(cursorDefaultVisibleIds([priced, unpriced], [point])).toEqual(["muse-spark-1-2"]);
+    const priced = { ...sol, modelId: "muse-spark-1-3-high", modelName: "Muse Spark 1.3 High" };
+    const unpriced = { ...priced, modelId: "muse-spark-1-4-high", modelName: "Muse Spark 1.4 High", publishedCostUsd: undefined };
+    const point = cursorBenchAdapter.computePoint(priced, ON)!;
+    expect(cursorDefaultVisibleIds([priced, unpriced], [point])).toEqual([priced.modelId]);
   });
 });
 
-describe("effectiveCursorCostUsd (surcharge math)", () => {
-  it("leaves first-party models unchanged with surcharge enabled", () => {
-    expect(effectiveCursorCostUsd(byId("composer-2"), true, 90)).toBe(byId("composer-2").publishedCostUsd);
-    const grok = { ...byId("composer-2"), modelId: "grok-4-6", modelName: "Grok 4.6", isThirdParty: true };
-    expect(effectiveCursorCostUsd(grok, true, 90)).toBe(grok.publishedCostUsd);
-  });
-
-  it("uses published completion tokens and output-cost subtraction", () => {
-    const lunaLike: DerivedCursorChartRecord = { ...byId("opus-5-max"), modelId: "gpt-5-6-luna-low", tokensPerTask: 100_000, outputTokens: 1_000, publishedCostUsd: 1 };
-    expect(completionTokensForCursorRate(lunaLike)).toBe(100_000);
-    const adjusted = effectiveCursorCostUsd(lunaLike, true, 90)!;
-    const outputCost = 100_000 / 1e6 * 1.2;
-    const blended = 0.9 * 0.02 + 0.1 * ((0.2 + 0.25) / 2);
-    const hidden = (1 - outputCost) / blended * 1e6;
-    expect(adjusted).toBeCloseTo(1 + (hidden + 100_000) / 1e6 * 0.25, 10);
-  });
-
-  it("does not use completion tokens alone when pricing is unavailable", () => {
-    const record = { ...byId("gemini-3.7-flash"), modelId: "unknown-model" };
+describe("Cursor fee eligibility and math", () => {
+  it.each(["composer-2-5", "grok-4-7-extra-high", "grok-4-6-high", "grok-4-5", "haiku-5-5-high", "gpt-5-6-luna-low", "gemini-3-8-flash-high", "glm-5-3-flash-high"])("keeps exempt %s unchanged and explains the exemption", (modelId) => {
+    const record = { ...sol, modelId };
     expect(effectiveCursorCostUsd(record, true, 90)).toBe(record.publishedCostUsd);
     expect(surchargeApplies(record, ON)).toBe(false);
+    const point = cursorBenchAdapter.computePoint(record, ON)!;
+    expect(cursorBenchAdapter.tooltipLines(record, point, ON).find((l) => l.label === "Cursor Token Rate")?.value).toContain("Exempt");
+    expect(cursorBenchAdapter.summaryTooltipLines!(record, point, ON).find((l) => l.label === "Cursor Token Rate")?.value).toContain("Exempt");
   });
 
-  it("leaves published cost unchanged when known output cost exceeds it", () => {
-    const record = { ...byId("opus-5-max"), modelId: "gpt-5-6-luna-low", tokensPerTask: 100_000, publishedCostUsd: 0.01 };
-    expect(effectiveCursorCostUsd(record, true, 90)).toBe(record.publishedCostUsd);
+  it("uses published completion tokens and subtracts their known cost", () => {
+    const record = { ...sol, outputTokens: 1_000 };
+    expect(completionTokensForCursorRate(record)).toBe(100_000);
+    const hidden = (10 - 100_000 / 1e6 * 20) / (0.9 * 0.4 + 0.1 * 4.5) * 1e6;
+    expect(effectiveCursorCostUsd(record, true, 90)).toBeCloseTo(10 + (hidden + 100_000) / 1e6 * 0.25, 10);
+    expect(surchargeApplies(record, ON)).toBe(true);
+  });
+
+  it.each([
+    { ...sol, modelId: "unknown-model" },
+    { ...sol, publishedCostUsd: 0.01 },
+    { ...sol, tokensPerTask: undefined },
+  ])("never labels unavailable estimates as fee-inclusive prices ($modelId)", (record) => {
+    expect(effectiveCursorCostUsd(record, true, 90)).toBeNull();
+    expect(cursorBenchAdapter.computePoint(record, ON)).toBeNull();
+    expect(effectiveCursorCostUsd(record, false, 90)).toBe(record.publishedCostUsd);
     expect(surchargeApplies(record, ON)).toBe(false);
-    expect(cursorBenchAdapter.tooltipLines(record, cursorBenchAdapter.computePoint(record, ON)!, ON).find((line) => line.label === "Cursor Token Rate")?.value).toContain("output cost may exceed published cost");
+    const rawPoint = cursorBenchAdapter.computePoint(record, OFF)!;
+    expect(cursorBenchAdapter.tooltipLines(record, rawPoint, ON).find((l) => l.label === "Cursor Token Rate")?.value).toContain("Estimate unavailable; omitted");
   });
 });
 
-describe("cursorBenchAdapter.computePoint + plot build", () => {
-  it("plots every valid fixture model unchanged when disabled", () => {
+describe("Cursor plots and tooltips", () => {
+  it("plots every valid fixture unchanged when disabled", () => {
     const build = buildChartPlot(CURSOR_FIXTURE_RECORDS, cursorBenchAdapter, OFF, "");
     expect(build.unplottable).toHaveLength(0);
     expect(build.entries).toHaveLength(CURSOR_FIXTURE_RECORDS.length);
@@ -128,38 +99,32 @@ describe("cursorBenchAdapter.computePoint + plot build", () => {
     }
   });
 
-  it("moves eligible third-party costs while keeping first-party costs unchanged", () => {
-    const before = buildChartPlot(CURSOR_FIXTURE_RECORDS, cursorBenchAdapter, OFF, "");
-    const after = buildChartPlot(CURSOR_FIXTURE_RECORDS, cursorBenchAdapter, ON, "");
-    for (const { record, point } of after.entries) {
-      const old = before.entries.find((entry) => entry.point.id === point.id)!.point;
-      if (!record.isThirdParty || /^(?:grok-4-6|grok-4-5|composer-2-5)(?:-|$)/.test(record.modelId)) expect(point.x).toBe(old.x);
-      else expect(point.x).toBeGreaterThanOrEqual(old.x);
-    }
+  it("moves eligible models but not exempt ones, and surfaces unavailable estimates", () => {
+    const exempt = { ...sol, modelId: "haiku-5-5-high" };
+    const unavailable = { ...sol, modelId: "future-model" };
+    const build = buildChartPlot([composer, sol, exempt, unavailable], cursorBenchAdapter, ON, "");
+    expect(build.entries.find((e) => e.point.id === sol.modelId)?.point.x).toBeGreaterThan(10);
+    expect(build.entries.find((e) => e.point.id === exempt.modelId)?.point.x).toBe(10);
+    expect(build.entries.find((e) => e.point.id === composer.modelId)?.point.x).toBe(composer.publishedCostUsd);
+    expect(build.unplottable.map(({ record }) => record.modelId)).toEqual(["future-model"]);
   });
 
-  it("recomputes plotted costs with cache-hit endpoints and exposes the 90% default", () => {
-    const record = { ...byId("opus-5-max"), modelId: "gpt-5-6-luna-low", publishedCostUsd: 30 };
-    const noCache = buildChartPlot([record], cursorBenchAdapter, cacheHitRateControls(0), "opus").entries[0]!.point;
-    const allCache = buildChartPlot([record], cursorBenchAdapter, cacheHitRateControls(100), "opus").entries[0]!.point;
+  it("recomputes costs across cache-hit endpoints and states uncertainty", () => {
+    const noCache = cursorBenchAdapter.computePoint(sol, { ...ON, cacheHitRate: 0 })!;
+    const allCache = cursorBenchAdapter.computePoint(sol, { ...ON, cacheHitRate: 100 })!;
     expect(allCache.x).toBeGreaterThan(noCache.x);
-    expect(cursorBenchAdapter.controlSpecs.find((spec) => spec.id === CACHE_HIT_RATE_CONTROL_ID)).toMatchObject({ label: "Estimated cache hit rate", default: 90 });
+    const lines = cursorBenchAdapter.tooltipLines(sol, allCache, { ...ON, cacheHitRate: 100 });
+    expect(lines.find((l) => l.label === "Estimated cache hit rate")?.value).toContain("100%");
+    expect(lines.find((l) => l.label === "Total processed tokens (estimate)")).toBeDefined();
+    expect(lines.find((l) => l.label === "Uncertainty at selected cache hit rate")).toBeDefined();
   });
 
-  it("tooltip states cache-hit estimate and uncertainty", () => {
-    const record = { ...byId("opus-5-max"), modelId: "gpt-5-6-luna-low", publishedCostUsd: 30 };
-    const point = cursorBenchAdapter.computePoint(record, cacheHitRateControls(90))!;
-    const lines = cursorBenchAdapter.tooltipLines(record, point, cacheHitRateControls(90));
-    expect(lines.find((line) => line.label === "Estimated cache hit rate")?.value).toContain("90%");
-    expect(lines.find((line) => line.label === "Total processed tokens (estimate)")).toBeDefined();
-    expect(lines.find((line) => line.label === "Uncertainty at selected cache hit rate")).toBeDefined();
-  });
-
-  it("tooltip cost values agree exactly with the plotted coordinate", () => {
-    const build = buildChartPlot(CURSOR_FIXTURE_RECORDS, cursorBenchAdapter, ON, "");
+  it("shows exactly the plotted price in summary and detailed tooltips", () => {
+    const build = buildChartPlot([composer, sol], cursorBenchAdapter, ON, "");
     for (const { record, point } of build.entries) {
-      const costLine = cursorBenchAdapter.tooltipLines(record, point, ON).find((line) => line.label === "Avg cost / task")!;
-      expect(costLine.value).toBe(formatCursorCostUsd(point.x));
+      for (const lines of [cursorBenchAdapter.tooltipLines(record, point, ON), cursorBenchAdapter.summaryTooltipLines!(record, point, ON)]) {
+        expect(lines.find((l) => l.label === "Avg cost / task")?.value).toBe(formatCursorCostUsd(point.x));
+      }
     }
   });
 });

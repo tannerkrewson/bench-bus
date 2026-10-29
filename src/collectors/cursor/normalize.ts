@@ -5,6 +5,7 @@ import {
   type CursorSnapshotPayload,
 } from "../../schemas";
 import type { RawCursorEvalRow } from "./types";
+import { isCursorFirstPartyModel } from "./policy";
 
 /**
  * Normalization: raw scraped rows -> validated canonical Cursor eval records
@@ -21,7 +22,7 @@ import type { RawCursorEvalRow } from "./types";
  * new first-party models; err toward adding explicit patterns rather than
  * loosening the third-party default.
  */
-const FIRST_PARTY_MODEL_PATTERNS: RegExp[] = [/^composer/i];
+// First-party identities are shared with the browser fee policy.
 
 /**
  * Serving provider derived from the model family prefix. The evals table does
@@ -32,7 +33,9 @@ const FIRST_PARTY_MODEL_PATTERNS: RegExp[] = [/^composer/i];
 const PROVIDER_BY_MODEL_PREFIX: ReadonlyArray<readonly [RegExp, string]> = [
   [/^grok/i, "xai"],
   [/^gpt/i, "openai"],
-  [/^(opus|sonnet)/i, "anthropic"],
+  [/^(?:claude\b|opus\b|sonnet\b|haiku\b|fable\b)/i, "anthropic"],
+  [/^deepseek\b/i, "deepseek"],
+  [/^muse\b/i, "meta"],
   [/^gemini/i, "google"],
   [/^kimi/i, "moonshot"],
   [/^glm/i, "zai"],
@@ -48,6 +51,7 @@ export function cursorModelId(modelName: string): string {
 }
 
 export function deriveProvider(modelName: string): string {
+  if (isCursorFirstPartyModel(cursorModelId(modelName))) return "cursor";
   for (const [pattern, provider] of PROVIDER_BY_MODEL_PREFIX) {
     if (pattern.test(modelName)) {
       return provider;
@@ -57,7 +61,7 @@ export function deriveProvider(modelName: string): string {
 }
 
 export function deriveIsThirdParty(modelName: string): boolean {
-  return !FIRST_PARTY_MODEL_PATTERNS.some((pattern) => pattern.test(modelName));
+  return !isCursorFirstPartyModel(cursorModelId(modelName));
 }
 
 /**

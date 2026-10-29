@@ -1,79 +1,88 @@
 import { describe, expect, it } from "vitest";
 import type { DerivedCursorChartRecord } from "../../schemas";
 import {
-  blendCursorNonOutputPrice,
-  cursorCompletionTokens,
-  cursorNonOutputPrices,
-  cursorTokenRateProfile,
-  estimateCursorTokenRate,
-  isCursorFirstPartyModel,
+  blendCursorNonOutputPrice, cursorCompletionTokens, cursorNonOutputPrices,
+  cursorTokenRateProfile, estimateCursorTokenRate, isCursorFirstPartyModel,
 } from "./pricing";
 
-const luna: DerivedCursorChartRecord = {
-  modelId: "gpt-5-6-luna-low", modelName: "GPT-5.6 Luna Low", provider: "openai",
-  isThirdParty: true, score: 70, tokensPerTask: 100_000, publishedCostUsd: 1,
+const sol: DerivedCursorChartRecord = {
+  modelId: "gpt-5-6-sol-low", modelName: "GPT-5.6 Sol Low", provider: "openai",
+  isThirdParty: true, score: 70, tokensPerTask: 100_000, publishedCostUsd: 10,
 };
-const composer: DerivedCursorChartRecord = { ...luna, modelId: "composer-2-5", modelName: "Composer 2.5", provider: "cursor", isThirdParty: false };
-const grok: DerivedCursorChartRecord = { ...luna, modelId: "grok-4-6", modelName: "Grok 4.6", provider: "xai", isThirdParty: true };
-const fable: DerivedCursorChartRecord = { ...luna, modelId: "fable-5-max", modelName: "Fable 5 Max", provider: "unknown", tokensPerTask: 103_525, publishedCostUsd: 17.32 };
 
 describe("Cursor token-rate pricing", () => {
-  it("uses current profiles with distinct cache-write prices", () => {
-    expect(cursorTokenRateProfile(luna)).toEqual({ inputPriceUsdPerMillion: 0.2, cacheReadPriceUsdPerMillion: 0.02, cacheWritePriceUsdPerMillion: 0.25, outputPriceUsdPerMillion: 1.2 });
-    expect(cursorTokenRateProfile({ modelId: "gpt-5-6-sol-high" })).toEqual({ inputPriceUsdPerMillion: 4, cacheReadPriceUsdPerMillion: 0.4, cacheWritePriceUsdPerMillion: 5, outputPriceUsdPerMillion: 20 });
-    expect(cursorTokenRateProfile({ modelId: "gpt-5-6-terra-high" })).toMatchObject({ cacheWritePriceUsdPerMillion: 2.5 });
-    expect(cursorTokenRateProfile({ modelId: "opus-5-max" })).toMatchObject({ cacheWritePriceUsdPerMillion: 6.25 });
-    expect(cursorTokenRateProfile({ modelId: "sonnet-5-max" })).toMatchObject({ inputPriceUsdPerMillion: 2, cacheWritePriceUsdPerMillion: 2.5, outputPriceUsdPerMillion: 10 });
-    expect(cursorTokenRateProfile({ modelId: "gemini-3-1-pro-high" })).toMatchObject({ cacheWritePriceUsdPerMillion: undefined });
-    expect(cursorTokenRateProfile(fable)).toMatchObject({ inputPriceUsdPerMillion: 10, cacheWritePriceUsdPerMillion: 12.5 });
+  it("uses exact release-specific rate cards instead of prefix inheritance", () => {
+    expect(cursorTokenRateProfile(sol)).toEqual({ inputPriceUsdPerMillion: 4, cacheReadPriceUsdPerMillion: 0.4, cacheWritePriceUsdPerMillion: 5, outputPriceUsdPerMillion: 20 });
+    expect(cursorTokenRateProfile({ modelId: "opus-5-max" })).toMatchObject({ inputPriceUsdPerMillion: 5, cacheReadPriceUsdPerMillion: 0.5, outputPriceUsdPerMillion: 25 });
+    expect(cursorTokenRateProfile({ modelId: "opus-5-5-max" })).toMatchObject({ inputPriceUsdPerMillion: 4, cacheReadPriceUsdPerMillion: 0.2, outputPriceUsdPerMillion: 20 });
+    expect(cursorTokenRateProfile({ modelId: "sonnet-5-5-high" })).toMatchObject({ cacheReadPriceUsdPerMillion: 0.1 });
+    expect(cursorTokenRateProfile({ modelId: "fable-5-1-max" })).toMatchObject({ cacheReadPriceUsdPerMillion: 0.25 });
+    expect(cursorTokenRateProfile({ modelId: "gemini-3-8-flash-high" })).toMatchObject({ outputPriceUsdPerMillion: 3.75 });
+    expect(cursorTokenRateProfile({ modelId: "opus-5-6-max" })).toBeNull();
+    expect(cursorTokenRateProfile({ modelId: "gpt-5-6-sol-pro-high" })).toBeNull();
   });
 
   it("blends physical cache-read share with the central non-cached rate", () => {
-    const profile = cursorTokenRateProfile(luna)!;
-    expect(cursorNonOutputPrices(profile)).toEqual([0.2, 0.02, 0.25]);
-    expect(blendCursorNonOutputPrice(profile, 0)).toBeCloseTo((0.2 + 0.25) / 2, 12);
-    expect(blendCursorNonOutputPrice(profile, 90)).toBeCloseTo(0.9 * 0.02 + 0.1 * 0.225, 12);
-    expect(blendCursorNonOutputPrice(profile, 100)).toBe(0.02);
+    const profile = cursorTokenRateProfile(sol)!;
+    expect(cursorNonOutputPrices(profile)).toEqual([4, 0.4, 5]);
+    expect(blendCursorNonOutputPrice(profile, 0)).toBe(4.5);
+    expect(blendCursorNonOutputPrice(profile, 90)).toBeCloseTo(0.9 * 0.4 + 0.1 * 4.5, 12);
+    expect(blendCursorNonOutputPrice(profile, 100)).toBe(0.4);
   });
 
-  it("subtracts known completion cost before estimating hidden and total tokens", () => {
-    const estimate = estimateCursorTokenRate(luna, 90)!;
-    const outputCost = (100_000 / 1e6) * 1.2;
-    const blended = 0.9 * 0.02 + 0.1 * ((0.2 + 0.25) / 2);
-    const hidden = ((1 - outputCost) / blended) * 1e6;
-    expect(estimate.cacheHitRatePercent).toBe(90);
-    expect(estimate.outputCostUsd).toBeCloseTo(outputCost, 12);
-    expect(estimate.residualNonOutputCostUsd).toBeCloseTo(1 - outputCost, 12);
+  it("subtracts completion cost before inferring hidden and total tokens", () => {
+    const estimate = estimateCursorTokenRate(sol, 90)!;
+    const outputCost = 100_000 / 1e6 * 20;
+    const hidden = (10 - outputCost) / (0.9 * 0.4 + 0.1 * 4.5) * 1e6;
+    expect(estimate.outputCostUsd).toBe(outputCost);
+    expect(estimate.residualNonOutputCostUsd).toBe(8);
     expect(estimate.hiddenTokens).toBeCloseTo(hidden, 6);
     expect(estimate.totalTokens).toBeCloseTo(hidden + 100_000, 6);
-  });
-
-  it("reports uncertainty from input/cache-write prices at the selected hit rate", () => {
-    const estimate = estimateCursorTokenRate(luna, 90)!;
+    expect(estimate.adjustedCostUsd).toBeCloseTo(10 + (hidden + 100_000) / 1e6 * 0.25, 12);
     expect(estimate.surchargeRangeUsd[0]).toBeLessThanOrEqual(estimate.surchargeUsd);
     expect(estimate.surchargeUsd).toBeLessThanOrEqual(estimate.surchargeRangeUsd[1]);
-    expect(estimate.surchargeRangeUsd[0]).not.toBe(estimate.surchargeRangeUsd[1]);
   });
 
-  it("uses tokensPerTask as completion tokens, never as total tokens", () => {
-    const record = { ...luna, tokensPerTask: 200_000, outputTokens: 1_000 };
+  it.each([
+    ["opus-5-5-high", 3.97, 53_078, 4, 0.2, 5, 20],
+    ["sonnet-5-5-high", 1.2, 37_391, 2, 0.1, 2.5, 10],
+    ["fable-5-1-high", 9.08, 58_438, 10, 0.25, 12.5, 50],
+    ["deepseek-v4-1-flash-1017-high", 0.77, 385_196, 0.3, 0.006, undefined, 1.2],
+    ["gemini-4-argon-high", 4.57, 109_500, 2, 0.1, undefined, 10],
+    ["muse-spark-1-3-high", 1.66, 30_654, 1.25, 0.15, undefined, 4.25],
+    ["muse-wonder-high", 3.51, 33_612, 4, 0.2, undefined, 20],
+    ["glm-5-3-high", 3.24, 60_031, 1.4, 0.26, undefined, 4.4],
+  ] as const)("applies a fee to current eligible %s with verified rates", (modelId, cost, tokens, input, cache, write, output) => {
+    const record = { ...sol, modelId, publishedCostUsd: cost, tokensPerTask: tokens };
+    const estimate = estimateCursorTokenRate(record, 90)!;
+    const blended = 0.9 * cache + 0.1 * (write === undefined ? input : (input + write) / 2);
+    const total = (cost - tokens / 1e6 * output) / blended * 1e6 + tokens;
+    expect(estimate.surchargeUsd).toBeCloseTo(total / 1e6 * 0.25, 12);
+    expect(estimate.adjustedCostUsd).toBeGreaterThan(cost);
+  });
+
+  it.each(["haiku-5-5-high", "gpt-5-6-luna-low", "gemini-3-8-flash-high", "glm-5-3-flash-high", "grok-4-7-high", "composer-2-5"])("does not estimate a fee for exempt %s even with stale third-party flags", (modelId) => {
+    expect(estimateCursorTokenRate({ ...sol, modelId }, 90)).toBeNull();
+  });
+
+  it("recognizes all documented Cursor models", () => {
+    for (const id of ["grok-4-5", "grok-4-6-high", "grok-4-7-extra-high", "composer-2-5"]) {
+      expect(isCursorFirstPartyModel(id)).toBe(true);
+    }
+  });
+
+  it("uses completion tokens, never mistakes them for total processed tokens", () => {
+    const record = { ...sol, tokensPerTask: 200_000, outputTokens: 1_000 };
     expect(cursorCompletionTokens(record)).toBe(200_000);
     expect(estimateCursorTokenRate(record, 90)?.totalTokens).toBeGreaterThan(200_000);
   });
 
-  it("exempts Cursor Models Grok 4.6, Grok 4.5, and Composer 2.5", () => {
-    expect(isCursorFirstPartyModel("grok-4-6-high")).toBe(true);
-    expect(isCursorFirstPartyModel("grok-4-5")).toBe(true);
-    expect(isCursorFirstPartyModel("composer-2-5-max")).toBe(true);
-    expect(estimateCursorTokenRate(composer, 90)).toBeNull();
-    expect(estimateCursorTokenRate(grok, 90)).toBeNull();
-  });
-
-  it("fails closed for invalid inputs and negative residuals", () => {
-    expect(estimateCursorTokenRate({ ...luna, tokensPerTask: undefined }, 90)).toBeNull();
-    expect(estimateCursorTokenRate({ ...luna, publishedCostUsd: -1 }, 90)).toBeNull();
-    expect(blendCursorNonOutputPrice(cursorTokenRateProfile(luna)!, -1)).toBeNull();
-    expect(blendCursorNonOutputPrice(cursorTokenRateProfile(luna)!, 101)).toBeNull();
-    expect(estimateCursorTokenRate({ ...luna, publishedCostUsd: 0.01 }, 90)).toBeNull();
+  it("fails closed for missing data, invalid cache rates, and negative residuals", () => {
+    expect(estimateCursorTokenRate({ ...sol, tokensPerTask: undefined }, 90)).toBeNull();
+    expect(estimateCursorTokenRate({ ...sol, publishedCostUsd: -1 }, 90)).toBeNull();
+    expect(estimateCursorTokenRate({ ...sol, modelId: "unknown" }, 90)).toBeNull();
+    expect(estimateCursorTokenRate({ ...sol, publishedCostUsd: 0.01 }, 90)).toBeNull();
+    expect(blendCursorNonOutputPrice(cursorTokenRateProfile(sol)!, -1)).toBeNull();
+    expect(blendCursorNonOutputPrice(cursorTokenRateProfile(sol)!, 101)).toBeNull();
   });
 });

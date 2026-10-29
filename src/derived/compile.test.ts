@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   makeSnapshotEnvelope,
+  SCHEMA_VERSIONS,
   type ArtificialAnalysisModel,
   type CursorEvalRecord,
   type OpenRouterModelPricing,
@@ -679,8 +680,8 @@ describe("mergeAaReasoningHistory", () => {
       effort("gpt-5-6-luna-high", "high", 47),
     ];
     expect(mergeAaReasoningHistory(
-      { records: current, intelligenceIndexVersion: "4.2" },
-      [{ records: oldScores, intelligenceIndexVersion: "4.1" }],
+      { records: current, intelligenceIndexVersion: "5" },
+      [{ records: oldScores, intelligenceIndexVersion: "4.2" }],
     ).map((model) => model.slug)).toEqual([
       "gpt-5-6-luna",
       "gpt-5-6-luna-xhigh",
@@ -771,6 +772,13 @@ describe("size discipline", () => {
 });
 
 describe("derived index", () => {
+  it("never points an old historical date at a replaced latest bundle", () => {
+    const old = { asOf: T1, path: "latest.json", aa: true, cursor: true };
+    const current = { ...old, asOf: T2 };
+    const json = upsertDerivedIndexEntry({ v: SCHEMA_VERSIONS.derived, entries: [old] }, current);
+    expect(JSON.parse(json).entries).toEqual([current]);
+  });
+
   it("upserts by asOf, sorts deterministically, and serializes byte-stably", () => {
     const e1 = { asOf: T2, path: "b.json", aa: true, cursor: false };
     const e2 = { asOf: T1, path: "a.json", aa: true, cursor: true };

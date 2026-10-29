@@ -30,7 +30,7 @@ export default function TimeTravelControl(): JSX.Element {
         onToggle={(event) => setOpen(event.currentTarget.open)}
       >
         <summary
-          class="tooltip tooltip-bottom btn btn-sm btn-outline btn-square list-none"
+          class="tooltip tooltip-bottom tooltip-end btn btn-sm btn-outline btn-square list-none"
           data-tip="Choose a benchmark snapshot from history"
           aria-label="Choose a benchmark snapshot from history"
           aria-haspopup="dialog"

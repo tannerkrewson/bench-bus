@@ -9,13 +9,14 @@ import type {
   TooltipLine,
 } from "../types";
 import { inferModelBrand } from "../brand";
-import { latestModelVersionIds, modelDisplayMetadata } from "../modelMetadata";
+import { latestModelVersionIds, modelDisplayMetadata, modelReleaseFamilyKey } from "../modelMetadata";
+import { paretoFrontier } from "../plotData";
+import { cursorTokenRateExemption } from "../../collectors/cursor/policy";
 import {
   blendCursorNonOutputPrice,
   cursorCompletionTokens,
   cursorTokenRateProfile,
   estimateCursorTokenRate,
-  isCursorFirstPartyModel,
 } from "./pricing";
 
 /**
@@ -27,41 +28,45 @@ export const CURSOR_BENCH_ID = "cursor";
 export const SURCHARGE_CONTROL_ID = "surcharge";
 export const CACHE_HIT_RATE_CONTROL_ID = "cacheHitRate";
 
+/** Current comparison families; superseded releases remain opt-in. */
 export const CURSOR_DEFAULT_MODEL_GROUPS = [
-  "opus-5", "grok-4-6", "luna", "sol", "terra", "fable-5", "composer-2-5", "gemini-3-7-flash",
+  "opus-5-5", "sonnet-5-5", "haiku-5-5", "grok-4-7",
+  "gemini-4-argon", "deepseek-v4-1-flash-1017", "composer-2-5", "gpt-5-6-sol",
 ] as const;
 
-const CURSOR_KNOWN_MODEL_GROUPS = new Set([
-  ...CURSOR_DEFAULT_MODEL_GROUPS,
-  "opus-4-8", "sonnet-5", "gemini-3-6-flash", "gpt-5-5", "kimi-k3", "glm-5-2", "glm-5-3",
-]);
-
-export function isCursorHiddenDefaultGroup(groupKey: string): boolean {
-  return groupKey === "kimi-k3" || groupKey.startsWith("kimi-") ||
-    groupKey === "gemini-3-6-flash" || groupKey.startsWith("glm-");
-}
+const DEFAULT_RELEASE_FAMILIES = new Set(
+  CURSOR_DEFAULT_MODEL_GROUPS.map((id) => modelReleaseFamilyKey("", id.replace(/-v(?=\d)/, "-"))),
+);
 
 export function cursorDefaultVisibleIds(
   records: readonly DerivedCursorChartRecord[],
   points?: readonly PlottablePoint[],
 ): string[] {
-  const plottableIds = points === undefined ? null : new Set(points.map((point) => point.id));
-  const eligibleRecords = records.filter((record) => plottableIds === null || plottableIds.has(record.modelId));
-  const candidates = eligibleRecords
-    .filter((record) => {
-      const groupKey = modelDisplayMetadata(record.modelName, record.modelId).groupKey;
-      return !isCursorHiddenDefaultGroup(groupKey) &&
-        (CURSOR_DEFAULT_MODEL_GROUPS.includes(groupKey as (typeof CURSOR_DEFAULT_MODEL_GROUPS)[number]) ||
-          !CURSOR_KNOWN_MODEL_GROUPS.has(groupKey));
-    })
-    .map((record) => record.modelId);
-  return latestModelVersionIds(
-    eligibleRecords.map((record) => ({
-      id: record.modelId,
-      label: modelDisplayMetadata(record.modelName, record.modelId).label,
-    })),
-    candidates,
+  const availablePoints = points ?? records.flatMap((record) => {
+    const point = cursorBenchAdapter.computePoint(record, { surcharge: true, cacheHitRate: 90 });
+    return point ? [point] : [];
+  });
+  const pointIds = new Set(availablePoints.map((point) => point.id));
+  // New discoveries need verified pricing before entering the implicit view.
+  // Explicit URL/selector choices still win.
+  const eligible = records.filter((record) =>
+    pointIds.has(record.modelId) &&
+    (cursorTokenRateExemption(record.modelId) !== null || cursorTokenRateProfile(record) !== null),
   );
+  const latestIds = new Set(latestModelVersionIds(
+    eligible.map((record) => ({
+      id: record.modelId, label: modelDisplayMetadata(record.modelName, record.modelId).label,
+    })),
+    eligible.map((record) => record.modelId),
+  ));
+  const frontierIds = new Set(paretoFrontier(
+    availablePoints.filter((point) => latestIds.has(point.id)),
+  ).map((point) => point.id));
+  return eligible.filter((record) =>
+    latestIds.has(record.modelId) &&
+    (DEFAULT_RELEASE_FAMILIES.has(modelReleaseFamilyKey(record.modelName, record.modelId)) ||
+      frontierIds.has(record.modelId)),
+  ).map((record) => record.modelId);
 }
 
 const SURCHARGE_CONTROL = {
@@ -69,7 +74,7 @@ const SURCHARGE_CONTROL = {
   id: SURCHARGE_CONTROL_ID,
   label: `Include Cursor Token Rate ($${CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS}/M tok)`,
   default: true,
-  description: "Estimate Cursor's flat third-party-model fee from published cost, completion tokens, and an estimated cache-hit rate; Cursor Models are exempt.",
+  description: "Estimate Cursor's Teams/Enterprise fee for eligible third-party models. Cursor models and explicitly excluded releases (including Haiku 5.5) are exempt.",
 } as const;
 
 const CACHE_HIT_RATE_CONTROL = {
@@ -95,7 +100,7 @@ function cacheHitRateFromControls(controls: Readonly<PricingControlState>): numb
 
 export function surchargeApplies(record: DerivedCursorChartRecord, controls: Readonly<PricingControlState>): boolean {
   if (!Boolean(controls[SURCHARGE_CONTROL_ID] ?? SURCHARGE_CONTROL.default)) return false;
-  if (!record.isThirdParty || isCursorFirstPartyModel(record.modelId)) return false;
+  if (!record.isThirdParty || cursorTokenRateExemption(record.modelId) !== null) return false;
   return estimateCursorTokenRate(record, cacheHitRateFromControls(controls)) !== null;
 }
 
@@ -106,9 +111,9 @@ export function effectiveCursorCostUsd(
 ): number | null {
   const base = record.publishedCostUsd;
   if (base === undefined || !Number.isFinite(base) || base <= 0) return null;
-  if (includeSurcharge && record.isThirdParty && !isCursorFirstPartyModel(record.modelId)) {
+  if (includeSurcharge && record.isThirdParty && cursorTokenRateExemption(record.modelId) === null) {
     const estimate = estimateCursorTokenRate(record, cacheHitRatePercent ?? CACHE_HIT_RATE_CONTROL.default);
-    if (estimate !== null) return estimate.adjustedCostUsd;
+    return estimate?.adjustedCostUsd ?? null;
   }
   return base;
 }
@@ -121,7 +126,10 @@ export const cursorBenchAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord>
   benchmarkId: CURSOR_BENCH_ID,
   title: "Best value models on Cursor",
   subtitle: "",
-  sourceLinks: [{ label: "CursorBench", href: "https://cursor.com/evals" }],
+  sourceLinks: [
+    { label: "CursorBench", href: "https://cursor.com/evals" },
+    { label: "Cursor pricing & fee policy", href: "https://cursor.com/docs/models-and-pricing#cursor-token-rate" },
+  ],
   xAxisLabel: "Avg cost per task (USD, cursor.com/evals)",
   yAxisLabel: "CursorBench score",
   defaultXScale: "log",
@@ -145,8 +153,16 @@ export const cursorBenchAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord>
     };
   },
   searchText: (record) => `${record.modelName} ${record.provider} ${record.modelId}`,
-  unplottableLabel: () => "no published price",
-  unplottableDescription: () => "This model has no valid published task cost, so it cannot be plotted.",
+  unplottableLabel: (controls) => controls.surcharge === false ? "no published price" : "no fee-inclusive price",
+  unplottableDescription: () => "No valid fee-inclusive cost is available. Turn off the third-party fee to inspect published costs; missing rate/token data is not an exemption.",
+  summaryTooltipLines: (record, point, controls): readonly TooltipLine[] => {
+    const fee = surchargeTooltipLine(record, controls) ?? cursorEstimateTooltipLines(record, controls)[0];
+    return [
+      { label: "CursorBench score", value: `${record.score.toFixed(1)}%` },
+      { label: "Avg cost / task", value: formatCursorCostUsd(point.x) },
+      ...(fee ? [fee] : []),
+    ];
+  },
   tooltipLines: (record, point, controls): readonly TooltipLine[] => {
     const lines: TooltipLine[] = [
       { label: "CursorBench score", value: `${record.score.toFixed(1)}%` },
@@ -166,10 +182,10 @@ export const cursorBenchAdapter: BenchmarkChartAdapter<DerivedCursorChartRecord>
 
 export function surchargeTooltipLine(record: DerivedCursorChartRecord, controls: Readonly<PricingControlState>): TooltipLine | null {
   if (!Boolean(controls[SURCHARGE_CONTROL_ID] ?? SURCHARGE_CONTROL.default) ||
-      !record.isThirdParty || isCursorFirstPartyModel(record.modelId)) return null;
+      !record.isThirdParty || cursorTokenRateExemption(record.modelId) !== null) return null;
   const estimate = estimateCursorTokenRate(record, cacheHitRateFromControls(controls));
   if (estimate === null) {
-    return { label: "Cursor Token Rate", value: "Estimate unavailable; published cost unchanged (output cost may exceed published cost, or completion tokens/rates are missing or invalid)" };
+    return { label: "Cursor Token Rate", value: "Estimate unavailable; omitted while fee is enabled (output cost may exceed published cost, or completion tokens/rates are missing or invalid)" };
   }
   return {
     label: "Cursor Token Rate fee (estimate)",
@@ -179,14 +195,18 @@ export function surchargeTooltipLine(record: DerivedCursorChartRecord, controls:
 
 export function cursorEstimateTooltipLines(record: DerivedCursorChartRecord, controls: Readonly<PricingControlState>): readonly TooltipLine[] {
   if (!Boolean(controls[SURCHARGE_CONTROL_ID] ?? SURCHARGE_CONTROL.default)) return [];
-  if (!record.isThirdParty || isCursorFirstPartyModel(record.modelId)) {
+  const exemption = cursorTokenRateExemption(record.modelId);
+  if (!record.isThirdParty || exemption === "cursor-model") {
     return [{ label: "Cursor Token Rate", value: "Exempt (Cursor Models are first-party)" }];
+  }
+  if (exemption === "excluded-model") {
+    return [{ label: "Cursor Token Rate", value: "Exempt (explicitly excluded by Cursor's published Token Rate policy)" }];
   }
   const cacheHitRatePercent = cacheHitRateFromControls(controls);
   const profile = cursorTokenRateProfile(record);
   const estimate = estimateCursorTokenRate(record, cacheHitRatePercent);
   if (estimate === null || profile === null) {
-    return [{ label: "Cursor Token Rate", value: "Estimate unavailable; published cost unchanged (output cost may exceed published cost, or completion tokens/rates are missing or invalid)" }];
+    return [{ label: "Cursor Token Rate", value: "Estimate unavailable; omitted while fee is enabled (output cost may exceed published cost, or completion tokens/rates are missing or invalid)" }];
   }
   const rate = blendCursorNonOutputPrice(profile, cacheHitRatePercent);
   if (rate === null) return [{ label: "Cursor Token Rate", value: "Estimate unavailable; published cost unchanged (invalid estimated cache hit rate)" }];

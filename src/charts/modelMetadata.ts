@@ -249,7 +249,7 @@ export function expandedModelName(label: string, id?: string): string {
   const effort = modelDisplayMetadata(label, id).effort;
   const name = effort ? `${base} (${effort})` : base;
   const haystack = `${label} ${id ?? ""}`.toLocaleLowerCase();
-  if (/(?:claude|anthropic|opus|sonnet|fable)/.test(haystack)) {
+  if (/(?:claude|anthropic|opus|sonnet|haiku|fable)/.test(haystack)) {
     return `Anthropic ${/^claude\b/i.test(base) ? name : `Claude ${name}`}`;
   }
   if (/(?:gpt|openai)/.test(haystack)) return `OpenAI ${name}`;

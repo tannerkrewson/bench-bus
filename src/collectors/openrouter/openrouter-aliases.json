@@ -3,6 +3,370 @@
   "description": "Explicit Artificial Analysis -> OpenRouter model identity mapping. Curated by humans: automatic matching must never silently extend this file. `status: confirmed` = identity verified against both live catalogs (AA model objects from the artificialanalysis.ai page payload and OpenRouter ids from /api/v1/models, refreshed 2026-09-03). `provisional` = plausible but unverified, surfaced in every run report. `aaModelId` is the Artificial Analysis model UUID from the AA page payload. `openrouterId` is the stable OpenRouter model id (no date suffix, no :variant, no ~ alias); the collector resolves the canonical date-suffixed slug at runtime via /api/v1/models. `undiscountedOpenrouterId`, when present, explicitly links a discounted tier to the OpenRouter model whose listed prices form the comparison line. NOTE: AA model slugs use dashes where names use dots (e.g. AA slug gpt-5-6-sol for GPT-5.6 Sol).",
   "entries": [
     {
+      "aaModelSlug": "deepseek-v4-flash",
+      "aaModelId": "fe4c0848-e284-4e52-a79d-cdc28392f1a9",
+      "openrouterId": "deepseek/deepseek-v4-flash-0731",
+      "status": "confirmed",
+      "note": "Historical curated identity retained for archived snapshots; not a V5 default."
+    },
+    {
+      "aaModelSlug": "deepseek-v4-1-flash",
+      "aaModelId": "dbe7c625-3100-4463-b479-a228c41f75dd",
+      "openrouterId": "deepseek/deepseek-v4.1-flash",
+      "status": "confirmed",
+      "note": "Historical curated identity retained for archived snapshots; 1017 is a distinct release."
+    },
+    {
+      "aaModelSlug": "claude-fable-5-1",
+      "aaModelId": "3e87c73e-a257-495e-9730-367a66229811",
+      "openrouterId": "anthropic/claude-fable-5.1",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "claude-fable-5-1-high",
+      "aaModelId": "9d7d72cd-d95d-45a0-b109-4ad292c9aabd",
+      "openrouterId": "anthropic/claude-fable-5.1",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "claude-fable-5-1-low",
+      "aaModelId": "05776db7-f5c0-40f7-b824-079160f8cfa8",
+      "openrouterId": "anthropic/claude-fable-5.1",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "claude-fable-5-1-medium",
+      "aaModelId": "3b7de71c-e034-4591-8ca6-6b6be2fa471f",
+      "openrouterId": "anthropic/claude-fable-5.1",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "claude-fable-5-1-xhigh",
+      "aaModelId": "9b166bf3-42db-4f63-8338-1c4a1244ffe8",
+      "openrouterId": "anthropic/claude-fable-5.1",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "claude-haiku-5-5",
+      "aaModelId": "7d064a11-6e78-4030-b535-cdf940615041",
+      "openrouterId": "anthropic/claude-haiku-5.5",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "claude-haiku-5-5-high",
+      "aaModelId": "20829974-af06-497e-9f42-77fb958d43b9",
+      "openrouterId": "anthropic/claude-haiku-5.5",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "claude-haiku-5-5-low",
+      "aaModelId": "42908ae3-d3bd-4934-be19-fbff93d3fde8",
+      "openrouterId": "anthropic/claude-haiku-5.5",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "claude-haiku-5-5-medium",
+      "aaModelId": "af26fff4-8120-41be-a5f0-86aaea023f20",
+      "openrouterId": "anthropic/claude-haiku-5.5",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "claude-haiku-5-5-xhigh",
+      "aaModelId": "41b5bf5e-daf6-42d9-b8d1-60e340a3028d",
+      "openrouterId": "anthropic/claude-haiku-5.5",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "claude-opus-5-5",
+      "aaModelId": "2f3c4dc9-a450-4303-8697-0237257cf08f",
+      "openrouterId": "anthropic/claude-opus-5.5",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "claude-opus-5-5-high",
+      "aaModelId": "f314eade-2232-44bf-a3ab-9b326bc67de6",
+      "openrouterId": "anthropic/claude-opus-5.5",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "claude-opus-5-5-low",
+      "aaModelId": "4416ca93-fde6-4b7b-abbc-3a6be109cc3d",
+      "openrouterId": "anthropic/claude-opus-5.5",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "claude-opus-5-5-medium",
+      "aaModelId": "ea9e0da6-169f-43c6-92f5-730a10d6ff8d",
+      "openrouterId": "anthropic/claude-opus-5.5",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "claude-opus-5-5-xhigh",
+      "aaModelId": "df5bf99d-d228-4715-b41b-19ca86118777",
+      "openrouterId": "anthropic/claude-opus-5.5",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "claude-sonnet-5-5",
+      "aaModelId": "b171d979-5ec1-45de-b8b9-db1ee65e77ec",
+      "openrouterId": "anthropic/claude-sonnet-5.5",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "claude-sonnet-5-5-high",
+      "aaModelId": "268525e2-f873-4178-bc07-e6a0ee1f002d",
+      "openrouterId": "anthropic/claude-sonnet-5.5",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "claude-sonnet-5-5-low",
+      "aaModelId": "bbc2ffea-cf6b-43be-8c41-1769347e234d",
+      "openrouterId": "anthropic/claude-sonnet-5.5",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "claude-sonnet-5-5-medium",
+      "aaModelId": "042e8a37-fcd0-40f4-8f41-99215fb68eda",
+      "openrouterId": "anthropic/claude-sonnet-5.5",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "claude-sonnet-5-5-xhigh",
+      "aaModelId": "975aeaef-50bd-4a65-9c73-f1015adcd4d4",
+      "openrouterId": "anthropic/claude-sonnet-5.5",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "deepseek-v4-1-flash-1017",
+      "aaModelId": "f151fd0b-2139-40cf-a3ec-995e8cedc592",
+      "openrouterId": "deepseek/deepseek-v4.1-flash-1017",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "gemini-3-8-flash",
+      "aaModelId": "8a999846-4c1d-4ce7-a8b7-1310a7166fd7",
+      "openrouterId": "google/gemini-3.8-flash",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "gemini-3-8-flash-medium",
+      "aaModelId": "744fa3c1-42a7-4995-b138-fb6be11f463c",
+      "openrouterId": "google/gemini-3.8-flash",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "gemini-4-argon",
+      "aaModelId": "d366dfa1-d940-4788-aa73-d298c45699b3",
+      "openrouterId": "google/gemini-4-argon",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "glm-5-3-low",
+      "aaModelId": "cc1e488b-8ba4-464d-875d-690166b15ad3",
+      "openrouterId": "z-ai/glm-5.3",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "gpt-6-1-sol",
+      "aaModelId": "b25ac058-1e33-4c31-bbc9-a20c3ad0717a",
+      "openrouterId": "openai/gpt-6.1-sol",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "gpt-6-1-sol-high",
+      "aaModelId": "3b84fee3-b70a-41bc-819e-5fbdef9a0042",
+      "openrouterId": "openai/gpt-6.1-sol",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "gpt-6-1-sol-low",
+      "aaModelId": "e76e0fe5-93ca-4272-9359-2eb1740467d1",
+      "openrouterId": "openai/gpt-6.1-sol",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "gpt-6-1-sol-medium",
+      "aaModelId": "a2e51d62-ea4e-4f15-8be0-be9dc1fb489d",
+      "openrouterId": "openai/gpt-6.1-sol",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "gpt-6-1-sol-xhigh",
+      "aaModelId": "092a3b0e-c5c8-45dc-bf1b-53673c8ff352",
+      "openrouterId": "openai/gpt-6.1-sol",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "gpt-6-1-terra",
+      "aaModelId": "b0c462cf-f2d0-4126-9434-28db9502219f",
+      "openrouterId": "openai/gpt-6.1-terra",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "gpt-6-1-terra-high",
+      "aaModelId": "ea3e1f50-f62d-41d2-849a-9af0413e4d37",
+      "openrouterId": "openai/gpt-6.1-terra",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "gpt-6-1-terra-low",
+      "aaModelId": "c955b262-a17f-4f1a-b097-6860b866295b",
+      "openrouterId": "openai/gpt-6.1-terra",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "gpt-6-1-terra-medium",
+      "aaModelId": "c441e158-a87d-4116-911b-93325e4b4f1c",
+      "openrouterId": "openai/gpt-6.1-terra",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "gpt-6-1-terra-non-reasoning",
+      "aaModelId": "0d3c777f-6817-42d7-9bb9-223314bc5a57",
+      "openrouterId": "openai/gpt-6.1-terra",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "gpt-6-1-terra-xhigh",
+      "aaModelId": "e8d443ba-8aca-4830-a186-ae869bb9c6fe",
+      "openrouterId": "openai/gpt-6.1-terra",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "gpt-6-luna",
+      "aaModelId": "6fb13851-40ce-4bda-ad3f-6b38e0c5daa7",
+      "openrouterId": "openai/gpt-6-luna",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "gpt-6-luna-high",
+      "aaModelId": "7d1229bc-deea-4717-ba5b-f59a35d991e3",
+      "openrouterId": "openai/gpt-6-luna",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "gpt-6-luna-low",
+      "aaModelId": "bf9708d8-933d-44f6-affa-b696a7a650c9",
+      "openrouterId": "openai/gpt-6-luna",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "gpt-6-luna-medium",
+      "aaModelId": "36667da0-9222-4967-adbb-f7efa15ad213",
+      "openrouterId": "openai/gpt-6-luna",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "gpt-6-luna-non-reasoning",
+      "aaModelId": "63cb48ea-0b0c-4e07-8ded-6d28dec4fa28",
+      "openrouterId": "openai/gpt-6-luna",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "gpt-6-luna-xhigh",
+      "aaModelId": "19813eb2-460a-475c-af65-810bb8660fec",
+      "openrouterId": "openai/gpt-6-luna",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "grok-4-7",
+      "aaModelId": "59627802-1546-422c-9a65-65b61c022d36",
+      "openrouterId": "x-ai/grok-4.7",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "grok-4-7-high",
+      "aaModelId": "272f5f03-aea9-4675-a244-2b753b618cdf",
+      "openrouterId": "x-ai/grok-4.7",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "grok-4-7-low",
+      "aaModelId": "208c16f0-8c5b-4524-ac8a-ac74c02e80a9",
+      "openrouterId": "x-ai/grok-4.7",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "kimi-k3-1-pro",
+      "aaModelId": "665c67ca-09eb-48f0-a7a3-0096e1d5de51",
+      "openrouterId": "moonshotai/kimi-k3.1-pro",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "mimo-v2-6-flash",
+      "aaModelId": "127de816-57d3-4037-8484-480a613cd413",
+      "openrouterId": "xiaomi/mimo-v2.6-flash",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "mimo-v2-6-pro",
+      "aaModelId": "24d8fdfe-6241-424e-b7b7-1b6efb06e4fb",
+      "openrouterId": "xiaomi/mimo-v2.6-pro",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "minimax-m3-1-flash",
+      "aaModelId": "d49c8680-e29b-400e-9511-824f7ddebe07",
+      "openrouterId": "minimax/minimax-m3.1-flash",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
+      "aaModelSlug": "muse-spark-1-3",
+      "aaModelId": "9999672c-b687-4026-9c15-5cef02ff53bb",
+      "openrouterId": "meta/muse-spark-1.3",
+      "status": "confirmed",
+      "note": "Verified 2026-10-28 against AA V5 model identity and the live OpenRouter catalog. Efforts share release-specific pricing, never benchmark scores or token counts."
+    },
+    {
       "aaModelSlug": "gpt-6-astra",
       "aaModelId": "2f339a97-9a0d-499a-9cb5-e0db665bfa25",
       "openrouterId": "openai/gpt-6-astra",

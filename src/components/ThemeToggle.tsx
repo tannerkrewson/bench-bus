@@ -176,7 +176,7 @@ export default function ThemeToggle() {
   const modeLabel = () => themeMode(theme());
   return (
     <div class="flex gap-1" role="group" aria-label="Theme controls">
-      <div class="tooltip tooltip-bottom" data-tip="Toggle light or dark mode">
+      <div class="tooltip tooltip-bottom tooltip-end" data-tip="Toggle light or dark mode">
         <button
           type="button"
           class="btn btn-sm btn-outline btn-square"
@@ -187,7 +187,7 @@ export default function ThemeToggle() {
           {modeLabel() === "dark" ? <Sun aria-hidden="true" size={17} /> : <Moon aria-hidden="true" size={17} />}
         </button>
       </div>
-      <div class="tooltip tooltip-bottom" data-tip={`Choose a random ${modeLabel()} theme`}>
+      <div class="tooltip tooltip-bottom tooltip-end" data-tip={`Choose a random ${modeLabel()} theme`}>
         <button
           type="button"
           class="btn btn-sm btn-outline btn-square"

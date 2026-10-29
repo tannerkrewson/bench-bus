@@ -14,17 +14,27 @@ describe("identity and classification heuristics", () => {
 
   it("classifies Cursor first-party models as not third-party", () => {
     expect(deriveIsThirdParty("Composer 2.5")).toBe(false);
+    expect(deriveIsThirdParty("Grok 4.6 Extra High")).toBe(false);
+    expect(deriveIsThirdParty("Grok 4.7 High")).toBe(false);
   });
 
   it("classifies external vendor models as third-party (surcharge-eligible)", () => {
-    expect(deriveIsThirdParty("Grok 4.6 Extra High")).toBe(true);
+    expect(deriveIsThirdParty("Haiku 5.5 High")).toBe(true);
+    expect(deriveIsThirdParty("Fable 5.1 High")).toBe(true);
+    expect(deriveIsThirdParty("Grok 5 High")).toBe(true);
     expect(deriveIsThirdParty("Opus 5 Max")).toBe(true);
     expect(deriveIsThirdParty("GPT-5.6 Luna Low")).toBe(true);
     expect(deriveIsThirdParty("Gemini 3.7 Flash High")).toBe(true);
   });
 
   it("maps model families to serving providers without guessing unknowns", () => {
-    expect(deriveProvider("Grok 4.6 Extra High")).toBe("xai");
+    expect(deriveProvider("Grok 4.6 Extra High")).toBe("cursor");
+    expect(deriveProvider("Grok 4.7 High")).toBe("cursor");
+    expect(deriveProvider("Haiku 5.5 High")).toBe("anthropic");
+    expect(deriveProvider("Claude Haiku 5.5 High")).toBe("anthropic");
+    expect(deriveProvider("Fable 5.1 High")).toBe("anthropic");
+    expect(deriveProvider("Muse Wonder High")).toBe("meta");
+    expect(deriveProvider("DeepSeek V4.1 Flash 1017 High")).toBe("deepseek");
     expect(deriveProvider("GPT-5.6 Luna Low")).toBe("openai");
     expect(deriveProvider("Opus 5 Max")).toBe("anthropic");
     expect(deriveProvider("Sonnet 5 High")).toBe("anthropic");

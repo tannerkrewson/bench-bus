@@ -1,0 +1,404 @@
+{
+  "version": 3,
+  "description": "Explicit Artificial Analysis -> OpenRouter model identity mapping. Curated by humans: automatic matching must never silently extend this file. `status: confirmed` = identity verified against both live catalogs (AA model objects from the artificialanalysis.ai page payload and OpenRouter ids from /api/v1/models, refreshed 2026-09-03). `provisional` = plausible but unverified, surfaced in every run report. `aaModelId` is the Artificial Analysis model UUID from the AA page payload. `openrouterId` is the stable OpenRouter model id (no date suffix, no :variant, no ~ alias); the collector resolves the canonical date-suffixed slug at runtime via /api/v1/models. `undiscountedOpenrouterId`, when present, explicitly links a discounted tier to the OpenRouter model whose listed prices form the comparison line. NOTE: AA model slugs use dashes where names use dots (e.g. AA slug gpt-5-6-sol for GPT-5.6 Sol).",
+  "entries": [
+    {
+      "aaModelSlug": "gpt-6-astra",
+      "aaModelId": "2f339a97-9a0d-499a-9cb5-e0db665bfa25",
+      "openrouterId": "openai/gpt-6-astra",
+      "status": "confirmed",
+      "note": "Verified 2026-09-04 against the AA and OpenRouter catalogs. Astra reasoning efforts share base model pricing; benchmark scores and token workloads remain effort-specific."
+    },
+    {
+      "aaModelSlug": "gpt-6-astra-high",
+      "aaModelId": "e05a4828-0536-4876-870d-a235023f992b",
+      "openrouterId": "openai/gpt-6-astra",
+      "status": "confirmed",
+      "note": "Verified 2026-09-04 against the AA and OpenRouter catalogs. Astra reasoning efforts share base model pricing; benchmark scores and token workloads remain effort-specific."
+    },
+    {
+      "aaModelSlug": "gpt-6-astra-low",
+      "aaModelId": "a3f8100d-e38f-408b-b0fa-0085dae18dc1",
+      "openrouterId": "openai/gpt-6-astra",
+      "status": "confirmed",
+      "note": "Verified 2026-09-04 against the AA and OpenRouter catalogs. Astra reasoning efforts share base model pricing; benchmark scores and token workloads remain effort-specific."
+    },
+    {
+      "aaModelSlug": "gpt-6-astra-medium",
+      "aaModelId": "e97a4ef5-e817-480e-9595-12f81dc4974f",
+      "openrouterId": "openai/gpt-6-astra",
+      "status": "confirmed",
+      "note": "Verified 2026-09-04 against the AA and OpenRouter catalogs. Astra reasoning efforts share base model pricing; benchmark scores and token workloads remain effort-specific."
+    },
+    {
+      "aaModelSlug": "gpt-6-astra-xhigh",
+      "aaModelId": "1f541ef3-913f-4eb2-9d07-0e93c7a9a5e3",
+      "openrouterId": "openai/gpt-6-astra",
+      "status": "confirmed",
+      "note": "Verified 2026-09-04 against the AA and OpenRouter catalogs. Astra reasoning efforts share base model pricing; benchmark scores and token workloads remain effort-specific."
+    },
+    {
+      "aaModelSlug": "claude-opus-5",
+      "aaModelId": "b8fc61f7-5e9a-49e6-8547-6ac56db24627",
+      "openrouterId": "anthropic/claude-opus-5",
+      "status": "confirmed"
+    },
+    {
+      "aaModelSlug": "claude-sonnet-5",
+      "aaModelId": "23c86e4a-c769-43c0-a056-79e3cd15834f",
+      "openrouterId": "anthropic/claude-sonnet-5",
+      "status": "confirmed"
+    },
+    {
+      "aaModelSlug": "gpt-5-6-sol",
+      "aaModelId": "d93edfe8-bf35-49ad-b56e-b18116142a1c",
+      "openrouterId": "openai/gpt-5.6-sol",
+      "status": "confirmed",
+      "note": "AA slug uses dashes (gpt-5-6-sol, 'GPT-5.6 Sol (max)'); corrected from the dot form in v1."
+    },
+    {
+      "aaModelSlug": "gemini-3-7-flash",
+      "aaModelId": "b2331108-72ed-415a-82d1-188633875bbc",
+      "openrouterId": "google/gemini-3.7-flash",
+      "status": "confirmed",
+      "note": "AA slug uses dashes (gemini-3-7-flash); corrected from the dot form in v1."
+    },
+    {
+      "aaModelSlug": "glm-5-3",
+      "aaModelId": "cd684ea4-b475-4269-b001-d469d06d8a7a",
+      "openrouterId": "z-ai/glm-5.3",
+      "status": "confirmed",
+      "note": "AA slug uses dashes (glm-5-3); corrected from the dot form in v1."
+    },
+    {
+      "aaModelSlug": "glm-5-3-flash",
+      "aaModelId": "19496b81-9f41-4214-a77a-1df803b3c5ae",
+      "openrouterId": "z-ai/glm-5.3-flash",
+      "status": "confirmed",
+      "note": "Verified 2026-08-26: AA GLM-5.3-Flash maps to OpenRouter z-ai/glm-5.3-flash; collector resolves its live canonical slug."
+    },
+    {
+      "aaModelSlug": "kimi-k3",
+      "aaModelId": "f7d2fc3e-1f7b-405f-818c-07952a4af78f",
+      "openrouterId": "moonshotai/kimi-k3",
+      "status": "confirmed"
+    },
+    {
+      "aaModelSlug": "grok-4-6",
+      "aaModelId": "c8adc5cf-fd5a-407b-af51-dc3bede3e49c",
+      "openrouterId": "x-ai/grok-4.6",
+      "status": "confirmed",
+      "note": "Verified 2026-08-21: AA slug is grok-4-6 ('Grok 4.6 (high)', release 2026-08-12); x-ai/grok-4.6 canonical x-ai/grok-4.6-20260810."
+    },
+    {
+      "aaModelSlug": "grok-4-6-medium",
+      "aaModelId": "26614164-6840-4e17-a65a-2deb2fe7e87b",
+      "openrouterId": "x-ai/grok-4.6",
+      "status": "confirmed",
+      "note": "Verified 2026-08-29: AA Grok 4.6 medium uses the shared x-ai/grok-4.6 family pricing; its AA token workload and score remain variant-specific."
+    },
+    {
+      "aaModelSlug": "deepseek-v4-pro",
+      "aaModelId": "83173329-c09a-41f1-a028-a282a5f908d7",
+      "openrouterId": "deepseek/deepseek-v4-pro-0813",
+      "status": "confirmed",
+      "note": "Verified 2026-08-21: AA deepseek-v4-pro is 'DeepSeek V4 Pro 0813 (Reasoning, Max Effort)' (release 2026-08-13), so it maps to the GA release deepseek/deepseek-v4-pro-0813 (canonical -20260813). The plain deepseek/deepseek-v4-pro id is the OLD 0423 release (canonical -20260423) and matches AA's dated deepseek-v4-pro-0424 slug instead. AA and DeepSeek's published peak pre-discount rates are $1.32/M input-cache-miss and $3.96/M output."
+    },
+    {
+      "aaModelSlug": "qwen3-8-max",
+      "aaModelId": "5e5b4ce7-bc54-47b2-b911-21b9cad8394c",
+      "openrouterId": "qwen/qwen3.8-max",
+      "status": "confirmed",
+      "note": "Verified 2026-08-21: AA slug is qwen3-8-max ('Qwen3.8 Max'); corrected from the dot form in v1."
+    },
+    {
+      "aaModelSlug": "nvidia-nemotron-3-super-120b-a12b",
+      "aaModelId": "63872e9c-3377-4a6b-b477-7bba244c38e9",
+      "openrouterId": "nvidia/nemotron-3-super-120b-a12b",
+      "status": "confirmed",
+      "note": "Verified 2026-08-21: AA slug carries the nvidia- prefix and full parameter suffix; corrected from nemotron-3-super in v1."
+    },
+    {
+      "aaModelSlug": "claude-opus-5-high",
+      "aaModelId": "712be54a-77ae-41b2-9a58-21181479d6ee",
+      "openrouterId": "anthropic/claude-opus-5",
+      "status": "confirmed",
+      "note": "AA exposes effort variants; OpenRouter exposes pricing on the shared Claude Opus 5 base model identity."
+    },
+    {
+      "aaModelSlug": "claude-opus-5-medium",
+      "aaModelId": "ff51be8f-e362-4a7e-9043-687ba15de207",
+      "openrouterId": "anthropic/claude-opus-5",
+      "status": "confirmed",
+      "note": "AA exposes effort variants; OpenRouter exposes pricing on the shared Claude Opus 5 base model identity."
+    },
+    {
+      "aaModelSlug": "claude-opus-5-xhigh",
+      "aaModelId": "1305c921-7aaa-4d6d-99b5-99b3acf15e19",
+      "openrouterId": "anthropic/claude-opus-5",
+      "status": "confirmed",
+      "note": "AA exposes effort variants; OpenRouter exposes pricing on the shared Claude Opus 5 base model identity."
+    },
+    {
+      "aaModelSlug": "gemini-3-7-flash-low",
+      "aaModelId": "ddfdaf64-3f8e-40a6-a492-608ee83a1351",
+      "openrouterId": "google/gemini-3.7-flash",
+      "status": "confirmed",
+      "note": "AA exposes effort variants; OpenRouter exposes pricing on the shared Gemini 3.7 Flash base model identity."
+    },
+    {
+      "aaModelSlug": "gemini-3-7-flash-medium",
+      "aaModelId": "eb0d4272-7204-42b9-b875-8866fed58548",
+      "openrouterId": "google/gemini-3.7-flash",
+      "status": "confirmed",
+      "note": "AA exposes effort variants; OpenRouter exposes pricing on the shared Gemini 3.7 Flash base model identity."
+    },
+    {
+      "aaModelSlug": "gpt-5-6-luna",
+      "aaModelId": "426d24c8-49ae-482a-b4a8-20f1c53f21c1",
+      "openrouterId": "openai/gpt-5.6-luna",
+      "status": "confirmed",
+      "note": "AA exposes effort variants; OpenRouter exposes pricing on the shared GPT-5.6 Luna base model identity."
+    },
+    {
+      "aaModelSlug": "gpt-5-6-luna-high",
+      "aaModelId": "aa55297e-8fbf-4372-b4ab-9b068dc6396c",
+      "openrouterId": "openai/gpt-5.6-luna",
+      "status": "confirmed",
+      "note": "AA exposes effort variants; OpenRouter exposes pricing on the shared GPT-5.6 Luna base model identity."
+    },
+    {
+      "aaModelSlug": "gpt-5-6-luna-low",
+      "aaModelId": "050c61cd-cddc-463a-a30a-a82aaa37be59",
+      "openrouterId": "openai/gpt-5.6-luna",
+      "status": "confirmed",
+      "note": "AA exposes effort variants; OpenRouter exposes pricing on the shared GPT-5.6 Luna base model identity."
+    },
+    {
+      "aaModelSlug": "gpt-5-6-luna-medium",
+      "aaModelId": "58b812bf-8498-46db-b834-f43ccc614b61",
+      "openrouterId": "openai/gpt-5.6-luna",
+      "status": "confirmed",
+      "note": "AA exposes effort variants; OpenRouter exposes pricing on the shared GPT-5.6 Luna base model identity."
+    },
+    {
+      "aaModelSlug": "gpt-5-6-luna-non-reasoning",
+      "aaModelId": "dc64f856-3ded-497d-9527-d41d31267ed5",
+      "openrouterId": "openai/gpt-5.6-luna",
+      "status": "confirmed",
+      "note": "AA exposes effort variants; OpenRouter exposes pricing on the shared GPT-5.6 Luna base model identity."
+    },
+    {
+      "aaModelSlug": "gpt-5-6-luna-xhigh",
+      "aaModelId": "87110ff0-1f79-41b4-9976-eda250597317",
+      "openrouterId": "openai/gpt-5.6-luna",
+      "status": "confirmed",
+      "note": "AA exposes effort variants; OpenRouter exposes pricing on the shared GPT-5.6 Luna base model identity."
+    },
+    {
+      "aaModelSlug": "muse-spark-1-2",
+      "aaModelId": "04ee6719-0327-463b-a1a1-70a6a78254f9",
+      "openrouterId": "meta/muse-spark-1.2-contributor",
+      "undiscountedOpenrouterId": "meta/muse-spark-1.2",
+      "status": "confirmed",
+      "note": "Verified 2026-08-23: AA Muse Spark 1.2 (xhigh) maps to OpenRouter's contributor tier; compare its explicit discounted tier against meta/muse-spark-1.2 listed pricing."
+    },
+    {
+      "aaModelSlug": "muse-spark-1-3-xhigh",
+      "aaModelId": "d5170215-69be-4129-849b-26d8d8825bfc",
+      "openrouterId": "meta/muse-spark-1.3-contributor",
+      "undiscountedOpenrouterId": "meta/muse-spark-1.3",
+      "status": "confirmed",
+      "note": "Verified 2026-09-10: AA Muse Spark 1.3 xhigh shares the contributor tier and undiscounted base pricing with the max row."
+    },
+    {
+      "aaModelSlug": "gpt-5-6-sol-high",
+      "aaModelId": "8afc250d-b538-45a2-812a-4605f4ffd87e",
+      "openrouterId": "openai/gpt-5.6-sol",
+      "status": "confirmed",
+      "note": "AA exposes effort variants; OpenRouter exposes pricing on the shared GPT-5.6 Sol base model identity."
+    },
+    {
+      "aaModelSlug": "gpt-5-6-sol-low",
+      "aaModelId": "0904b596-8932-43bd-9b21-324f128e1723",
+      "openrouterId": "openai/gpt-5.6-sol",
+      "status": "confirmed",
+      "note": "AA exposes effort variants; OpenRouter exposes pricing on the shared GPT-5.6 Sol base model identity."
+    },
+    {
+      "aaModelSlug": "gpt-5-6-sol-medium",
+      "aaModelId": "6f174934-5b7d-4333-86cb-f5ebf4a862e3",
+      "openrouterId": "openai/gpt-5.6-sol",
+      "status": "confirmed",
+      "note": "AA exposes effort variants; OpenRouter exposes pricing on the shared GPT-5.6 Sol base model identity."
+    },
+    {
+      "aaModelSlug": "gpt-5-6-sol-xhigh",
+      "aaModelId": "d998db47-9b67-4727-a2bb-2e1261020ac0",
+      "openrouterId": "openai/gpt-5.6-sol",
+      "status": "confirmed",
+      "note": "AA exposes effort variants; OpenRouter exposes pricing on the shared GPT-5.6 Sol base model identity."
+    },
+    {
+      "aaModelSlug": "qwen3-8-flash-next",
+      "aaModelId": "9ac3908c-9eb2-44db-8c01-3ec7da6fc2ae",
+      "openrouterId": "qwen/qwen3.8-flash",
+      "status": "confirmed",
+      "note": "AA names this Qwen3.8-Flash-Next; OpenRouter's dated qwen/qwen3.8-flash catalog identity has the same 2026-08-26 release."
+    },
+    {
+      "aaModelSlug": "mimo-v2-5-0424",
+      "aaModelId": "22d09131-343b-4adf-8760-533e20a2155f",
+      "openrouterId": "xiaomi/mimo-v2.5",
+      "status": "confirmed",
+      "note": "AA's MiMo-V2.5 record is slugged mimo-v2-5-0424; OpenRouter's canonical identity is xiaomi/mimo-v2.5-20260422."
+    },
+    {
+      "aaModelSlug": "glm-5-2",
+      "aaModelId": "f7a4ea75-e548-4069-80d4-9be8bc7c009b",
+      "openrouterId": "z-ai/glm-5.2",
+      "status": "confirmed",
+      "note": "AA GLM-5.2 max record maps to OpenRouter z-ai/glm-5.2."
+    },
+    {
+      "aaModelSlug": "deepseek-v4-flash-0420",
+      "aaModelId": "d8ddb241-b3e4-4c25-a6a3-72eb1b30c541",
+      "openrouterId": "deepseek/deepseek-v4-flash",
+      "status": "confirmed",
+      "note": "OpenRouter calls this DeepSeek V4 Flash 0423; AA's corresponding measured record is slugged deepseek-v4-flash-0420 and released 2026-04-24."
+    },
+    {
+      "aaModelSlug": "deepseek-v4-pro-0424",
+      "aaModelId": "bf220674-68bd-43cc-a1b8-ce5ed4d2f18d",
+      "openrouterId": "deepseek/deepseek-v4-pro",
+      "status": "confirmed",
+      "note": "OpenRouter calls this DeepSeek V4 Pro 0423; AA's corresponding measured record is slugged deepseek-v4-pro-0424 and released 2026-04-24."
+    },
+    {
+      "aaModelSlug": "hy3",
+      "aaModelId": "b23e6c69-96e5-44c9-8f58-4b42e0c399d5",
+      "openrouterId": "tencent/hy3",
+      "status": "confirmed",
+      "note": "AA Hy3 maps to OpenRouter tencent/hy3; both catalogs identify the 2026-07-06 model."
+    },
+    {
+      "aaModelSlug": "claude-opus-4-7",
+      "aaModelId": "e9a09db3-8fd6-41dd-ba2f-20e0a2bff7f2",
+      "openrouterId": "anthropic/claude-opus-4.7",
+      "status": "confirmed",
+      "note": "Verified 2026-09-03 against the AA snapshot and OpenRouter catalog/effective-pricing; both identify Claude Opus 4.7."
+    },
+    {
+      "aaModelSlug": "claude-opus-4-8",
+      "aaModelId": "992b7b84-5069-4c6a-9295-834252553d50",
+      "openrouterId": "anthropic/claude-opus-4.8",
+      "status": "confirmed",
+      "note": "Verified 2026-09-03 against the AA snapshot and OpenRouter catalog/effective-pricing; both identify Claude Opus 4.8."
+    },
+    {
+      "aaModelSlug": "deepseek-v4-flash-0420-high",
+      "aaModelId": "89a2c945-1fab-4ee4-9f45-83a9f46cb221",
+      "openrouterId": "deepseek/deepseek-v4-flash",
+      "status": "confirmed",
+      "note": "AA's high-effort 0420 variant shares the DeepSeek V4 Flash OpenRouter identity already used by deepseek-v4-flash-0420; canonical effective-pricing returned data on 2026-09-03."
+    },
+    {
+      "aaModelSlug": "gemini-3-1-pro-preview",
+      "aaModelId": "bbd93ebe-80da-4594-bb19-61e69d0331df",
+      "openrouterId": "google/gemini-3.1-pro-preview",
+      "status": "confirmed",
+      "note": "Verified 2026-09-03 against the AA snapshot and OpenRouter catalog/effective-pricing; both identify Gemini 3.1 Pro Preview."
+    },
+    {
+      "aaModelSlug": "gemini-3-5-flash",
+      "aaModelId": "0097ebf5-124f-42f6-9463-33b00e711f03",
+      "openrouterId": "google/gemini-3.5-flash",
+      "status": "confirmed",
+      "note": "Verified 2026-09-03 against the AA snapshot and OpenRouter catalog/effective-pricing; both identify Gemini 3.5 Flash."
+    },
+    {
+      "aaModelSlug": "glm-5-1",
+      "aaModelId": "5aa1c578-af76-4b91-8699-cdd43582b3af",
+      "openrouterId": "z-ai/glm-5.1",
+      "status": "confirmed",
+      "note": "Verified 2026-09-03 against the AA snapshot and OpenRouter catalog/effective-pricing; both identify GLM 5.1."
+    },
+    {
+      "aaModelSlug": "gpt-5-4",
+      "aaModelId": "a89c4b28-2d8c-456e-88ea-255fb51fd2b6",
+      "openrouterId": "openai/gpt-5.4",
+      "status": "confirmed",
+      "note": "Verified 2026-09-03 against the AA snapshot and OpenRouter catalog/effective-pricing; both identify GPT-5.4."
+    },
+    {
+      "aaModelSlug": "gpt-5-4-mini",
+      "aaModelId": "ba242e40-83b7-4cd3-a0e0-b56237984914",
+      "openrouterId": "openai/gpt-5.4-mini",
+      "status": "confirmed",
+      "note": "Verified 2026-09-03 against the AA snapshot and OpenRouter catalog/effective-pricing; both identify GPT-5.4 Mini."
+    },
+    {
+      "aaModelSlug": "gpt-5-5",
+      "aaModelId": "1f054429-397e-4fdb-9e71-67bc92c1735e",
+      "openrouterId": "openai/gpt-5.5",
+      "status": "confirmed",
+      "note": "Verified 2026-09-03 against the AA snapshot and OpenRouter catalog/effective-pricing; the xhigh AA row uses the shared GPT-5.5 identity."
+    },
+    {
+      "aaModelSlug": "gpt-5-5-high",
+      "aaModelId": "b13c1257-d746-4027-8fc8-4892dc14701c",
+      "openrouterId": "openai/gpt-5.5",
+      "status": "confirmed",
+      "note": "AA's high-effort row shares the GPT-5.5 OpenRouter identity used by the xhigh row; canonical effective-pricing returned data on 2026-09-03."
+    },
+    {
+      "aaModelSlug": "gpt-5-5-medium",
+      "aaModelId": "6b79f899-e3c0-45f6-923c-243faccdb2fc",
+      "openrouterId": "openai/gpt-5.5",
+      "status": "confirmed",
+      "note": "AA's medium-effort row shares the GPT-5.5 OpenRouter identity used by the xhigh row; canonical effective-pricing returned data on 2026-09-03."
+    },
+    {
+      "aaModelSlug": "kimi-k2-6",
+      "aaModelId": "0de67206-4d36-4d10-b8f6-cf37fa747a03",
+      "openrouterId": "moonshotai/kimi-k2.6",
+      "status": "confirmed",
+      "note": "Verified 2026-09-03 against the AA snapshot and OpenRouter catalog/effective-pricing; both identify Kimi K2.6."
+    },
+    {
+      "aaModelSlug": "mimo-v2-5-pro",
+      "aaModelId": "00f1248e-78e3-4230-8dc8-5e13ba8645e2",
+      "openrouterId": "xiaomi/mimo-v2.5-pro",
+      "status": "confirmed",
+      "note": "Verified 2026-09-03 against the AA snapshot and OpenRouter catalog/effective-pricing; both identify MiMo-V2.5-Pro."
+    },
+    {
+      "aaModelSlug": "minimax-m2-7",
+      "aaModelId": "4bbceacb-cf47-464b-b60f-e1d1fe016d67",
+      "openrouterId": "minimax/minimax-m2.7",
+      "status": "confirmed",
+      "note": "Verified 2026-09-03 against the AA snapshot and OpenRouter catalog/effective-pricing; both identify MiniMax M2.7."
+    },
+    {
+      "aaModelSlug": "minimax-m3",
+      "aaModelId": "277f939a-985b-4b37-859d-b3eabc7c0b26",
+      "openrouterId": "minimax/minimax-m3",
+      "status": "confirmed",
+      "note": "Verified 2026-09-03 against the AA snapshot and OpenRouter catalog/effective-pricing; both identify MiniMax M3."
+    },
+    {
+      "aaModelSlug": "qwen3-6-plus",
+      "aaModelId": "f371ad68-6947-4767-a78f-1f6c81f96b93",
+      "openrouterId": "qwen/qwen3.6-plus",
+      "status": "confirmed",
+      "note": "Verified 2026-09-03 against the AA snapshot and OpenRouter catalog/effective-pricing; both identify Qwen3.6 Plus."
+    },
+    {
+      "aaModelSlug": "qwen3-7-max",
+      "aaModelId": "69534bed-2ffd-4235-832b-e20a810333ab",
+      "openrouterId": "qwen/qwen3.7-max",
+      "status": "confirmed",
+      "note": "Verified 2026-09-03 against the AA snapshot and OpenRouter catalog/effective-pricing; both identify Qwen3.7 Max."
+    }
+  ]
+}

@@ -2,50 +2,48 @@
 export const AA_DEFAULT_COST_MODE = "intelligence-vs-cost-per-task" as const;
 
 /**
- * Models shown in the initial AA/OpenRouter chart view. Keep upstream AA
- * slugs verbatim so URL/session selections remain stable as the catalog
- * changes. Non-reasoning rows are excluded by the chart section.
+ * V5-era comparison set (reviewed 2026-10-28). Effort variants are discovered
+ * from these exact source identities. The live cheapest-price Pareto frontier
+ * is always added, including new families not explicitly curated here.
+ * Unscored/retired models are never synthesized from an older index version.
  */
 export const AA_DEFAULT_MODEL_SLUGS = [
-  "gpt-5-6-luna-low",
-  "gpt-5-6-luna",
-  "gpt-5-6-luna-medium",
-  "gpt-5-6-luna-high",
-  "gpt-5-6-luna-xhigh",
-  "gpt-5-6-sol-low",
-  "gpt-5-6-sol-medium",
-  "gpt-5-6-sol-high",
-  "gpt-5-6-sol-xhigh",
-  "gpt-5-6-sol",
-  "muse-spark-1-3-xhigh",
-  "claude-opus-5-high",
-  "claude-opus-5",
-  "claude-opus-5-xhigh",
-  "claude-fable-5-1-high",
-  "claude-fable-5-1-xhigh",
-  "claude-fable-5-1",
+  "gpt-6-luna",
+  "gpt-6-1-terra",
+  "gpt-6-1-sol",
   "gpt-6-astra",
-  "gemini-3-8-flash",
-  // Keep only the current DeepSeek release in the implicit view. Older
-  // DeepSeek rows remain available through the selector when explicitly
-  // requested.
-  "deepseek-v4-1-flash",
-  "glm-5-3-flash",
+  "claude-haiku-5-5",
+  "claude-opus-5-5",
+  "claude-sonnet-5-5",
+  "gemini-4-argon",
   "grok-4-7",
+  "deepseek-v4-1-flash-1017",
+  "mimo-v2-6-flash",
   "mimo-v2-6-pro",
+  "kimi-k3-1-pro",
+  "minimax-m3-1-flash",
 ] as const;
 
 /**
- * Families whose latest plottable release should follow the source catalog
- * automatically. Hidden IDs are retained as selector-only rows, while a
- * newer release in the same normalized family is admitted without another
- * code change.
+ * Follow current product families automatically; dominated older releases
+ * remain selector-only. Never infer pricing identity from a family policy.
  */
 export const AA_DEFAULT_AUTO_RELEASE_FAMILY_POLICIES = [
-  { seedSlug: "gpt-5-6-luna", hiddenSlugs: [] },
-  { seedSlug: "gpt-5-6-sol", hiddenSlugs: [] },
-  { seedSlug: "claude-opus-5", hiddenSlugs: [] },
+  { seedSlug: "gpt-6-luna", hiddenSlugs: [] },
+  { seedSlug: "gpt-6-1-terra", hiddenSlugs: [] },
+  { seedSlug: "gpt-6-1-sol", hiddenSlugs: [] },
+  { seedSlug: "gpt-6-astra", hiddenSlugs: [] },
+  { seedSlug: "claude-haiku-5-5", hiddenSlugs: [] },
+  { seedSlug: "claude-opus-5-5", hiddenSlugs: [] },
+  { seedSlug: "claude-sonnet-5-5", hiddenSlugs: [] },
+  { seedSlug: "gemini-4-argon", hiddenSlugs: [] },
   { seedSlug: "grok-4-7", hiddenSlugs: [] },
+  { seedSlug: "deepseek-v4-1-flash-1017", hiddenSlugs: [] },
+  { seedSlug: "mimo-v2-6-flash", hiddenSlugs: [] },
+  { seedSlug: "mimo-v2-6-pro", hiddenSlugs: [] },
+  { seedSlug: "kimi-k3-1-pro", hiddenSlugs: [] },
+  { seedSlug: "minimax-m3-1-flash", hiddenSlugs: [] },
+  // Preserve these older policies for historical views and future releases.
   {
     seedSlug: "gemini-3-1-pro-preview",
     hiddenSlugs: ["gemini-2-5-pro", "gemini-3-1-pro-preview"],

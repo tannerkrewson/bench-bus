@@ -79,6 +79,8 @@ export interface CompactBundle {
 
 /** `{ f, m }` dataset with positional records; record shape differs per chart. */
 export interface CompactDataset {
+  /** Optional AA index generation; absent in older bundles. */
+  iv?: string;
   /** Freshness tuple; an entry is the source's observedAt or null when unavailable. */
   f: [string | null, string | null, string | null, string | null];
   /** Positional record tuples (AA or Cursor shape); validated on decode. */
@@ -113,7 +115,7 @@ type CompactCursorRecord = [
 ];
 
 export function encodeAaDataset(
-  dataset: { freshness: FreshnessMetadata; records: DerivedAaChartRecord[] } | null,
+  dataset: { freshness: FreshnessMetadata; records: DerivedAaChartRecord[]; intelligenceIndexVersion?: string } | null,
 ): CompactDataset | null {
   if (!dataset) return null;
   return {
@@ -123,6 +125,7 @@ export function encodeAaDataset(
       dataset.freshness.deepsweObservedAt ?? null,
       dataset.freshness.cursorObservedAt ?? null,
     ],
+    ...(dataset.intelligenceIndexVersion ? { iv: dataset.intelligenceIndexVersion } : {}),
     m: dataset.records.map(
       (r): CompactAaRecord => [
         r.slug,
@@ -223,7 +226,7 @@ export interface DecodedBundle {
     deepswe: { available: boolean; observedAt?: string };
     cursor: { available: boolean; observedAt?: string };
   };
-  aa: { freshness: ReturnType<typeof decodeFreshness>; records: DerivedAaChartRecord[] } | null;
+  aa: { freshness: ReturnType<typeof decodeFreshness>; records: DerivedAaChartRecord[]; intelligenceIndexVersion?: string } | null;
   cursor: { freshness: ReturnType<typeof decodeFreshness>; records: DerivedCursorChartRecord[] } | null;
 }
 
@@ -260,6 +263,10 @@ export function decodeBundle(raw: unknown): DecodedBundle {
       throw new TypeError("Invalid aa dataset");
     }
     const { f, m } = dataset as { f: unknown; m: unknown };
+    const iv = (dataset as { iv?: unknown }).iv;
+    if (iv !== undefined && (typeof iv !== "string" || !iv.trim())) {
+      throw new TypeError("Invalid AA Intelligence Index version");
+    }
     if (!Array.isArray(m)) throw new TypeError("Invalid aa records array");
     const records = m.map((row) => {
       if (!Array.isArray(row) || row.length !== 9) {
@@ -298,7 +305,7 @@ export function decodeBundle(raw: unknown): DecodedBundle {
         },
       });
     });
-    return { freshness: decodeFreshness(asOf, f), records };
+    return { freshness: decodeFreshness(asOf, f), records, ...(typeof iv === "string" ? { intelligenceIndexVersion: iv } : {}) };
   };
 
   const decodeCursor = (dataset: unknown) => {

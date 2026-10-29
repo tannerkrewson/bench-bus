@@ -1,28 +1,22 @@
 # Collection workflows (GitHub Actions)
 
-Four scheduled workflows collect benchmark data, validate it, store it on the
+Four manually triggered workflows collect benchmark data, validate it, store it on the
 dedicated `bench-bus-data` branch, and push. They never touch the deployed
 site: the site build reads the data branch separately. After a successful
 collection, `deploy.yml` receives the completion event and publishes the new
 data automatically.
 
-| Workflow | Schedule (UTC) | Source | Concurrency group |
+| Workflow | Trigger | Source | Concurrency group |
 | --- | --- | --- | --- |
-| `collect-openrouter.yml` | `0 1,5,9,13,17,21 * * *` (six times daily, UTC) | OpenRouter effective pricing | `collect-openrouter` |
-| `collect-aa.yml` | `17 0,4,8,12,16,20 * * *` (six times daily, UTC) | Artificial Analysis models | `collect-aa` |
-| `collect-cursor.yml` | `41 1,5,9,13,17,21 * * *` (six times daily, UTC) | Cursor eval table | `collect-cursor` |
-| `collect-deepswe.yml` | `30 1,5,9,13,17,21 * * *` (six times daily, UTC) | DeepSWE leaderboard scores | `collect-deepswe` |
+| `collect-openrouter.yml` | `workflow_dispatch` | OpenRouter effective pricing | `collect-openrouter` |
+| `collect-aa.yml` | `workflow_dispatch` | Artificial Analysis models | `collect-aa` |
+| `collect-cursor.yml` | `workflow_dispatch` | Cursor eval table | `collect-cursor` |
+| `collect-deepswe.yml` | `workflow_dispatch` | DeepSWE leaderboard scores | `collect-deepswe` |
 
-All four also support `workflow_dispatch` for manual recovery/testing.
-
-## Scheduling caveat (important)
-
-GitHub **scheduled workflows are best-effort**: during high-load periods runs
-can be delayed significantly or skipped entirely. Bench Bus is built to
-tolerate that — the frontend surfaces data freshness (observedAt per source)
-instead of breaking, and a missed run simply means the previous
-last-known-good snapshot stays in effect. Do not add alerting that treats a
-missed cron as data corruption; use `workflow_dispatch` for recovery.
+Cron scheduling is disabled indefinitely for all workflows. There is no automatic
+restart date; restoring scheduled collection requires an explicit workflow change.
+Use `workflow_dispatch` for manual collection/testing. Until then, the site keeps
+serving the last-known-good snapshots and displays their data freshness.
 
 ## Pipeline shape (shared composite action)
 
@@ -74,7 +68,7 @@ duplicate-entry guards make even same-source double-writes safe.
 ## Local testing (no network, no push)
 
 ```bash
-# Structural checks on the workflow YAMLs (schedules, guards, permissions):
+# Structural checks on the workflow YAMLs (disabled schedules, guards, permissions):
 node .github/scripts/validate-workflows.mjs
 
 # Full offline dry-run of collect -> snapshot -> commit against a fixture
