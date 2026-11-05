@@ -471,7 +471,7 @@ describe("aa tooltips and metadata", () => {
 describe("aaAdapter subtitle", () => {
   it("uses the requested concise methodology copy", () => {
     expect(aaAdapter.subtitle).toBe(
-      "Compare Artificial Analysis scores and measured workload costs using AA listed prices or the cheapest regular OpenRouter provider. Data is refreshed manually; see the update time.",
+      "Compare Artificial Analysis scores and measured workload costs using AA listed prices or the cheapest regular OpenRouter provider. Data is refreshed daily; see the update time.",
     );
   });
 

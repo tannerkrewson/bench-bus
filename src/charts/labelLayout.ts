@@ -335,15 +335,23 @@ function leaderCrossesPoint(label: PositionedLabel, point: LabelLayoutPoint): bo
   ) < (point.radius ?? LABEL_DOT_RADIUS);
 }
 
-function coversLine(label: PositionedLabel, line: LabelLayoutLine): boolean {
-  const minX = Math.min(line.left1, line.left2);
-  const maxX = Math.max(line.left1, line.left2);
-  const minY = Math.min(line.top1, line.top2);
-  const maxY = Math.max(line.top1, line.top2);
-  const padding = LABEL_GAP;
-  return maxX >= label.left - padding && minX <= label.left + label.width + padding &&
-    maxY >= label.top - padding && minY <= label.top + label.height + padding;
+/** Proper crossing only: a shared endpoint, such as a leader's own dot, does not count. */
+function segmentsCross(a: LabelLayoutLine, b: LabelLayoutLine): boolean {
+  const side = (line: LabelLayoutLine, left: number, top: number) =>
+    (line.left2 - line.left1) * (top - line.top1) - (line.top2 - line.top1) * (left - line.left1);
+  return side(a, b.left1, b.top1) * side(a, b.left2, b.top2) < 0 &&
+    side(b, a.left1, a.top1) * side(b, a.left2, a.top2) < 0;
 }
+
+/**
+ * Soft placement cost in pixels of leader length. Any cost at or above
+ * LEADER_CONFLICT_COST means the leader runs through a dot or another label,
+ * or crosses another leader, so a compact label retry is worth attempting.
+ */
+const LEADER_CONFLICT_COST = 400;
+const LEADER_LINE_CROSSING_COST = 80;
+const NON_PREFERRED_SIDE_COST = 2;
+const MAX_REFINEMENT_PASSES = 4;
 
 /**
  * Place point labels inside the plot bounds. A candidate is accepted only if
@@ -368,13 +376,29 @@ export function layoutModelLabels(
       a.anchorLeft - b.anchorLeft ||
       a.id.localeCompare(b.id),
   );
-  const placed: PositionedLabel[] = [];
-  const result = new Map<string, PositionedLabel>();
+  const placed = new Map<string, { label: PositionedLabel; cost: number }>();
   const sideOffset = LABEL_DOT_RADIUS + LABEL_GAP;
 
-  for (const anchor of sorted) {
-    let best: PositionedLabel | undefined;
-    let fallback: PositionedLabel | undefined;
+  const leaderCost = (label: PositionedLabel, others: readonly PositionedLabel[]): number => {
+    const leader = labelLeaderSegment(label);
+    // Any label beside its dot is close enough; don't reward crowding the dot.
+    let cost = Math.max(sideOffset, Math.hypot(leader.left2 - leader.left1, leader.top2 - leader.top1));
+    if (options.leaderObstacles?.some((point) => leaderCrossesPoint(label, point))) cost += LEADER_CONFLICT_COST;
+    for (const other of others) {
+      if (labelLeaderCrossesLabel(label, other) || labelLeaderCrossesLabel(other, label)) cost += LEADER_CONFLICT_COST;
+      if (segmentsCross(leader, labelLeaderSegment(other))) cost += LEADER_CONFLICT_COST;
+    }
+    for (const line of options.lines ?? []) {
+      if (segmentsCross(leader, line)) cost += LEADER_LINE_CROSSING_COST;
+    }
+    return cost;
+  };
+
+  const placeAnchor = (
+    anchor: LabelLayoutAnchor,
+    others: readonly PositionedLabel[],
+  ): { label: PositionedLabel; cost: number } | undefined => {
+    let best: { label: PositionedLabel; cost: number } | undefined;
     // A discount suffix is useful context, but it should not make the model
     // name disappear entirely when the plot is crowded. Retry compactly while
     // retaining accessibleLabel/title with the complete discount text.
@@ -398,42 +422,38 @@ export function layoutModelLabels(
       const sides: ("left" | "right" | "center")[] = preferredSide === "left"
         ? ["left", "right", "center"]
         : ["right", "left", "center"];
-      const verticalOffsets = [
-        0,
-        -height - LABEL_GAP,
-        height + LABEL_GAP,
-        -2 * (height + LABEL_GAP),
-        2 * (height + LABEL_GAP),
-        -3 * (height + LABEL_GAP),
-        3 * (height + LABEL_GAP),
-      ];
+      const rowStep = height + LABEL_GAP;
       const candidates: { left: number; top: number; side: "left" | "right" | "center" }[] = [];
-      const addCandidate = (side: "left" | "right" | "center", verticalOffset: number) => {
+      const addCandidate = (side: "left" | "right" | "center", horizontalShift: number, verticalOffset: number) => {
         const horizontalOffset = side === "left"
           ? -width - sideOffset
           : side === "right" ? sideOffset : -width / 2;
         candidates.push({
-          left: clamp(layoutAnchor.anchorLeft + horizontalOffset, minLeft, maxLeft),
+          left: clamp(layoutAnchor.anchorLeft + horizontalOffset + horizontalShift, minLeft, maxLeft),
           top: clamp(layoutAnchor.anchorTop - height / 2 + verticalOffset, minTop, maxTop),
           side,
         });
       };
-      // Local candidates keep labels near their own dot. The broader sweep is a
-      // last resort for crowded clusters and remains bounded by the plot.
+      // Search outward so a nearby gap in any direction beats a far-away row
+      // directly beside the dot. The vertical sweep is a last resort for
+      // crowded clusters and remains bounded by the plot.
       for (const side of sides) {
-        for (const verticalOffset of verticalOffsets) addCandidate(side, verticalOffset);
+        for (let row = -5; row <= 5; row += 1) {
+          for (let shift = -3; shift <= 3; shift += 1) {
+            if (side === "left" && shift > 0) continue;
+            if (side === "right" && shift < 0) continue;
+            if (side === "center" && shift !== 0) continue;
+            addCandidate(side, shift * 32, row * rowStep);
+          }
+        }
       }
-      const verticalRange = Math.max(
-        Math.max(...verticalOffsets.map((offset) => Math.abs(offset))) + height,
-        bounds.bottom - bounds.top,
-      );
+      const verticalRange = bounds.bottom - bounds.top;
       for (const side of sides) {
         for (let verticalOffset = -verticalRange; verticalOffset <= verticalRange; verticalOffset += 18) {
-          addCandidate(side, verticalOffset);
+          addCandidate(side, 0, verticalOffset);
         }
       }
 
-      let bestScore = Infinity;
       const seen = new Set<string>();
       for (const candidate of candidates) {
         const key = `${candidate.left}:${candidate.top}`;
@@ -447,42 +467,41 @@ export function layoutModelLabels(
           height,
         };
         if (options.excludedRegions?.some((region) => overlapsRegion(positioned, region))) continue;
-        if (placed.some((existing) => overlaps(positioned, existing))) continue;
+        if (others.some((existing) => overlaps(positioned, existing))) continue;
         if (obstacles.some((point) => point.id !== layoutAnchor.id && coversPoint(positioned, point))) continue;
         if (coversPoint(positioned, { id: layoutAnchor.id, left: layoutAnchor.anchorLeft, top: layoutAnchor.anchorTop })) continue;
-        if (options.lines?.some((line) => coversLine(positioned, line))) continue;
-        // Keep the least disruptive text placement available if every strict
-        // candidate's leader clearance fails. The model name is more useful
-        // than silently omitting a crowded point, while annotation lines still
-        // remain clear of the text itself.
-        if (!fallback) fallback = positioned;
-        if (options.leaderObstacles?.some((point) => leaderCrossesPoint(positioned, point))) continue;
-        if (placed.some((existing) =>
-          labelLeaderCrossesLabel(positioned, existing) || labelLeaderCrossesLabel(existing, positioned),
-        )) continue;
-        const targetLeft = preferredSide === "left"
-          ? layoutAnchor.anchorLeft - width - sideOffset
-          : layoutAnchor.anchorLeft + sideOffset;
-        const distance =
-          Math.abs(candidate.left - targetLeft) * 0.05 +
-          Math.abs(candidate.top - (layoutAnchor.anchorTop - height / 2)) * 0.02;
-        if (distance < bestScore) {
-          best = positioned;
-          bestScore = distance;
-        }
+        if (options.lines?.some((line) => segmentIntersectsLabel(line, positioned))) continue;
+        const cost = leaderCost(positioned, others) +
+          (candidate.side === preferredSide ? 0 : NON_PREFERRED_SIDE_COST);
+        if (!best || cost < best.cost) best = { label: positioned, cost };
       }
-      if (best) break;
+      // Prefer the full label unless every placement has a real leader
+      // conflict. Labels stay visible in dense plots even then, because the
+      // model name is more useful than silently omitting a crowded point.
+      if (best && best.cost < LEADER_CONFLICT_COST) break;
     }
+    return best;
+  };
 
-    // Labels remain visible in dense plots when their text itself can fit. A
-    // too-wide label still has no valid fallback and is intentionally omitted.
-    if (!best) best = fallback;
-    if (!best) continue;
-    placed.push(best);
-    result.set(anchor.id, best);
+  // Greedy placement depends on order: an early label cannot see the labels
+  // placed after it. Re-seat each label against all the others until stable.
+  for (let pass = 0; pass < MAX_REFINEMENT_PASSES; pass += 1) {
+    let changed = false;
+    for (const anchor of sorted) {
+      const current = placed.get(anchor.id);
+      const others = [...placed.values()].filter(({ label }) => label.id !== anchor.id).map(({ label }) => label);
+      const next = placeAnchor(anchor, others);
+      const currentCost = current ? leaderCost(current.label, others) : Infinity;
+      if (next && next.cost < currentCost - 0.5) {
+        placed.set(anchor.id, next);
+        changed = true;
+      }
+    }
+    if (!changed) break;
   }
 
-  return anchors.map((anchor) => result.get(anchor.id)).filter(
-    (label): label is PositionedLabel => label !== undefined,
-  );
+  return anchors.flatMap((anchor) => {
+    const entry = placed.get(anchor.id);
+    return entry ? [entry.label] : [];
+  });
 }

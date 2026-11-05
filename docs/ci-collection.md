@@ -1,74 +1,36 @@
-# Collection workflows (GitHub Actions)
+# Daily refresh (GitHub Actions)
 
-Four manually triggered workflows collect benchmark data, validate it, store it on the
-dedicated `bench-bus-data` branch, and push. They never touch the deployed
-site: the site build reads the data branch separately. After a successful
-collection, `deploy.yml` receives the completion event and publishes the new
-data automatically.
+One workflow, `.github/workflows/refresh.yml`, runs at 5:07 PM America/New_York
+and on `workflow_dispatch`. It replaces the old four collector workflows, each
+of which started its own full deploy. The schedule uses `:07` because GitHub
+documents delays at the start of each hour, and `timezone` so it follows DST.
 
-| Workflow | Trigger | Source | Concurrency group |
-| --- | --- | --- | --- |
-| `collect-openrouter.yml` | `workflow_dispatch` | OpenRouter effective pricing | `collect-openrouter` |
-| `collect-aa.yml` | `workflow_dispatch` | Artificial Analysis models | `collect-aa` |
-| `collect-cursor.yml` | `workflow_dispatch` | Cursor eval table | `collect-cursor` |
-| `collect-deepswe.yml` | `workflow_dispatch` | DeepSWE leaderboard scores | `collect-deepswe` |
+`.github/scripts/daily-refresh.sh` does the work in one job:
 
-Cron scheduling is disabled indefinitely for all workflows. There is no automatic
-restart date; restoring scheduled collection requires an explicit workflow change.
-Use `workflow_dispatch` for manual collection/testing. Until then, the site keeps
-serving the last-known-good snapshots and displays their data freshness.
+1. **Collect and store** AA, OpenRouter, Cursor and DeepSWE. Each collector and
+   the snapshot store validate and fail closed, so a failed source keeps its
+   last-known-good snapshot.
+2. **Commit and push** one commit to `bench-bus-data`.
+3. **Typecheck and test**, only if `main` changed since the last publish (the
+   `Source:` line in the `gh-pages` commit message). Data-only days skip this.
+4. **Compile and build**, starting from the published `derived-data/` so history
+   carries forward. The outgoing `latest.json` becomes a dated time-travel point
+   once it is at least a week newer than the last dated one.
+5. **Publish** `dist/` to `gh-pages` and request a Pages build.
 
-## Pipeline shape (shared composite action)
+If some sources fail, the others still publish and the run then fails, so the
+failure shows in the Actions tab and GitHub's notification email. Nothing is
+committed to `main`, so the job never triggers itself or other workflows.
 
-All four workflows delegate to `./.github/actions/collect-and-store`, which
-runs, in order:
+GitHub disables schedules in a public repository after 60 days without repository
+activity. Re-enable with `gh workflow enable refresh.yml` if that happens.
 
-1. **Collect** — `npm run collect:<source> -- --out <temp envelope.json>`.
-   Every collector fails closed: any upstream, parsing, or validation error
-   exits nonzero and nothing downstream executes.
-2. **Store** — `npm run snapshot -- write --dir data-branch --input <envelope>`.
-   The snapshot store re-validates the entire envelope against the shared
-   schemas, refuses to overwrite an existing snapshot path or duplicate
-   manifest entry, writes the snapshot atomically, and only then appends the
-   manifest entry and moves `latestKnownGood`. Empty collections are rejected
-   by default so an upstream shape change cannot shadow known-good data with
-   an empty "newer" snapshot.
-3. **Commit** — `npm run snapshot -- commit --repo data-branch --message ...`.
-   Guarded by `assertDataBranch`: refuses to commit unless `bench-bus-data`
-   is the checked-out branch. A no-op commit is not an error.
-4. **Push** — `git push origin HEAD:bench-bus-data` from the data-branch
-   checkout.
-
-The push is the handoff to the deployment workflow. Because it is performed
-with `GITHUB_TOKEN`, it cannot itself trigger another workflow; `deploy.yml`
-listens for successful completion of these collector workflows instead.
-
-Failure semantics: a failure at any step leaves the `bench-bus-data` checkout
-untouched, so a push never happens and the remote data branch keeps its
-previous last-known-good state. The workflow run itself fails (nonzero),
-making the breakage visible in the Actions tab.
-
-## Overlap safety
-
-Each workflow has its own `concurrency` group with
-`cancel-in-progress: false`, so overlapping runs of the same source queue
-serially instead of racing on the data branch. Different sources use different
-groups and different manifest namespaces (`manifests/<source>.json`), so they
-can run concurrently without conflict; the snapshot store's duplicate-path and
-duplicate-entry guards make even same-source double-writes safe.
-
-## Permissions (least privilege)
-
-- Workflow level: `contents: read` only.
-- The single collect job escalates to `contents: write`, required solely for
-  the data-branch push.
-- The `main` checkout uses `persist-credentials: false`; only the
-  `bench-bus-data` checkout persists credentials.
+Public repositories get standard runners free, but the job is kept short anyway.
 
 ## Local testing (no network, no push)
 
 ```bash
-# Structural checks on the workflow YAMLs (disabled schedules, guards, permissions):
+# Structural checks on the workflow YAMLs (one daily schedule, permissions, wiring):
 node .github/scripts/validate-workflows.mjs
 
 # Full offline dry-run of collect -> snapshot -> commit against a fixture
@@ -81,8 +43,3 @@ and validates against the real Cursor snapshot schemas. The dry-run script
 asserts the snapshot file lands at its deterministic path, the manifest's
 `latestKnownGood` moves, the working tree is clean after commit, and a corrupt
 envelope is rejected with the manifest left byte-identical.
-
-## Not here
-
-The GitHub Pages deployment workflow is a separate concern (tracked
-separately); this directory intentionally contains only collection workflows.

@@ -3,10 +3,10 @@
 Static AI benchmark comparisons at [benchb.us](https://benchb.us): benchmark
 scores versus estimated benchmark workload cost.
 
-Bench Bus is a fully static site — no runtime server. All GitHub Actions are
-disabled. Benchmark/pricing data is collected and validated locally, immutable
-snapshots live on `bench-bus-data`, and locally built static assets are
-published from `gh-pages` with `.nojekyll` (no Actions minutes).
+Bench Bus is a fully static site — no runtime server. One GitHub Actions job
+runs daily at 5:07 PM Eastern: it collects and validates benchmark/pricing data,
+stores immutable snapshots on `bench-bus-data`, and publishes the built static
+assets to `gh-pages` with `.nojekyll`.
 
 ## Tech stack
 
@@ -31,5 +31,5 @@ npm run typecheck  # tsc --noEmit
 ## Deployment
 
 Production builds target GitHub Pages at the custom domain `benchb.us`
-(see `public/CNAME`). See [manual collection and deployment](docs/deployment.md)
-for the local-only workflow. Do not re-enable Actions without approval.
+(see `public/CNAME`). See [collection and deployment](docs/deployment.md) for
+the daily job and the manual fallback.

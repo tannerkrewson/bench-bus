@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 /**
- * Structural smoke test for the collection workflow YAMLs. Deliberately
- * dependency-free: checks the invariants the workflows must keep (disabled schedules,
- * manual dispatch, concurrency guards, least-privilege permissions, timeouts,
- * composite-action wiring) with targeted line-level assertions instead of a
- * full YAML parser.
+ * Structural smoke test for the daily refresh workflow. Deliberately
+ * dependency-free: checks the invariants the workflow must keep (one daily
+ * schedule, one job, concurrency guard, least privilege, timeout, script
+ * wiring) with targeted line-level assertions instead of a full YAML parser.
  *
  * Usage:  node .github/scripts/validate-workflows.mjs
  * Exit 0 when every expectation holds; nonzero otherwise.
@@ -16,13 +15,6 @@ import { fileURLToPath } from "node:url";
 const ghDir = join(dirname(fileURLToPath(import.meta.url)), "..");
 const workflowsDir = join(ghDir, "workflows");
 
-const expectations = [
-  { file: "collect-openrouter.yml" },
-  { file: "collect-aa.yml" },
-  { file: "collect-cursor.yml" },
-  { file: "collect-deepswe.yml" },
-];
-
 let failures = 0;
 const check = (label, ok) => {
   console.log(`${ok ? "PASS" : "FAIL"}  ${label}`);
@@ -30,98 +22,48 @@ const check = (label, ok) => {
 };
 
 async function main() {
-  const workflowFiles = (await readdir(workflowsDir)).filter((f) => /\.ya?ml$/.test(f));
+  const workflowFiles = (await readdir(workflowsDir)).filter((f) => /\.ya?ml$/.test(f)).sort();
+  check("only ci.yml and refresh.yml exist", workflowFiles.join() === "ci.yml,refresh.yml");
 
-  for (const file of workflowFiles) {
-    const text = await readFile(join(workflowsDir, file), "utf8");
-    check(`${file}: cron scheduling is disabled`, !/^\s*(?:schedule\s*:|(?:-\s*)?cron\s*:)/m.test(text));
+  const ci = await readFile(join(workflowsDir, "ci.yml"), "utf8");
+  check("ci.yml: has no schedule", !/^\s*(?:schedule\s*:|(?:-\s*)?cron\s*:)/m.test(ci));
+
+  const refresh = await readFile(join(workflowsDir, "refresh.yml"), "utf8");
+  const crons = refresh.match(/^\s*-\s*cron\s*:\s*"([^"]+)"/gm) ?? [];
+  check("refresh.yml: exactly one schedule", crons.length === 1);
+  check("refresh.yml: runs once a day", /cron: "\d+ \d+ \* \* \*"/.test(refresh));
+  check("refresh.yml: scheduled in Eastern time", refresh.includes('timezone: "America/New_York"'));
+  check("refresh.yml: workflow_dispatch trigger present", /^  workflow_dispatch:/m.test(refresh));
+  check("refresh.yml: never triggers on push", !/^  push:/m.test(refresh));
+  check(
+    "refresh.yml: concurrency group queues instead of racing",
+    /concurrency:\s*\n\s*group: \S+\s*\n\s*cancel-in-progress: false/.test(refresh),
+  );
+  check(
+    "refresh.yml: workflow-level permissions limited to contents: read",
+    /^permissions:\s*\n\s*contents: read\s*\n/m.test(refresh),
+  );
+  check("refresh.yml: job timeout-minutes set", /timeout-minutes: \d+/.test(refresh));
+  check(
+    "refresh.yml: source checkout does not persist credentials",
+    refresh.includes("persist-credentials: false"),
+  );
+  check(
+    "refresh.yml: checks out data and site branches into separate paths",
+    refresh.includes("ref: bench-bus-data") && refresh.includes("path: data-branch") &&
+      refresh.includes("ref: gh-pages") && refresh.includes("path: site"),
+  );
+  check("refresh.yml: runs the refresh script", refresh.includes(".github/scripts/daily-refresh.sh"));
+
+  const script = await readFile(join(ghDir, "scripts/daily-refresh.sh"), "utf8");
+  for (const source of ["aa", "cursor", "deepswe"]) {
+    check(`daily-refresh.sh: collects ${source}`, new RegExp(`^collect ${source}$`, "m").test(script));
   }
-
-  // The four collection workflows must exist; other workflows owned by
-  // separate issues (ci.yml, deploy.yml) are allowed but not validated here.
-  const nonCollectionWorkflows = new Set(["ci.yml", "deploy.yml"]);
-  const collectionWorkflows = workflowFiles.filter((f) => !nonCollectionWorkflows.has(f));
-
-  check(
-    "exactly the four collection workflows exist (besides ci/deploy owned elsewhere)",
-    collectionWorkflows.length === 4 &&
-      expectations.every((e) => collectionWorkflows.includes(e.file)),
-  );
-
-  for (const expectation of expectations) {
-    const text = await readFile(join(workflowsDir, expectation.file), "utf8");
-    const name = expectation.file;
-
-    check(`${name}: workflow_dispatch trigger present`, /^  workflow_dispatch:/m.test(text));
-    check(
-      `${name}: concurrency group with cancel-in-progress: false (queue, never race)`,
-      /concurrency:\s*\n\s*group: \S+\s*\n\s*cancel-in-progress: false/.test(text),
-    );
-    check(
-      `${name}: workflow-level permissions limited to contents: read`,
-      /permissions:\s*\n\s*contents: read\s*\n/.test(text),
-    );
-    check(
-      `${name}: job-level contents: write (data-branch push only)`,
-      /contents: write/.test(text),
-    );
-    check(`${name}: job timeout-minutes set`, /timeout-minutes: \d+/.test(text));
-    check(
-      `${name}: uses the shared collect-and-store composite action`,
-      text.includes("./.github/actions/collect-and-store"),
-    );
-    check(
-      `${name}: checks out the bench-bus-data branch into a separate path`,
-      text.includes("ref: bench-bus-data") && text.includes("path: data-branch"),
-    );
-    check(
-      `${name}: source checkout does not persist credentials`,
-      text.includes("persist-credentials: false"),
-    );
-    check(
-      `${name}: documents indefinite scheduling disablement`,
-      text.includes("Cron scheduling is disabled indefinitely"),
-    );
-  }
-
-  const action = await readFile(
-    join(ghDir, "actions/collect-and-store/action.yml"),
-    "utf8",
-  );
-  check(
-    "composite action runs collector with fail-closed --out envelope",
-    action.includes("collect:${SOURCE}") && action.includes("--out"),
-  );
-  check(
-    "composite action validates + writes via the snapshot store",
-    action.includes("snapshot -- write") && action.includes("--input"),
-  );
-  check(
-    "composite action commits via the guarded snapshot commit",
-    action.includes("snapshot -- commit") && action.includes("--repo"),
-  );
-  check(
-    "composite action pushes HEAD:bench-bus-data",
-    action.includes("HEAD:bench-bus-data"),
-  );
-
-  const deploy = await readFile(join(workflowsDir, "deploy.yml"), "utf8");
-  const collectorNames = [
-    "Collect Artificial Analysis models",
-    "Collect OpenRouter pricing",
-    "Collect DeepSWE scores",
-    "Collect Cursor eval table",
-  ];
-  check(
-    "deploy workflow runs after collector completion",
-    deploy.includes("workflow_run:") &&
-      deploy.includes("types: [completed]") &&
-      collectorNames.every((name) => deploy.includes(`- ${name}`)),
-  );
-  check(
-    "deploy workflow skips failed collector completions",
-    deploy.includes("github.event.workflow_run.conclusion == 'success'"),
-  );
+  check("daily-refresh.sh: collects openrouter", /^collect openrouter /m.test(script));
+  check("daily-refresh.sh: stores via the snapshot CLI", script.includes("snapshot -- write"));
+  check("daily-refresh.sh: commits via the guarded snapshot commit", script.includes("snapshot -- commit"));
+  check("daily-refresh.sh: pushes both branches", script.includes("HEAD:bench-bus-data") && script.includes("HEAD:gh-pages"));
+  check("daily-refresh.sh: verifies the custom domain", script.includes("dist/CNAME"));
 
   if (failures > 0) {
     console.error(`\nworkflow validation FAILED: ${failures} check(s) failed`);

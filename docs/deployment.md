@@ -1,10 +1,13 @@
-# Manual deployment to benchb.us
+# Deployment to benchb.us
 
-All GitHub Actions workflows **and repository Actions permissions are disabled**.
-Do not enable or dispatch them. Cron triggers have also been removed locally.
+The `Daily refresh` workflow (`.github/workflows/refresh.yml`) collects, stores,
+builds and publishes once a day at 5:07 PM Eastern. A code change on `main`
+reaches the site on the next run; dispatch the workflow to publish it sooner:
+`gh workflow run refresh.yml`. See [the collection docs](ci-collection.md).
+The manual steps below remain the fallback. `ci.yml` stays disabled.
 
 Production uses GitHub Pages **Deploy from a branch**, `gh-pages`, `/`.
-Builds run locally; `public/.nojekyll` bypasses GitHub's Jekyll/Actions build.
+`public/.nojekyll` bypasses GitHub's Jekyll build.
 The custom domain remains `benchb.us`; HTTPS is served by Cloudflare.
 **Hosting follow-up (`bench-bus-4xi`):** GitHub already reported certificate
 `bad_authz` before this deploy. Switching publishing modes reset its
@@ -12,9 +15,6 @@ The custom domain remains `benchb.us`; HTTPS is served by Cloudflare.
 "The certificate has not finished being issued". HTTP does not redirect yet.
 A Cloudflare administrator should enable Always Use HTTPS and repair origin
 certificate issuance, then restore GitHub Pages HTTPS enforcement.
-GitHub documents this Actions-free path in its
-[Pages worker migration notice](https://github.blog/changelog/2024-07-08-pages-legacy-worker-sunset/).
-The old `deploy.yml` artifact workflow is retained but disabled.
 
 ## Collect and validate locally
 
@@ -60,8 +60,8 @@ as are Cursor models (including Grok 4.7). The shared policy is
 [Cursor's published policy](https://cursor.com/docs/models-and-pricing#cursor-token-rate),
 not inferred family prefixes. Missing estimates are unavailable with the fee
 enabled, never plotted as fee-free. The current default view has eight curated
-families plus verified current value-frontier points (nine families / 33 effort
-variants at the default fee/cache settings); other published rows remain opt-in.
+families plus verified current value-frontier points (nine families at the
+default fee/cache settings); other published rows remain opt-in.
 A frozen 81-row fixture tests complete current pricing coverage.
 
 DeepSWE's upstream leaderboard was last generated 2026-06-20 as of this
@@ -97,16 +97,9 @@ view. Old bundles without a known index version are not labeled V5.
 
 5. Confirm `https://benchb.us/` serves the new hashed JS/CSS and
    `derived-data/latest.json` matches the local build. Inspect the live site,
-   not just the preview. Verify Actions remains disabled:
+   not just the preview.
 
-   ```bash
-   gh api repos/{owner}/{repo}/actions/permissions
-   gh api repos/{owner}/{repo}/actions/workflows --jq '.workflows[] | [.name, .state]'
-   ```
-
-Source changes can stay uncommitted locally; publishing assets does not require
-pushing `main`. Keep source/data/asset provenance in the deployment commit
-message. For rollback, revert the last asset commit on `gh-pages` and push;
-no Actions workflow is needed. To restore the old artifact pipeline in the
-future, explicitly approve enabling Actions and switching Pages back to
-`build_type: workflow` first.
+Keep source/data/asset provenance in the deployment commit message, including a
+`Source: <main sha>` line: the daily job skips typecheck and tests when that sha
+still matches `main`. For rollback, revert the last asset commit on `gh-pages`
+and push, then disable the workflow if the next run would republish the problem.

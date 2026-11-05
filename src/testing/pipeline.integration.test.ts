@@ -150,7 +150,7 @@ describe("offline end-to-end pipeline: collect -> store -> resolve -> compile ->
     // 3. Store all three sources in a real DataBranchStore (full validation).
     // Collector CLIs emit source payloads; the store normalizes them to
     // envelopes itself (normalizeSnapshotInput), so the production
-    // collect-and-store action can pipe collector output straight into
+    // daily refresh script can pipe collector output straight into
     // `snapshot write` — regression-tested below.
     store = new DataBranchStore(await dirPromise);
     await store.init();

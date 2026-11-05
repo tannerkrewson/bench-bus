@@ -247,6 +247,53 @@ describe("layoutModelLabels", () => {
     expect(labelLeaderCrossesLabel(second!, first!)).toBe(false);
   });
 
+  it("keeps a label near its dot when only a family line's bounding box is in the way", () => {
+    // The diagonal's bounding box covers the whole plot, but the segment itself
+    // leaves room directly beside the dot.
+    const [label] = layoutModelLabels(
+      [{ id: "model", label: "Model", anchorLeft: 150, anchorTop: 150, color: "red" }],
+      bounds,
+      { lines: [{ left1: 20, top1: 20, left2: 300, top2: 90 }] },
+    );
+    const leader = labelLeaderSegment(label!);
+    expect(Math.hypot(leader.left2 - leader.left1, leader.top2 - leader.top1)).toBeLessThan(30);
+  });
+
+  it("seats dense scatter labels without any two leaders crossing", () => {
+    const side = (l: ReturnType<typeof labelLeaderSegment>, x: number, y: number) =>
+      (l.left2 - l.left1) * (y - l.top1) - (l.top2 - l.top1) * (x - l.left1);
+    const crosses = (a: ReturnType<typeof labelLeaderSegment>, b: ReturnType<typeof labelLeaderSegment>) =>
+      side(a, b.left1, b.top1) * side(a, b.left2, b.top2) < 0 &&
+      side(b, a.left1, a.top1) * side(b, a.left2, a.top2) < 0;
+    const plot = { left: 0, top: 0, right: 900, bottom: 500 };
+    for (const seed of [1, 2, 3, 4, 5]) {
+      let state = seed * 7919;
+      const next = () => (state = (state * 16807) % 2147483647) / 2147483647;
+      const anchors = Array.from({ length: 16 }, (_, index) => ({
+        id: `model-${index}`,
+        label: `Model family ${index}`,
+        anchorLeft: 250 + next() * 400,
+        anchorTop: 120 + next() * 260,
+        color: "red",
+      }));
+      const leaders = layoutModelLabels(anchors, plot).map(labelLeaderSegment);
+      expect(leaders).toHaveLength(anchors.length);
+      for (const [index, leader] of leaders.entries()) {
+        for (const other of leaders.slice(index + 1)) expect(crosses(leader, other)).toBe(false);
+      }
+    }
+  });
+
+  it("stays on the dot's side of a family line rather than leading across it", () => {
+    const line = { left1: 170, top1: 10, left2: 170, top2: 210 };
+    const [label] = layoutModelLabels(
+      [{ id: "model", label: "Model", anchorLeft: 150, anchorTop: 100, color: "red" }],
+      bounds,
+      { lines: [line] },
+    );
+    expect(label!.left + label!.width).toBeLessThan(170);
+  });
+
   it("honors an opposite-side preference for a hovered label", () => {
     const [label] = layoutModelLabels(
       [{ id: "hovered", label: "Hovered model", anchorLeft: 150, anchorTop: 100, color: "red" }],

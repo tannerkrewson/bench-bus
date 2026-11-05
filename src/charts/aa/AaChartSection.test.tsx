@@ -12,7 +12,7 @@ import {
   AA_DEFAULT_MODEL_SLUGS,
 } from "./constants";
 
-const AA_SUBTITLE = "Compare Artificial Analysis scores and measured workload costs using AA listed prices or the cheapest regular OpenRouter provider. Data is refreshed manually; see the update time.";
+const AA_SUBTITLE = "Compare Artificial Analysis scores and measured workload costs using AA listed prices or the cheapest regular OpenRouter provider. Data is refreshed daily; see the update time.";
 
 function mount(ui: () => JSX.Element) {
   const container = document.createElement("div");
@@ -336,12 +336,13 @@ describe("AaChartSection", () => {
     expect(AA_DEFAULT_MODEL_SLUGS).toEqual(expect.arrayContaining([
       "gpt-6-luna", "gpt-6-1-terra", "gpt-6-1-sol", "gpt-6-astra",
       "claude-haiku-5-5", "claude-opus-5-5", "claude-sonnet-5-5",
-      "gemini-4-argon", "grok-4-7", "deepseek-v4-1-flash-1017",
-      "mimo-v2-6-flash", "mimo-v2-6-pro", "kimi-k3-1-pro", "minimax-m3-1-flash",
+      "gemini-4-argon", "gemini-4-carbon", "grok-4-7", "deepseek-v4-1-flash-1017",
+      "mimo-v2-6-flash", "kimi-k3-1-pro",
     ]));
     for (const retiredDefault of [
       "gpt-5-6-luna", "gpt-5-6-sol", "claude-opus-5", "muse-spark-1-3-xhigh",
       "deepseek-v4-flash", "deepseek-v4-1-flash", "glm-5-3-flash", "minimax-m3",
+      "minimax-m3-1-flash", "mimo-v2-6-pro",
     ]) {
       expect(AA_DEFAULT_MODEL_SLUGS).not.toContain(retiredDefault);
     }
@@ -395,7 +396,7 @@ describe("AaChartSection", () => {
     expect(selected).toContain("minimax-m4");
     expect(selected).not.toContain("mimo-v2-5-0424");
     expect(selected).not.toContain("mimo-v2-5-pro");
-    expect(selected).toContain("mimo-v2-6-pro");
+    expect(selected).not.toContain("mimo-v2-6-pro");
     expect(AA_DEFAULT_AUTO_RELEASE_FAMILY_POLICIES).toEqual(expect.arrayContaining([
       { seedSlug: "gpt-6-luna", hiddenSlugs: [] },
       { seedSlug: "gpt-6-1-sol", hiddenSlugs: [] },

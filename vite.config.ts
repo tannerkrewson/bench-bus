@@ -4,7 +4,7 @@ import solid from "vite-plugin-solid";
 import tailwindcss from "@tailwindcss/vite";
 
 // Fully static build for GitHub Pages served at the custom domain benchb.us.
-// Local builds publish to gh-pages with .nojekyll while Actions is disabled.
+// Builds publish to gh-pages with .nojekyll.
 export default defineConfig({
   base: "/",
   plugins: [solid(), tailwindcss()],

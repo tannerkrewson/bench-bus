@@ -1,0 +1,62 @@
+# Daily Bench Bus refresh: collect every source, store the snapshots on
+# bench-bus-data, rebuild the site, and publish it to gh-pages.
+#
+# One job replaces the old per-source collectors and their per-collector
+# deploys. Runs at :07 because GitHub delays schedules at the top of the hour.
+
+name: Daily refresh
+
+on:
+  schedule:
+    - cron: "7 17 * * *"
+      timezone: "America/New_York"
+  workflow_dispatch:
+
+concurrency:
+  group: refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      # Pushes to bench-bus-data and gh-pages.
+      contents: write
+      # Requests the Pages build after the gh-pages push.
+      pages: write
+    steps:
+      - name: Checkout application source (main)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Checkout data branch (bench-bus-data)
+        uses: actions/checkout@v4
+        with:
+          ref: bench-bus-data
+          path: data-branch
+          fetch-depth: 1
+
+      - name: Checkout published site (gh-pages)
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: site
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Collect, build, and publish
+        run: bash .github/scripts/daily-refresh.sh data-branch site
+        env:
+          GH_TOKEN: ${{ github.token }}

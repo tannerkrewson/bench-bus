@@ -23,6 +23,23 @@ describe("selectCheapestProvider (cheapest-effective mode)", () => {
     expect(winner?.totalCostUsd).toBeCloseTo(expected, 10);
   });
 
+  it("treats a 0/0 provider as missing data rather than a free winner", () => {
+    const winner = selectCheapestProvider(
+      [
+        { providerName: "Fireworks Spot", providerSlug: "fireworks", effectiveInputPrice: 0, effectiveOutputPrice: 0 },
+        { providerName: "DeepSeek", providerSlug: "deepseek", effectiveInputPrice: 0.02, effectiveOutputPrice: 0.8 },
+      ],
+      1e6,
+      1e6,
+    );
+    expect(winner?.providerSlug).toBe("deepseek");
+    expect(selectCheapestProvider(
+      [{ providerName: "Fireworks Spot", providerSlug: "fireworks", effectiveInputPrice: 0, effectiveOutputPrice: 0 }],
+      1e6,
+      1e6,
+    )).toBeNull();
+  });
+
   it("can select a provider that is not independently cheapest on both dimensions", () => {
     // InputCheap has the cheaper input price; OutputCheap wins on the
     // output-heavy canonical workload (900M output tokens).

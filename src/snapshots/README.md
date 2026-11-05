@@ -9,7 +9,7 @@ Modules:
 - `paths.ts` — deterministic branch/path conventions.
 - `store.ts` — `DataBranchStore`: validated, immutable, append-only snapshot
   writes + manifest management + point-in-time resolution.
-- `git.ts` — thin, injectable git integration used by Actions workflows.
+- `git.ts` — thin, injectable git integration used by the daily refresh workflow.
 - `cli.ts` — tsx CLI (`init` / `write` / `resolve` / `commit`).
 
 Git branch creation/checkouts are owned by the caller; nothing here switches

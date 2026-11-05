@@ -67,6 +67,9 @@ export function selectCheapestProvider(
   for (const p of providers) {
     if (!options.includeFlex && p.serviceTier?.toLowerCase() === "flex") continue;
     if (!usablePrice(p.effectiveInputPrice) || !usablePrice(p.effectiveOutputPrice)) continue;
+    // OpenRouter publishes 0/0 for endpoints with no observed effective price.
+    // That is missing data, not a free provider, and must not win the selection.
+    if (p.effectiveInputPrice === 0 && p.effectiveOutputPrice === 0) continue;
     const totalCostUsd =
       (inputTokens / 1e6) * p.effectiveInputPrice + (outputTokens / 1e6) * p.effectiveOutputPrice;
     if (!Number.isFinite(totalCostUsd)) continue;

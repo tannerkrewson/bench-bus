@@ -2,7 +2,7 @@
 /**
  * Offline dry-run of the Actions collect -> snapshot -> commit flow.
  *
- * Exercises exactly what the collect-and-store composite action does, without
+ * Exercises the store and commit steps of daily-refresh.sh, without
  * network access and without pushing:
  *
  *   1. initialize a fresh temporary bench-bus-data checkout skeleton

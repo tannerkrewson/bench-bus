@@ -2,7 +2,7 @@
 export const AA_DEFAULT_COST_MODE = "intelligence-vs-cost-per-task" as const;
 
 /**
- * V5-era comparison set (reviewed 2026-10-28). Effort variants are discovered
+ * V5-era comparison set (reviewed 2026-11-05). Effort variants are discovered
  * from these exact source identities. The live cheapest-price Pareto frontier
  * is always added, including new families not explicitly curated here.
  * Unscored/retired models are never synthesized from an older index version.
@@ -16,12 +16,11 @@ export const AA_DEFAULT_MODEL_SLUGS = [
   "claude-opus-5-5",
   "claude-sonnet-5-5",
   "gemini-4-argon",
+  "gemini-4-carbon",
   "grok-4-7",
   "deepseek-v4-1-flash-1017",
   "mimo-v2-6-flash",
-  "mimo-v2-6-pro",
   "kimi-k3-1-pro",
-  "minimax-m3-1-flash",
 ] as const;
 
 /**
@@ -37,12 +36,11 @@ export const AA_DEFAULT_AUTO_RELEASE_FAMILY_POLICIES = [
   { seedSlug: "claude-opus-5-5", hiddenSlugs: [] },
   { seedSlug: "claude-sonnet-5-5", hiddenSlugs: [] },
   { seedSlug: "gemini-4-argon", hiddenSlugs: [] },
+  { seedSlug: "gemini-4-carbon", hiddenSlugs: [] },
   { seedSlug: "grok-4-7", hiddenSlugs: [] },
   { seedSlug: "deepseek-v4-1-flash-1017", hiddenSlugs: [] },
   { seedSlug: "mimo-v2-6-flash", hiddenSlugs: [] },
-  { seedSlug: "mimo-v2-6-pro", hiddenSlugs: [] },
   { seedSlug: "kimi-k3-1-pro", hiddenSlugs: [] },
-  { seedSlug: "minimax-m3-1-flash", hiddenSlugs: [] },
   // Preserve these older policies for historical views and future releases.
   {
     seedSlug: "gemini-3-1-pro-preview",
