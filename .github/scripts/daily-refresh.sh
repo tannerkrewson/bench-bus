@@ -61,6 +61,8 @@ else
 fi
 
 # The published index owns history, because this job never commits to main.
+# public/derived-data is generated, not tracked, so a fresh checkout lacks it.
+mkdir -p public/derived-data
 if [[ -f "$site_dir/derived-data/index.json" ]]; then
   cp -f "$site_dir"/derived-data/*.json public/derived-data/
 fi
