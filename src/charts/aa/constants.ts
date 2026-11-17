@@ -2,7 +2,7 @@
 export const AA_DEFAULT_COST_MODE = "intelligence-vs-cost-per-task" as const;
 
 /**
- * V5-era comparison set (reviewed 2026-11-05). Effort variants are discovered
+ * V5-era comparison set (reviewed 2026-11-17). Effort variants are discovered
  * from these exact source identities. The live cheapest-price Pareto frontier
  * is always added, including new families not explicitly curated here.
  * Unscored/retired models are never synthesized from an older index version.
@@ -10,8 +10,8 @@ export const AA_DEFAULT_COST_MODE = "intelligence-vs-cost-per-task" as const;
 export const AA_DEFAULT_MODEL_SLUGS = [
   "gpt-6-luna",
   "gpt-6-1-terra",
-  "gpt-6-1-sol",
-  "gpt-6-astra",
+  "gpt-6-2-sol",
+  "gpt-6-2-astra",
   "claude-haiku-5-5",
   "claude-opus-5-5",
   "claude-sonnet-5-5",
@@ -30,8 +30,8 @@ export const AA_DEFAULT_MODEL_SLUGS = [
 export const AA_DEFAULT_AUTO_RELEASE_FAMILY_POLICIES = [
   { seedSlug: "gpt-6-luna", hiddenSlugs: [] },
   { seedSlug: "gpt-6-1-terra", hiddenSlugs: [] },
-  { seedSlug: "gpt-6-1-sol", hiddenSlugs: [] },
-  { seedSlug: "gpt-6-astra", hiddenSlugs: [] },
+  { seedSlug: "gpt-6-2-sol", hiddenSlugs: [] },
+  { seedSlug: "gpt-6-2-astra", hiddenSlugs: [] },
   { seedSlug: "claude-haiku-5-5", hiddenSlugs: [] },
   { seedSlug: "claude-opus-5-5", hiddenSlugs: [] },
   { seedSlug: "claude-sonnet-5-5", hiddenSlugs: [] },

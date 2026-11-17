@@ -334,13 +334,13 @@ describe("AaChartSection", () => {
       ...AA_DEFAULT_MODEL_SLUGS,
     ]));
     expect(AA_DEFAULT_MODEL_SLUGS).toEqual(expect.arrayContaining([
-      "gpt-6-luna", "gpt-6-1-terra", "gpt-6-1-sol", "gpt-6-astra",
+      "gpt-6-luna", "gpt-6-1-terra", "gpt-6-2-sol", "gpt-6-2-astra",
       "claude-haiku-5-5", "claude-opus-5-5", "claude-sonnet-5-5",
       "gemini-4-argon", "gemini-4-carbon", "grok-4-7", "deepseek-v4-1-flash-1017",
       "mimo-v2-6-flash", "kimi-k3-1-pro",
     ]));
     for (const retiredDefault of [
-      "gpt-5-6-luna", "gpt-5-6-sol", "claude-opus-5", "muse-spark-1-3-xhigh",
+      "gpt-5-6-luna", "gpt-5-6-sol", "gpt-6-1-sol", "gpt-6-astra", "claude-opus-5", "muse-spark-1-3-xhigh",
       "deepseek-v4-flash", "deepseek-v4-1-flash", "glm-5-3-flash", "minimax-m3",
       "minimax-m3-1-flash", "mimo-v2-6-pro",
     ]) {
@@ -399,7 +399,7 @@ describe("AaChartSection", () => {
     expect(selected).not.toContain("mimo-v2-6-pro");
     expect(AA_DEFAULT_AUTO_RELEASE_FAMILY_POLICIES).toEqual(expect.arrayContaining([
       { seedSlug: "gpt-6-luna", hiddenSlugs: [] },
-      { seedSlug: "gpt-6-1-sol", hiddenSlugs: [] },
+      { seedSlug: "gpt-6-2-sol", hiddenSlugs: [] },
       { seedSlug: "claude-opus-5-5", hiddenSlugs: [] },
       { seedSlug: "grok-4-7", hiddenSlugs: [] },
       { seedSlug: "minimax-m3", hiddenSlugs: ["minimax-m3"] },
