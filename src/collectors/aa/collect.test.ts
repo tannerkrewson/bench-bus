@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { collectAa, collectFromHtml } from "./collector";
+import {
+  AA_SOURCE_PAGE_SLUGS,
+  aaModelPageUrl,
+  collectAa,
+  collectFromHtml,
+  collectFromPages,
+} from "./collector";
 import {
   buildRscEndpoint,
   discoverIntelligenceIndexVersion,
@@ -197,10 +203,14 @@ describe("buildAaCollection", () => {
     });
   });
 
-  it("fails closed for missing or null fields other than cacheWritePrice", () => {
+  it("stores an omitted cache-write price as null, since AA now omits the key", () => {
     const missingCacheWrite = { ...realGlm53FlashRawModel };
     delete missingCacheWrite.cacheWritePrice;
-    expect(() => buildAaCollection([missingCacheWrite])).toThrow(/No complete Artificial Analysis models/);
+    const result = buildAaCollection([missingCacheWrite]);
+    expect(result.records[0]!.cacheWritePrice).toBeNull();
+  });
+
+  it("fails closed for missing or null fields other than cacheWritePrice", () => {
 
     for (const field of ["id", "cacheHitPrice", "intelligenceIndex"] as const) {
       expect(() =>
@@ -252,5 +262,55 @@ describe("collectAa (end-to-end with injected fetch)", () => {
     await expect(
       collectAa({ startUrl: START_URL, fetchImpl }),
     ).rejects.toThrow(/HTTP 503/);
+  });
+
+  it("reads and merges every default model page when no slugs are given", async () => {
+    const requested: string[] = [];
+    const fetchImpl = (async (url: string | URL | Request) => {
+      requested.push(String(url));
+      return new Response(aaPageHtml, { status: 200 });
+    }) as typeof fetch;
+    const result = await collectAa({ observedAt: OBSERVED_AT, fetchImpl });
+    expect(requested).toEqual(AA_SOURCE_PAGE_SLUGS.map(aaModelPageUrl));
+    expect(result.startUrls).toEqual(AA_SOURCE_PAGE_SLUGS.map(aaModelPageUrl));
+    expect(result.payload.records).toHaveLength(3);
+  });
+});
+
+describe("collectFromPages (merging AA model pages)", () => {
+  const OTHER_URL = "https://artificialanalysis.ai/models/gpt-6-2-sol";
+  const versionMarker = (version: string) =>
+    `<script>self.__next_f.push([1,"Artificial Analysis Intelligence Index v${version} incorporates 10 evaluations"])</script>`;
+
+  it("keeps each model identity once when several pages list it", () => {
+    const result = collectFromPages(
+      [
+        { startUrl: START_URL, html: aaPageHtml },
+        { startUrl: OTHER_URL, html: aaPageHtml },
+      ],
+      OBSERVED_AT,
+    );
+    expect(result.payload.records).toHaveLength(3);
+    // Each copy of the fixture has one internal duplicate, plus the three
+    // models that the second copy lists again.
+    expect(result.stats.duplicateCount).toBe(5);
+    expect(result.payload.source.startUrl).toBe(START_URL);
+    expect(result.startUrls).toEqual([START_URL, OTHER_URL]);
+  });
+
+  it("refuses to merge pages that report different Intelligence Index versions", () => {
+    expect(() =>
+      collectFromPages(
+        [
+          { startUrl: START_URL, html: `${aaPageHtml}${versionMarker("5.0.1")}` },
+          { startUrl: OTHER_URL, html: `${aaPageHtml}${versionMarker("4.2")}` },
+        ],
+        OBSERVED_AT,
+      ),
+    ).toThrow(/different Intelligence Index versions/);
+  });
+
+  it("requires at least one page", () => {
+    expect(() => collectFromPages([], OBSERVED_AT)).toThrow(/No Artificial Analysis pages/);
   });
 });

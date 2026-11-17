@@ -5,7 +5,9 @@
  *   "collect:aa": "tsx src/collectors/aa/collect.ts"
  *
  * Usage:
- *   tsx src/collectors/aa/collect.ts [modelSlug] [--out <path>] [--url <startUrl>]
+ *   tsx src/collectors/aa/collect.ts [modelSlug ...] [--out <path>] [--url <startUrl>]
+ *
+ * Without model slugs, reads every page in AA_SOURCE_PAGE_SLUGS and merges them.
  *
  * Emits a deterministic normalized full-model JSON dataset to --out (or
  * stdout). Exits nonzero with diagnostics on any failure; never emits
@@ -17,7 +19,7 @@ import { collectAa } from "./collector";
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
-  let slug: string | undefined;
+  const slugs: string[] = [];
   let out: string | undefined;
   let url: string | undefined;
 
@@ -31,17 +33,20 @@ async function main(): Promise<void> {
       if (!url) throw new Error("--url requires a URL argument");
     } else if (arg === "--help" || arg === "-h") {
       process.stdout.write(
-        "Usage: tsx src/collectors/aa/collect.ts [modelSlug] [--out <path>] [--url <startUrl>]\n",
+        "Usage: tsx src/collectors/aa/collect.ts [modelSlug ...] [--out <path>] [--url <startUrl>]\n",
       );
       return;
     } else if (!arg.startsWith("--")) {
-      slug = arg;
+      slugs.push(arg);
     } else {
       throw new Error(`Unknown option: ${arg}`);
     }
   }
 
-  const result = await collectAa({ slug, startUrl: url });
+  const result = await collectAa({
+    slugs: slugs.length > 0 ? slugs : undefined,
+    startUrl: url,
+  });
   const json = JSON.stringify(result.payload, null, 2) + "\n";
 
   if (out) {
@@ -53,7 +58,7 @@ async function main(): Promise<void> {
 
   const { source, records } = result.payload;
   process.stderr.write(
-    `[aa-collector] startUrl=${source.startUrl}\n` +
+    `[aa-collector] startUrls=${result.startUrls.join(",")}\n` +
       `[aa-collector] rscEndpoint=${source.rscEndpoint}\n` +
       `[aa-collector] intelligenceIndexVersion=${source.intelligenceIndexVersion ?? "unknown"}\n` +
       `[aa-collector] models=${records.length} ` +

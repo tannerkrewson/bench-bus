@@ -1,5 +1,11 @@
 # Research: Scraping Artificial Analysis, OpenRouter effective pricing, and Cursor evals (2026)
 
+> **Update 2026-11-17:** AA model pages no longer embed the full model set. Each
+> page carries about 28 complete models around its own model, so the collector
+> reads the pages in `AA_SOURCE_PAGE_SLUGS` and merges them by identity. AA also
+> stopped publishing a `cacheWritePrice` key on most records; a missing value is
+> stored as `null`. The sections below describe the 2026-08 state.
+
 ## Summary
 All four sources are verifiable as of 2026-08. Artificial Analysis model pages are Next.js App Router pages whose full model dataset (including `canonicalIntelligenceIndexTokenCount`) is embedded server-side in RSC Flight payloads (`self.__next_f.push` scripts) inside the HTML — no `?_rsc=` request needed for a first load; a paid Data API also exists. OpenRouter's `effective-pricing` frontend endpoint is public and unauthenticated but **only returns data when given the canonical slug with date suffix** (e.g. `anthropic/claude-opus-5-20260723`); short permaslugs return an empty-but-200 skeleton. DeepSWE publishes a JSON leaderboard with explicit model, harness, reasoning-effort, and pass-rate fields. Cursor's CursorBench page is fully server-rendered HTML + an SSR'd inline SVG chart, with the same content mirrored in embedded RSC flight scripts; no separate JSON endpoint was found and no third-party surcharge field appears on the page.
 

@@ -35,14 +35,19 @@ const TOKEN_COUNT_FIELDS = ["input", "output", "answer", "reasoning"] as const;
  * Copy a complete raw model into a canonical record with fixed key order so
  * serialization is deterministic regardless of upstream key order. Values are
  * passed through by reference/exactly — no rounding, defaults, or recomputation.
- * Returns null when the record is incomplete (missing/null required field,
- * except for a source-published null cache-write price).
+ * Returns null when the record is incomplete (missing/null required field).
+ * A missing or null cache-write price is not required: it is stored as null.
  */
 export function normalizeModel(raw: RawAaModel): ArtificialAnalysisModel | null {
   const record: Record<string, unknown> = {};
   for (const field of REQUIRED_TOP_LEVEL) {
     const value = raw[field];
-    if (value === undefined || (value === null && field !== "cacheWritePrice")) return null;
+    if (field === "cacheWritePrice") {
+      // AA omits this key (or sends null) when no listed cache-write rate exists.
+      record[field] = value ?? null;
+      continue;
+    }
+    if (value === undefined || value === null) return null;
     record[field] = value;
   }
   const cost = {
