@@ -1,21 +1,23 @@
 # Daily refresh (GitHub Actions)
 
 One workflow, `.github/workflows/refresh.yml`, runs at 5:07 PM America/New_York
-and on `workflow_dispatch`. It replaces the old four collector workflows, each
+and on `workflow_dispatch`. It replaces the old per-source collector workflows, each
 of which started its own full deploy. The schedule uses `:07` because GitHub
 documents delays at the start of each hour, and `timezone` so it follows DST.
 
 `.github/scripts/daily-refresh.sh` does the work in one job:
 
-1. **Collect and store** AA, OpenRouter, Cursor and DeepSWE. Each collector and
+1. **Collect and store** AA, OpenRouter and Cursor. Each collector and
    the snapshot store validate and fail closed, so a failed source keeps its
    last-known-good snapshot.
 2. **Commit and push** one commit to `bench-bus-data`.
 3. **Typecheck and test**, only if `main` changed since the last publish (the
    `Source:` line in the `gh-pages` commit message). Data-only days skip this.
-4. **Compile and build**, starting from the published `derived-data/` so history
-   carries forward. The outgoing `latest.json` becomes a dated time-travel point
-   once it is at least a week newer than the last dated one.
+4. **Compile and build** every view listed in the published
+   `derived-data/index.json`, rebuilt from `bench-bus-data` with the current
+   source, so a derived-format change never strands an older bundle. The
+   outgoing `latest.json` becomes a dated time-travel point once it is at least
+   a week newer than the last dated one.
 5. **Publish** `dist/` to `gh-pages` and request a Pages build.
 
 If some sources fail, the others still publish and the run then fails, so the

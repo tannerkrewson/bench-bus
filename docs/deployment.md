@@ -31,9 +31,8 @@ npm ci
 npm run collect:aa -- --out <scratch>/aa.json
 npm run collect:openrouter -- --frontier-aa <scratch>/aa.json --out <scratch>/openrouter.json
 npm run collect:cursor -- --out <scratch>/cursor.json
-npm run collect:deepswe -- --out <scratch>/deepswe.json
 
-for source in aa openrouter cursor deepswe; do
+for source in aa openrouter cursor; do
   npm run snapshot -- write --dir <data-checkout> --input <scratch>/$source.json
 done
 npm run derive -- --data-dir <data-checkout> --out-dir public/derived-data
@@ -64,18 +63,23 @@ families plus verified current value-frontier points (nine families at the
 default fee/cache settings); other published rows remain opt-in.
 A frozen 81-row fixture tests complete current pricing coverage.
 
-DeepSWE's upstream leaderboard was last generated 2026-06-20 as of this
-refresh. A fresh fetch is **not** a new evaluation; its current-model coverage
-is limited. Never map its old scores to a similarly named newer release.
+The AA chart's Benchmark picker offers the Intelligence Index and the AA
+evaluations in `src/schemas/aaEvaluations.ts`. Scores come from the same AA
+model records, so adding an evaluation means adding an entry there, after
+checking its field against the leader on its AA evaluation page. Snapshots
+before 2026-11-18 have no evaluation scores, so older views plot only the
+Intelligence Index. DeepSWE is no longer collected; its old snapshots remain
+on `bench-bus-data` but nothing reads them.
 
 ## Preserve history
 
-The index must not point an old date at a newly overwritten `latest.json`.
-`upsertDerivedIndexEntry` now replaces reused paths as well as reused dates.
-Before overwriting a latest bundle worth keeping, compile it under a dated
-name (with its original `--as-of`) or archive the original bundle and update
-the index. `20260829T232939Z.json` preserves the previously deployed historical
-view. Old bundles without a known index version are not labeled V5.
+The daily job rebuilds every view listed in the published `index.json` from
+`bench-bus-data` (see `docs/ci-collection.md`), so dated bundles always match
+the current derived format. To rebuild them by hand, run `derive` once per
+dated entry with its `--as-of` and file name, then once without `--as-of` for
+`latest.json`. `upsertDerivedIndexEntry` replaces reused paths as well as
+reused dates, so an old date never points at a newly overwritten
+`latest.json`. Old bundles without a known index version are not labeled V5.
 
 ## Publish the validated build
 
