@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { finiteNumber, isoUtcTimestamp, nonEmptyString } from "./primitives";
+import { AA_EVALUATION_IDS } from "./aaEvaluations";
 
 /**
  * Canonical token counts Artificial Analysis publishes for its Intelligence
@@ -20,6 +21,12 @@ export const canonicalIntelligenceIndexTokenCountSchema = z
     message: "canonicalIntelligenceIndexTokenCount.output must equal answer + reasoning",
     path: ["output"],
   });
+
+/**
+ * Scores for the evaluations in AA_EVALUATIONS, exactly as AA publishes them.
+ * An evaluation AA has not run for the model is absent, never null or zero.
+ */
+export const aaEvaluationScoresSchema = z.partialRecord(z.enum(AA_EVALUATION_IDS), finiteNumber);
 
 export type CanonicalIntelligenceIndexTokenCount = z.infer<
   typeof canonicalIntelligenceIndexTokenCountSchema
@@ -67,6 +74,8 @@ export const artificialAnalysisModelSchema = z
       total: finiteNumber,
     }),
     canonicalIntelligenceIndexTokenCount: canonicalIntelligenceIndexTokenCountSchema,
+    /** Absent in snapshots collected before evaluation scores were stored. */
+    evaluations: aaEvaluationScoresSchema.optional(),
   })
   .strict();
 

@@ -9,6 +9,7 @@ import {
   artificialAnalysisModelSchema,
   type ArtificialAnalysisModel,
 } from "../../schemas";
+import { AA_EVALUATION_IDS, type AaEvaluationScores } from "../../schemas/aaEvaluations";
 import type { RawAaModel } from "./flight";
 import { computeAaListedParetoFrontier, type AaFrontierIdentity } from "./frontier";
 
@@ -73,7 +74,24 @@ export function normalizeModel(raw: RawAaModel): ArtificialAnalysisModel | null 
     answer: counts["answer"],
     reasoning: counts["reasoning"],
   };
+  const evaluations = evaluationScores(raw);
+  if (evaluations) record["evaluations"] = evaluations;
   return record as unknown as ArtificialAnalysisModel;
+}
+
+/**
+ * Collect the published evaluation scores in AA_EVALUATIONS order. A missing
+ * or null score is simply absent: AA has not run that evaluation for the
+ * model, which never makes the record incomplete. A present non-number is
+ * passed through so schema validation fails closed on a format change.
+ */
+function evaluationScores(raw: RawAaModel): AaEvaluationScores | undefined {
+  const scores: Record<string, unknown> = {};
+  for (const id of AA_EVALUATION_IDS) {
+    const value = raw[id];
+    if (value !== undefined && value !== null) scores[id] = value;
+  }
+  return Object.keys(scores).length > 0 ? (scores as AaEvaluationScores) : undefined;
 }
 
 export interface AaCollectionResult {

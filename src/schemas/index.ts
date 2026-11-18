@@ -7,6 +7,7 @@
 export * from "./version";
 export * from "./primitives";
 export * from "./aa";
+export * from "./aaEvaluations";
 export * from "./openrouter";
 export * from "./deepswe";
 export * from "./cursor";

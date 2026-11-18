@@ -210,6 +210,27 @@ describe("buildAaCollection", () => {
     expect(result.records[0]!.cacheWritePrice).toBeNull();
   });
 
+  it("stores published evaluation scores and leaves unrun evaluations out", () => {
+    const result = buildAaCollection([{
+      ...realGlm53FlashRawModel,
+      frontierCode20: 0.443797727272727,
+      omniscience: -12.5,
+      terminalBench40: null,
+      critptAgenticHard: 0.6,
+    }]);
+    expect(result.records[0]!.evaluations).toEqual({
+      frontierCode20: 0.443797727272727,
+      omniscience: -12.5,
+    });
+    expect(buildAaCollection([realGlm53FlashRawModel]).records[0]).not.toHaveProperty("evaluations");
+  });
+
+  it("fails closed when an evaluation score is not a number", () => {
+    expect(() =>
+      buildAaCollection([{ ...realGlm53FlashRawModel, frontierCode20: "44%" }]),
+    ).toThrow(/failed validation/);
+  });
+
   it("fails closed for missing or null fields other than cacheWritePrice", () => {
 
     for (const field of ["id", "cacheHitPrice", "intelligenceIndex"] as const) {
