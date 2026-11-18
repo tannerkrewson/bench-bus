@@ -22,14 +22,13 @@ describe("App", () => {
     const sourceSections = [...container.querySelectorAll<HTMLElement>("[data-testid='chart-sources']")];
     expect(sourceSections).toHaveLength(2);
     expect(sourceSections.map((section) => [...section.querySelectorAll("a")].map((link) => link.textContent))).toEqual([
-      ["Artificial Analysis", "OpenRouter", "DeepSWE"],
+      ["Artificial Analysis", "OpenRouter"],
       ["CursorBench", "Cursor pricing & fee policy"],
     ]);
     expect(sourceSections.map((section) => [...section.querySelectorAll<HTMLAnchorElement>("a")].map((link) => link.href))).toEqual([
       [
         "https://artificialanalysis.ai/",
         "https://openrouter.ai/",
-        "https://deepswe.datacurve.ai/artifacts/v1/leaderboard-live.json",
       ],
       ["https://cursor.com/evals", "https://cursor.com/docs/models-and-pricing#cursor-token-rate"],
     ]);

@@ -1,5 +1,5 @@
 import { Crown } from "lucide-solid";
-import { createEffect, createMemo, createSignal, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, For, Show } from "solid-js";
 import BenchmarkScatterChart from "../BenchmarkScatterChart";
 import ChartDetailModal from "../ChartDetailModal";
 import ChartTooltip from "../ChartTooltip";
@@ -17,7 +17,14 @@ import { timeVaryingDiscountNote } from "../../content/discountNotes";
 import ChartControlPanel from "../../components/ChartControlPanel";
 import ModelList from "../../components/ModelList";
 import type { DerivedAaChartRecord } from "../../schemas";
-import { AA_SCORE_SOURCE_CONTROL_ID, aaAdapter, aaControlledTooltipLines, aaYAxisLabel } from "./adapter";
+import {
+  AA_SCORE_SOURCE_CONTROL,
+  AA_SCORE_SOURCE_CONTROL_ID,
+  aaAdapter,
+  aaControlledTooltipLines,
+  aaYAxisLabel,
+  selectedAaEvaluation,
+} from "./adapter";
 import { AA_DEFAULT_CACHE_HIT_RATE } from "./pricing";
 import {
   discountDetailLines,
@@ -58,9 +65,9 @@ export interface AaChartSectionProps {
 }
 
 /**
- * Artificial Analysis chart section: Intelligence Index versus estimated
- * canonical-workload cost, with the three pricing modes and cache-hit
- * slider. Composes the shared chart primitives directly so hover tooltips
+ * Artificial Analysis chart section: the selected AA benchmark score versus
+ * estimated canonical-workload cost, with the three pricing modes and
+ * cache-hit slider. Composes the shared chart primitives directly so hover tooltips
  * can include control-dependent rows (pricing mode, winning provider).
  */
 export default function AaChartSection(props: AaChartSectionProps) {
@@ -71,15 +78,6 @@ export default function AaChartSection(props: AaChartSectionProps) {
     ...defaultControls(),
     ...props.initialState?.controls,
   };
-  // DeepSWE covers models that may not have a current OpenRouter provider;
-  // listed AA pricing keeps the score view populated by default. An explicit
-  // URL pricing mode still wins.
-  if (
-    initialControls[AA_SCORE_SOURCE_CONTROL_ID] === "deepswe" &&
-    props.initialState?.controls?.pricingMode === undefined
-  ) {
-    initialControls.pricingMode = "listed";
-  }
 
   const [scale, setScale] = createSignal(props.initialState?.scale ?? aaAdapter.defaultXScale);
   const [query, setQuery] = createSignal(props.initialState?.query ?? "");
@@ -284,13 +282,15 @@ export default function AaChartSection(props: AaChartSectionProps) {
   };
 
   const setControl = (id: string, value: number | boolean | string) => {
-    setControls((prev) => ({
-      ...prev,
-      [id]: value,
-      ...(id === AA_SCORE_SOURCE_CONTROL_ID && value === "deepswe" && prev.pricingMode === "cheapest"
-        ? { pricingMode: "listed" }
-        : {}),
-    }));
+    setControls((prev) => ({ ...prev, [id]: value }));
+  };
+  const scoreSourceId = `chart-${aaAdapter.benchmarkId}-control-${AA_SCORE_SOURCE_CONTROL_ID}`;
+  const unscoredLabel = () => (selectedAaEvaluation(controls()) ? "no score" : undefined);
+  const unscoredDescription = () => {
+    const evaluation = selectedAaEvaluation(controls());
+    return evaluation
+      ? `No ${evaluation.label} score from Artificial Analysis, or no price with the current pricing settings.`
+      : undefined;
   };
 
   return (
@@ -322,6 +322,23 @@ export default function AaChartSection(props: AaChartSectionProps) {
             </div>
           </div>
           <div class="flex flex-wrap items-center justify-end gap-2">
+            {/* The benchmark changes what the whole graph measures, so it stays
+                visible instead of living inside Settings. */}
+            <label class="flex items-center gap-2 text-sm font-medium" for={scoreSourceId}>
+              <span>{AA_SCORE_SOURCE_CONTROL.label}</span>
+              <select
+                id={scoreSourceId}
+                class="select select-sm select-bordered"
+                data-testid="aa-benchmark-select"
+                title={AA_SCORE_SOURCE_CONTROL.description}
+                value={String(controls()[AA_SCORE_SOURCE_CONTROL_ID] ?? AA_SCORE_SOURCE_CONTROL.default)}
+                onChange={(event) => setControl(AA_SCORE_SOURCE_CONTROL_ID, event.currentTarget.value)}
+              >
+                <For each={AA_SCORE_SOURCE_CONTROL.options}>
+                  {(option) => <option value={option.value}>{option.label}</option>}
+                </For>
+              </select>
+            </label>
             <ChartControlPanel
               benchmarkId={aaAdapter.benchmarkId}
               scale={scale}
@@ -338,6 +355,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
               showDiscounts={showDiscounts}
               onShowDiscountsChange={setShowDiscounts}
               isControlVisible={(spec) =>
+                spec.id !== AA_SCORE_SOURCE_CONTROL_ID &&
                 (spec.id !== "cacheHitRate" || controls().pricingMode === "listed") &&
                 (spec.id !== "includeFlex" || controls().pricingMode === "cheapest")
               }
@@ -353,6 +371,8 @@ export default function AaChartSection(props: AaChartSectionProps) {
                 onQueryChange={setQuery}
                 onToggleSelect={toggleSelect}
                 unplottable={() => allBuild().unplottable.map((u) => aaAdapter.identity(u.record))}
+                unplottableLabel={unscoredLabel}
+                unplottableDescription={unscoredDescription}
               />
             </Show>
             <MethodologyModal
@@ -381,7 +401,10 @@ export default function AaChartSection(props: AaChartSectionProps) {
                   role="status"
                   data-testid="aa-no-points"
                 >
-                  No models have computable costs for the current pricing settings.
+                  {selectedAaEvaluation(controls())
+                    ? `No models in this view have a ${selectedAaEvaluation(controls())?.label} score. ` +
+                      "Evaluation scores are stored from 2026-11-18 onward."
+                    : "No models have computable costs for the current pricing settings."}
                 </p>
               }
             >

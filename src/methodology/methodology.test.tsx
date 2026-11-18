@@ -3,6 +3,7 @@ import { render } from "solid-js/web";
 import type { JSX } from "solid-js";
 import MethodologyModal from "./MethodologyModal";
 import { AaMethodologyContent, CursorMethodologyContent } from "./MethodologyPanel";
+import { AA_EVALUATIONS } from "../schemas";
 
 function mount(ui: () => JSX.Element) {
   const container = document.createElement("div");
@@ -50,8 +51,12 @@ describe("graph methodology content", () => {
     expect(text).toContain("Cheapest mode picks one regular provider");
     expect(text).toContain("OpenAI Flex is excluded by default");
     expect(text).toContain("Price source");
-    expect(text).toContain("DeepSWE pass@1");
-    expect(text).toContain("models without a score in the selected source are omitted");
+    expect(text).toContain("FrontierCode-AA 2.0");
+    expect(text).toContain("Models without a score for the selected benchmark are omitted");
+    expect(text).not.toContain("DeepSWE");
+    expect(
+      container.querySelector<HTMLAnchorElement>("a[href='https://artificialanalysis.ai/evaluations/frontiercode-2-0']"),
+    ).not.toBeNull();
     expect(text).not.toContain("CursorBench");
     dispose();
   });
@@ -90,7 +95,8 @@ describe("graph methodology content", () => {
       </>
     ));
     const links = container.querySelectorAll<HTMLAnchorElement>("a");
-    expect(links).toHaveLength(5);
+    // Four fixed source links plus one per AA evaluation.
+    expect(links).toHaveLength(4 + AA_EVALUATIONS.length);
     links.forEach((link) => {
       expect(link.target).toBe("_blank");
       expect(link.rel).toBe("noopener noreferrer");

@@ -6,6 +6,7 @@ import AaChartSection from "./AaChartSection";
 import { AA_FIXTURE_RECORDS, AA_RECORD_PLOTTABLE_CHEAPEST, AA_RECORD_UNPLOTTABLE } from "./fixtures";
 import { chartStateFromParams, chartStateToParams } from "../urlState";
 import { aaAdapter } from "./adapter";
+import { AA_EVALUATIONS } from "../../schemas";
 import {
   AA_DEFAULT_AUTO_RELEASE_FAMILY_POLICIES,
   AA_DEFAULT_COST_MODE,
@@ -47,12 +48,16 @@ describe("AaChartSection", () => {
     expect(
       container.querySelector("input#chart-aa-control-pricingMode, #chart-aa-control-pricingMode"),
     ).not.toBeNull();
-    const scoreSource = container.querySelector("#chart-aa-control-scoreSource") as HTMLSelectElement;
-    expect(scoreSource).not.toBeNull();
+    // The benchmark picker sits beside the title, outside the Settings popover.
+    const scoreSource = container.querySelector("[data-testid='aa-benchmark-select']") as HTMLSelectElement;
+    expect(scoreSource.id).toBe("chart-aa-control-scoreSource");
+    expect(scoreSource.closest("[data-testid='chart-settings']")).toBeNull();
+    expect(container.querySelectorAll("#chart-aa-control-scoreSource")).toHaveLength(1);
     expect([...scoreSource.options].map((option) => option.textContent)).toEqual([
-      "Artificial Analysis",
-      "DeepSWE pass@1",
+      "Intelligence Index",
+      ...AA_EVALUATIONS.map((evaluation) => evaluation.label),
     ]);
+    expect(scoreSource.value).toBe("intelligenceIndex");
     // 3 plotted + 1 unplottable (no providers) in the default mode.
     const checkboxes = container.querySelectorAll("[data-testid='model-list'] input[type='checkbox']");
     expect(checkboxes).toHaveLength(3);
@@ -76,17 +81,39 @@ describe("AaChartSection", () => {
     dispose();
   });
 
-  it("uses listed pricing and selects scored records when DeepSWE is selected", () => {
-    const { container, dispose } = mount(() => <AaChartSection records={() => AA_FIXTURE_RECORDS} />);
-    const scoreSource = container.querySelector("#chart-aa-control-scoreSource") as HTMLSelectElement;
-    scoreSource.value = "deepswe";
+  it("plots the selected AA evaluation and marks unscored models", () => {
+    const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
+    const { container, dispose } = mount(() => (
+      <AaChartSection records={() => AA_FIXTURE_RECORDS} onStateChange={(state) => states.push(state)} />
+    ));
+    const scoreSource = container.querySelector("[data-testid='aa-benchmark-select']") as HTMLSelectElement;
+    scoreSource.value = "frontierCode20";
     scoreSource.dispatchEvent(new Event("change", { bubbles: true }));
 
-    const pricingMode = container.querySelector("#chart-aa-control-pricingMode") as HTMLSelectElement;
-    expect(pricingMode.value).toBe("listed");
-    expect(container.querySelector("#chart-aa-control-cacheHitRate")).not.toBeNull();
-    expect(container.textContent).not.toContain("no DeepSWE score");
+    // Pricing is independent of the benchmark.
+    expect((container.querySelector("#chart-aa-control-pricingMode") as HTMLSelectElement).value).toBe("cheapest");
+    expect(states[states.length - 1]?.controls.scoreSource).toBe("frontierCode20");
+    // Only the fixture record with a FrontierCode score stays selectable.
     expect(container.querySelectorAll("[data-testid='model-list'] input[type='checkbox']")).toHaveLength(1);
+    expect(container.textContent).toContain("no score");
+    expect(container.textContent).toContain("No FrontierCode-AA 2.0 score from Artificial Analysis");
+    expect(container.querySelector("[aria-label^='Scatter chart of']")?.getAttribute("aria-label")).toContain(
+      "FrontierCode-AA 2.0 score (%)",
+    );
+    dispose();
+  });
+
+  it("explains an empty evaluation view from snapshots without evaluation scores", () => {
+    const unscored = AA_FIXTURE_RECORDS.map((record) => ({ ...record, evaluations: {} }));
+    const { container, dispose } = mount(() => (
+      <AaChartSection
+        records={() => unscored}
+        initialState={{ controls: { scoreSource: "hleDiamond" } }}
+      />
+    ));
+    expect(container.querySelector("[data-testid='aa-no-points']")?.textContent).toContain(
+      "No models in this view have a HLE-Diamond score.",
+    );
     dispose();
   });
 
@@ -369,10 +396,7 @@ describe("AaChartSection", () => {
       slug,
       name,
       shortName: name,
-      scoreSources: {
-        ...AA_RECORD_PLOTTABLE_CHEAPEST.scoreSources,
-        artificialAnalysis: releaseScores[slug] ?? 50,
-      },
+      intelligenceIndex: releaseScores[slug] ?? 50,
     });
     const records = [
       release("gemini-2-5-pro", "Gemini 2.5 Pro"),
@@ -414,7 +438,7 @@ describe("AaChartSection", () => {
         slug: "deepseek-v4-flash",
         name: "DeepSeek V4 Flash 0731 (Reasoning, Max Effort)",
         shortName: "DeepSeek V4 Flash 0731 (max)",
-        scoreSources: { ...AA_RECORD_PLOTTABLE_CHEAPEST.scoreSources, artificialAnalysis: 70 },
+        intelligenceIndex: 70,
         providers: [{
           providerName: "Low-cost provider",
           providerSlug: "low-cost",
@@ -427,7 +451,7 @@ describe("AaChartSection", () => {
         slug: "deepseek-v4-pro",
         name: "DeepSeek V4 Pro 0813 (Reasoning, Max Effort)",
         shortName: "DeepSeek V4 Pro 0813 (max)",
-        scoreSources: { ...AA_RECORD_PLOTTABLE_CHEAPEST.scoreSources, artificialAnalysis: 80 },
+        intelligenceIndex: 80,
         providers: [{
           providerName: "Higher-cost provider",
           providerSlug: "higher-cost",
@@ -440,7 +464,7 @@ describe("AaChartSection", () => {
         slug: "deepseek-v4-1-flash",
         name: "DeepSeek V4.1 Flash (Reasoning, Max Effort)",
         shortName: "DeepSeek V4.1 Flash (max)",
-        scoreSources: { ...AA_RECORD_PLOTTABLE_CHEAPEST.scoreSources, artificialAnalysis: 90 },
+        intelligenceIndex: 90,
       },
     ];
     const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
@@ -525,14 +549,14 @@ describe("AaChartSection", () => {
       slug: "grok-4-6",
       name: "Grok 4.6 (max)",
       shortName: "Grok 4.6 (max)",
-      scoreSources: { ...AA_RECORD_PLOTTABLE_CHEAPEST.scoreSources, artificialAnalysis: 46 },
+      intelligenceIndex: 46,
     };
     const newRelease = {
       ...oldRelease,
       slug: "grok-4-7",
       name: "Grok 4.7 (max)",
       shortName: "Grok 4.7 (max)",
-      scoreSources: { ...AA_RECORD_PLOTTABLE_CHEAPEST.scoreSources, artificialAnalysis: 47 },
+      intelligenceIndex: 47,
     };
     const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
     const { dispose } = mount(() => (
@@ -550,10 +574,7 @@ describe("AaChartSection", () => {
       slug,
       name,
       shortName: name,
-      scoreSources: {
-        ...AA_RECORD_PLOTTABLE_CHEAPEST.scoreSources,
-        artificialAnalysis: Number(slug.match(/grok-(\d+)-(\d+)/)?.slice(1).join(".") ?? 0),
-      },
+      intelligenceIndex: Number(slug.match(/grok-(\d+)-(\d+)/)?.slice(1).join(".") ?? 0),
     });
     const [records, setRecords] = createSignal([
       release("grok-4-5", "Grok 4.5 (high)"),
@@ -592,10 +613,7 @@ describe("AaChartSection", () => {
       slug,
       name,
       shortName: name,
-      scoreSources: {
-        ...AA_RECORD_PLOTTABLE_CHEAPEST.scoreSources,
-        artificialAnalysis: slug === "glm-5-3-flash" ? 90 : 50,
-      },
+      intelligenceIndex: slug === "glm-5-3-flash" ? 90 : 50,
     });
     const records = [
       release("qwen3-7-max", "Qwen3.7 Max"),

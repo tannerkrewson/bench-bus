@@ -1,6 +1,6 @@
-import type { Component } from "solid-js";
+import { For, type Component } from "solid-js";
 import { AA_DEFAULT_CACHE_HIT_RATE } from "../charts/aa/pricing";
-import { CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS } from "../schemas";
+import { AA_EVALUATIONS, aaEvaluationPageUrl, CURSOR_THIRD_PARTY_SURCHARGE_PER_1M_TOKENS } from "../schemas";
 
 /** Methodology for the Artificial Analysis and OpenRouter graph. */
 export const AaMethodologyContent: Component = () => (
@@ -9,18 +9,26 @@ export const AaMethodologyContent: Component = () => (
       <strong>How to read this.</strong> Scores cover chosen tests. Cost is an estimate, not a bill.
     </p>
     <p>
-      <strong>Score source.</strong>{" "}
+      <strong>Benchmark.</strong>{" "}
       <a class="link link-hover" href="https://artificialanalysis.ai/" target="_blank" rel="noopener noreferrer">
         Artificial Analysis
       </a>{" "}
-      publishes the default score. The Score source control can instead use{" "}
-      <a class="link link-hover" href="https://deepswe.datacurve.ai/artifacts/v1/leaderboard-live.json" target="_blank" rel="noopener noreferrer">
-        DeepSWE pass@1
-      </a>{" "}
-      scores; models without a score in the selected source are omitted. Token counts come from real test runs.
-      The index-version badge identifies the benchmark generation when known. Scores and workloads from earlier
-      index versions are not carried into V5; historical views retain their original benchmark generation. DeepSWE has limited
-      legacy-model coverage and may not score current releases.
+      publishes every score. The Benchmark picker plots the Intelligence Index or one of these evaluations:{" "}
+      <For each={AA_EVALUATIONS}>
+        {(evaluation, index) => (
+          <>
+            {index() > 0 ? ", " : ""}
+            <a class="link link-hover" href={aaEvaluationPageUrl(evaluation)} target="_blank" rel="noopener noreferrer">
+              {evaluation.label}
+            </a>
+          </>
+        )}
+      </For>
+      . Models without a score for the selected benchmark are omitted. Token counts come from real test runs. Pass rates are shown as percentages, and
+      AA-Omniscience uses its own -100 to 100 scale. The cost axis always uses the measured Intelligence Index
+      workload, because AA publishes per-evaluation token counts for only a few models. The index-version badge
+      identifies the benchmark generation when known. Scores and workloads from earlier index versions are not
+      carried into V5; historical views retain their original benchmark generation.
     </p>
     <p>
       <strong>Price source.</strong>{" "}

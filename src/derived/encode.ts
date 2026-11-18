@@ -1,8 +1,10 @@
 import {
+  AA_EVALUATION_IDS,
   derivedAaChartRecordSchema,
   derivedCursorChartRecordSchema,
   freshnessMetadataSchema,
   SCHEMA_VERSIONS,
+  type AaEvaluationScores,
   type DerivedAaChartRecord,
   type DerivedCursorChartRecord,
   type FreshnessMetadata,
@@ -26,7 +28,7 @@ import {
  *     `cursor` compact Cursor dataset or `null`
  *
  * - Each dataset is `{ f, m }`:
- *     `f`  freshness tuple `[aaObservedAt, openrouterObservedAt, deepsweObservedAt, cursorObservedAt]`
+ *     `f`  freshness tuple `[aaObservedAt, openrouterObservedAt, cursorObservedAt]`
  *          where an entry is the source's observation time or `null` when no
  *          eligible snapshot exists for that source at `asOf` (it contributes
  *          no data to that dataset; nothing is fabricated)
@@ -40,7 +42,7 @@ import {
  *         undiscountedModelId|null], ...],
  *       [weightedInputPrice, weightedOutputPrice],
  *       [price1mInputTokens, price1mOutputTokens, cacheHitPrice],
- *       [artificialAnalysisScore, deepSwePassAt1|null]]`
+ *       {evaluationId: score, ...}]`  (AA evaluation scores; unrun ones absent)
  *
  * - Cursor record tuple (mirrors DerivedCursorChartRecord):
  *     `[modelId, modelName, provider, isThirdParty (0|1), score,
@@ -70,7 +72,6 @@ export interface CompactBundle {
   sources: {
     aa: CompactSourceAvailability;
     openrouter: CompactSourceAvailability;
-    deepswe: CompactSourceAvailability;
     cursor: CompactSourceAvailability;
   };
   aa: CompactDataset | null;
@@ -82,7 +83,7 @@ export interface CompactDataset {
   /** Optional AA index generation; absent in older bundles. */
   iv?: string;
   /** Freshness tuple; an entry is the source's observedAt or null when unavailable. */
-  f: [string | null, string | null, string | null, string | null];
+  f: [string | null, string | null, string | null];
   /** Positional record tuples (AA or Cursor shape); validated on decode. */
   m: unknown[];
 }
@@ -99,7 +100,7 @@ type CompactAaRecord = [
   >, // providers
   [number, number], // weighted
   [number, number, number], // listed
-  [number, number | null], // scoreSources [AA, DeepSWE pass@1]
+  AaEvaluationScores, // evaluations
 ];
 
 type CompactCursorRecord = [
@@ -122,7 +123,6 @@ export function encodeAaDataset(
     f: [
       dataset.freshness.aaObservedAt ?? null,
       dataset.freshness.openrouterObservedAt ?? null,
-      dataset.freshness.deepsweObservedAt ?? null,
       dataset.freshness.cursorObservedAt ?? null,
     ],
     ...(dataset.intelligenceIndexVersion ? { iv: dataset.intelligenceIndexVersion } : {}),
@@ -156,7 +156,7 @@ export function encodeAaDataset(
         }),
         [r.weighted.weightedInputPrice, r.weighted.weightedOutputPrice],
         [r.listed.price1mInputTokens, r.listed.price1mOutputTokens, r.listed.cacheHitPrice],
-        [r.scoreSources.artificialAnalysis, r.scoreSources.deepSwePassAt1 ?? null],
+        r.evaluations,
       ],
     ),
   };
@@ -170,7 +170,6 @@ export function encodeCursorDataset(
     f: [
       dataset.freshness.aaObservedAt ?? null,
       dataset.freshness.openrouterObservedAt ?? null,
-      dataset.freshness.deepsweObservedAt ?? null,
       dataset.freshness.cursorObservedAt ?? null,
     ],
     m: dataset.records.map(
@@ -190,11 +189,11 @@ export function encodeCursorDataset(
 }
 
 function decodeFreshness(bundleAsOf: string, f: unknown) {
-  if (!Array.isArray(f) || f.length !== 4) {
+  if (!Array.isArray(f) || f.length !== 3) {
     throw new TypeError(`Invalid freshness tuple: ${JSON.stringify(f)}`);
   }
-  const [aaObservedAt, openrouterObservedAt, deepsweObservedAt, cursorObservedAt] = f;
-  for (const entry of [aaObservedAt, openrouterObservedAt, deepsweObservedAt, cursorObservedAt]) {
+  const [aaObservedAt, openrouterObservedAt, cursorObservedAt] = f;
+  for (const entry of [aaObservedAt, openrouterObservedAt, cursorObservedAt]) {
     if (entry !== null && typeof entry !== "string") {
       throw new TypeError(`Invalid freshness tuple: ${JSON.stringify(f)}`);
     }
@@ -204,7 +203,6 @@ function decodeFreshness(bundleAsOf: string, f: unknown) {
     asOf: bundleAsOf,
     ...(typeof aaObservedAt === "string" ? { aaObservedAt } : {}),
     ...(typeof openrouterObservedAt === "string" ? { openrouterObservedAt } : {}),
-    ...(typeof deepsweObservedAt === "string" ? { deepsweObservedAt } : {}),
     ...(typeof cursorObservedAt === "string" ? { cursorObservedAt } : {}),
   });
 }
@@ -217,13 +215,23 @@ function decodeAvailability(raw: unknown): { available: boolean; observedAt?: st
   throw new TypeError(`Invalid source availability encoding: ${JSON.stringify(raw)}`);
 }
 
+/**
+ * Keep the evaluations this build knows. A page still running older code can
+ * meet a bundle that already offers a newly added evaluation; it ignores that
+ * score instead of rejecting the whole bundle.
+ */
+function knownEvaluations(raw: unknown): unknown {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return raw;
+  const scores = raw as Record<string, unknown>;
+  return Object.fromEntries(AA_EVALUATION_IDS.filter((id) => id in scores).map((id) => [id, scores[id]]));
+}
+
 /** Decoded, schema-validated view of a compact bundle for the browser. */
 export interface DecodedBundle {
   asOf: string;
   sources: {
     aa: { available: boolean; observedAt?: string };
     openrouter: { available: boolean; observedAt?: string };
-    deepswe: { available: boolean; observedAt?: string };
     cursor: { available: boolean; observedAt?: string };
   };
   aa: { freshness: ReturnType<typeof decodeFreshness>; records: DerivedAaChartRecord[]; intelligenceIndexVersion?: string } | null;
@@ -253,7 +261,6 @@ export function decodeBundle(raw: unknown): DecodedBundle {
   const sources = {
     aa: decodeAvailability(sourcesRaw.aa),
     openrouter: decodeAvailability(sourcesRaw.openrouter),
-    deepswe: decodeAvailability(sourcesRaw.deepswe),
     cursor: decodeAvailability(sourcesRaw.cursor),
   };
 
@@ -272,8 +279,8 @@ export function decodeBundle(raw: unknown): DecodedBundle {
       if (!Array.isArray(row) || row.length !== 9) {
         throw new TypeError(`Invalid compact AA record: ${JSON.stringify(row)}`);
       }
-      const [slug, name, shortName, intelligenceIndex, tokens, providers, weighted, listed, scoreSources] = row as CompactAaRecord;
-      if (!Array.isArray(tokens) || !Array.isArray(providers) || !Array.isArray(weighted) || !Array.isArray(listed) || !Array.isArray(scoreSources)) {
+      const [slug, name, shortName, intelligenceIndex, tokens, providers, weighted, listed, evaluations] = row as CompactAaRecord;
+      if (!Array.isArray(tokens) || !Array.isArray(providers) || !Array.isArray(weighted) || !Array.isArray(listed)) {
         throw new TypeError(`Invalid compact AA record structure: ${slug}`);
       }
       return derivedAaChartRecordSchema.parse({
@@ -299,10 +306,7 @@ export function decodeBundle(raw: unknown): DecodedBundle {
           price1mOutputTokens: listed[1],
           cacheHitPrice: listed[2],
         },
-        scoreSources: {
-          artificialAnalysis: scoreSources[0],
-          ...(scoreSources[1] !== null ? { deepSwePassAt1: scoreSources[1] } : {}),
-        },
+        evaluations: knownEvaluations(evaluations),
       });
     });
     return { freshness: decodeFreshness(asOf, f), records, ...(typeof iv === "string" ? { intelligenceIndexVersion: iv } : {}) };

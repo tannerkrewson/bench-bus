@@ -16,11 +16,11 @@ const PLOTTABLE_AA_RECORDS = AA_FIXTURE_RECORDS.filter((r) => r.providers.length
 function freshDatasets() {
   return {
     aa: encodeAaDataset({
-      freshness: { schemaVersion: SCHEMA_VERSIONS.derived, asOf: AT, aaObservedAt: AT, openrouterObservedAt: AT, deepsweObservedAt: AT, cursorObservedAt: AT },
+      freshness: { schemaVersion: SCHEMA_VERSIONS.derived, asOf: AT, aaObservedAt: AT, openrouterObservedAt: AT, cursorObservedAt: AT },
       records: [...PLOTTABLE_AA_RECORDS],
     }),
     cursor: encodeCursorDataset({
-      freshness: { schemaVersion: SCHEMA_VERSIONS.derived, asOf: AT, aaObservedAt: AT, openrouterObservedAt: AT, deepsweObservedAt: AT, cursorObservedAt: AT },
+      freshness: { schemaVersion: SCHEMA_VERSIONS.derived, asOf: AT, aaObservedAt: AT, openrouterObservedAt: AT, cursorObservedAt: AT },
       records: [...CURSOR_FIXTURE_RECORDS],
     }),
   };
@@ -34,7 +34,6 @@ function bundle(overrides: Partial<Record<string, unknown>> = {}) {
     sources: {
       aa: encodeSourceAvailability({ available: true, observedAt: AT }),
       openrouter: encodeSourceAvailability({ available: true, observedAt: AT }),
-      deepswe: encodeSourceAvailability({ available: true, observedAt: AT }),
       cursor: encodeSourceAvailability({ available: true, observedAt: AT }),
     },
     aa,
@@ -81,11 +80,18 @@ describe("decodeBundle", () => {
       }],
     };
     const encoded = encodeAaDataset({
-      freshness: { schemaVersion: SCHEMA_VERSIONS.derived, asOf: AT, aaObservedAt: AT, openrouterObservedAt: AT, deepsweObservedAt: AT, cursorObservedAt: AT },
+      freshness: { schemaVersion: SCHEMA_VERSIONS.derived, asOf: AT, aaObservedAt: AT, openrouterObservedAt: AT, cursorObservedAt: AT },
       records: [discounted],
     });
     const decoded = decodeBundle(bundle({ aa: encoded }));
     expect(decoded.aa?.records[0]?.providers[0]).toEqual(discounted.providers[0]);
+  });
+
+  it("ignores evaluations this build does not know instead of rejecting the bundle", () => {
+    const encoded = bundle();
+    const row = (encoded.aa as { m: unknown[][] }).m[0]!;
+    row[8] = { frontierCode20: 0.4, someFutureEval: 0.9 };
+    expect(decodeBundle(encoded).aa?.records[0]?.evaluations).toEqual({ frontierCode20: 0.4 });
   });
 
   it("emits schema-valid records for every decoded model", () => {

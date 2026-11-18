@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { derivedAaDatasetSchema, SCHEMA_VERSIONS } from "../../schemas";
 import { decodeBundle } from "../../derived/encode";
+import type { PricingControlState } from "../types";
 import {
   aaAdapter,
   aaControlledTooltipLines,
+  aaYAxisLabel,
   AA_BENCHMARK_ID,
   openRouterUrlForAaModel,
 } from "./adapter";
@@ -24,7 +26,6 @@ describe("aa fixtures and decode path", () => {
       asOf: BUNDLE_AS_OF,
       aaObservedAt: BUNDLE_AS_OF,
       openrouterObservedAt: BUNDLE_AS_OF,
-      deepsweObservedAt: BUNDLE_AS_OF,
       cursorObservedAt: BUNDLE_AS_OF,
     };
     expect(() => derivedAaDatasetSchema.parse({ freshness, records: AA_FIXTURE_RECORDS })).not.toThrow();
@@ -115,13 +116,32 @@ describe("aaAdapter.computePoint", () => {
     expect(provider?.value).toBe("AA listed pricing");
   });
 
-  it("plots DeepSWE pass@1 as a percentage when selected", () => {
-    const point = aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, {
-      scoreSource: "deepswe",
-      pricingMode: "cheapest",
-      cacheHitRate: 0.9,
-    });
+  it("plots a pass-rate evaluation as a percentage when selected", () => {
+    const controls = { scoreSource: "frontierCode20", pricingMode: "cheapest", cacheHitRate: 0.9 };
+    const point = aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, controls);
     expect(point?.y).toBe(51.2);
+    // The cost axis still uses the Intelligence Index workload.
+    expect(point?.x).toBe(aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, {})?.x);
+    expect(aaYAxisLabel(controls)).toBe("FrontierCode-AA 2.0 score (%)");
+    expect(aaControlledTooltipLines(AA_RECORD_PLOTTABLE_CHEAPEST, point!, controls)[0]).toEqual({
+      label: "FrontierCode-AA 2.0",
+      value: "51.2%",
+    });
+  });
+
+  it("plots an index evaluation in its own points", () => {
+    const controls = { scoreSource: "omniscience", pricingMode: "cheapest", cacheHitRate: 0.9 };
+    expect(aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, controls)?.y).toBe(12.4);
+    expect(aaYAxisLabel(controls)).toBe("AA-Omniscience Index");
+  });
+
+  it("plots the Intelligence Index by default and for unknown benchmarks", () => {
+    for (const controls of [{}, { scoreSource: "deepswe" }, { scoreSource: "aa" }] as PricingControlState[]) {
+      expect(aaAdapter.computePoint(AA_RECORD_PLOTTABLE_CHEAPEST, controls)?.y).toBe(
+        AA_RECORD_PLOTTABLE_CHEAPEST.intelligenceIndex,
+      );
+      expect(aaYAxisLabel(controls)).toBe("Intelligence Index");
+    }
   });
 
   it("uses parenthesis-free labels and stable families for verbose DeepSeek and Luna sources", () => {
@@ -397,10 +417,10 @@ describe("aaAdapter.computePoint", () => {
     ).not.toBeNull();
   });
 
-  it("omits models with no DeepSWE score when that source is selected", () => {
+  it("omits models with no score for the selected evaluation", () => {
     expect(
       aaAdapter.computePoint(AA_RECORD_NO_LISTING, {
-        scoreSource: "deepswe",
+        scoreSource: "frontierCode20",
         pricingMode: "cheapest",
         cacheHitRate: 0.9,
       }),
@@ -479,7 +499,6 @@ describe("aaAdapter subtitle", () => {
     expect(aaAdapter.sourceLinks).toEqual([
       { label: "Artificial Analysis", href: "https://artificialanalysis.ai/" },
       { label: "OpenRouter", href: "https://openrouter.ai/" },
-      { label: "DeepSWE", href: "https://deepswe.datacurve.ai/artifacts/v1/leaderboard-live.json" },
     ]);
   });
 });

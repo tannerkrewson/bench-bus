@@ -13,7 +13,6 @@ import { validAaModel } from "./fixtures/aa";
 
 const freshness: FreshnessMetadata = {
   schemaVersion: SCHEMA_VERSIONS.derived,
-  deepsweObservedAt: "2026-08-20T20:00:00.000Z",
   asOf: "2026-08-21T00:00:00.000Z",
   aaObservedAt: "2026-08-20T22:00:00.000Z",
   openrouterObservedAt: "2026-08-20T23:00:00.000Z",
@@ -25,7 +24,7 @@ const aaRecord: DerivedAaChartRecord = {
   name: validAaModel.name,
   shortName: validAaModel.shortName,
   intelligenceIndex: validAaModel.intelligenceIndex,
-  scoreSources: { artificialAnalysis: validAaModel.intelligenceIndex },
+  evaluations: { frontierCode20: 0.44, omniscience: -3.5 },
   canonicalTokens: {
     input: validAaModel.canonicalIntelligenceIndexTokenCount.input,
     output: validAaModel.canonicalIntelligenceIndexTokenCount.output,

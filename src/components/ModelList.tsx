@@ -22,9 +22,9 @@ export interface ModelListProps {
   /** Ids of unplottable (matched but unpriced) models, shown disabled. */
   unplottable: () => readonly { id: string; label: string }[];
   /** Current pricing-specific badge text for unplottable rows. */
-  unplottableLabel?: () => string;
+  unplottableLabel?: () => string | undefined;
   /** Current pricing-specific explanation for unplottable rows. */
-  unplottableDescription?: () => string;
+  unplottableDescription?: () => string | undefined;
 }
 
 /**

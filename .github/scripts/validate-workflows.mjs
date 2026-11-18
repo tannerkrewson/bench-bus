@@ -56,7 +56,7 @@ async function main() {
   check("refresh.yml: runs the refresh script", refresh.includes(".github/scripts/daily-refresh.sh"));
 
   const script = await readFile(join(ghDir, "scripts/daily-refresh.sh"), "utf8");
-  for (const source of ["aa", "cursor", "deepswe"]) {
+  for (const source of ["aa", "cursor"]) {
     check(`daily-refresh.sh: collects ${source}`, new RegExp(`^collect ${source}$`, "m").test(script));
   }
   check("daily-refresh.sh: collects openrouter", /^collect openrouter /m.test(script));

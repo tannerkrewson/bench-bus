@@ -2,6 +2,7 @@ import { z } from "zod";
 import { finiteNumber, isoUtcTimestamp, nonEmptyString } from "./primitives";
 import { SCHEMA_VERSIONS } from "./version";
 import { openRouterProviderSummarySchema } from "./openrouter";
+import { aaEvaluationScoresSchema } from "./aa";
 
 
 /**
@@ -34,17 +35,8 @@ export const derivedAaChartRecordSchema = z
     name: nonEmptyString,
     shortName: nonEmptyString,
     intelligenceIndex: finiteNumber,
-    /** Score values from each selectable benchmark source. */
-    scoreSources: z
-      .object({
-        /** Artificial Analysis Intelligence Index, in published score units. */
-        artificialAnalysis: finiteNumber,
-        /** DeepSWE pass@1 as published, in the source's 0-1 rate units. */
-        deepSwePassAt1: finiteNumber.refine((value) => value >= 0 && value <= 1, {
-          message: "deepSwePassAt1 must be between 0 and 1",
-        }).optional(),
-      })
-      .strict(),
+    /** AA evaluation scores as published; an unrun evaluation is absent. */
+    evaluations: aaEvaluationScoresSchema,
     canonicalTokens: z
       .object({
         input: finiteNumber,
@@ -110,8 +102,6 @@ export const freshnessMetadataSchema = z
     aaObservedAt: isoUtcTimestamp.optional(),
     /** Observation time of the OpenRouter snapshot used. Absent = no pricing available. */
     openrouterObservedAt: isoUtcTimestamp.optional(),
-    /** Observation time of the DeepSWE snapshot used. Absent = no score available. */
-    deepsweObservedAt: isoUtcTimestamp.optional(),
     /** Observation time of the Cursor snapshot used. Absent = no Cursor snapshot at/before asOf. */
     cursorObservedAt: isoUtcTimestamp.optional(),
   })

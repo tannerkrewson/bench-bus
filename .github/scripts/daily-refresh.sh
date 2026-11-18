@@ -39,9 +39,8 @@ frontier_aa="$work_dir/aa.json"
 [[ -f "$frontier_aa" ]] || frontier_aa=$(find "$data_dir/snapshots/aa" -type f -name '*.json' | sort | tail -n 1)
 collect openrouter --frontier-aa "$frontier_aa"
 collect cursor
-collect deepswe
 
-if [[ ${#failed[@]} -eq 4 ]]; then
+if [[ ${#failed[@]} -eq 3 ]]; then
   echo "::error::every collector failed; nothing to publish"
   exit 1
 fi
@@ -60,26 +59,35 @@ else
   npm test
 fi
 
-# The published index owns history, because this job never commits to main.
+# The published index lists the time-travel history, because this job never
+# commits to main. Every listed view is rebuilt from the data branch with this
+# source, so a change to the derived format never strands an older bundle.
 # public/derived-data is generated, not tracked, so a fresh checkout lacks it.
+rm -rf public/derived-data
 mkdir -p public/derived-data
-if [[ -f "$site_dir/derived-data/index.json" ]]; then
-  cp -f "$site_dir"/derived-data/*.json public/derived-data/
-fi
+published_index="$site_dir/derived-data/index.json"
+[[ -f "$published_index" ]] || published_index=/dev/null
 
-# Keep a weekly point in the time-travel history. Any other outgoing latest.json
-# is simply replaced, which keeps the published site from growing by a bundle a day.
-archive_as_of=$(node -e '
-  const { entries } = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
+# Keep a weekly point in the history: an outgoing latest.json becomes a dated
+# view once it is a week newer than the last one. Any other latest.json is
+# simply replaced, which keeps the site from growing by a bundle a day. Only
+# asOf and path are read, so this works across index format versions.
+history=$(node -e '
+  const raw = require("node:fs").readFileSync(process.argv[1], "utf8").trim();
+  const entries = raw ? JSON.parse(raw).entries : [];
+  const dated = entries.filter((entry) => entry.path !== "latest.json").map((entry) => entry.asOf);
   const latest = entries.find((entry) => entry.path === "latest.json");
-  const dated = entries.filter((entry) => entry.path !== "latest.json").map((entry) => Date.parse(entry.asOf));
   const week = 7 * 24 * 60 * 60 * 1000;
-  if (latest && Date.parse(latest.asOf) - Math.max(0, ...dated) >= week) console.log(latest.asOf);
-' public/derived-data/index.json)
-if [[ -n "$archive_as_of" ]]; then
-  archive_name=$(sed -E 's/[-:]//g; s/\.[0-9]+//' <<<"$archive_as_of")
-  npm run -s derive -- --data-dir "$data_dir" --out-dir public/derived-data --as-of "$archive_as_of" --name "$archive_name"
-fi
+  const newestDated = Math.max(0, ...dated.map((asOf) => Date.parse(asOf)));
+  if (latest && Date.parse(latest.asOf) - newestDated >= week) dated.push(latest.asOf);
+  console.log(dated.join("\n"));
+' "$published_index")
+mapfile -t history_as_of <<<"$history"
+for as_of in "${history_as_of[@]}"; do
+  [[ -n "$as_of" ]] || continue
+  name=$(sed -E 's/[-:]//g; s/\.[0-9]+//' <<<"$as_of")
+  npm run -s derive -- --data-dir "$data_dir" --out-dir public/derived-data --as-of "$as_of" --name "$name"
+done
 npm run -s derive -- --data-dir "$data_dir" --out-dir public/derived-data
 # The native bundler has segfaulted intermittently; a clean rebuild succeeds.
 npm run -s build || npm run -s build

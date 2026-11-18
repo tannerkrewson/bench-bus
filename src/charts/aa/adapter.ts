@@ -1,4 +1,4 @@
-import type { DerivedAaChartRecord } from "../../schemas";
+import { AA_EVALUATIONS, type AaEvaluation, type DerivedAaChartRecord } from "../../schemas";
 import type {
   BenchmarkChartAdapter,
   PlottablePoint,
@@ -23,8 +23,8 @@ import {
 /** URL/namespace id of the Artificial Analysis chart. */
 export const AA_BENCHMARK_ID = "aa";
 export const AA_SCORE_SOURCE_CONTROL_ID = "scoreSource";
-
-type AaScoreSource = "aa" | "deepswe";
+/** Score-source value for the Artificial Analysis Intelligence Index. */
+export const AA_INTELLIGENCE_INDEX_SOURCE = "intelligenceIndex";
 
 /**
  * Confirmed AA -> OpenRouter identities from the committed alias mapping,
@@ -59,17 +59,33 @@ const PRICING_MODE_CONTROL = {
   ],
 } as const;
 
-const SCORE_SOURCE_CONTROL = {
+/**
+ * The benchmark plotted on the vertical axis: the Intelligence Index or one of
+ * the current AA evaluations. The section shows this picker beside the chart
+ * title rather than inside Settings.
+ */
+export const AA_SCORE_SOURCE_CONTROL = {
   kind: "select",
   id: AA_SCORE_SOURCE_CONTROL_ID,
-  label: "Score source",
-  default: "aa",
-  description: "Choose the benchmark that supplies the graph's vertical score.",
+  label: "Benchmark",
+  default: AA_INTELLIGENCE_INDEX_SOURCE,
+  description: "Choose the Artificial Analysis benchmark plotted as the score.",
   options: [
-    { value: "aa", label: "Artificial Analysis" },
-    { value: "deepswe", label: "DeepSWE pass@1" },
+    { value: AA_INTELLIGENCE_INDEX_SOURCE, label: "Intelligence Index" },
+    ...AA_EVALUATIONS.map((evaluation) => ({ value: evaluation.id, label: evaluation.label })),
   ],
 } as const;
+
+/** The selected AA evaluation, or undefined for the Intelligence Index. */
+export function selectedAaEvaluation(controls: Readonly<PricingControlState>): AaEvaluation | undefined {
+  const source = String(controls[AA_SCORE_SOURCE_CONTROL_ID] ?? AA_SCORE_SOURCE_CONTROL.default);
+  return AA_EVALUATIONS.find((evaluation) => evaluation.id === source);
+}
+
+/** Display name of the selected benchmark. */
+export function aaScoreLabel(controls: Readonly<PricingControlState>): string {
+  return selectedAaEvaluation(controls)?.label ?? "Intelligence Index";
+}
 
 const CACHE_HIT_CONTROL = {
   kind: "slider",
@@ -92,7 +108,7 @@ const INCLUDE_FLEX_CONTROL = {
   description: "Include OpenAI's lower-cost Flex tier, which has higher latency and lower availability.",
 } as const;
 
-export const AA_CONTROL_SPECS = [SCORE_SOURCE_CONTROL, PRICING_MODE_CONTROL, CACHE_HIT_CONTROL, INCLUDE_FLEX_CONTROL] as const;
+export const AA_CONTROL_SPECS = [AA_SCORE_SOURCE_CONTROL, PRICING_MODE_CONTROL, CACHE_HIT_CONTROL, INCLUDE_FLEX_CONTROL] as const;
 
 function includeFlexFromControls(controls: Readonly<PricingControlState>): boolean {
   return controls[INCLUDE_FLEX_CONTROL.id] === true || controls[INCLUDE_FLEX_CONTROL.id] === "true";
@@ -106,19 +122,27 @@ function providerLabel(winner: ReturnType<typeof selectCheapestProvider>): strin
   return `${winner.providerName}${tier} ($${winner.totalCostUsd.toFixed(2)})`;
 }
 
+/**
+ * Plotted score for the selected benchmark: pass rates become percentages,
+ * index scores keep their own points. Null when AA has not run it.
+ */
 function scoreForSource(record: DerivedAaChartRecord, controls: Readonly<PricingControlState>): number | null {
-  const source = String(controls[AA_SCORE_SOURCE_CONTROL_ID] ?? SCORE_SOURCE_CONTROL.default) as AaScoreSource;
-  if (source === "deepswe") {
-    const score = record.scoreSources.deepSwePassAt1;
-    return score === undefined ? null : score * 100;
-  }
-  return record.scoreSources.artificialAnalysis;
+  const evaluation = selectedAaEvaluation(controls);
+  if (!evaluation) return record.intelligenceIndex;
+  const score = record.evaluations[evaluation.id];
+  if (score === undefined) return null;
+  return evaluation.unit === "rate" ? score * 100 : score;
 }
 
+/** The chart matches "score" to format percentage ticks. */
 export function aaYAxisLabel(controls: Readonly<PricingControlState>): string {
-  return String(controls[AA_SCORE_SOURCE_CONTROL_ID] ?? SCORE_SOURCE_CONTROL.default) === "deepswe"
-    ? "DeepSWE pass@1 (%)"
-    : "Intelligence Index";
+  const evaluation = selectedAaEvaluation(controls);
+  if (!evaluation) return "Intelligence Index";
+  return evaluation.unit === "rate" ? `${evaluation.label} score (%)` : `${evaluation.label} Index`;
+}
+
+function formatScore(point: PlottablePoint, controls: Readonly<PricingControlState>): string {
+  return selectedAaEvaluation(controls)?.unit === "rate" ? `${point.y.toFixed(1)}%` : point.y.toFixed(1);
 }
 
 function aaListedSavingsDiscount(
@@ -150,8 +174,10 @@ function aaListedSavingsDiscount(
 }
 
 /**
- * Real Artificial Analysis adapter: Intelligence Index (Y) versus the
- * estimated cost of the actual canonical benchmark workload (X).
+ * Real Artificial Analysis adapter: the selected AA benchmark score (Y)
+ * versus the estimated cost of the actual canonical Intelligence Index
+ * workload (X). AA publishes per-evaluation token counts only for a few
+ * models, so every benchmark keeps the Intelligence Index workload cost.
  */
 export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
   benchmarkId: AA_BENCHMARK_ID,
@@ -160,7 +186,6 @@ export const aaAdapter: BenchmarkChartAdapter<DerivedAaChartRecord> = {
   sourceLinks: [
     { label: "Artificial Analysis", href: "https://artificialanalysis.ai/" },
     { label: "OpenRouter", href: "https://openrouter.ai/" },
-    { label: "DeepSWE", href: "https://deepswe.datacurve.ai/artifacts/v1/leaderboard-live.json" },
   ],
   xAxisLabel: "Estimated Intelligence Index workload cost (USD)",
   yAxisLabel: "Intelligence Index",
@@ -246,12 +271,8 @@ export function aaControlledTooltipLines(
   controls: Readonly<PricingControlState>,
 ): readonly TooltipLine[] {
   const mode = String(controls["pricingMode"] ?? PRICING_MODE_CONTROL.default);
-  const scoreSource = String(controls[AA_SCORE_SOURCE_CONTROL_ID] ?? SCORE_SOURCE_CONTROL.default);
   const lines: TooltipLine[] = [
-    {
-      label: scoreSource === "deepswe" ? "DeepSWE pass@1" : "Intelligence Index",
-      value: scoreSource === "deepswe" ? `${(point.y / 100).toFixed(3)} (${point.y.toFixed(1)}%)` : point.y.toFixed(1),
-    },
+    { label: aaScoreLabel(controls), value: formatScore(point, controls) },
     { label: "Est. workload cost", value: `$${point.x.toFixed(2)}` },
   ];
   if (mode === "cheapest") {
