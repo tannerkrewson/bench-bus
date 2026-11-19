@@ -4,7 +4,7 @@ export const AA_DEFAULT_COST_MODE = "intelligence-vs-cost-per-task" as const;
 /**
  * V5-era comparison set (reviewed 2026-11-17). Effort variants are discovered
  * from these exact source identities. The live score-and-cost Pareto frontier
- * is always added. Gemini models enter the default view through that frontier.
+ * is always added. Gemini also has a frontier within its own lineup.
  * Unscored/retired models are never synthesized from an older index version.
  */
 export const AA_DEFAULT_MODEL_SLUGS = [

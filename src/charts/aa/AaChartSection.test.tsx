@@ -379,7 +379,7 @@ describe("AaChartSection", () => {
     dispose();
   });
 
-  it("shows Gemini variants by default only when they are on the current score and cost frontier", () => {
+  it("keeps Gemini's own score and cost frontier even when another vendor wins overall", () => {
     const model = (slug: string, name: string, price: number, index: number, frontierCode20: number) => ({
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
       slug,
@@ -393,8 +393,8 @@ describe("AaChartSection", () => {
       model("gemini-4-hydrogen", "Gemini 4 Hydrogen (Xhigh)", 1, 54, 0.39),
       model("gemini-4-argon", "Gemini 4 Argon (High)", 2, 50, 0.25),
       model("gemini-4-neon-high", "Gemini 4 Neon (High)", 3, 59, 0.43),
-      model("gpt-6-2-sol", "GPT-6.2 Sol", 3, 60, 0.42),
-      model("gemini-4-carbon", "Gemini 4 Carbon (High)", 4, 60, 0.40),
+      model("gpt-6-2-sol", "GPT-6.2 Sol", 0.5, 62, 0.46),
+      model("gemini-4-carbon", "Gemini 4 Carbon (High)", 4, 58, 0.45),
       model("gemini-4-neon", "Gemini 4 Neon (Xhigh)", 5, 61, 0.44),
     ];
     const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
@@ -402,13 +402,13 @@ describe("AaChartSection", () => {
       <AaChartSection records={() => records} onStateChange={(state) => states.push(state)} />
     ));
     const selectedGeminis = () => states.at(-1)?.selectedIds.filter((id) => id.startsWith("gemini-"));
-    expect(selectedGeminis()).toEqual(["gemini-4-hydrogen", "gemini-4-neon"]);
+    expect(selectedGeminis()).toEqual(["gemini-4-hydrogen", "gemini-4-neon-high", "gemini-4-neon"]);
+    expect(container.querySelector("[data-testid='model-list']")?.textContent).toContain("Gemini 4 Carbon");
 
     const scoreSource = container.querySelector<HTMLSelectElement>("[data-testid='aa-benchmark-select']")!;
     scoreSource.value = "frontierCode20";
     scoreSource.dispatchEvent(new Event("change", { bubbles: true }));
-    expect(selectedGeminis()).toEqual(["gemini-4-hydrogen", "gemini-4-neon-high", "gemini-4-neon"]);
-    expect(container.querySelector("[data-testid='model-list']")?.textContent).toContain("Gemini 4 Carbon");
+    expect(selectedGeminis()).toEqual(["gemini-4-hydrogen", "gemini-4-neon-high", "gemini-4-carbon"]);
     dispose();
   });
 
@@ -502,7 +502,7 @@ describe("AaChartSection", () => {
     dispose();
   });
 
-  it("does not automatically show uncurated newly discovered models", () => {
+  it("keeps newly discovered models off the defaults unless they qualify for a frontier", () => {
     const astra = {
       ...AA_RECORD_UNPLOTTABLE,
       slug: "gpt-6-astra",
@@ -562,7 +562,7 @@ describe("AaChartSection", () => {
     expect(selected).toContain("gpt-6-astra-low");
     expect(selected).toContain("gpt-6-astra-high");
     expect(selected).not.toContain("claude-new-model");
-    expect(selected).not.toContain("gemini-new-model");
+    expect(selected).toContain("gemini-new-model");
     expect(selected).not.toContain("unrelated-model");
     dispose();
   });

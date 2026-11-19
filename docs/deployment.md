@@ -48,8 +48,9 @@ AA's index generation is retained in the snapshots and the derived bundle;
 the chart displays it when known. V4 scores and token workloads cannot fill
 missing V5 rows. The default selection includes curated releases and the
 score and cost frontier for the selected benchmark and pricing settings.
-Gemini variants enter the default selection through the frontier and remain
-selectable when another model offers a better score and cost tradeoff.
+The default also includes the frontier within the Gemini lineup, so a Gemini
+variant stays visible when no other Gemini offers a better score and cost
+tradeoff. Other variants remain selectable.
 Historical aliases stay in the mapping for archived snapshots.
 
 Cursor's fee policy and standard rate cards were verified October 29, 2026.

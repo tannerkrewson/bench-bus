@@ -166,9 +166,15 @@ export default function AaChartSection(props: AaChartSectionProps) {
   const dynamicDefaultIds = createMemo(() => {
     // Frontier membership takes precedence over release-family hiding. Use
     // every plottable record with the current benchmark and pricing settings.
-    const frontierIds = paretoFrontier(allBuild().entries.map(({ point }) => point))
-      .map((point) => point.id);
-    return [...new Set([...curatedDefaultIds(), ...frontierIds])];
+    const points = allBuild().entries.map(({ point }) => point);
+    const frontier = paretoFrontier(points);
+    // Keep the best Gemini choices visible even when another vendor wins overall.
+    const geminiFrontier = paretoFrontier(points.filter(({ id }) => id.startsWith("gemini-")));
+    return [...new Set([
+      ...curatedDefaultIds(),
+      ...frontier.map(({ id }) => id),
+      ...geminiFrontier.map(({ id }) => id),
+    ])];
   });
   const [selectedIds, setSelectedIds] = createSignal<string[]>(
     selectionSpecified()
