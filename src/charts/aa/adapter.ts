@@ -13,8 +13,7 @@ import aliasFile from "../../collectors/openrouter/openrouter-aliases.json";
 import curatedModelFile from "../../collectors/openrouter/curated-models.json";
 import {
   AA_DEFAULT_CACHE_HIT_RATE,
-  AA_SAVINGS_TOLERANCE_RATE,
-  AA_SAVINGS_TOLERANCE_USD,
+  AA_MINIMUM_SAVINGS_RATE,
   listedCostUsd,
   selectCheapestProvider,
   weightedCostUsd,
@@ -157,10 +156,9 @@ function aaListedSavingsDiscount(
     record.canonicalTokens.output,
     cacheHitRate,
   );
-  if (preDiscountX === null || winner.totalCostUsd >= preDiscountX) return undefined;
-  const savingsUsd = preDiscountX - winner.totalCostUsd;
-  const tolerance = Math.max(AA_SAVINGS_TOLERANCE_USD, preDiscountX * AA_SAVINGS_TOLERANCE_RATE);
-  if (savingsUsd <= tolerance) return undefined;
+  if (preDiscountX === null || winner.totalCostUsd / preDiscountX > 1 - AA_MINIMUM_SAVINGS_RATE + Number.EPSILON) {
+    return undefined;
+  }
   const percentage = discountPercentageFromCosts(preDiscountX, winner.totalCostUsd);
   if (percentage === undefined) return undefined;
   return {

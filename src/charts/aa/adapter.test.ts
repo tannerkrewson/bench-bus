@@ -348,15 +348,15 @@ describe("aaAdapter.computePoint", () => {
     expect(withFlex.discount?.providerName).toBe("OpenAI (1) Flex");
   });
 
-  it("suppresses savings at the one-percent tolerance boundary", () => {
+  it.each([[9.9, false], [10, true], [10.1, true]])("only annotates a %s%% savings if it meets the minimum", (savings, annotated) => {
     const record = {
       ...AA_RECORD_PLOTTABLE_CHEAPEST,
       canonicalTokens: { input: 1_000_000, output: 1_000_000 },
       providers: [{
         providerName: "Nearly Equal Provider",
         providerSlug: "nearly-equal",
-        effectiveInputPrice: 9.9,
-        effectiveOutputPrice: 19.8,
+        effectiveInputPrice: 10 * (1 - savings / 100),
+        effectiveOutputPrice: 20 * (1 - savings / 100),
         listedInputPrice: 10,
         listedOutputPrice: 20,
         discountPercentage: 50,
@@ -364,7 +364,9 @@ describe("aaAdapter.computePoint", () => {
       listed: { price1mInputTokens: 10, price1mOutputTokens: 20, cacheHitPrice: 10 },
     };
     const point = aaAdapter.computePoint(record, controls)!;
-    expect(point.discount).toBeUndefined();
+    expect(point.x).toBeCloseTo(30 * (1 - savings / 100));
+    if (annotated) expect(point.discount?.percentage).toBeCloseTo(savings);
+    else expect(point.discount).toBeUndefined();
   });
 
   it("does not infer savings when AA listed pricing is absent", () => {

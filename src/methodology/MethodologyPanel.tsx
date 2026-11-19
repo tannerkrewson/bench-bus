@@ -47,7 +47,7 @@ export const AaMethodologyContent: Component = () => (
     </p>
     <p>
       <strong>Price savings.</strong> Arrows compare the cheapest regular effective OpenRouter provider with AA listed
-      pricing for the same workload. Near-equal costs omit the arrow. The tooltip names the winning provider.
+      pricing for the same workload. Discounts below 10% omit the savings markers. The tooltip names the winning provider.
     </p>
     <p>
       <strong>Limits.</strong> No score covers every skill. Real costs vary by task. Old views hold only Bench Bus
