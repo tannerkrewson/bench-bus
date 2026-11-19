@@ -838,7 +838,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
     dispose();
   });
 
-  it("reveals only the focused family's effort lines in the on-focus view", async () => {
+  it("keeps subtle effort paths interactive and emphasizes only the focused family", async () => {
     const { container, dispose } = mountSizedChart(() => (
       <BenchmarkScatterChart
         points={() => [
@@ -847,7 +847,7 @@ describe("BenchmarkScatterChart discount annotations", () => {
           { id: "sol-low", label: "Sol low", x: 7, y: 40, effortGroup: "sol", effort: "low" },
           { id: "sol-high", label: "Sol high", x: 9, y: 60, effortGroup: "sol", effort: "high" },
         ]}
-        connectEffortsOnFocus
+        subtleEffortConnections
         scale={() => "linear"}
         xAxisLabel={() => "Cost"}
         yAxisLabel={() => "Score"}
@@ -855,7 +855,8 @@ describe("BenchmarkScatterChart discount annotations", () => {
       />
     ));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    expect(container.querySelector("[data-testid='family-connector-hit']")).toBeNull();
+    const paths = [...container.querySelectorAll("[data-testid='family-connector-hit']")];
+    expect(paths.map((path) => path.getAttribute("stroke-width"))).toEqual(["6", "6"]);
     expect(container.querySelector("[data-testid='focused-connector']")).toBeNull();
     const label = container.querySelector<HTMLElement>("[data-testid='model-label'][data-model-id='neon-high']")!;
     label.focus();

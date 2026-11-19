@@ -435,7 +435,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
                     showFrontier={showFrontier}
                     showCrowns={showCrowns}
                     showDiscounts={showDiscounts}
-                    connectEffortsOnFocus
+                    subtleEffortConnections
                     compactDiscountLabels
                     xAxisLabel={() => aaAdapter.xAxisLabel}
                     yAxisLabel={() => aaYAxisLabel(controls())}
@@ -457,7 +457,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
               </div>
             </Show>
             <div class="mt-2 flex flex-wrap items-center justify-center gap-4 text-sm text-base-content/70">
-              <span>Hover or tap a model to connect its effort levels.</span>
+              <span>Hover or tap to highlight a model’s effort levels.</span>
               <Show when={showFrontier()}>
                 <div class="flex items-center gap-2" role="img" aria-label="Pareto frontier (dotted line)">
                   <span class="w-6 border-t-2 border-dashed border-primary" aria-hidden="true" />

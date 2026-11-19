@@ -39,8 +39,8 @@ export interface BenchmarkScatterChartProps {
   showFrontier?: () => boolean;
   showCrowns?: () => boolean;
   showDiscounts?: () => boolean;
-  /** Reveal effort connections only while inspecting a model. */
-  connectEffortsOnFocus?: boolean;
+  /** Keep effort paths visible beneath the dots and emphasize the active model. */
+  subtleEffortConnections?: boolean;
   compactDiscountLabels?: boolean;
   height?: number;
   /** Hover changes only when the pointer is within the hit radius of a dot. */
@@ -404,7 +404,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   const [hoveredCrownId, setHoveredCrownId] = createSignal<string | null>(null);
   const [hoveredLabelId, setHoveredLabelId] = createSignal<string | null>(null);
   const focusedModelId = createMemo(() =>
-    hoveredLabelId() ?? (props.connectEffortsOnFocus ? hoveredAxisReadout()?.id ?? null : null),
+    hoveredLabelId() ?? (props.subtleEffortConnections ? hoveredAxisReadout()?.id ?? null : null),
   );
   const [hoveredConnectorFamilyId, setHoveredConnectorFamilyId] = createSignal<string | null>(null);
   const clearHoveredPoint = () => {
@@ -851,7 +851,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       left2: discount.effectiveLeft,
       top2: discount.top,
     }));
-    const familyLines = props.connectEffortsOnFocus ? [] : currentSeries.variantGroups.flatMap((group) => {
+    const familyLines = props.subtleEffortConnections ? [] : currentSeries.variantGroups.flatMap((group) => {
       const positions = group.members
         .map((member) => {
           const index = currentSeries.ids.indexOf(member.id);
@@ -1280,8 +1280,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         ...currentSeries.variantGroups.map((group) => ({
           label: `${group.baseLabel} effort variants`,
           stroke: groupColor(group.key, styles.dark),
-          width: 1.5,
-          alpha: props.connectEffortsOnFocus ? 0 : 0.62,
+          width: props.subtleEffortConnections ? 1.25 : 1.5,
+          alpha: props.subtleEffortConnections ? 0.32 : 0.62,
           points: { show: false },
         })),
         ...pointGroups.map((groupKey) => {
@@ -1757,7 +1757,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     // This dependency is the synchronization boundary between uPlot's
     // imperative data lifecycle and Solid's declarative SVG overlays.
     plotRevision();
-    if (props.connectEffortsOnFocus || !plot) return [] as { x1: number; y1: number; x2: number; y2: number; representativeId: string }[];
+    if (!plot) return [] as { x1: number; y1: number; x2: number; y2: number; representativeId: string }[];
     const currentPlot = plot;
     return currentSeries.variantGroups.flatMap((group) => {
       const points = group.members
@@ -1794,7 +1794,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   const focusedGeometry = createMemo(() => {
     plotRevision();
     const id = focusedModelId();
-    if (id === null || !plot || (!props.connectEffortsOnFocus && !labelPositions().some((label) => label.id === id))) return null;
+    if (id === null || !plot || (!props.subtleEffortConnections && !labelPositions().some((label) => label.id === id))) return null;
     const index = currentSeries.ids.indexOf(id);
     if (index < 0) return null;
     const currentPlot = plot;
@@ -2147,7 +2147,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
               x2={segment.x2}
               y2={segment.y2}
               stroke="transparent"
-              stroke-width="12"
+              stroke-width={props.subtleEffortConnections ? 6 : 12}
               style={{ "pointer-events": "stroke" }}
               data-testid="family-connector-hit"
               data-model-id={segment.representativeId}
