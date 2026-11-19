@@ -363,7 +363,7 @@ describe("AaChartSection", () => {
     expect(AA_DEFAULT_MODEL_SLUGS).toEqual(expect.arrayContaining([
       "gpt-6-luna", "gpt-6-1-terra", "gpt-6-2-sol", "gpt-6-2-astra",
       "claude-haiku-5-5", "claude-opus-5-5", "claude-sonnet-5-5",
-      "gemini-4-argon", "gemini-4-carbon", "grok-4-7", "deepseek-v4-1-flash-1017",
+      "grok-4-7", "deepseek-v4-1-flash-1017",
       "mimo-v2-6-flash", "kimi-k3-1-pro",
     ]));
     for (const retiredDefault of [
@@ -379,13 +379,43 @@ describe("AaChartSection", () => {
     dispose();
   });
 
+  it("shows Gemini variants by default only when they are on the current score and cost frontier", () => {
+    const model = (slug: string, name: string, price: number, index: number, frontierCode20: number) => ({
+      ...AA_RECORD_PLOTTABLE_CHEAPEST,
+      slug,
+      name,
+      intelligenceIndex: index,
+      evaluations: { frontierCode20 },
+      providers: [],
+      listed: { price1mInputTokens: price, price1mOutputTokens: price, cacheHitPrice: price },
+    });
+    const records = [
+      model("gemini-4-hydrogen", "Gemini 4 Hydrogen (Xhigh)", 1, 54, 0.39),
+      model("gemini-4-argon", "Gemini 4 Argon (High)", 2, 50, 0.25),
+      model("gemini-4-neon-high", "Gemini 4 Neon (High)", 3, 59, 0.43),
+      model("gpt-6-2-sol", "GPT-6.2 Sol", 3, 60, 0.42),
+      model("gemini-4-carbon", "Gemini 4 Carbon (High)", 4, 60, 0.40),
+      model("gemini-4-neon", "Gemini 4 Neon (Xhigh)", 5, 61, 0.44),
+    ];
+    const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
+    const { container, dispose } = mount(() => (
+      <AaChartSection records={() => records} onStateChange={(state) => states.push(state)} />
+    ));
+    const selectedGeminis = () => states.at(-1)?.selectedIds.filter((id) => id.startsWith("gemini-"));
+    expect(selectedGeminis()).toEqual(["gemini-4-hydrogen", "gemini-4-neon"]);
+
+    const scoreSource = container.querySelector<HTMLSelectElement>("[data-testid='aa-benchmark-select']")!;
+    scoreSource.value = "frontierCode20";
+    scoreSource.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(selectedGeminis()).toEqual(["gemini-4-hydrogen", "gemini-4-neon-high", "gemini-4-neon"]);
+    expect(container.querySelector("[data-testid='model-list']")?.textContent).toContain("Gemini 4 Carbon");
+    dispose();
+  });
+
   it("hides configured current releases while following future family releases", () => {
     const releaseScores: Record<string, number> = {
-      "gemini-2-5-pro": 50,
-      "gemini-3-1-pro-preview": 55,
-      "gemini-3-2-pro": 60,
       "minimax-m3": 50,
-      "minimax-m4": 60,
+      "minimax-m4": 61,
       "mimo-v2-5-0424": 50,
       "mimo-v2-5-pro": 55,
       "mimo-v2-6-pro": 60,
@@ -399,9 +429,6 @@ describe("AaChartSection", () => {
       intelligenceIndex: releaseScores[slug] ?? 50,
     });
     const records = [
-      release("gemini-2-5-pro", "Gemini 2.5 Pro"),
-      release("gemini-3-1-pro-preview", "Gemini 3.1 Pro Preview"),
-      release("gemini-3-2-pro", "Gemini 3.2 Pro"),
       release("minimax-m3", "MiniMax-M3"),
       release("minimax-m4", "MiniMax-M4"),
       release("mimo-v2-5-0424", "MiMo-V2.5"),
@@ -413,9 +440,6 @@ describe("AaChartSection", () => {
       <AaChartSection records={() => records} onStateChange={(state) => states.push(state)} />
     ));
     const selected = states[states.length - 1]?.selectedIds ?? [];
-    expect(selected).not.toContain("gemini-2-5-pro");
-    expect(selected).not.toContain("gemini-3-1-pro-preview");
-    expect(selected).toContain("gemini-3-2-pro");
     expect(selected).not.toContain("minimax-m3");
     expect(selected).toContain("minimax-m4");
     expect(selected).not.toContain("mimo-v2-5-0424");

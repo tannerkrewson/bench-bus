@@ -43,6 +43,7 @@ export const AA_SOURCE_PAGE_SLUGS = [
   "gemini-4-argon",
   "gemini-4-carbon",
   "gemini-4-hydrogen",
+  "gemini-4-neon",
   // xAI
   "grok-4-7",
   // DeepSeek

@@ -46,8 +46,10 @@ Collectors and snapshot storage validate and fail closed. Do not publish a
 failed collection or fabricate missing benchmark scores/provider prices.
 AA's index generation is retained in the snapshots and the derived bundle;
 the chart displays it when known. V4 scores and token workloads cannot fill
-missing V5 rows. Current defaults follow relevant releases plus the complete
-cheapest-provider frontier; other currently scored models remain selectable.
+missing V5 rows. The default selection includes curated releases and the
+score and cost frontier for the selected benchmark and pricing settings.
+Gemini variants enter the default selection through the frontier and remain
+selectable when another model offers a better score and cost tradeoff.
 Historical aliases stay in the mapping for archived snapshots.
 
 Cursor's fee policy and standard rate cards were verified October 29, 2026.

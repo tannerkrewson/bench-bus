@@ -106,16 +106,13 @@ export default function AaChartSection(props: AaChartSectionProps) {
   const allBuild = createMemo(() =>
     buildChartPlot(visibleRecords(), aaAdapter, controls(), ""),
   );
-  const dynamicDefaultIds = createMemo(() => {
+  const curatedDefaultIds = createMemo(() => {
     const listedBuild = buildChartPlot(
       visibleRecords(),
       aaAdapter,
       { ...defaultControls(), pricingMode: "listed", cacheHitRate: AA_DEFAULT_CACHE_HIT_RATE },
       "",
     );
-    const openRouterBuild = buildChartPlot(visibleRecords(), aaAdapter, defaultControls(), "");
-    const frontierIds = paretoFrontier(openRouterBuild.entries.map(({ point }) => point))
-      .map((point) => point.id);
     // Keep the initial graph intentionally curated. Configured release
     // families discover all matching source rows, then latestModelVersionIds
     // keeps only the newest plottable release while unrelated discoveries
@@ -161,23 +158,25 @@ export default function AaChartSection(props: AaChartSectionProps) {
       })
       .map((record) => record.slug);
     const candidateIds = [...curatedIds, ...discoveredVariants, ...discoveredReleases];
-    const policyDefaultIds = latestModelVersionIds(
+    return latestModelVersionIds(
       listedBuild.entries.map(({ point }) => ({ id: point.id, label: point.label })),
       candidateIds,
     );
-    // Frontier membership takes precedence over release-family hiding: the
-    // cheapest OpenRouter frontier can include an older release that current
-    // default-version rules otherwise suppress. Recompute from every loaded
-    // record so defaults follow changing prices and scores automatically.
-    return [...new Set([...policyDefaultIds, ...frontierIds])];
+  });
+  const dynamicDefaultIds = createMemo(() => {
+    // Frontier membership takes precedence over release-family hiding. Use
+    // every plottable record with the current benchmark and pricing settings.
+    const frontierIds = paretoFrontier(allBuild().entries.map(({ point }) => point))
+      .map((point) => point.id);
+    return [...new Set([...curatedDefaultIds(), ...frontierIds])];
   });
   const [selectedIds, setSelectedIds] = createSignal<string[]>(
     selectionSpecified()
       ? [...(props.initialState?.selectedIds ?? [])]
       : dynamicDefaultIds(),
   );
-  // A default selection follows each newly loaded snapshot. Once a URL or user
-  // interaction specifies a selection, it remains untouched by snapshot updates.
+  // Defaults follow the loaded snapshot and chart settings until the URL or
+  // the model picker specifies a selection.
   createEffect(() => {
     const defaults = dynamicDefaultIds();
     if (!selectionSpecified()) setSelectedIds(defaults);
