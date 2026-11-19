@@ -189,17 +189,14 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
   };
   createEffect(emitState);
 
-  const toggleSelect = (id: string) => {
-    // Capture both values before changing selectionSpecified: Solid applies
-    // signal writes synchronously, so reading it inside the updater would make
-    // the first toggle discard the adapter's default selection.
-    const wasSelectionSpecified = selectionSpecified();
-    const current = effectiveSelectedIds();
+  const setSelection = (ids: readonly string[], selected: boolean) => {
+    const current = new Set(selectionSpecified() ? selectedIds() : effectiveSelectedIds());
+    for (const id of ids) {
+      if (selected) current.add(id);
+      else current.delete(id);
+    }
     setSelectionSpecified(true);
-    setSelectedIds((prev) => {
-      const source = wasSelectionSpecified ? prev : current;
-      return source.includes(id) ? source.filter((x) => x !== id) : [...source, id];
-    });
+    setSelectedIds([...current]);
   };
 
   const resetDefault = () => {
@@ -264,7 +261,7 @@ export default function BenchmarkChartSection<TRecord>(props: BenchmarkChartSect
                 onResetDefault={resetDefault}
                 query={query}
                 onQueryChange={setQuery}
-                onToggleSelect={toggleSelect}
+                onSetSelection={setSelection}
                 unplottableLabel={() => props.adapter.unplottableLabel?.(controls()) ?? "no pricing"}
                 unplottableDescription={() =>
                   props.adapter.unplottableDescription?.(controls()) ??

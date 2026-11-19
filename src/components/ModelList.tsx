@@ -10,7 +10,8 @@ export interface ModelListProps {
   /** All points currently available under the active pricing settings. */
   points: () => readonly PlottablePoint[];
   selectedIds: () => readonly string[];
-  onToggleSelect: (id: string) => void;
+  onSetSelection: (ids: readonly string[], selected: boolean) => void;
+  groupEffortsOnly?: boolean;
   /** IDs used by the benchmark's initial curated/default view. */
   defaultSelectedIds?: () => readonly string[];
   onResetDefault?: () => void;
@@ -54,7 +55,7 @@ const EFFORT_ORDER: Record<string, number> = {
  * is only created when at least two effort variants are present, so ordinary
  * models retain their familiar individual row in combined mode.
  */
-function modelItems(points: readonly PlottablePoint[]): ModelListItem[] {
+function modelItems(points: readonly PlottablePoint[], groupEffortsOnly: boolean): ModelListItem[] {
   const sorted = [...points].sort((a, b) => a.label.localeCompare(b.label));
   const groups = new Map<string, { label: string; members: PlottablePoint[]; colorKey: string }>();
   const individual: ModelListItem[] = [];
@@ -64,7 +65,7 @@ function modelItems(points: readonly PlottablePoint[]): ModelListItem[] {
     // An effortGroup is also assigned to ordinary base models by adapters, so
     // it cannot by itself make a selector family. Only labels with an explicit
     // reasoning-effort suffix participate in combined rows.
-    if (!parts) {
+    if (!parts && !groupEffortsOnly) {
       individual.push({
         key: `model:${point.id}`,
         label: point.label,
@@ -74,9 +75,10 @@ function modelItems(points: readonly PlottablePoint[]): ModelListItem[] {
       });
       continue;
     }
-    const colorKey = point.effortGroup ?? modelGroupKey(parts.baseLabel, point.id);
+    const baseLabel = parts?.baseLabel ?? point.label;
+    const colorKey = point.effortGroup ?? modelGroupKey(baseLabel, point.id);
     const group = groups.get(colorKey) ?? {
-      label: parts.baseLabel,
+      label: baseLabel,
       members: [],
       colorKey,
     };
@@ -130,7 +132,7 @@ export default function ModelList(props: ModelListProps) {
     else setLocalQuery(value);
   };
   const sorted = createMemo(() => [...props.points()].sort((a, b) => a.label.localeCompare(b.label)));
-  const items = createMemo(() => modelItems(sorted()));
+  const items = createMemo(() => modelItems(sorted(), props.groupEffortsOnly ?? false));
   const groupColors = createMemo(() => modelGroupColors(
     sorted().map((point) => point.effortGroup ?? modelGroupKey(point.label, point.id)),
     darkTheme(),
@@ -205,10 +207,7 @@ export default function ModelList(props: ModelListProps) {
   const clearSelection = (event: MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    // Snapshot before toggling: the first toggle can switch from the adapter's
-    // implicit default selection to an explicit selection synchronously.
-    const selectedIds = [...props.selectedIds()];
-    for (const id of selectedIds) props.onToggleSelect(id);
+    props.onSetSelection(props.selectedIds(), false);
   };
   const toggleCombinedMode = () => {
     const scrollTop = modelMenu?.scrollTop ?? 0;
@@ -221,12 +220,7 @@ export default function ModelList(props: ModelListProps) {
   const toggleItem = (item: ModelListItem) => {
     const selected = new Set(props.selectedIds());
     const allSelected = item.members.every((point) => selected.has(point.id));
-    // Add only missing members or remove only selected members. This keeps a
-    // partially selected family deterministic and preserves unrelated URL/user
-    // selections exactly as they were.
-    for (const point of item.members) {
-      if (selected.has(point.id) === allSelected) props.onToggleSelect(point.id);
-    }
+    props.onSetSelection(item.members.map((point) => point.id), !allSelected);
   };
   const itemColor = (item: ModelListItem) => {
     const point = item.members[0]!;
@@ -273,25 +267,27 @@ export default function ModelList(props: ModelListProps) {
             </button>
           </div>
         </div>
-        <div class="mb-2 flex items-center justify-between gap-3 rounded-box border border-base-300 px-2 py-1.5" data-testid="model-effort-mode">
-          <span>
-            <span class="block text-sm font-medium">Effort selection</span>
-            <span class="block text-xs text-base-content/60">
-              {combinedMode() ? "Combined model-family variants" : "Individual effort variants"}
+        <Show when={!props.groupEffortsOnly}>
+          <div class="mb-2 flex items-center justify-between gap-3 rounded-box border border-base-300 px-2 py-1.5" data-testid="model-effort-mode">
+            <span>
+              <span class="block text-sm font-medium">Effort selection</span>
+              <span class="block text-xs text-base-content/60">
+                {combinedMode() ? "Combined model-family variants" : "Individual effort variants"}
+              </span>
             </span>
-          </span>
-          <button
-            id={`${props.searchId ?? "model-list-search"}-effort-mode`}
-            type="button"
-            role="switch"
-            class="btn btn-outline btn-xs min-w-20 shrink-0"
-            aria-checked={combinedMode()}
-            aria-label="Combine model-family effort variants"
-            onClick={toggleCombinedMode}
-          >
-            {combinedMode() ? "Combined" : "Individual"}
-          </button>
-        </div>
+            <button
+              id={`${props.searchId ?? "model-list-search"}-effort-mode`}
+              type="button"
+              role="switch"
+              class="btn btn-outline btn-xs min-w-20 shrink-0"
+              aria-checked={combinedMode()}
+              aria-label="Combine model-family effort variants"
+              onClick={toggleCombinedMode}
+            >
+              {combinedMode() ? "Combined" : "Individual"}
+            </button>
+          </div>
+        </Show>
         <label class="mb-2 block" for={props.searchId ?? "model-list-search"}>
           <span class="sr-only">Filter models</span>
           <input

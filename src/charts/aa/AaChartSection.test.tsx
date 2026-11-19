@@ -401,14 +401,41 @@ describe("AaChartSection", () => {
     const { container, dispose } = mount(() => (
       <AaChartSection records={() => records} onStateChange={(state) => states.push(state)} />
     ));
-    const selectedGeminis = () => states.at(-1)?.selectedIds.filter((id) => id.startsWith("gemini-"));
-    expect(selectedGeminis()).toEqual(["gemini-4-hydrogen", "gemini-4-neon-high", "gemini-4-neon"]);
+    const selectedGeminis = () => states.at(-1)?.selectedIds.filter((id) => id.startsWith("gemini-")).sort();
+    expect(selectedGeminis()).toEqual(["gemini-4-hydrogen", "gemini-4-neon", "gemini-4-neon-high"]);
     expect(container.querySelector("[data-testid='model-list']")?.textContent).toContain("Gemini 4 Carbon");
 
     const scoreSource = container.querySelector<HTMLSelectElement>("[data-testid='aa-benchmark-select']")!;
     scoreSource.value = "frontierCode20";
     scoreSource.dispatchEvent(new Event("change", { bubbles: true }));
-    expect(selectedGeminis()).toEqual(["gemini-4-hydrogen", "gemini-4-neon-high", "gemini-4-carbon"]);
+    // Neon Xhigh is outscored by cheaper Carbon on FrontierCode, but Neon High
+    // earns the model a place, so both Neon efforts stay visible.
+    expect(selectedGeminis()).toEqual(["gemini-4-carbon", "gemini-4-hydrogen", "gemini-4-neon", "gemini-4-neon-high"]);
+    dispose();
+  });
+
+  it("expands a partial URL selection and lets the picker toggle only the entire model", () => {
+    const records = [
+      { ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "gemini-4-neon", name: "Gemini 4 Neon (Xhigh)" },
+      { ...AA_RECORD_PLOTTABLE_CHEAPEST, slug: "gemini-4-neon-low", name: "Gemini 4 Neon (Low)" },
+    ];
+    const states: Parameters<NonNullable<Parameters<typeof AaChartSection>[0]["onStateChange"]>>[0][] = [];
+    const { container, dispose } = mount(() => (
+      <AaChartSection
+        records={() => records}
+        initialState={{ selectedIds: ["gemini-4-neon-low"] }}
+        onStateChange={(state) => states.push(state)}
+      />
+    ));
+    expect(container.querySelector("[data-testid='model-effort-mode']")).toBeNull();
+    const checkbox = container.querySelector<HTMLInputElement>("input[aria-label='Show Gemini 4 Neon']")!;
+    const ids = () => [...(states.at(-1)?.selectedIds ?? [])].sort();
+    expect(checkbox.checked).toBe(true);
+    expect(ids()).toEqual(["gemini-4-neon", "gemini-4-neon-low"]);
+    checkbox.click();
+    expect(ids()).toEqual([]);
+    checkbox.click();
+    expect(ids()).toEqual(["gemini-4-neon", "gemini-4-neon-low"]);
     dispose();
   });
 

@@ -102,6 +102,17 @@ export default function AaChartSection(props: AaChartSectionProps) {
   const visibleRecords = createMemo(() =>
     props.records().filter((record) => !isNonReasoningModel(record.name, record.slug)),
   );
+  const effortGroupById = createMemo(() => new Map(visibleRecords().map(({ name, slug }) =>
+    [slug, modelDisplayMetadata(name, slug).groupKey] as const,
+  )));
+  const expandEffortGroups = (ids: readonly string[]): string[] => {
+    const groupsById = effortGroupById();
+    const groups = new Set(ids.map((id) => groupsById.get(id)));
+    return [...new Set([
+      ...ids,
+      ...[...groupsById].filter(([, group]) => groups.has(group)).map(([id]) => id),
+    ])];
+  };
 
   const allBuild = createMemo(() =>
     buildChartPlot(visibleRecords(), aaAdapter, controls(), ""),
@@ -170,23 +181,16 @@ export default function AaChartSection(props: AaChartSectionProps) {
     const frontier = paretoFrontier(points);
     // Keep the best Gemini choices visible even when another vendor wins overall.
     const geminiFrontier = paretoFrontier(points.filter(({ id }) => id.startsWith("gemini-")));
-    return [...new Set([
+    return expandEffortGroups([
       ...curatedDefaultIds(),
       ...frontier.map(({ id }) => id),
       ...geminiFrontier.map(({ id }) => id),
-    ])];
+    ]);
   });
-  const [selectedIds, setSelectedIds] = createSignal<string[]>(
-    selectionSpecified()
-      ? [...(props.initialState?.selectedIds ?? [])]
-      : dynamicDefaultIds(),
+  const [explicitIds, setExplicitIds] = createSignal<readonly string[]>(props.initialState?.selectedIds ?? []);
+  const selectedIds = createMemo(() =>
+    selectionSpecified() ? expandEffortGroups(explicitIds()) : dynamicDefaultIds(),
   );
-  // Defaults follow the loaded snapshot and chart settings until the URL or
-  // the model picker specifies a selection.
-  createEffect(() => {
-    const defaults = dynamicDefaultIds();
-    if (!selectionSpecified()) setSelectedIds(defaults);
-  });
   // Keep the selector filter independent from chart visibility: the selector
   // searches all records that are plottable under the active pricing settings,
   // while the chart contains only selected models.
@@ -275,14 +279,15 @@ export default function AaChartSection(props: AaChartSectionProps) {
   };
   createEffect(emitState);
 
-  const toggleSelect = (id: string) => {
+  const setSelection = (ids: readonly string[], selected: boolean) => {
+    const members = new Set(expandEffortGroups(ids));
+    const current = selectedIds();
+    setExplicitIds(selected ? [...new Set([...current, ...members])] : current.filter((id) => !members.has(id)));
     setSelectionSpecified(true);
-    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   const resetDefault = () => {
     setSelectionSpecified(false);
-    setSelectedIds(dynamicDefaultIds());
     setQuery("");
   };
 
@@ -374,7 +379,8 @@ export default function AaChartSection(props: AaChartSectionProps) {
                 onResetDefault={resetDefault}
                 query={query}
                 onQueryChange={setQuery}
-                onToggleSelect={toggleSelect}
+                onSetSelection={setSelection}
+                groupEffortsOnly
                 unplottable={() => allBuild().unplottable.map((u) => aaAdapter.identity(u.record))}
                 unplottableLabel={unscoredLabel}
                 unplottableDescription={unscoredDescription}

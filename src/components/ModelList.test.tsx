@@ -32,7 +32,7 @@ describe("ModelList effort selection", () => {
       <ModelList
         points={() => BASE_WITH_VARIANT_POINTS}
         selectedIds={() => []}
-        onToggleSelect={() => undefined}
+        onSetSelection={() => undefined}
         unplottable={() => []}
         searchId="model-test-search-base"
       />
@@ -50,7 +50,9 @@ describe("ModelList effort selection", () => {
       <ModelList
         points={() => VARIANT_POINTS}
         selectedIds={selected}
-        onToggleSelect={(id) => setSelected((ids) => ids.includes(id) ? ids.filter((value) => value !== id) : [...ids, id])}
+        onSetSelection={(members, visible) => setSelected((ids) => visible
+          ? [...new Set([...ids, ...members])]
+          : ids.filter((id) => !members.includes(id)))}
         unplottable={() => []}
         searchId="model-test-search"
       />
@@ -72,7 +74,9 @@ describe("ModelList effort selection", () => {
       <ModelList
         points={() => VARIANT_POINTS}
         selectedIds={selected}
-        onToggleSelect={(id) => setSelected((ids) => ids.includes(id) ? ids.filter((value) => value !== id) : [...ids, id])}
+        onSetSelection={(members, visible) => setSelected((ids) => visible
+          ? [...new Set([...ids, ...members])]
+          : ids.filter((id) => !members.includes(id)))}
         unplottable={() => []}
         searchId="model-test-search-2"
       />
@@ -106,7 +110,7 @@ describe("ModelList effort selection", () => {
       <ModelList
         points={() => VARIANT_POINTS}
         selectedIds={() => []}
-        onToggleSelect={() => undefined}
+        onSetSelection={() => undefined}
         unplottable={() => [{ id: "missing", label: "Missing Model" }]}
         searchId="model-test-search-3"
       />
@@ -136,7 +140,7 @@ describe("ModelList effort selection", () => {
       <ModelList
         points={() => points}
         selectedIds={() => []}
-        onToggleSelect={() => undefined}
+        onSetSelection={() => undefined}
         unplottable={() => []}
         searchId="model-test-search-colors"
       />
