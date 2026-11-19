@@ -12,6 +12,7 @@ export interface ModelListProps {
   selectedIds: () => readonly string[];
   onSetSelection: (ids: readonly string[], selected: boolean) => void;
   groupEffortsOnly?: boolean;
+  modelColor?: (groupKey: string, dark: boolean) => string | undefined;
   /** IDs used by the benchmark's initial curated/default view. */
   defaultSelectedIds?: () => readonly string[];
   onResetDefault?: () => void;
@@ -225,7 +226,7 @@ export default function ModelList(props: ModelListProps) {
   const itemColor = (item: ModelListItem) => {
     const point = item.members[0]!;
     const key = item.colorKey ?? point.effortGroup ?? modelGroupKey(point.label, point.id);
-    return groupColors().get(key) ?? modelGroupColor(key, darkTheme());
+    return props.modelColor?.(key, darkTheme()) ?? groupColors().get(key) ?? modelGroupColor(key, darkTheme());
   };
   const resetDefault = (event: MouseEvent) => {
     event.preventDefault();

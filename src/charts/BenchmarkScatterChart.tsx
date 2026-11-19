@@ -29,6 +29,8 @@ export interface BenchmarkScatterChartProps {
   points: () => readonly PlottablePoint[];
   /** Complete priced family universe used to keep colors stable as selection changes. */
   colorGroupKeys?: () => readonly string[];
+  /** Optional shared family colors calculated by the chart section. */
+  modelColor?: (groupKey: string, dark: boolean) => string | undefined;
   scale: () => XScale;
   xAxisLabel: () => string;
   yAxisLabel: () => string;
@@ -574,6 +576,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   };
 
   const groupColor = (groupKey: string, dark: boolean): string => {
+    const assigned = props.modelColor?.(groupKey, dark);
+    if (assigned) return assigned;
     const visibleGroups = [
       ...(props.colorGroupKeys?.() ?? []),
       ...currentSeries.groupKeys,
@@ -1170,6 +1174,10 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     const xAxisLabel = xAxisLabelForScale(props.xAxisLabel(), scale);
     const styles = themeStyles();
     const pointGroups = [...new Set(currentSeries.groupKeys)];
+    const seriesColor = (key: string) => {
+      const fallback = groupColor(key, styles.dark);
+      return () => props.modelColor?.(key, styles.dark) ?? fallback;
+    };
     plotStructureKey = `${currentSeries.discounts.length}|${currentSeries.variantGroups
       .map((group) => `${group.key}:${group.members.length}`)
       .join("|")}|${pointGroups.join("|")}`;
@@ -1279,13 +1287,13 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
         {},
         ...currentSeries.variantGroups.map((group) => ({
           label: `${group.baseLabel} effort variants`,
-          stroke: groupColor(group.key, styles.dark),
+          stroke: seriesColor(group.key),
           width: props.subtleEffortConnections ? 1.25 : 1.5,
           alpha: props.subtleEffortConnections ? 0.32 : 0.62,
           points: { show: false },
         })),
         ...pointGroups.map((groupKey) => {
-          const color = groupColor(groupKey, styles.dark);
+          const color = seriesColor(groupKey);
           return {
             label: `${groupKey} models`,
             stroke: color,

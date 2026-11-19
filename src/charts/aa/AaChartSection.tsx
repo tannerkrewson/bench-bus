@@ -16,6 +16,7 @@ import type {
 import { timeVaryingDiscountNote } from "../../content/discountNotes";
 import ChartControlPanel from "../../components/ChartControlPanel";
 import ModelList from "../../components/ModelList";
+import { nearbyModelColor, nearbyModelColorSlots } from "../nearbyModelColors";
 import type { DerivedAaChartRecord } from "../../schemas";
 import {
   AA_SCORE_SOURCE_CONTROL,
@@ -42,7 +43,6 @@ import {
   isNonReasoningModel,
   latestModelVersionIds,
   modelDisplayMetadata,
-  modelGroupKey,
   modelReleaseFamilyKey,
 } from "../modelMetadata";
 import MethodologyModal from "../../methodology/MethodologyModal";
@@ -205,6 +205,9 @@ export default function AaChartSection(props: AaChartSectionProps) {
       unplottable: candidate.unplottable,
     };
   });
+  const plottedPoints = createMemo(() => build().entries.map(({ point }) => point));
+  const colorSlots = createMemo(() => nearbyModelColorSlots(plottedPoints(), scale()));
+  const modelColor = (groupKey: string, dark: boolean) => nearbyModelColor(colorSlots(), groupKey, dark);
 
   // Visibility filtering is handled by `build`; unselected models are omitted
   // from the chart rather than painted as a second selection layer.
@@ -381,6 +384,7 @@ export default function AaChartSection(props: AaChartSectionProps) {
                 onQueryChange={setQuery}
                 onSetSelection={setSelection}
                 groupEffortsOnly
+                modelColor={modelColor}
                 unplottable={() => allBuild().unplottable.map((u) => aaAdapter.identity(u.record))}
                 unplottableLabel={unscoredLabel}
                 unplottableDescription={unscoredDescription}
@@ -425,10 +429,8 @@ export default function AaChartSection(props: AaChartSectionProps) {
               <div class="w-full overflow-x-auto overscroll-x-contain" data-testid="chart-scroll">
                 <div class="relative min-w-[720px] sm:min-w-0" data-testid="chart-scroll-content">
                   <BenchmarkScatterChart
-                    points={() => build().entries.map((e) => e.point)}
-                    colorGroupKeys={() => build().entries.map(({ point }) =>
-                      point.effortGroup ?? modelGroupKey(point.label, point.id),
-                    )}
+                    points={plottedPoints}
+                    modelColor={modelColor}
                     scale={scale}
                     showLabels={showLabels}
                     labelExclusionElements={() => watermarkRegion ? [watermarkRegion] : []}
