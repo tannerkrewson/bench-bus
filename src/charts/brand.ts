@@ -130,7 +130,7 @@ const WELL_KNOWN_GROUP_SLOTS: Readonly<Record<string, number>> = {
   "gpt-5-5": 5,
 };
 
-/** Stable slots for every family in the curated AA default view. */
+/** Stable slots for current and historical comparison families. */
 const STABLE_MODEL_GROUP_SLOTS: Readonly<Record<string, number>> = {
   "deepseek-v4-flash-0731": 0,
   "opus-5": 1,
@@ -152,6 +152,21 @@ const STABLE_MODEL_GROUP_SLOTS: Readonly<Record<string, number>> = {
   "minimax-m3": 16,
   "gpt-6-astra": 17,
   sonnet: 8,
+  "deepseek-v4-1-flash-1017": 0,
+  "opus-5-5": 1,
+  "grok-4-7": 2,
+  "gpt-6-1-terra": 3,
+  "haiku-5-5": 4,
+  "gpt-6-2-astra": 5,
+  "gpt-6-2-sol": 6,
+  "gemini-4-hydrogen": 7,
+  "muse-ember": 8,
+  "gpt-6-luna": 9,
+  "gemini-4-neon": 10,
+  "fable-5-2": 13,
+  "kimi-k3-1-pro": 14,
+  "sonnet-5-5": 15,
+  "mimo-v2-6-flash": 16,
 };
 
 function canonicalGroupKey(groupKey: string): string {

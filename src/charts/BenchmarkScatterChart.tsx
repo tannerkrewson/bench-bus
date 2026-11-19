@@ -39,6 +39,9 @@ export interface BenchmarkScatterChartProps {
   showFrontier?: () => boolean;
   showCrowns?: () => boolean;
   showDiscounts?: () => boolean;
+  /** Reveal effort connections only while inspecting a model. */
+  connectEffortsOnFocus?: boolean;
+  compactDiscountLabels?: boolean;
   height?: number;
   /** Hover changes only when the pointer is within the hit radius of a dot. */
   onHover?: (
@@ -389,6 +392,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   const [labelPositions, setLabelPositions] = createSignal<ReturnType<typeof layoutModelLabels>>([]);
   const [hoveredPosition, setHoveredPosition] = createSignal<{ left: number; top: number } | null>(null);
   const [hoveredAxisReadout, setHoveredAxisReadout] = createSignal<{
+    id: string;
     left: number;
     top: number;
     cost: number;
@@ -399,6 +403,9 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   } | null>(null);
   const [hoveredCrownId, setHoveredCrownId] = createSignal<string | null>(null);
   const [hoveredLabelId, setHoveredLabelId] = createSignal<string | null>(null);
+  const focusedModelId = createMemo(() =>
+    hoveredLabelId() ?? (props.connectEffortsOnFocus ? hoveredAxisReadout()?.id ?? null : null),
+  );
   const [hoveredConnectorFamilyId, setHoveredConnectorFamilyId] = createSignal<string | null>(null);
   const clearHoveredPoint = () => {
     setHoveredPosition(null);
@@ -542,7 +549,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       const point = pointById.get(id);
       if (!point) return modelLabelParts(id, null);
       const discount = props.showDiscounts?.() ?? true ? discountForPoint(point) : null;
-      return modelLabelParts(point.label, discount);
+      return modelLabelParts(point.label, discount, props.compactDiscountLabels);
     });
     currentSeries = {
       x: orderedIds.map((id) => series.x[indexById.get(id)!]!),
@@ -844,7 +851,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
       left2: discount.effectiveLeft,
       top2: discount.top,
     }));
-    const familyLines = currentSeries.variantGroups.flatMap((group) => {
+    const familyLines = props.connectEffortsOnFocus ? [] : currentSeries.variantGroups.flatMap((group) => {
       const positions = group.members
         .map((member) => {
           const index = currentSeries.ids.indexOf(member.id);
@@ -1080,6 +1087,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     const overRect = over.getBoundingClientRect();
     const parentRect = parent.getBoundingClientRect();
     setHoveredAxisReadout({
+      id: target.id,
       left: dot.left,
       top: dot.top,
       cost,
@@ -1273,7 +1281,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
           label: `${group.baseLabel} effort variants`,
           stroke: groupColor(group.key, styles.dark),
           width: 1.5,
-          alpha: 0.62,
+          alpha: props.connectEffortsOnFocus ? 0 : 0.62,
           points: { show: false },
         })),
         ...pointGroups.map((groupKey) => {
@@ -1375,7 +1383,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   const applyPlotEmphasis = () => {
     const root = container?.querySelector<HTMLElement>(".uplot");
-    const focusedId = hoveredLabelId();
+    const focusedId = focusedModelId();
     const focused = focusedId !== null;
     const pointGroupKeys = [...new Set(currentSeries.groupKeys)];
     const focusedConnectorIndex = focusedId === null
@@ -1741,7 +1749,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   createEffect(on(() => [props.xAxisLabel(), props.yAxisLabel()] as const, createPlot, { defer: true }));
 
   createEffect(() => {
-    hoveredLabelId();
+    focusedModelId();
     applyPlotEmphasis();
   });
 
@@ -1749,7 +1757,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
     // This dependency is the synchronization boundary between uPlot's
     // imperative data lifecycle and Solid's declarative SVG overlays.
     plotRevision();
-    if (!plot) return [] as { x1: number; y1: number; x2: number; y2: number; representativeId: string }[];
+    if (props.connectEffortsOnFocus || !plot) return [] as { x1: number; y1: number; x2: number; y2: number; representativeId: string }[];
     const currentPlot = plot;
     return currentSeries.variantGroups.flatMap((group) => {
       const points = group.members
@@ -1766,7 +1774,7 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
   });
 
   const isFocusedFamilyId = (id: string): boolean => {
-    const focusedId = hoveredLabelId();
+    const focusedId = focusedModelId();
     if (focusedId === null) return true;
     const group = currentSeries.variantGroups.find((candidate) =>
       candidate.members.some((member) => member.id === focusedId),
@@ -1785,9 +1793,8 @@ export default function BenchmarkScatterChart(props: BenchmarkScatterChartProps)
 
   const focusedGeometry = createMemo(() => {
     plotRevision();
-    const id = hoveredLabelId();
-    const labels = labelPositions();
-    if (id === null || !plot || !labels.some((label) => label.id === id)) return null;
+    const id = focusedModelId();
+    if (id === null || !plot || (!props.connectEffortsOnFocus && !labelPositions().some((label) => label.id === id))) return null;
     const index = currentSeries.ids.indexOf(id);
     if (index < 0) return null;
     const currentPlot = plot;

@@ -838,6 +838,35 @@ describe("BenchmarkScatterChart discount annotations", () => {
     dispose();
   });
 
+  it("reveals only the focused family's effort lines in the on-focus view", async () => {
+    const { container, dispose } = mountSizedChart(() => (
+      <BenchmarkScatterChart
+        points={() => [
+          { id: "neon-low", label: "Neon low", x: 3, y: 30, effortGroup: "neon", effort: "low" },
+          { id: "neon-high", label: "Neon high", x: 5, y: 50, effortGroup: "neon", effort: "high" },
+          { id: "sol-low", label: "Sol low", x: 7, y: 40, effortGroup: "sol", effort: "low" },
+          { id: "sol-high", label: "Sol high", x: 9, y: 60, effortGroup: "sol", effort: "high" },
+        ]}
+        connectEffortsOnFocus
+        scale={() => "linear"}
+        xAxisLabel={() => "Cost"}
+        yAxisLabel={() => "Score"}
+        height={320}
+      />
+    ));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(container.querySelector("[data-testid='family-connector-hit']")).toBeNull();
+    expect(container.querySelector("[data-testid='focused-connector']")).toBeNull();
+    const label = container.querySelector<HTMLElement>("[data-testid='model-label'][data-model-id='neon-high']")!;
+    label.focus();
+    expect(container.querySelectorAll("[data-testid='focused-connector']")).toHaveLength(1);
+    const focusedDots = [...container.querySelectorAll<SVGElement>("[data-testid='focused-model-dot']")];
+    expect(focusedDots.map((dot) => dot.dataset.modelId)).toEqual(["neon-low", "neon-high"]);
+    label.blur();
+    expect(container.querySelector("[data-testid='focused-connector']")).toBeNull();
+    dispose();
+  });
+
   it("emphasizes one family label and connector, then restores de-emphasis", async () => {
     const { container, dispose } = mountSizedChart(() => (
       <BenchmarkScatterChart

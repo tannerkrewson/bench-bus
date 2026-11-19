@@ -200,7 +200,7 @@ describe("model brand colors", () => {
     expect(keys.map((key) => dark.get(key))).toEqual(keys.map((key) => modelGroupColor(key, true)));
   });
 
-  it("keeps the curated AA default families on distinct palette slots", () => {
+  it("keeps the previous AA default families on distinct palette slots", () => {
     const keys = [
       "gpt-5-6-luna",
       "gpt-5-6-sol",
@@ -224,6 +224,17 @@ describe("model brand colors", () => {
 
     expect(new Set(modelGroupColors(keys, false).values()).size).toBe(keys.length);
     expect(new Set(modelGroupColors(keys, true).values()).size).toBe(keys.length);
+  });
+
+  it("uses a different color for each current default family in both themes", () => {
+    const keys = [
+      "deepseek-v4-1-flash-1017", "opus-5-5", "grok-4-7", "gpt-6-1-terra", "haiku-5-5",
+      "gpt-6-2-astra", "gpt-6-2-sol", "gemini-4-hydrogen", "muse-ember", "gpt-6-luna",
+      "gemini-4-neon", "fable-5-2", "kimi-k3-1-pro", "sonnet-5-5", "mimo-v2-6-flash",
+    ];
+    for (const dark of [false, true]) {
+      expect(new Set(modelGroupColors(keys, dark).values()).size).toBe(keys.length);
+    }
   });
 
   it("keeps overflow colors deterministic instead of collapsing to blue", () => {

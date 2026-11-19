@@ -133,13 +133,14 @@ export function discountDetailLines(
 export function modelLabelParts(
   label: string,
   discount: PriceDiscountAnnotation | null,
+  compactDiscount = false,
 ): ModelLabelParts {
   if (!discount) return { mainLabel: label, accessibleLabel: label };
-  const discountLabel = `(${roundDiscountPercent(discount.percentage)}% discount)`;
+  const percentage = `${roundDiscountPercent(discount.percentage)}%`;
   return {
     mainLabel: label,
-    discountLabel,
-    accessibleLabel: `${label} ${discountLabel}`,
+    discountLabel: compactDiscount ? `−${percentage}` : `(${percentage} discount)`,
+    accessibleLabel: `${label} (${percentage} discount)`,
   };
 }
 
