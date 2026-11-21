@@ -37,8 +37,13 @@ function profile(
   };
 }
 
-// Standard rate cards, verified 2026-10-29 at cursor.com/docs/models-and-pricing.
-// Long-context/fast/regional surcharges cannot be inferred from aggregate evals.
+// Standard rate cards from cursor.com/docs/models-and-pricing. The 2026-10-29
+// verification covers the original entries; Fable 5.2 and the Gemini 4 Neon,
+// Carbon, and Hydrogen entries were checked against the docs table on
+// 2026-11-21. Long-context/fast/regional surcharges cannot be inferred from
+// aggregate evals.
+// Unpriced third-party releases are not plotted in the default view, so every
+// newly published model needs its rate card here before it can appear.
 const PROFILE_BY_MODEL_ID: Readonly<Record<string, CursorTokenRateProfile>> = {
   "gpt-5-6-luna": profile(0.2, 0.02, 0.25, 1.2),
   "gpt-5-6-sol": profile(4, 0.4, 5, 20),
@@ -49,12 +54,18 @@ const PROFILE_BY_MODEL_ID: Readonly<Record<string, CursorTokenRateProfile>> = {
   "sonnet-5-5": profile(2, 0.1, 2.5, 10),
   "fable-5": profile(10, 1, 12.5, 50),
   "fable-5-1": profile(10, 0.25, 12.5, 50),
+  "fable-5-2": profile(8, 0.2, 10, 40),
   "haiku-5-5": profile(0.1, 0.01, 0.125, 0.5),
   "deepseek-v4-1-flash-1017": profile(0.3, 0.006, undefined, 1.2),
   "gemini-3-1-pro": profile(2, 0.2, undefined, 12),
   "gemini-3-7-flash": profile(0.75, 0.075, undefined, 3.5),
   "gemini-3-8-flash": profile(0.75, 0.075, undefined, 3.75),
   "gemini-4-argon": profile(2, 0.1, undefined, 10),
+  // Introductory rates through 2026-11-30. From 2026-12-01 the docs list
+  // $4 input / $0.20 cache read / $20 output; update this entry then.
+  "gemini-4-carbon": profile(2, 0.1, undefined, 10),
+  "gemini-4-hydrogen": profile(1.5, 0.075, undefined, 7.5),
+  "gemini-4-neon": profile(3, 0.15, undefined, 15),
   "glm-5-2": profile(1.4, 0.26, undefined, 4.4),
   "glm-5-3": profile(1.4, 0.26, undefined, 4.4),
   "glm-5-3-flash": profile(0.15, 0.029, undefined, 0.5),

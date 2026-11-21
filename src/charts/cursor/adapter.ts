@@ -9,8 +9,8 @@ import type {
   TooltipLine,
 } from "../types";
 import { inferModelBrand } from "../brand";
-import { latestModelVersionIds, modelDisplayMetadata, modelReleaseFamilyKey } from "../modelMetadata";
-import { paretoFrontier } from "../plotData";
+import { latestModelVersionIds, modelDisplayMetadata } from "../modelMetadata";
+import { clearlySurpassedIds } from "../plotData";
 import { cursorTokenRateExemption } from "../../collectors/cursor/policy";
 import {
   blendCursorNonOutputPrice,
@@ -28,16 +28,15 @@ export const CURSOR_BENCH_ID = "cursor";
 export const SURCHARGE_CONTROL_ID = "surcharge";
 export const CACHE_HIT_RATE_CONTROL_ID = "cacheHitRate";
 
-/** Current comparison families; superseded releases remain opt-in. */
-export const CURSOR_DEFAULT_MODEL_GROUPS = [
-  "opus-5-5", "sonnet-5-5", "haiku-5-5", "grok-4-7",
-  "gemini-4-argon", "deepseek-v4-1-flash-1017", "composer-2-5", "gpt-5-6-sol",
-] as const;
-
-const DEFAULT_RELEASE_FAMILIES = new Set(
-  CURSOR_DEFAULT_MODEL_GROUPS.map((id) => modelReleaseFamilyKey("", id.replace(/-v(?=\d)/, "-"))),
-);
-
+/**
+ * Default CursorBench view, derived from the published data rather than a
+ * hand-kept list. Every release that is the newest of its family and has
+ * verified pricing (a rate card or a documented exemption) is a candidate.
+ * Candidates are hidden only when another candidate is clearly better on both
+ * score and cost. Newly published families therefore appear as soon as they
+ * are priced, and the best value points stay visible. Explicit URL/selector
+ * choices still override this default.
+ */
 export function cursorDefaultVisibleIds(
   records: readonly DerivedCursorChartRecord[],
   points?: readonly PlottablePoint[],
@@ -47,26 +46,23 @@ export function cursorDefaultVisibleIds(
     return point ? [point] : [];
   });
   const pointIds = new Set(availablePoints.map((point) => point.id));
-  // New discoveries need verified pricing before entering the implicit view.
-  // Explicit URL/selector choices still win.
-  const eligible = records.filter((record) =>
+  // Unverified discoveries stay selector-only until a rate card or exemption exists.
+  const priced = records.filter((record) =>
     pointIds.has(record.modelId) &&
     (cursorTokenRateExemption(record.modelId) !== null || cursorTokenRateProfile(record) !== null),
   );
   const latestIds = new Set(latestModelVersionIds(
-    eligible.map((record) => ({
+    priced.map((record) => ({
       id: record.modelId, label: modelDisplayMetadata(record.modelName, record.modelId).label,
     })),
-    eligible.map((record) => record.modelId),
+    priced.map((record) => record.modelId),
   ));
-  const frontierIds = new Set(paretoFrontier(
+  const surpassedIds = clearlySurpassedIds(
     availablePoints.filter((point) => latestIds.has(point.id)),
-  ).map((point) => point.id));
-  return eligible.filter((record) =>
-    latestIds.has(record.modelId) &&
-    (DEFAULT_RELEASE_FAMILIES.has(modelReleaseFamilyKey(record.modelName, record.modelId)) ||
-      frontierIds.has(record.modelId)),
-  ).map((record) => record.modelId);
+  );
+  return priced
+    .filter((record) => latestIds.has(record.modelId) && !surpassedIds.has(record.modelId))
+    .map((record) => record.modelId);
 }
 
 const SURCHARGE_CONTROL = {

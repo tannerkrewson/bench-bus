@@ -78,7 +78,7 @@ export const CursorMethodologyContent: Component = () => (
         published Token Rate exclusions
       </a>{" "}
       also exempt Haiku 5.5, GPT-5.6 Luna, Gemini 3.8 Flash, and GLM 5.3 Flash, among others.
-      Third-party does not automatically mean fee-eligible. Policy and rate cards were verified October 29, 2026.
+      Third-party does not automatically mean fee-eligible. Policy and most rate cards were verified October 29, 2026; Fable 5.2 and Gemini 4 rate cards were verified November 21, 2026.
     </p>
     <p>
       <strong>Cache-hit setting.</strong> It starts at 90%: the share of non-output prompt tokens assumed to come from

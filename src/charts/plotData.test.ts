@@ -3,6 +3,7 @@ import type { PlottablePoint } from "./types";
 import { AA_FIXTURE_RECORDS, aaDemoAdapter } from "./fixtures";
 import {
   buildChartPlot,
+  clearlySurpassedIds,
   discountDetailLines,
   discountHoverTitle,
   discountMath,
@@ -183,5 +184,26 @@ describe("paretoFrontier", () => {
       { id: "same-score", label: "Same score", x: 2, y: 50 },
     ]);
     expect(frontier.map((point) => point.id)).toEqual(["first"]);
+  });
+});
+
+describe("clearlySurpassedIds", () => {
+  it("flags only points beaten on both score and cost", () => {
+    const surpassed = clearlySurpassedIds([
+      { id: "best", label: "Best", x: 1, y: 60 },
+      { id: "beaten-both", label: "Beaten both", x: 2, y: 50 },
+      { id: "cheaper-only", label: "Cheaper only", x: 0.5, y: 30 },
+      { id: "better-only", label: "Better only", x: 5, y: 70 },
+    ]);
+    expect([...surpassed]).toEqual(["beaten-both"]);
+  });
+
+  it("does not treat ties on either axis as a clear surpass", () => {
+    const surpassed = clearlySurpassedIds([
+      { id: "first", label: "First", x: 1, y: 50 },
+      { id: "same-score-higher-cost", label: "Same score", x: 2, y: 50 },
+      { id: "same-cost-lower-score", label: "Same cost", x: 1, y: 40 },
+    ]);
+    expect(surpassed.size).toBe(0);
   });
 });

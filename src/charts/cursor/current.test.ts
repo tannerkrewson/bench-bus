@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import snapshot from "./fixtures/2026-10-29.json";
 import { derivedCursorChartRecordSchema } from "../../schemas";
 import { cursorTokenRateExemption } from "../../collectors/cursor/policy";
-import { modelDisplayMetadata, expandedModelName } from "../modelMetadata";
+import { expandedModelName } from "../modelMetadata";
 import { cursorBenchAdapter, cursorDefaultVisibleIds } from "./adapter";
 
 const records = snapshot.records.map(({ stepsPerTask: _steps, ...record }) => derivedCursorChartRecordSchema.parse(record));
@@ -27,20 +27,19 @@ describe("2026-10-29 CursorBench coverage regression", () => {
     expect(exempt).toBe(24);
   });
 
-  it("starts with nine relevant/frontier families, not every published family", () => {
-    const selected = new Set(cursorDefaultVisibleIds(records));
-    const families = [...new Set(records.filter((r) => selected.has(r.modelId))
-      .map((r) => modelDisplayMetadata(r.modelName, r.modelId).groupKey))];
-    expect(families.sort()).toEqual([
-      "composer-2-5", "deepseek-v4-1-flash-1017", "gemini-4-argon", "gpt-5-6-luna",
-      "gpt-5-6-sol", "grok-4-7", "haiku-5-5", "opus-5-5", "sonnet-5-5",
-    ].sort());
-    expect(selected.size).toBe(33);
-    // The newly added DeepSeek release must match its curated family even
-    // though ID version separators differ from its dotted source label.
-    expect(selected.has("deepseek-v4-1-flash-1017-high")).toBe(true);
-    expect(selected.has("fable-5-1-max")).toBe(false);
-    expect(selected.has("opus-5-max")).toBe(false);
+  it("shows only the newest releases that are not clearly surpassed on score and cost", () => {
+    const selected = cursorDefaultVisibleIds(records);
+    expect([...selected].sort()).toEqual([
+      "gpt-5-6-luna-low", "gpt-5-6-luna-medium",
+      "haiku-5-5-extra-high", "haiku-5-5-high", "haiku-5-5-low", "haiku-5-5-max", "haiku-5-5-medium",
+      "opus-5-5-extra-high", "opus-5-5-high", "opus-5-5-max", "opus-5-5-medium",
+      "sonnet-5-5-extra-high",
+    ]);
+    // Superseded releases stay selector-only even when they are not beaten.
+    expect(selected).not.toContain("opus-5-max");
+    expect(selected).not.toContain("fable-5-1-max");
+    // Composer 2.5 is clearly beaten by cheaper, higher-scoring Haiku 5.5 rows.
+    expect(selected.some((id) => id.startsWith("composer-2-5"))).toBe(false);
     expect(expandedModelName("Haiku 5.5 High", "haiku-5-5-high")).toBe("Anthropic Claude Haiku 5.5 (high)");
   });
 });

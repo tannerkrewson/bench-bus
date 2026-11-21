@@ -32,14 +32,28 @@ describe("cursorBenchAdapter identity + defaults", () => {
     ]);
   });
 
-  it("hides superseded releases, dominated uncurated models, and unverified discoveries", () => {
+  it("hides superseded releases and models clearly beaten on both score and cost", () => {
     const records = [composer, sol,
-      { ...sol, modelId: "opus-5-high", modelName: "Opus 5 High" },
-      { ...sol, modelId: "opus-5-5-high", modelName: "Opus 5.5 High", publishedCostUsd: 8 },
+      // Superseded by Opus 5.5 even though it looks strong on both axes.
+      { ...sol, modelId: "opus-5-high", modelName: "Opus 5 High", score: 90, publishedCostUsd: 0.5, tokensPerTask: 1_000 },
+      // Cheaper than Composer and not beaten by anything on both axes, so it stays.
+      { ...sol, modelId: "opus-5-5-high", modelName: "Opus 5.5 High", score: 60, publishedCostUsd: 1, tokensPerTask: 10_000 },
       { ...sol, modelId: "muse-wonder-high", modelName: "Muse Wonder High", score: 20 },
       { ...sol, modelId: "unknown-model", modelName: "Unknown Model", publishedCostUsd: 0.1 },
     ];
-    expect(cursorDefaultVisibleIds(records)).toEqual(["composer-2", "gpt-5-6-sol-high", "opus-5-5-high"]);
+    expect(cursorDefaultVisibleIds(records)).toEqual(["composer-2", "opus-5-5-high"]);
+  });
+
+  it("keeps models that tie on score even when one is cheaper", () => {
+    const cheaper = { ...sol, modelId: "opus-5-5-high", modelName: "Opus 5.5 High", publishedCostUsd: 8 };
+    expect(cursorDefaultVisibleIds([sol, cheaper])).toEqual([sol.modelId, cheaper.modelId]);
+  });
+
+  it("shows a newly priced family without a hand-kept list, and keeps its best value rows", () => {
+    const neonHigh = { ...sol, modelId: "gemini-4-neon-high", modelName: "Gemini 4 Neon High", provider: "google", score: 63.7, publishedCostUsd: 6.54 };
+    const neonLow = { ...sol, modelId: "gemini-4-neon-low", modelName: "Gemini 4 Neon Low", provider: "google", score: 45.5, publishedCostUsd: 1.26, tokensPerTask: 20_000 };
+    const unpricedFuture = { ...sol, modelId: "future-lab-model-high", modelName: "Future Lab Model High", score: 95, publishedCostUsd: 0.2 };
+    expect(cursorDefaultVisibleIds([neonHigh, neonLow, unpricedFuture])).toEqual([neonHigh.modelId, neonLow.modelId]);
   });
 
   it("retains verified current value-frontier models outside the curated lineup", () => {

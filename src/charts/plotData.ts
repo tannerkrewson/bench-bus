@@ -247,3 +247,19 @@ export function paretoFrontier(points: readonly PlottablePoint[]): PlottablePoin
 
   return frontier;
 }
+
+/**
+ * Ids of points that another point beats on both axes: strictly higher score
+ * and strictly lower cost. A tie on either axis is not a clear surpass, so
+ * tied points stay out of this set.
+ */
+export function clearlySurpassedIds(points: readonly PlottablePoint[]): Set<string> {
+  const surpassed = new Set<string>();
+  for (const point of points) {
+    const beaten = points.some((other) =>
+      other.id !== point.id && other.y > point.y && other.x < point.x,
+    );
+    if (beaten) surpassed.add(point.id);
+  }
+  return surpassed;
+}
