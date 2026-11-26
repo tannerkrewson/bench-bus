@@ -249,17 +249,27 @@ export function paretoFrontier(points: readonly PlottablePoint[]): PlottablePoin
 }
 
 /**
- * Ids of points that another point beats on both axes: strictly higher score
- * and strictly lower cost. A tie on either axis is not a clear surpass, so
- * tied points stay out of this set.
+ * Group keys whose every point is beaten on both axes (strictly higher score
+ * and strictly lower cost) by points of one single other group. A group with
+ * any point that the other group cannot beat, including a tie on either axis,
+ * is not clearly surpassed.
  */
-export function clearlySurpassedIds(points: readonly PlottablePoint[]): Set<string> {
-  const surpassed = new Set<string>();
+export function clearlySurpassedGroups(
+  points: readonly PlottablePoint[],
+  groupOf: (point: PlottablePoint) => string,
+): Set<string> {
+  const groups = new Map<string, PlottablePoint[]>();
   for (const point of points) {
-    const beaten = points.some((other) =>
-      other.id !== point.id && other.y > point.y && other.x < point.x,
+    const key = groupOf(point);
+    groups.set(key, [...(groups.get(key) ?? []), point]);
+  }
+  const beats = (a: PlottablePoint, b: PlottablePoint) => a.y > b.y && a.x < b.x;
+  const surpassed = new Set<string>();
+  for (const [key, members] of groups) {
+    const beaten = [...groups].some(([other, rivals]) =>
+      other !== key && members.every((member) => rivals.some((rival) => beats(rival, member))),
     );
-    if (beaten) surpassed.add(point.id);
+    if (beaten) surpassed.add(key);
   }
   return surpassed;
 }

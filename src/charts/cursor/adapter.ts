@@ -10,7 +10,7 @@ import type {
 } from "../types";
 import { inferModelBrand } from "../brand";
 import { latestModelVersionIds, modelDisplayMetadata } from "../modelMetadata";
-import { clearlySurpassedIds } from "../plotData";
+import { clearlySurpassedGroups } from "../plotData";
 import { cursorTokenRateExemption } from "../../collectors/cursor/policy";
 import {
   blendCursorNonOutputPrice,
@@ -30,12 +30,11 @@ export const CACHE_HIT_RATE_CONTROL_ID = "cacheHitRate";
 
 /**
  * Default CursorBench view, derived from the published data rather than a
- * hand-kept list. Every release that is the newest of its family and has
- * verified pricing (a rate card or a documented exemption) is a candidate.
- * Candidates are hidden only when another candidate is clearly better on both
- * score and cost. Newly published families therefore appear as soon as they
- * are priced, and the best value points stay visible. Explicit URL/selector
- * choices still override this default.
+ * hand-kept list. The newest release of each family with verified pricing (a
+ * rate card or a documented exemption) is a candidate, shown with all of its
+ * efforts. A family is hidden only when one other family beats every one of
+ * its efforts on both score and cost. Explicit URL/selector choices still
+ * override this default.
  */
 export function cursorDefaultVisibleIds(
   records: readonly DerivedCursorChartRecord[],
@@ -57,12 +56,13 @@ export function cursorDefaultVisibleIds(
     })),
     priced.map((record) => record.modelId),
   ));
-  const surpassedIds = clearlySurpassedIds(
-    availablePoints.filter((point) => latestIds.has(point.id)),
-  );
-  return priced
-    .filter((record) => latestIds.has(record.modelId) && !surpassedIds.has(record.modelId))
-    .map((record) => record.modelId);
+  const familyOf = (point: PlottablePoint) => point.effortGroup ?? point.id;
+  const candidates = availablePoints.filter((point) => latestIds.has(point.id));
+  const surpassedFamilies = clearlySurpassedGroups(candidates, familyOf);
+  const visibleIds = new Set(candidates
+    .filter((point) => !surpassedFamilies.has(familyOf(point)))
+    .map((point) => point.id));
+  return priced.filter((record) => visibleIds.has(record.modelId)).map((record) => record.modelId);
 }
 
 const SURCHARGE_CONTROL = {

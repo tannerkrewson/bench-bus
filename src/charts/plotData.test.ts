@@ -3,7 +3,7 @@ import type { PlottablePoint } from "./types";
 import { AA_FIXTURE_RECORDS, aaDemoAdapter } from "./fixtures";
 import {
   buildChartPlot,
-  clearlySurpassedIds,
+  clearlySurpassedGroups,
   discountDetailLines,
   discountHoverTitle,
   discountMath,
@@ -187,23 +187,38 @@ describe("paretoFrontier", () => {
   });
 });
 
-describe("clearlySurpassedIds", () => {
-  it("flags only points beaten on both score and cost", () => {
-    const surpassed = clearlySurpassedIds([
-      { id: "best", label: "Best", x: 1, y: 60 },
-      { id: "beaten-both", label: "Beaten both", x: 2, y: 50 },
-      { id: "cheaper-only", label: "Cheaper only", x: 0.5, y: 30 },
-      { id: "better-only", label: "Better only", x: 5, y: 70 },
-    ]);
-    expect([...surpassed]).toEqual(["beaten-both"]);
+describe("clearlySurpassedGroups", () => {
+  const group = (point: PlottablePoint) => point.id.split(":")[0]!;
+
+  it("hides a group only when one other group beats every one of its points", () => {
+    const surpassed = clearlySurpassedGroups([
+      { id: "best:low", label: "", x: 1, y: 50 },
+      { id: "best:high", label: "", x: 3, y: 70 },
+      { id: "beaten:low", label: "", x: 2, y: 45 },
+      { id: "beaten:high", label: "", x: 4, y: 65 },
+      // Its cheap effort is unbeaten, so the whole group stays.
+      { id: "mixed:low", label: "", x: 0.5, y: 30 },
+      { id: "mixed:high", label: "", x: 5, y: 60 },
+    ], group);
+    expect([...surpassed]).toEqual(["beaten"]);
+  });
+
+  it("does not combine two groups to surpass a third", () => {
+    const surpassed = clearlySurpassedGroups([
+      { id: "a:low", label: "", x: 1, y: 40 },
+      { id: "b:high", label: "", x: 3, y: 70 },
+      { id: "c:low", label: "", x: 2, y: 35 },
+      { id: "c:high", label: "", x: 4, y: 65 },
+    ], group);
+    expect(surpassed.size).toBe(0);
   });
 
   it("does not treat ties on either axis as a clear surpass", () => {
-    const surpassed = clearlySurpassedIds([
-      { id: "first", label: "First", x: 1, y: 50 },
-      { id: "same-score-higher-cost", label: "Same score", x: 2, y: 50 },
-      { id: "same-cost-lower-score", label: "Same cost", x: 1, y: 40 },
-    ]);
+    const surpassed = clearlySurpassedGroups([
+      { id: "first:x", label: "", x: 1, y: 50 },
+      { id: "same-score:x", label: "", x: 2, y: 50 },
+      { id: "same-cost:x", label: "", x: 1, y: 40 },
+    ], group);
     expect(surpassed.size).toBe(0);
   });
 });

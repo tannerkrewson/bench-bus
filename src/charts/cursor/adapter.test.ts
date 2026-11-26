@@ -56,6 +56,25 @@ describe("cursorBenchAdapter identity + defaults", () => {
     expect(cursorDefaultVisibleIds([neonHigh, neonLow, unpricedFuture])).toEqual([neonHigh.modelId, neonLow.modelId]);
   });
 
+  it("keeps a family's efforts together and hides a family another one beats at every effort", () => {
+    const opus = (effort: string, score: number, cost: number) => ({
+      ...sol, modelId: `opus-5-5-${effort}`, modelName: `Opus 5.5 ${effort}`, score, publishedCostUsd: cost, tokensPerTask: 10_000,
+    });
+    const grok = (effort: string, score: number, cost: number) => ({
+      ...sol, modelId: `grok-4-7-${effort}`, modelName: `Grok 4.7 ${effort}`, provider: "cursor", isThirdParty: false, score, publishedCostUsd: cost,
+    });
+    const records = [
+      // Opus max is beaten by Grok high, but Opus low is unbeaten, so all Opus efforts stay.
+      opus("low", 50, 1), opus("max", 55, 9),
+      grok("high", 60, 5), grok("max", 62, 8),
+      // Every Sol effort is beaten by a Grok effort, so the Sol family is hidden.
+      { ...sol, score: 58, publishedCostUsd: 6 },
+    ];
+    expect(cursorDefaultVisibleIds(records).sort()).toEqual([
+      "grok-4-7-high", "grok-4-7-max", "opus-5-5-low", "opus-5-5-max",
+    ]);
+  });
+
   it("retains verified current value-frontier models outside the curated lineup", () => {
     const cheap = { ...sol, modelId: "glm-5-3-flash-high", modelName: "GLM 5.3 Flash High", score: 30, publishedCostUsd: 0.1 };
     expect(cursorDefaultVisibleIds([composer, cheap])).toContain(cheap.modelId);
