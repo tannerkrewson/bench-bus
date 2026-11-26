@@ -206,7 +206,12 @@ export async function collectOpenRouterPricing(
   const records: OpenRouterModelPricing[] = [];
   const failures: ModelFailure[] = [];
 
-  await mapWithConcurrency(entries, concurrency, async (entry: AliasEntry) => {
+  // Delisted identities only sanction stored history; there is nothing to fetch.
+  const delisted = entries.filter((entry) => entry.status === "delisted");
+  for (const entry of delisted) log(`skipping delisted ${entry.aaModelSlug} (${entry.openrouterId})`);
+  const collectable = entries.filter((entry) => entry.status !== "delisted");
+
+  await mapWithConcurrency(collectable, concurrency, async (entry: AliasEntry) => {
     try {
       const canonicalSlug = resolveCanonicalSlug(rawCatalog, entry.openrouterId);
       if (canonicalSlug === undefined || canonicalSlug.startsWith("~")) {

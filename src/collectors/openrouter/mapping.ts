@@ -28,8 +28,12 @@ export const aliasEntrySchema = z
       message:
         "undiscountedOpenrouterId must be a bare vendor/model id without ':variant' suffixes or '~' alias prefixes",
     }).optional(),
-    /** confirmed = identity verified against both catalogs. */
-    status: z.enum(["confirmed", "provisional"]),
+    /**
+     * confirmed = identity verified against both catalogs.
+     * delisted = OpenRouter removed the model. The entry stays so stored
+     * snapshots keep their sanctioned pricing link, but collection skips it.
+     */
+    status: z.enum(["confirmed", "provisional", "delisted"]),
     note: z.string().optional(),
   })
   .strict();

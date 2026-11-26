@@ -521,6 +521,26 @@ describe("collectOpenRouterPricing", () => {
     ).rejects.toThrow(/phantom-model/);
   });
 
+  it("skips delisted aliases instead of failing when the catalog no longer lists them", async () => {
+    const seed = {
+      ...aliasSeed,
+      entries: [
+        ...aliasSeed.entries,
+        {
+          aaModelSlug: "retired-model",
+          aaModelId: "retired-model",
+          openrouterId: "retired/retired-model",
+          status: "delisted",
+        },
+      ],
+    };
+    const files = baseFiles();
+    files.set(ALIAS_PATH, JSON.stringify(seed));
+    const report = await collectOpenRouterPricing(baseOptions({ io: memoryIo(files) }));
+    expect(report.failures).toEqual([]);
+    expect(report.records.some((record) => record.aaModelSlug === "retired-model")).toBe(false);
+  });
+
   it("never writes output when any model fails (partial snapshot impossible)", async () => {
     const files = baseFiles();
     const routes = {
